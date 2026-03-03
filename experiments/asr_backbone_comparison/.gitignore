@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# uv / virtualenv
+.venv/
+.python-version
+
+# Experiment outputs
+outputs/
+data/
+RWKV-block/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

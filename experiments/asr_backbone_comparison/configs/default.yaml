@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ASR Backbone Comparison — default experiment configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0     # cap training data
+max_val_hours: 5.0        # cap validation data
+max_test_hours: 5.0       # cap test data
+max_audio_sec: 15.0       # drop utterances longer than this
+min_audio_sec: 0.5        # drop utterances shorter than this
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6
+n_heads: 4                # for Transformer / Linear Attention
+head_size: 64             # for RWKV (d_model must be divisible by this)
+ffn_mult: 5               # FFN hidden dim = d_model * ffn_mult (for Transformer/LinAttn)
+dropout: 0.15
+conv_channels: 256        # front-end ConvSubsampling channels
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0  # dynamic batching: total audio seconds per batch
+num_epochs: 30
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 10
+seed: 42
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+# 0 → the cap is disabled, full test set is used
+max_carry_eval_utterances: 0   # limit carry-state eval (slow step-by-step)
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_default
+data_dir: ./data/cv_uk            # where Common Voice gets extracted
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+# Get your API key at: https://commonvoice.mozilla.org/en/profile/settings
+# Set CV_API_KEY env var or fill in below (do not commit credentials)
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones to run ─────────────────────────────────────────────────────────
+# Remove entries to skip; order determines run order
+backbones:
+  - transformer
+  - linear_attention
+  - mamba
+  - rwkv6
+  - rwkv7

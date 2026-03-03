@@ -1,0 +1,151 @@
+# ASR Encoder Backbone Comparison
+
+Minimal CTC-based ASR pipeline comparing five encoder backbones on ~32h Ukrainian speech from Mozilla Common Voice. Only the encoder block is swapped; frontend (ConvSubsampling), optimizer, and CTC head are identical across all runs.
+
+## Hypothesis
+
+1. Lightweight recurrent/SSM encoders (Mamba, RWKV-6) achieve CER competitive with a Transformer of comparable size on 32h data.
+2. Under chunked inference (2–5s chunks), stateful architectures with carry-state achieve lower CER than reset-state.
+3. Stateful encoders degrade less from full-utterance to chunked CER than the stateless Transformer.
+
+## Backbones
+
+| Backbone | Complexity | Stateful |
+|---|---|---|
+| Transformer | O(T²) | No |
+| Linear Attention | O(T·D²) | No |
+| Mamba | O(T) | Yes |
+| RWKV-6 | O(T) | Yes |
+| RWKV-7 | O(T) | Yes |
+
+All: ~7M parameters, 6 layers, d_model=256.
+
+## Project Structure
+
+```
+experiments/asr_backbone_comparison/
+├── pyproject.toml          # uv project + dependencies
+├── setup_rwkv.sh           # clone & patch RWKV-block, install it
+├── configs/
+│   └── default.yaml        # full experiment config
+├── src/asr_exp/
+│   ├── config.py           # ExperimentConfig dataclass + YAML loader
+│   ├── data/               # text normalization, vocab, dataset, CV loader
+│   ├── models/             # all 5 encoder backbones + ASRModel wrapper
+│   ├── training/           # train loop, evaluators, CTC decode
+│   └── utils/              # seeding, param count, plots
+└── scripts/
+    └── run_experiment.py   # CLI entry point (restartable)
+```
+
+## Setup
+
+### 1. Prerequisites
+
+- Python ≥ 3.10
+- CUDA 12.4 (adjust `cu124` in `pyproject.toml` for other versions)
+- [uv](https://github.com/astral-sh/uv) package manager
+
+### 2. Create environment and install dependencies
+
+```bash
+cd experiments/asr_backbone_comparison
+
+# Create venv and install all Python deps (torch via CUDA wheel)
+uv sync
+
+# Install RWKV-block (clones, patches, installs as editable)
+bash setup_rwkv.sh
+
+# mamba-ssm needs to be built against the installed torch/CUDA
+# Run inside the uv venv:
+uv pip install causal-conv1d mamba-ssm --no-build-isolation
+```
+
+### 3. Common Voice API key
+
+Get your key at <https://commonvoice.mozilla.org/en/profile/settings> and export it:
+
+```bash
+export CV_API_KEY="your_key_here"
+```
+
+Or set `cv_api_key` in `configs/default.yaml` (do not commit credentials).
+
+If the dataset tarball or extracted folder already exist in `data/cv_uk/`, the download step is skipped automatically.
+
+## Running Experiments
+
+```bash
+# Full run with default config
+uv run scripts/run_experiment.py
+
+# Use a custom config
+uv run scripts/run_experiment.py --config configs/default.yaml
+
+# Run only specific backbones
+uv run scripts/run_experiment.py --backbone transformer mamba
+
+# Resume after interruption (default behavior — completed backbones are skipped)
+uv run scripts/run_experiment.py --resume
+
+# Re-run a backbone that already has results
+uv run scripts/run_experiment.py --backbone rwkv7 --force
+
+# Load saved checkpoints and evaluate only (no training)
+uv run scripts/run_experiment.py --eval-only
+
+# Override output directory
+uv run scripts/run_experiment.py --output-dir outputs/run_v2
+```
+
+## Restart / Resume Behavior
+
+The runner is designed to be safely interrupted and restarted:
+
+| File | Purpose |
+|---|---|
+| `outputs/<run>/results.json` | Aggregated results for all completed backbones |
+| `outputs/<run>/best_<backbone>.pt` | Best model checkpoint (lowest dev CER) |
+| `outputs/<run>/history_<backbone>.json` | Per-epoch training history |
+| `outputs/<run>/vocab.json` | Vocabulary (built once from train split) |
+
+On restart, any backbone already present in `results.json` is skipped. Pass `--force` to re-run a specific backbone.
+
+## Outputs
+
+```
+outputs/<run>/
+├── results.json                  # final metrics for all backbones
+├── vocab.json                    # character vocabulary
+├── best_transformer.pt           # best checkpoints
+├── best_mamba.pt
+├── history_transformer.json      # per-epoch history
+├── ...
+└── plots/
+    ├── convergence.{pdf,png}     # train/dev loss and CER curves
+    ├── chunked_cer_reset.{pdf,png}  # grouped bar chart
+    └── carry_vs_reset.{pdf,png}  # carry vs reset for stateful models
+```
+
+## Config Reference
+
+All parameters live in `configs/default.yaml` and map 1:1 to `ExperimentConfig` fields in `src/asr_exp/config.py`. Key parameters:
+
+| Parameter | Default | Description |
+|---|---|---|
+| `max_train_hours` | 35.0 | Cap training data |
+| `d_model` | 256 | Model hidden dim |
+| `n_layers` | 6 | Encoder depth |
+| `num_epochs` | 30 | Max training epochs |
+| `lr` | 3e-4 | Peak learning rate |
+| `batch_max_seconds` | 240 | Dynamic batch budget (seconds of audio) |
+| `chunk_sizes_sec` | [2, 5, 10] | Chunk sizes for chunked inference eval |
+| `early_stopping_patience` | 10 | Epochs without dev CER improvement |
+| `backbones` | all 5 | Which backbones to run |
+
+## Known Issues
+
+- **RWKV-7**: Converges poorly in the baseline run. Under investigation.
+- **Carry-state eval subset**: carry-state evaluation is limited to `max_carry_eval_utterances=500` utterances (Mamba step-by-step is slow). This makes direct comparison with reset-state (full test set) unfair — noted in results.
+- **mamba-ssm CUDA kernels**: The carry-state Mamba step uses a pure-PyTorch implementation to avoid `causal_conv1d` kernel version mismatches. Training uses the fused kernel normally.
