@@ -116,16 +116,43 @@ On restart, any backbone already present in `results.json` is skipped. Pass `--f
 
 ```
 outputs/<run>/
-├── results.json                  # final metrics for all backbones
+├── config_snapshot.yaml          # fully-resolved config (incl. CLI overrides)
+├── run_info.json                 # GPU, PyTorch version, Python, timestamp
+├── results.json                  # aggregated metrics for all completed backbones
+├── results_tables.txt            # formatted CER tables (Tables 1–3)
 ├── vocab.json                    # character vocabulary
-├── best_transformer.pt           # best checkpoints
-├── best_mamba.pt
-├── history_transformer.json      # per-epoch history
-├── ...
+├── best_<backbone>.pt            # best checkpoint per backbone (lowest dev CER)
+├── history_<backbone>.json       # per-epoch loss/CER/WER/LR — written every epoch
+├── samples_<backbone>.txt        # first 50 test ref/hyp pairs
 └── plots/
     ├── convergence.{pdf,png}     # train/dev loss and CER curves
-    ├── chunked_cer_reset.{pdf,png}  # grouped bar chart
-    └── carry_vs_reset.{pdf,png}  # carry vs reset for stateful models
+    ├── chunked_cer_reset.{pdf,png}  # grouped bar chart: full vs chunked (reset)
+    └── carry_vs_reset.{pdf,png}  # carry vs reset CER for stateful models
+```
+
+### `results.json` schema (per backbone)
+
+```jsonc
+{
+  "backbone": "mamba",
+  "params": {
+    "frontend":  412160,   // ConvSubsampling
+    "encoder":  6291456,   // backbone-specific layers
+    "ctc_head":   10240,   // LayerNorm + linear projection
+    "total":    6713856
+  },
+  "n_params": 6713856,             // same as params.total (backwards compat)
+  "best_epoch": 18,
+  "best_dev_cer": 0.2134,
+  "training_wall_time_s": 7240.5,  // sum of epoch times
+  "test": {"loss": ..., "cer": ..., "wer": ...},
+  "chunked_reset": {"2.0s": {"cer": ..., "wer": ..., "n_evaluated": ...}, ...},
+  "chunked_carry": {"2.0s": {"cer": ..., "wer": ..., "n_evaluated": ...}, ...},
+  "history": {
+    "epoch": [...], "train_loss": [...], "dev_loss": [...],
+    "dev_cer": [...], "dev_wer": [...], "lr": [...], "epoch_time_s": [...]
+  }
+}
 ```
 
 ## Config Reference

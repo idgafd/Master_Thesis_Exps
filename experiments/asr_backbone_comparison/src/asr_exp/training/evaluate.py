@@ -18,10 +18,12 @@ def evaluate(
     vocab: CharVocab,
     device: torch.device,
     tag: str = "dev",
+    return_predictions: bool = False,
 ) -> dict:
     """Compute CTC loss, CER, and WER over a DataLoader.
 
     Returns: {"loss": float, "cer": float, "wer": float}
+    If return_predictions=True, also includes {"refs": [...], "hyps": [...]}.
     """
     model.eval()
     ctc_loss_fn = nn.CTCLoss(blank=0, reduction="mean", zero_infinity=True)
@@ -63,7 +65,11 @@ def evaluate(
         print(f"    HYP: {all_hyps[i][:80]}")
         print()
 
-    return {"loss": avg_loss, "cer": cer, "wer": wer_val}
+    result = {"loss": avg_loss, "cer": cer, "wer": wer_val}
+    if return_predictions:
+        result["refs"] = all_refs
+        result["hyps"] = all_hyps
+    return result
 
 
 @torch.no_grad()

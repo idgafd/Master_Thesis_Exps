@@ -18,11 +18,16 @@ The runner is fully restartable:
 """
 
 import argparse
+import dataclasses
+import datetime
 import json
 import os
+import platform
 import sys
 import time
 from pathlib import Path
+
+import yaml
 
 import torch
 from torch.optim import AdamW
@@ -48,8 +53,51 @@ from asr_exp.training import (
     evaluate_chunked,
     train_one_epoch,
 )
-from asr_exp.utils.misc import count_parameters, make_serializable, set_seed
+from asr_exp.utils.misc import count_parameters, count_parameters_by_module, make_serializable, set_seed
 from asr_exp.utils.plots import plot_all
+
+
+# ── Helper functions ─────────────────────────────────────────────────────────
+
+def _save_sample_predictions(refs: list, hyps: list, path: str, n: int = 50) -> None:
+    """Write the first n ref/hyp pairs to a plain-text file."""
+    with open(path, "w", encoding="utf-8") as f:
+        for i, (ref, hyp) in enumerate(zip(refs[:n], hyps[:n])):
+            f.write(f"[{i+1:03d}]\n")
+            f.write(f"REF: {ref}\n")
+            f.write(f"HYP: {hyp}\n\n")
+    print(f"  Sample predictions saved to {path}")
+
+
+def _save_run_info(output_dir: str, device: torch.device) -> None:
+    """Save hardware and software environment info to run_info.json."""
+    info = {
+        "date": datetime.datetime.now().isoformat(timespec="seconds"),
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "torch": torch.__version__,
+        "device": str(device),
+    }
+    if torch.cuda.is_available():
+        info["gpu_name"] = torch.cuda.get_device_name(0)
+        info["gpu_vram_gb"] = round(
+            torch.cuda.get_device_properties(0).total_memory / 1e9, 1
+        )
+    path = os.path.join(output_dir, "run_info.json")
+    with open(path, "w") as f:
+        json.dump(info, f, indent=2)
+    print(f"Run info saved to {path}")
+
+
+def _save_config_snapshot(cfg, output_dir: str) -> None:
+    """Save a snapshot of the fully-resolved config to <output_dir>/config_snapshot.yaml.
+
+    Captures any CLI overrides — the source YAML alone may not reflect them.
+    """
+    snapshot_path = os.path.join(output_dir, "config_snapshot.yaml")
+    with open(snapshot_path, "w", encoding="utf-8") as f:
+        yaml.dump(dataclasses.asdict(cfg), f, allow_unicode=True, sort_keys=True)
+    print(f"Config snapshot saved to {snapshot_path}")
 
 
 # ── Per-backbone experiment ───────────────────────────────────────────────────
@@ -197,7 +245,16 @@ def run_backbone(
 
     # ── Evaluation ────────────────────────────────────────────────────────────
     print(f"\n--- Final Test Evaluation ({backbone_type}) ---")
-    test_metrics = evaluate(model, test_loader, vocab, device, tag="test")
+    test_metrics = evaluate(
+        model, test_loader, vocab, device, tag="test", return_predictions=True
+    )
+    # Save sample predictions (first 50) to a text file
+    _save_sample_predictions(
+        refs=test_metrics.pop("refs"),
+        hyps=test_metrics.pop("hyps"),
+        path=os.path.join(cfg.output_dir, f"samples_{backbone_type}.txt"),
+        n=50,
+    )
 
     print(f"\n--- Chunked Inference: RESET-STATE ({backbone_type}) ---")
     chunked_reset = {}
@@ -221,11 +278,14 @@ def run_backbone(
     else:
         print(f"\n  Carry-state: N/A for {backbone_type} (stateless architecture)")
 
+    training_time_s = sum(history["epoch_time_s"])
     return {
         "backbone": backbone_type,
-        "n_params": n_params,
+        "params": count_parameters_by_module(model),  # {frontend, encoder, ctc_head, total}
+        "n_params": n_params,                          # kept for backwards compat
         "best_epoch": best_epoch,
         "best_dev_cer": float(best_dev_cer),
+        "training_wall_time_s": training_time_s,
         "test": test_metrics,
         "chunked_reset": chunked_reset,
         "chunked_carry": chunked_carry,
@@ -385,6 +445,7 @@ def main():
         cfg.backbones = args.backbone
 
     os.makedirs(cfg.output_dir, exist_ok=True)
+    _save_config_snapshot(cfg, cfg.output_dir)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -392,6 +453,7 @@ def main():
         print(f"GPU: {torch.cuda.get_device_name()}")
         print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
+    _save_run_info(cfg.output_dir, device)
     set_seed(cfg.seed)
 
     # ── Data ──────────────────────────────────────────────────────────────────
