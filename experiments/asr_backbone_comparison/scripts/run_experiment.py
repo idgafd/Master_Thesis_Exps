@@ -248,20 +248,21 @@ def _save_results(results: dict, path: str) -> None:
     print(f"Results saved to {path}")
 
 
-def _print_tables(all_results: dict, backbones: list, chunk_sizes_sec: list) -> None:
+def _build_tables(all_results: dict, backbones: list, chunk_sizes_sec: list) -> str:
+    """Build the results summary as a plain-text string."""
     present = [bb for bb in backbones if bb in all_results]
-
-    print("\n" + "─" * 30)
-    print("  RESULTS SUMMARY")
-    print("─" * 30)
+    lines = []
+    lines.append("─" * 30)
+    lines.append("  RESULTS SUMMARY")
+    lines.append("─" * 30)
 
     # Table 1: full utterance + reset-state chunks
-    print("\n  Table 1: Full utterance + Reset-state chunked CER")
+    lines.append("\n  Table 1: Full utterance + Reset-state chunked CER")
     header = f"{'Backbone':<22} {'Params':>8} {'BestDev':>8} {'TestCER':>8}"
     for cs in chunk_sizes_sec:
         header += f" {'R@'+str(cs)+'s':>8}"
-    print(header)
-    print("-" * len(header))
+    lines.append(header)
+    lines.append("-" * len(header))
     for bb in present:
         r = all_results[bb]
         row = (
@@ -272,39 +273,39 @@ def _print_tables(all_results: dict, backbones: list, chunk_sizes_sec: list) -> 
             key = f"{cs}s"
             cer = r["chunked_reset"].get(key, {}).get("cer", float("nan"))
             row += f" {cer:>8.4f}"
-        print(row)
+        lines.append(row)
 
     # Table 2: carry-state chunks
     has_carry = any(all_results[bb]["chunked_carry"] for bb in present)
     if has_carry:
-        print(f"\n  Table 2: Carry-state chunked CER (recurrent/SSM backbones)")
+        lines.append(f"\n  Table 2: Carry-state chunked CER (recurrent/SSM backbones)")
         header2 = f"{'Backbone':<22} {'TestCER':>8}"
         for cs in chunk_sizes_sec:
             header2 += f" {'C@'+str(cs)+'s':>8}"
-        print(header2)
-        print("-" * len(header2))
+        lines.append(header2)
+        lines.append("-" * len(header2))
         for bb in present:
             r = all_results[bb]
             if not r["chunked_carry"]:
-                print(f"{bb:<22} {r['test']['cer']:>8.4f}  (stateless — no carry)")
+                lines.append(f"{bb:<22} {r['test']['cer']:>8.4f}  (stateless — no carry)")
             else:
                 row = f"{bb:<22} {r['test']['cer']:>8.4f}"
                 for cs in chunk_sizes_sec:
                     key = f"{cs}s"
                     cer = r["chunked_carry"].get(key, {}).get("cer", float("nan"))
                     row += f" {cer:>8.4f}"
-                print(row)
+                lines.append(row)
 
-        print(f"\n  Table 3: CER improvement from carry-state (Reset − Carry)")
+        lines.append(f"\n  Table 3: CER improvement from carry-state (Reset − Carry)")
         header3 = f"{'Backbone':<22}"
         for cs in chunk_sizes_sec:
             header3 += f" {'Δ@'+str(cs)+'s':>8}"
-        print(header3)
-        print("-" * len(header3))
+        lines.append(header3)
+        lines.append("-" * len(header3))
         for bb in present:
             r = all_results[bb]
             if not r["chunked_carry"]:
-                print(f"{bb:<22}  N/A (stateless)")
+                lines.append(f"{bb:<22}  N/A (stateless)")
                 continue
             row = f"{bb:<22}"
             for cs in chunk_sizes_sec:
@@ -315,7 +316,20 @@ def _print_tables(all_results: dict, backbones: list, chunk_sizes_sec: list) -> 
                     row += f" {sign}{delta:>7.4f}"
                 else:
                     row += f" {'N/A':>8}"
-            print(row)
+            lines.append(row)
+
+    return "\n".join(lines)
+
+
+def _print_tables(
+    all_results: dict, backbones: list, chunk_sizes_sec: list, output_dir: str
+) -> None:
+    text = _build_tables(all_results, backbones, chunk_sizes_sec)
+    print("\n" + text)
+    tables_path = os.path.join(output_dir, "results_tables.txt")
+    with open(tables_path, "w", encoding="utf-8") as f:
+        f.write(text + "\n")
+    print(f"Tables saved to {tables_path}")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -426,7 +440,7 @@ def main():
         _save_results(all_results, results_path)
 
     # ── Summary ───────────────────────────────────────────────────────────────
-    _print_tables(all_results, cfg.backbones, cfg.chunk_sizes_sec)
+    _print_tables(all_results, cfg.backbones, cfg.chunk_sizes_sec, cfg.output_dir)
 
     completed = [bb for bb in cfg.backbones if bb in all_results and "error" not in all_results[bb]]
     if completed:
