@@ -1,0 +1,9 @@
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance + Reset-state chunked CER
+Backbone                 Params  BestDev  TestCER   R@2.0s   R@5.0s  R@10.0s
+----------------------------------------------------------------------------
+bidir_linear_attention    7.44M   0.1911   0.2044   0.2408   0.2101   0.2043
+bidir_rwkv6               7.74M   0.1676   0.1790   0.2161   0.1857   0.1790
