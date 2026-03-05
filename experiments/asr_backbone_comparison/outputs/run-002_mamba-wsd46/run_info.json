@@ -1,0 +1,10 @@
+{
+  "run_id": "run_mamba_wsd_v2_20260305_1058",
+  "date": "2026-03-05T10:58:42",
+  "platform": "Linux-6.8.0-71-generic-x86_64-with-glibc2.39",
+  "python": "3.11.14",
+  "torch": "2.7.1+cu128",
+  "device": "cuda",
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+  "gpu_vram_gb": 102.0
+}
