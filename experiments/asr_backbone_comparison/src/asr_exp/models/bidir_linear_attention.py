@@ -1,16 +1,19 @@
-"""Bidirectional Linear Attention encoder (LION dual-recurrence correction).
+"""Bidirectional Linear Attention with learnable decay (LION-D, parallel form).
 
-Implements the balanced dual-recurrence from the LION recipe:
-  - Forward pass  : S_i^F = λ S_{i-1}^F + k_i v_i^T
-  - Backward pass : S_i^B = λ S_{i+1}^B + k_i v_i^T
-  - Correction    : subtract ½(q_i·k_i) v_i so neither stream double-counts token i
-  - Combine       : y_i = (ŷ_i^F + ŷ_i^B) / (c_i^F + c_i^B)
+LION-D full linear attention (Eq. 8 from Afzal et al. 2025):
+  Y = SCALE( Q K^T ⊙ M ) V
 
-This is mathematically equivalent to full (non-causal) linear attention while
-staying in the recurrent / TC^0 complexity class (O(T·D²) per layer).
+where M_ij = λ^|i-j| is a symmetric decay mask with learnable per-head λ.
+This is the parallel/matrix form — mathematically equivalent to the RNN form
+with LION correction terms, but fully parallelizable for training.
 
-Feature map: ELU(x)+1  (Katharopoulos et al. 2020, same as linear_attention.py)
-Decay      : learnable scalar per head, initialised near 1 via sigmoid(log(9))≈0.9
+Compared to linear_attention.py (which is LION-LIT with M=1, no decay),
+this adds a learnable distance-based decay that down-weights farther tokens.
+
+Feature map: ELU(x)+1  (same as linear_attention.py for fair comparison)
+Decay: learnable scalar per head, λ = sigmoid(w), init ≈ 0.9
+
+Not compatible with carry-state inference (bidirectional).
 """
 
 import math
@@ -23,7 +26,7 @@ from asr_exp.models.components import SinusoidalPE
 
 
 class BidirLinearAttentionLayer(nn.Module):
-    """Single LION-corrected bidirectional linear attention layer with pre-norm + FFN."""
+    """Single LION-D bidirectional linear attention layer (parallel form)."""
 
     def __init__(self, d_model: int, n_heads: int, ffn_dim: int, dropout: float):
         super().__init__()
@@ -55,59 +58,6 @@ class BidirLinearAttentionLayer(nn.Module):
     def _elu_feature(x: torch.Tensor) -> torch.Tensor:
         return F.elu(x) + 1.0
 
-    def _recurrence(
-        self,
-        Q: torch.Tensor,   # (B, H, T, d)
-        K: torch.Tensor,   # (B, H, T, d)
-        V: torch.Tensor,   # (B, H, T, d)
-        decay: torch.Tensor,  # (H,) in [0,1]
-        reverse: bool,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Run one directional recurrence; returns (Y, C) each (B, H, T, d)."""
-        B, H, T, d = Q.shape
-        device = Q.device
-
-        S = torch.zeros(B, H, d, d, device=device, dtype=Q.dtype)  # context matrix
-        z = torch.zeros(B, H, d, device=device, dtype=Q.dtype)      # normaliser vector
-
-        Y_list = []
-        C_list = []
-
-        time_range = range(T - 1, -1, -1) if reverse else range(T)
-
-        for i in time_range:
-            k_i = K[:, :, i, :]  # (B, H, d)
-            v_i = V[:, :, i, :]  # (B, H, d)
-            q_i = Q[:, :, i, :]  # (B, H, d)
-
-            # decay shape: (1, H, 1, 1) and (1, H, 1) for broadcasting
-            lam = decay.view(1, H, 1, 1)
-            lam_z = decay.view(1, H, 1)
-
-            # State update: S = λS + k⊗v,   z = λz + k
-            S = lam * S + torch.einsum("bhd,bhe->bhde", k_i, v_i)
-            z = lam_z * z + k_i
-
-            # Raw output before LION correction
-            y_raw = torch.einsum("bhd,bhde->bhe", q_i, S)   # (B, H, d)
-            c_raw = (q_i * z).sum(dim=-1)                    # (B, H)
-
-            # LION correction: subtract ½(q·k)v  /  ½(q·k)
-            qk = (q_i * k_i).sum(dim=-1, keepdim=True)       # (B, H, 1)
-            y_corr = y_raw - 0.5 * qk * v_i                  # (B, H, d)
-            c_corr = c_raw - 0.5 * qk.squeeze(-1)            # (B, H)
-
-            Y_list.append(y_corr)
-            C_list.append(c_corr)
-
-        if reverse:
-            Y_list.reverse()
-            C_list.reverse()
-
-        Y = torch.stack(Y_list, dim=2)  # (B, H, T, d)
-        C = torch.stack(C_list, dim=2)  # (B, H, T)
-        return Y, C
-
     def forward(
         self, x: torch.Tensor, mask: torch.Tensor | None = None
     ) -> torch.Tensor:
@@ -123,24 +73,33 @@ class BidirLinearAttentionLayer(nn.Module):
         def proj_reshape(proj):
             return proj(x).view(B, T, self.n_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        Q = self._elu_feature(proj_reshape(self.q_proj))
-        K = self._elu_feature(proj_reshape(self.k_proj))
-        V = proj_reshape(self.v_proj)
+        Q = self._elu_feature(proj_reshape(self.q_proj))  # (B, H, T, d)
+        K = self._elu_feature(proj_reshape(self.k_proj))  # (B, H, T, d)
+        V = proj_reshape(self.v_proj)                      # (B, H, T, d)
 
-        # Zero out padding positions so they don't contaminate the state
+        # Zero out padding positions
         if mask is not None:
             pad = (~mask).float().view(B, 1, T, 1)  # True=padding → 0
             K = K * pad
             V = V * pad
 
+        # Build decay mask: M_ij = λ^|i-j|, shape (H, T, T)
         decay = torch.sigmoid(self.decay_logit)  # (H,) in (0,1)
+        positions = torch.arange(T, device=x.device)
+        distances = (positions.unsqueeze(0) - positions.unsqueeze(1)).abs().float()  # (T, T)
+        # Compute λ^|i-j| in log-space for stability: exp(|i-j| * log(λ))
+        log_decay = torch.log(decay.clamp(min=1e-8))  # (H,)
+        M = torch.exp(distances.unsqueeze(0) * log_decay.view(-1, 1, 1))  # (H, T, T)
 
-        Y_f, C_f = self._recurrence(Q, K, V, decay, reverse=False)
-        Y_b, C_b = self._recurrence(Q, K, V, decay, reverse=True)
+        # Attention: A = Q K^T ⊙ M, shape (B, H, T, T)
+        A = torch.einsum("bhid,bhjd->bhij", Q, K) * M.unsqueeze(0)
 
-        # Combine: y_i = (Y_f + Y_b) / (C_f + C_b)
-        denom = (C_f + C_b).unsqueeze(-1).clamp(min=1e-6)  # (B, H, T, 1)
-        out = (Y_f + Y_b) / denom                          # (B, H, T, d)
+        # SCALE: normalize each row by its sum
+        row_sum = A.sum(dim=-1, keepdim=True).clamp(min=1e-6)  # (B, H, T, 1)
+        A = A / row_sum
+
+        # Output: A @ V
+        out = torch.einsum("bhij,bhjd->bhid", A, V)  # (B, H, T, d)
 
         # Reshape back to (B, T, D)
         out = out.permute(0, 2, 1, 3).reshape(B, T, D)
@@ -152,11 +111,11 @@ class BidirLinearAttentionLayer(nn.Module):
 
 
 class BidirLinearAttentionEncoder(nn.Module):
-    """Stack of LION bidirectional linear attention layers.
+    """Stack of LION-D bidirectional linear attention layers (parallel form).
 
-    Mathematically equivalent to full (non-causal) linear attention.
-    Not compatible with streaming / carry-state inference because the backward
-    pass requires the full sequence.
+    Same as linear_attention.py but with a learnable per-head decay mask
+    M_ij = λ^|i-j| that down-weights distant tokens.
+    Not compatible with streaming / carry-state inference.
     """
 
     supports_carry_state = False
@@ -184,11 +143,6 @@ class BidirLinearAttentionEncoder(nn.Module):
         lengths: torch.Tensor,
         state=None,
     ) -> tuple[torch.Tensor, None]:
-        """
-        x       : (B, T, D)
-        lengths : (B,) valid frame counts
-        state   : ignored (bidirectional, no carry state)
-        """
         x = self.pos_enc(x)
         B, T, _ = x.shape
         mask = torch.arange(T, device=x.device).unsqueeze(0) >= lengths.unsqueeze(1)
