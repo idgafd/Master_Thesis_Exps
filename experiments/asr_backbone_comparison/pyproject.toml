@@ -5,11 +5,10 @@ description = "CTC-based ASR encoder backbone comparison on Ukrainian Common Voi
 requires-python = ">=3.10"
 dependencies = [
     # PyTorch — install with CUDA wheel separately (see README)
-    "torch==2.4.1",
-    "torchaudio==2.4.1",
-    # Mamba SSM (requires CUDA build tools; install after torch)
-    "mamba-ssm",
-    "causal-conv1d",
+    "torch==2.7.1",
+    "torchaudio==2.7.1",
+    # Mamba SSM — installed separately via:
+    # uv pip install causal-conv1d mamba-ssm --no-build-isolation
     # Data
     "datasets>=2.20",
     "soundfile>=0.12",
@@ -33,15 +32,11 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/asr_exp"]
 
-[tool.uv]
-# CUDA index for torch — adjust cu124 to match your CUDA version
-index-url = "https://download.pytorch.org/whl/cu124"
-
 [tool.uv.sources]
 torch = { index = "pytorch" }
 torchaudio = { index = "pytorch" }
 
 [[tool.uv.index]]
 name = "pytorch"
-url = "https://download.pytorch.org/whl/cu124"
+url = "https://download.pytorch.org/whl/cu128"
 explicit = true
