@@ -1,5 +1,5 @@
 backbones:
-- bidir_linear_attention
+- mamba
 batch_max_seconds: 240.0
 chunk_sizes_sec:
 - 2.0
