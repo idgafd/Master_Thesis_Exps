@@ -80,3 +80,6 @@ backbones:
   - mamba
   - rwkv6
   - rwkv7
+  - bidir_rwkv6
+  # Vim-style bidir backbones need fewer layers to match params — use
+  # configs/bidir_vim.yaml (3L) and configs/bidir_vim_mamba.yaml (4L)

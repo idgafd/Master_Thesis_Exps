@@ -17,7 +17,11 @@ class ASRModel(nn.Module):
     All five backbone types share the same frontend and output head.
     """
 
-    BACKBONE_TYPES = {"transformer", "linear_attention", "bidir_linear_attention", "mamba", "rwkv6", "rwkv7"}
+    BACKBONE_TYPES = {
+        "transformer", "linear_attention", "bidir_linear_attention",
+        "mamba", "rwkv6", "rwkv7",
+        "bidir_rwkv6", "bidir_vim_rwkv6", "bidir_vim_mamba",
+    }
 
     def __init__(self, backbone_type: str, vocab_size: int, cfg: ExperimentConfig):
         super().__init__()
@@ -58,6 +62,18 @@ class ASRModel(nn.Module):
         if backbone_type == "rwkv7":
             from asr_exp.models.rwkv7 import RWKV7Encoder
             return RWKV7Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6":
+            from asr_exp.models.bidir_rwkv6 import BidirRWKV6Encoder
+            return BidirRWKV6Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_vim_rwkv6":
+            from asr_exp.models.bidir_vim_rwkv6 import BidirVimRWKV6Encoder
+            return BidirVimRWKV6Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_vim_mamba":
+            from asr_exp.models.bidir_vim_mamba import BidirVimMambaEncoder
+            return BidirVimMambaEncoder(cfg.d_model, cfg.n_layers, cfg.dropout)
 
         raise ValueError(backbone_type)  # unreachable
 
