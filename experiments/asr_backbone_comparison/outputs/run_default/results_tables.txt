@@ -1,0 +1,18 @@
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance + Reset-state chunked CER
+Backbone                 Params  BestDev  TestCER   R@2.0s   R@5.0s  R@10.0s
+----------------------------------------------------------------------------
+mamba                     7.70M   0.1971   0.2098   0.2593   0.2200   0.2098
+
+  Table 2: Carry-state chunked CER (recurrent/SSM backbones)
+Backbone                TestCER   C@2.0s   C@5.0s  C@10.0s
+----------------------------------------------------------
+mamba                    0.2098   0.2121   0.2102   0.2098
+
+  Table 3: CER improvement from carry-state (Reset − Carry)
+Backbone                 Δ@2.0s   Δ@5.0s  Δ@10.0s
+-------------------------------------------------
+mamba                  + 0.0472 + 0.0098  0.0000
