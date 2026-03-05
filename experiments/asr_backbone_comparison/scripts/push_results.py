@@ -3,11 +3,7 @@
 Commit and push experiment results to GitHub.
 
 Usage:
-    # Commit results from the default run directory:
-    python scripts/push_results.py
-
-    # Commit results from a specific run directory:
-    python scripts/push_results.py --output-dir ./outputs/run_default
+    python scripts/push_results.py --output-dir ./outputs/run-003_bidir-cosine
 
     # Dry-run: show what would be committed without actually doing it:
     python scripts/push_results.py --dry-run
@@ -101,8 +97,8 @@ def main():
     parser = argparse.ArgumentParser(description="Commit and push experiment results")
     parser.add_argument(
         "--output-dir",
-        default=str(EXP_DIR / "outputs" / "run_default"),
-        help="Path to the run output directory (default: outputs/run_default)",
+        required=True,
+        help="Path to the run output directory (e.g. outputs/run-003_bidir-cosine)",
     )
     parser.add_argument(
         "--message", "-m",
@@ -146,11 +142,7 @@ def main():
         msg = args.message
     else:
         bb_str = ", ".join(backbones) if backbones else "no backbones"
-        msg = (
-            f"results: {run_id} — {bb_str}\n\n"
-            f"Committed by push_results.py\n\n"
-            f"Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-        )
+        msg = f"results: {run_id} — {bb_str}"
 
     if args.dry_run:
         print(f"\nWould commit with message:\n  {msg.splitlines()[0]}")
