@@ -17,7 +17,7 @@ class ASRModel(nn.Module):
     All five backbone types share the same frontend and output head.
     """
 
-    BACKBONE_TYPES = {"transformer", "linear_attention", "mamba", "rwkv6", "rwkv7"}
+    BACKBONE_TYPES = {"transformer", "linear_attention", "bidir_linear_attention", "mamba", "rwkv6", "rwkv7"}
 
     def __init__(self, backbone_type: str, vocab_size: int, cfg: ExperimentConfig):
         super().__init__()
@@ -42,6 +42,10 @@ class ASRModel(nn.Module):
         if backbone_type == "linear_attention":
             from asr_exp.models.linear_attention import LinearAttentionEncoder
             return LinearAttentionEncoder(cfg.d_model, cfg.n_heads, cfg.n_layers, ffn_dim, cfg.dropout)
+
+        if backbone_type == "bidir_linear_attention":
+            from asr_exp.models.bidir_linear_attention import BidirLinearAttentionEncoder
+            return BidirLinearAttentionEncoder(cfg.d_model, cfg.n_heads, cfg.n_layers, ffn_dim, cfg.dropout)
 
         if backbone_type == "mamba":
             from asr_exp.models.mamba import MambaEncoder
