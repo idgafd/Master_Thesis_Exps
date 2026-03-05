@@ -1,0 +1,70 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Vim-style bidirectional backbones — parameter-matched to ~7.7M total
+#
+# Vim duplicates SSM blocks for fwd/bwd, so we reduce n_layers to match
+# the param budget of the 6-layer unidirectional baselines:
+#   bidir_vim_rwkv6  3L  → 7.74M  (vs rwkv6 6L → 7.74M)
+#   bidir_vim_mamba  4L  → 7.52M  (vs mamba 6L → 7.70M)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 3               # 3 layers for bidir_vim_rwkv6 ≈ 7.74M total
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: wsd
+wsd_decay_epochs: 12
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_bidir_vim
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+# NOTE: n_layers=3 is optimal for bidir_vim_rwkv6 (7.74M).
+#       bidir_vim_mamba at 3L is 6.12M (slightly under-parameterized).
+#       For exact match, run bidir_vim_mamba separately with n_layers=4 (7.52M)
+#       using configs/bidir_vim_mamba.yaml.
+backbones:
+  - bidir_vim_rwkv6

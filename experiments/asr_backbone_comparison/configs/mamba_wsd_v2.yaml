@@ -1,0 +1,75 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Mamba — WSD tuned to prevent mid-training dev-loss degradation
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Problem observed in run_default:
+#   - Dev loss started rising at epoch 12 (best dev loss at epoch 14: 0.8725)
+#   - WSD decay only kicked in at epoch 48 — model had been overfitting for 34 epochs
+#   - Train/dev loss gap grew from 0.23 (ep 11) to 0.99 (ep 60)
+#
+# Fix: set wsd_decay_epochs=46 → decay starts at epoch 14 (the dev-loss optimum),
+# giving a 46-epoch cosine decay instead of holding 3e-4 while the model memorises.
+#
+# Layout with num_epochs=60, wsd_decay_epochs=46:
+#   warmup : ~1 epoch  (500 steps)
+#   stable : ~13 epochs (peak LR = 3e-4)
+#   decay  : 46 epochs  (cosine 3e-4 → 1e-6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: wsd
+wsd_decay_epochs: 46
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_mamba_wsd_v2
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+backbones:
+  - mamba
