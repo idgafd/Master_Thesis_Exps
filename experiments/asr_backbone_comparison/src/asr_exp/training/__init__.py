@@ -1,6 +1,6 @@
 from asr_exp.training.decode import compute_cer, greedy_ctc_decode
 from asr_exp.training.evaluate import evaluate, evaluate_chunked
-from asr_exp.training.train import WarmupScheduler, train_one_epoch
+from asr_exp.training.train import WarmupScheduler, WSDScheduler, train_one_epoch
 
 __all__ = [
     "compute_cer",
@@ -8,5 +8,6 @@ __all__ = [
     "evaluate",
     "evaluate_chunked",
     "WarmupScheduler",
+    "WSDScheduler",
     "train_one_epoch",
 ]

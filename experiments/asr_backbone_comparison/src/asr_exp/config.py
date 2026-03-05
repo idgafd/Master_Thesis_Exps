@@ -39,6 +39,12 @@ class ExperimentConfig:
     early_stopping_patience: int = 10
     seed: int = 42
 
+    # ── LR Scheduler ─────────────────────────────────────────────────────
+    # "cosine": warmup + cosine annealing over full training (original)
+    # "wsd":    warmup → stable → cosine decay (recommended for Mamba)
+    scheduler_type: str = "cosine"
+    wsd_decay_epochs: int = 12   # WSD only: epochs spent in the decay phase
+
     # ── SpecAugment ──────────────────────────────────────────────────────
     spec_augment: bool = True
     freq_mask_param: int = 15
@@ -64,6 +70,7 @@ class ExperimentConfig:
         default_factory=lambda: [
             "transformer",
             "linear_attention",
+            "bidir_linear_attention",
             "mamba",
             "rwkv6",
             "rwkv7",

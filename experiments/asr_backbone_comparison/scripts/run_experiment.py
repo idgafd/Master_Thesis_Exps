@@ -49,6 +49,7 @@ from asr_exp.data import (
 from asr_exp.models import ASRModel
 from asr_exp.training import (
     WarmupScheduler,
+    WSDScheduler,
     evaluate,
     evaluate_chunked,
     train_one_epoch,
@@ -187,8 +188,24 @@ def run_backbone(
     else:
         total_steps = len(train_loader) * cfg.num_epochs
         optimizer = AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-        base_scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=1e-6)
-        scheduler = WarmupScheduler(optimizer, base_scheduler, cfg.warmup_steps)
+
+        if cfg.scheduler_type == "wsd":
+            decay_steps = cfg.wsd_decay_epochs * len(train_loader)
+            scheduler = WSDScheduler(
+                optimizer,
+                total_steps=total_steps,
+                warmup_steps=cfg.warmup_steps,
+                decay_steps=decay_steps,
+            )
+            print(
+                f"Scheduler: WSD | warmup={cfg.warmup_steps} steps | "
+                f"stable={total_steps - cfg.warmup_steps - decay_steps} steps | "
+                f"decay={decay_steps} steps ({cfg.wsd_decay_epochs} epochs)"
+            )
+        else:
+            base_scheduler = CosineAnnealingLR(optimizer, T_max=total_steps, eta_min=1e-6)
+            scheduler = WarmupScheduler(optimizer, base_scheduler, cfg.warmup_steps)
+            print(f"Scheduler: cosine | warmup={cfg.warmup_steps} steps")
 
         spec_aug = (
             SpecAugment(

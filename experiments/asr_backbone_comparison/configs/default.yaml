@@ -24,13 +24,29 @@ conv_channels: 256        # front-end ConvSubsampling channels
 
 # ── Training ─────────────────────────────────────────────────────────────────
 batch_max_seconds: 240.0  # dynamic batching: total audio seconds per batch
-num_epochs: 30
+num_epochs: 60
 lr: 3.0e-4
 weight_decay: 0.01
 warmup_steps: 500
 grad_clip: 5.0
-early_stopping_patience: 10
+early_stopping_patience: 15
 seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+# "cosine": warmup + cosine annealing over full training (original)
+# "wsd":    warmup → stable → cosine decay (optimized for Mamba on this data)
+#
+# Observations on this dataset:
+#   - Dev CER plateaus / starts rising ~epoch 48
+#   - WSD holds peak LR through the stable phase, then decays for the final
+#     wsd_decay_epochs to consolidate gains before early stopping fires.
+#
+# Layout with num_epochs=60, wsd_decay_epochs=12:
+#   warmup  : ~1 epoch  (500 steps)
+#   stable  : ~47 epochs (peak LR = 3e-4)
+#   decay   : 12 epochs  (cosine 3e-4 → 1e-6)
+scheduler_type: wsd
+wsd_decay_epochs: 12
 
 # ── SpecAugment ──────────────────────────────────────────────────────────────
 spec_augment: true
@@ -60,6 +76,7 @@ cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
 backbones:
   - transformer
   - linear_attention
+  - bidir_linear_attention
   - mamba
   - rwkv6
   - rwkv7
