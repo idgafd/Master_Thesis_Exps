@@ -10,8 +10,9 @@ build/
 .venv/
 .python-version
 
-# Experiment outputs
-outputs/
+# Experiment outputs — weights/PDFs excluded, results tracked via outputs/.gitignore
+outputs/**/*.pt
+outputs/**/*.pdf
 data/
 RWKV-block/
 

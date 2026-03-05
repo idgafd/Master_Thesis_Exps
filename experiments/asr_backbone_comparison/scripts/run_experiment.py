@@ -70,9 +70,17 @@ def _save_sample_predictions(refs: list, hyps: list, path: str, n: int = 50) -> 
     print(f"  Sample predictions saved to {path}")
 
 
-def _save_run_info(output_dir: str, device: torch.device) -> None:
-    """Save hardware and software environment info to run_info.json."""
+def _make_run_id(output_dir: str) -> str:
+    """Generate a human-readable run ID: <dir_name>_<YYYYMMDD>_<HHMM>."""
+    dir_name = Path(output_dir).name
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    return f"{dir_name}_{ts}"
+
+
+def _save_run_info(output_dir: str, device: torch.device, run_id: str) -> None:
+    """Save hardware, software environment, and run_id to run_info.json."""
     info = {
+        "run_id": run_id,
         "date": datetime.datetime.now().isoformat(timespec="seconds"),
         "platform": platform.platform(),
         "python": platform.python_version(),
@@ -87,7 +95,7 @@ def _save_run_info(output_dir: str, device: torch.device) -> None:
     path = os.path.join(output_dir, "run_info.json")
     with open(path, "w") as f:
         json.dump(info, f, indent=2)
-    print(f"Run info saved to {path}")
+    print(f"Run info saved to {path}  [run_id={run_id}]")
 
 
 def _save_config_snapshot(cfg, output_dir: str) -> None:
@@ -470,7 +478,8 @@ def main():
         print(f"GPU: {torch.cuda.get_device_name()}")
         print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
-    _save_run_info(cfg.output_dir, device)
+    run_id = _make_run_id(cfg.output_dir)
+    _save_run_info(cfg.output_dir, device, run_id)
     set_seed(cfg.seed)
 
     # ── Data ──────────────────────────────────────────────────────────────────
