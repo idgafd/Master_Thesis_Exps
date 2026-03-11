@@ -12,7 +12,7 @@ cv_tarball_name: Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz
 d_model: 256
 data_dir: ./data/cv_uk
 dropout: 0.15
-early_stopping_patience: 15
+early_stopping_patience: 20
 ffn_mult: 5
 freq_mask_param: 15
 grad_clip: 5.0
@@ -28,10 +28,10 @@ min_audio_sec: 0.5
 n_heads: 4
 n_layers: 6
 n_mels: 80
-num_epochs: 60
+num_epochs: 100
 num_freq_masks: 2
 num_time_masks: 2
-output_dir: ./outputs/run_biwkv6_6L
+output_dir: ./outputs/run_biwkv6_6L_100ep
 sample_rate: 16000
 scheduler_type: cosine
 seed: 42

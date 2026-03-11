@@ -1,6 +1,6 @@
 {
-  "run_id": "run_biwkv6_6L_20260311_0332",
-  "date": "2026-03-11T03:32:22",
+  "run_id": "run_biwkv6_6L_100ep_20260311_0934",
+  "date": "2026-03-11T09:34:39",
   "platform": "Linux-5.15.0-52-generic-x86_64-with-glibc2.39",
   "python": "3.12.12",
   "torch": "2.10.0+cu130",
