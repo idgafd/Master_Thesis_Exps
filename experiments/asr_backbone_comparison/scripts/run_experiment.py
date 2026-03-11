@@ -341,66 +341,87 @@ def _build_tables(all_results: dict, backbones: list, chunk_sizes_sec: list) -> 
     lines.append("  RESULTS SUMMARY")
     lines.append("─" * 30)
 
-    # Table 1: full utterance + reset-state chunks
-    lines.append("\n  Table 1: Full utterance + Reset-state chunked CER")
-    header = f"{'Backbone':<22} {'Params':>8} {'BestDev':>8} {'TestCER':>8}"
-    for cs in chunk_sizes_sec:
-        header += f" {'R@'+str(cs)+'s':>8}"
-    lines.append(header)
-    lines.append("-" * len(header))
+    # Table 1: full utterance metrics (loss + CER + WER)
+    lines.append("\n  Table 1: Full utterance metrics")
+    header1 = (
+        f"{'Backbone':<26} {'Params':>8} {'BestDev':>8}"
+        f" {'TestLoss':>9} {'TestCER':>8} {'TestWER':>8}"
+    )
+    lines.append(header1)
+    lines.append("-" * len(header1))
     for bb in present:
         r = all_results[bb]
         row = (
-            f"{bb:<22} {r['n_params'] / 1e6:>7.2f}M "
-            f"{r['best_dev_cer']:>8.4f} {r['test']['cer']:>8.4f}"
+            f"{bb:<26} {r['n_params'] / 1e6:>7.2f}M"
+            f" {r['best_dev_cer']:>8.4f}"
+            f" {r['test']['loss']:>9.4f}"
+            f" {r['test']['cer']:>8.4f}"
+            f" {r['test']['wer']:>8.4f}"
         )
+        lines.append(row)
+
+    # Table 2: reset-state chunked CER + WER
+    lines.append("\n  Table 2: Reset-state chunked evaluation")
+    header2 = f"{'Backbone':<26}"
+    for cs in chunk_sizes_sec:
+        lbl = f"{cs:g}s"
+        header2 += f" {'R@'+lbl+'_CER':>11} {'R@'+lbl+'_WER':>11}"
+    lines.append(header2)
+    lines.append("-" * len(header2))
+    for bb in present:
+        r = all_results[bb]
+        row = f"{bb:<26}"
         for cs in chunk_sizes_sec:
             key = f"{cs}s"
             cer = r["chunked_reset"].get(key, {}).get("cer", float("nan"))
-            row += f" {cer:>8.4f}"
+            wer = r["chunked_reset"].get(key, {}).get("wer", float("nan"))
+            row += f" {cer:>11.4f} {wer:>11.4f}"
         lines.append(row)
 
-    # Table 2: carry-state chunks
+    # Table 3: carry-state chunks (if any)
     has_carry = any(all_results[bb]["chunked_carry"] for bb in present)
     if has_carry:
-        lines.append(f"\n  Table 2: Carry-state chunked CER (recurrent/SSM backbones)")
-        header2 = f"{'Backbone':<22} {'TestCER':>8}"
+        lines.append("\n  Table 3: Carry-state chunked evaluation (recurrent/SSM backbones)")
+        header3 = f"{'Backbone':<26}"
         for cs in chunk_sizes_sec:
-            header2 += f" {'C@'+str(cs)+'s':>8}"
-        lines.append(header2)
-        lines.append("-" * len(header2))
-        for bb in present:
-            r = all_results[bb]
-            if not r["chunked_carry"]:
-                lines.append(f"{bb:<22} {r['test']['cer']:>8.4f}  (stateless — no carry)")
-            else:
-                row = f"{bb:<22} {r['test']['cer']:>8.4f}"
-                for cs in chunk_sizes_sec:
-                    key = f"{cs}s"
-                    cer = r["chunked_carry"].get(key, {}).get("cer", float("nan"))
-                    row += f" {cer:>8.4f}"
-                lines.append(row)
-
-        lines.append(f"\n  Table 3: CER improvement from carry-state (Reset − Carry)")
-        header3 = f"{'Backbone':<22}"
-        for cs in chunk_sizes_sec:
-            header3 += f" {'Δ@'+str(cs)+'s':>8}"
+            lbl = f"{cs:g}s"
+            header3 += f" {'C@'+lbl+'_CER':>11} {'C@'+lbl+'_WER':>11}"
         lines.append(header3)
         lines.append("-" * len(header3))
         for bb in present:
             r = all_results[bb]
             if not r["chunked_carry"]:
-                lines.append(f"{bb:<22}  N/A (stateless)")
+                lines.append(f"{bb:<26}  (stateless — no carry)")
+            else:
+                row = f"{bb:<26}"
+                for cs in chunk_sizes_sec:
+                    key = f"{cs}s"
+                    cer = r["chunked_carry"].get(key, {}).get("cer", float("nan"))
+                    wer = r["chunked_carry"].get(key, {}).get("wer", float("nan"))
+                    row += f" {cer:>11.4f} {wer:>11.4f}"
+                lines.append(row)
+
+        lines.append("\n  Table 4: CER improvement from carry-state (Reset − Carry)")
+        header4 = f"{'Backbone':<26}"
+        for cs in chunk_sizes_sec:
+            lbl = f"{cs:g}s"
+            header4 += f" {'Δ@'+lbl:>9}"
+        lines.append(header4)
+        lines.append("-" * len(header4))
+        for bb in present:
+            r = all_results[bb]
+            if not r["chunked_carry"]:
+                lines.append(f"{bb:<26}  N/A (stateless)")
                 continue
-            row = f"{bb:<22}"
+            row = f"{bb:<26}"
             for cs in chunk_sizes_sec:
                 key = f"{cs}s"
                 if key in r["chunked_carry"] and key in r["chunked_reset"]:
                     delta = r["chunked_reset"][key]["cer"] - r["chunked_carry"][key]["cer"]
                     sign = "+" if delta > 0 else ""
-                    row += f" {sign}{delta:>7.4f}"
+                    row += f" {sign}{delta:>8.4f}"
                 else:
-                    row += f" {'N/A':>8}"
+                    row += f" {'N/A':>9}"
             lines.append(row)
 
     return "\n".join(lines)

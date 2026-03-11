@@ -20,7 +20,9 @@ class ASRModel(nn.Module):
     BACKBONE_TYPES = {
         "transformer", "linear_attention", "bidir_linear_attention",
         "mamba", "rwkv6", "rwkv7",
-        "bidir_rwkv6", "bidir_vim_rwkv6", "bidir_vim_mamba",
+        "bidir_rwkv6", "bidir_rwkv6_conv", "bidir_rwkv6_conv_nogate",
+        "biwkv6", "biwkv6_no_conv_no_gate",
+        "bidir_vim_rwkv6", "bidir_vim_mamba",
     }
 
     def __init__(self, backbone_type: str, vocab_size: int, cfg: ExperimentConfig):
@@ -66,6 +68,22 @@ class ASRModel(nn.Module):
         if backbone_type == "bidir_rwkv6":
             from asr_exp.models.bidir_rwkv6 import BidirRWKV6Encoder
             return BidirRWKV6Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6_conv":
+            from asr_exp.models.bidir_rwkv6_conv import BidirRWKV6ConvEncoder
+            return BidirRWKV6ConvEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_gate=True)
+
+        if backbone_type == "bidir_rwkv6_conv_nogate":
+            from asr_exp.models.bidir_rwkv6_conv import BidirRWKV6ConvEncoder
+            return BidirRWKV6ConvEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_gate=False)
+
+        if backbone_type == "biwkv6":
+            from asr_exp.models.biwkv6 import BiWKV6Encoder
+            return BiWKV6Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_conv_shift=True, use_gate=True)
+
+        if backbone_type == "biwkv6_no_conv_no_gate":
+            from asr_exp.models.biwkv6 import BiWKV6Encoder
+            return BiWKV6Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_conv_shift=False, use_gate=False)
 
         if backbone_type == "bidir_vim_rwkv6":
             from asr_exp.models.bidir_vim_rwkv6 import BidirVimRWKV6Encoder

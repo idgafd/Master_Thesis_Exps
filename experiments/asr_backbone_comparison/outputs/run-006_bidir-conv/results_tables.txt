@@ -5,11 +5,11 @@
   Table 1: Full utterance metrics
 Backbone                     Params  BestDev  TestLoss  TestCER  TestWER
 ------------------------------------------------------------------------
-bidir_linear_attention        7.44M   0.1911    0.9011   0.2044   0.7673
-bidir_rwkv6                   7.74M   0.1676    0.7988   0.1790   0.6704
+bidir_rwkv6_conv_nogate       7.75M   0.1587    0.7585   0.1760   0.6563
+bidir_rwkv6_conv              8.14M   0.1635    0.7785   0.1813   0.6845
 
   Table 2: Reset-state chunked evaluation
 Backbone                      R@2s_CER    R@2s_WER    R@5s_CER    R@5s_WER   R@10s_CER   R@10s_WER
 --------------------------------------------------------------------------------------------------
-bidir_linear_attention          0.2408      0.8375      0.2101      0.7784      0.2043      0.7673
-bidir_rwkv6                     0.2161      0.7489      0.1857      0.6824      0.1790      0.6699
+bidir_rwkv6_conv_nogate         0.2084      0.7336      0.1804      0.6626      0.1744      0.6503
+bidir_rwkv6_conv                0.2123      0.7499      0.1848      0.6860      0.1791      0.6747

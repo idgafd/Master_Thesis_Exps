@@ -1,0 +1,77 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment: LION bidir_rwkv6 + learned ConvShift + xres gate
+#
+# Compares three backbones under identical conditions:
+#   bidir_rwkv6       — baseline LION (fixed symmetric token shift, no gate)
+#   bidir_rwkv6_conv  — LION + DWConv1d ConvShift + xres-conditioned gate
+#
+# Motivated by AudioRWKV (Xiong et al. 2025): their ablation showed
+# ConvShift (+1.56 mAP) and Gate (+0.63 mAP) are the two largest gains
+# beyond the plain bidirectional scan.  This experiment tests both on ASR.
+#
+# ConvShift init: weight [0.5, 0, 0.5] per channel → exact reproduction of
+# the fixed symmetric shift at epoch 0, learned from there.
+# Gate init: sigmoid(3) ≈ 0.95 near-identity at epoch 0 for stable startup.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: cosine
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_bidir_conv
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+# bidir_rwkv6 is the reference — already trained in run-005 (CER 0.179).
+# Here we isolate the contribution of each AudioRWKV component on top of it:
+#   bidir_rwkv6_conv_nogate  — LION + DWConv1d ConvShift, NO gate
+#   bidir_rwkv6_conv         — LION + DWConv1d ConvShift + xres-gated output
+backbones:
+  - bidir_rwkv6_conv_nogate
+  - bidir_rwkv6_conv
