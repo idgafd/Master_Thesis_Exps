@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment: Bi-WKV — capacity ceiling test
+#
+# run-007 used n_layers=3 bidir (6 RWKV-6 blocks, 7.74M params).
+# Dev CER plateaued at ~0.201 from epoch 30 — possible architecture or capacity ceiling.
+# This run doubles to n_layers=6 bidir (12 RWKV-6 blocks, ~13.6M params) to
+# distinguish: if gap to LION persists → architecture-limited; if it closes → capacity.
+#
+# Configuration: no gate, no ConvShift.
+# run-007 confirmed gate provides zero benefit at n_layers=3.
+# At larger scale it would only add ~400K params for likely the same outcome.
+# Clean no-gate baseline gives the clearest capacity ceiling measurement.
+#
+# Carry-state: supports_carry_state=True, evaluated with 500 utterances.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6           # 6 bidir layers = 12 RWKV-6 blocks, ~13.6M total params
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: cosine
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 500
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_biwkv6_6L
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+backbones:
+  - biwkv6_no_conv_no_gate
