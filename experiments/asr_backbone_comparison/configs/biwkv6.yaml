@@ -1,0 +1,81 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment: Bi-WKV RWKV-6 — AudioRWKV-style bidirectional architecture
+#
+# Each effective layer = 2 RWKV-6 blocks (fwd + bwd) + ConvShift + gate.
+# n_layers=3 → 6 RWKV-6 blocks total ≈ 7.9 M params (matches bidir_rwkv6).
+#
+# Ablation design:
+#   biwkv6_nogate  — fixed 0.5/0.5 fwd+bwd average (BiLSTM baseline)
+#                    Shows architecture cost without learned fusion.
+#   biwkv6         — full AudioRWKV: ConvShift + sigmoid(W_gate(xres)) gate
+#                    The gate is inseparable from the xres signal.
+#
+# Reference for comparison (from run-005):
+#   bidir_rwkv6 (LION, 6L, CER 0.179, WER 0.670) — parallel O(T²), no carry
+#
+# Bi-WKV advantage: supports carry-state inference (forward-only path),
+# enabling streaming / chunked-carry eval that LION cannot do.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+# n_layers=3 effective bidir layers (= 6 RWKV-6 blocks), matching LION 6L params
+d_model: 256
+n_layers: 3
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: cosine
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 500   # non-zero: biwkv6 supports carry-state inference
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_biwkv6
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+# biwkv6_no_conv_no_gate  — plain BiLSTM-average per-layer (no ConvShift, no gate)
+#                           Tests whether Bi-WKV architecture alone helps vs LION
+# biwkv6                  — full AudioRWKV: ConvShift + xres-conditioned gate
+#                           ConvShift-only variant is not meaningful (xres feeds gate only)
+backbones:
+  - biwkv6_no_conv_no_gate
+  - biwkv6

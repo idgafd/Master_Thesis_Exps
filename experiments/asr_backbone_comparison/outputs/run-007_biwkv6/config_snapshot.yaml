@@ -1,0 +1,44 @@
+backbones:
+- biwkv6_no_conv_no_gate
+- biwkv6
+batch_max_seconds: 240.0
+chunk_sizes_sec:
+- 2.0
+- 5.0
+- 10.0
+conv_channels: 256
+cv_api_key: 328645c5c87ab85af5e267f6f19e74229dc7e030cc89c805b3206d2a630a0921
+cv_dataset_id: cmj8u3pys00t5nxxb56wugqgq
+cv_tarball_name: Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz
+d_model: 256
+data_dir: ./data/cv_uk
+dropout: 0.15
+early_stopping_patience: 15
+ffn_mult: 5
+freq_mask_param: 15
+grad_clip: 5.0
+head_size: 64
+hop_length_ms: 10
+lr: 0.0003
+max_audio_sec: 15.0
+max_carry_eval_utterances: 500
+max_test_hours: 5.0
+max_train_hours: 35.0
+max_val_hours: 5.0
+min_audio_sec: 0.5
+n_heads: 4
+n_layers: 3
+n_mels: 80
+num_epochs: 60
+num_freq_masks: 2
+num_time_masks: 2
+output_dir: ./outputs/run_biwkv6
+sample_rate: 16000
+scheduler_type: cosine
+seed: 42
+spec_augment: true
+time_mask_param: 35
+warmup_steps: 500
+weight_decay: 0.01
+win_length_ms: 25
+wsd_decay_epochs: 12
