@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Experiment: LION bidir_rwkv6_conv_nogate — capacity ceiling test
+#
+# Best model from run-006 (CER 0.1760, n_layers=6, 7.75M) scaled to n_layers=12.
+# Param budget ~13.6M — tests whether LION is still depth-limited at 6 layers.
+# dev CER was still declining at epoch 59 in run-006 (no plateau) → suggests
+# more depth and/or longer training can still extract more.
+#
+# No gate: run-006 confirmed the xres-conditioned gate hurts (-0.005 CER).
+# ConvShift only: kept, as it gave the +0.003 CER improvement over fixed shift.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 12          # doubled from run-006 (was 6)
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 2.5e-4           # reduced from 3e-4: deeper models need smaller updates
+weight_decay: 0.01
+warmup_steps: 1000   # doubled from 500: 12 layers need longer stable ramp-up
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: cosine
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run_lion12
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+backbones:
+  - bidir_rwkv6_conv_nogate
