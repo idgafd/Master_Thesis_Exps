@@ -1,0 +1,107 @@
+# Experiment Results — Full Metrics
+
+All experiments: CTC-based ASR on Common Voice Ukrainian (35h train / 5h val / 5h test, 16 kHz, 80-mel).
+Chunked evaluation: audio split into fixed-length chunks, decoded independently (reset-state) or with hidden state carried across chunks (carry-state).
+
+---
+
+## Table 1 — Full-Utterance Metrics
+
+| Run | Backbone | Params | Best Dev CER | Test Loss | Test CER | Test WER | Notes |
+|-----|----------|--------|-------------|-----------|----------|----------|-------|
+| 003 | `mamba` | 7.70M | 0.1971 | 1.2556 | 0.2098 | 0.7599 | WSD decay @ ep 12 |
+| 004 | `mamba` | 7.70M | 0.1997 | 1.2300 | 0.2125 | 0.7688 | WSD decay @ ep 46 |
+| 005 | `bidir_linear_attention` | 7.44M | 0.1911 | 0.9011 | 0.2044 | 0.7673 | LION-D recurrence |
+| 005 | `bidir_rwkv6` | 7.74M | 0.1676 | 0.7988 | 0.1790 | 0.6704 | **LION baseline** |
+| 006 | `bidir_rwkv6_conv_nogate` | 7.75M | 0.1587 | 0.7585 | **0.1760** | **0.6563** | LION + ConvShift, no gate |
+| 006 | `bidir_rwkv6_conv` | 8.14M | 0.1635 | 0.7785 | 0.1813 | 0.6845 | LION + ConvShift + gate |
+| 007 | `biwkv6_no_conv_no_gate` | 7.74M | 0.2011 | 0.9123 | 0.2201 | 0.7788 | BiWKV6 serial bidir |
+| 007 | `biwkv6` | 7.94M | 0.2006 | 0.9340 | 0.2211 | 0.7830 | BiWKV6 + ConvShift + gate |
+| 008 | `bidir_rwkv6_conv_nogate` | 13.58M | 0.1624 | 0.8746 | 0.1816 | 0.6623 | LION 12-layer, 100 ep |
+| 009 | `biwkv6_no_conv_no_gate` | 13.56M | 0.1713 | 0.8185 | 0.1894 | 0.6774 | BiWKV6 6-layer, 100 ep |
+| 010 | `bidir_rwkv6_cplx_b` | 7.74M | 0.1932 | 0.9163 | 0.2140 | 0.7312 | Complex decay θ=0.31 |
+| 010 | `bidir_rwkv6_cplx_c` | 7.74M | 0.2109 | 0.9744 | 0.2322 | 0.7625 | Complex decay θ=0.90 |
+| 011 | `bidir_rwkv6_cplx_d` | 7.74M | 0.1909 | 0.9002 | 0.2107 | 0.7232 | Learnable θ per layer |
+| 011 | `bidir_rwkv6_cplx_b_cos2` | 7.74M | 0.1757 | 0.8546 | 0.1955 | 0.7181 | cos² mask, θ=0.31 |
+| 012 | `bidir_rwkv6_cplx_d_cos2` | 7.74M | 0.1782 | 0.8558 | 0.1977 | 0.7212 | Learnable θ + cos² mask |
+| 012 | `bidir_rwkv6_headscale` | 7.74M | 0.1660 | 0.8082 | 0.1839 | 0.6874 | Per-head decay bias (24 params) |
+| 013 | `bidir_rwkv6_gaussian` | 7.74M | 0.1693 | 0.8027 | 0.1861 | 0.6796 | Gaussian attn modulation |
+| 013 | `bidir_rwkv6_dual` | 7.74M | 0.1696 | 0.8220 | 0.1875 | 0.6903 | Dual-decay weighted output |
+| 014 | `bidir_rwkv6_layerconv` | — | 0.2691† | — | — | — | Layer-dep ConvShift *(9/60 ep)* |
+| 015 | `bidir_rwkv6_temperature` | — | 0.2602† | — | — | — | Per-head temperature *(9/60 ep)* |
+
+† Best dev CER so far; training in progress.
+
+---
+
+## Table 2 — Reset-State Chunked CER
+
+Audio split into chunks decoded independently (no cross-chunk memory). Degradation vs full-utterance shows sensitivity to context truncation.
+
+| Run | Backbone | Full CER | R@2s CER | R@5s CER | R@10s CER |
+|-----|----------|----------|----------|----------|-----------|
+| 003 | `mamba` | 0.2098 | 0.2593 | 0.2200 | 0.2098 |
+| 004 | `mamba` | 0.2125 | 0.2629 | 0.2228 | 0.2125 |
+| 005 | `bidir_linear_attention` | 0.2044 | 0.2408 | 0.2101 | 0.2043 |
+| 005 | `bidir_rwkv6` | 0.1790 | 0.2161 | 0.1857 | 0.1790 |
+| 006 | `bidir_rwkv6_conv_nogate` | **0.1760** | **0.2084** | **0.1804** | **0.1744** |
+| 006 | `bidir_rwkv6_conv` | 0.1813 | 0.2123 | 0.1848 | 0.1791 |
+| 007 | `biwkv6_no_conv_no_gate` | 0.2201 | 0.2504 | 0.2256 | 0.2201 |
+| 007 | `biwkv6` | 0.2211 | 0.2504 | 0.2261 | 0.2211 |
+| 008 | `bidir_rwkv6_conv_nogate` (12L) | 0.1816 | 0.2126 | 0.1845 | 0.1790 |
+| 009 | `biwkv6_no_conv_no_gate` (6L/100ep) | 0.1894 | 0.2213 | 0.1950 | 0.1895 |
+| 010 | `bidir_rwkv6_cplx_b` | 0.2140 | 0.2388 | 0.2161 | 0.2114 |
+| 010 | `bidir_rwkv6_cplx_c` | 0.2322 | 0.2523 | 0.2322 | 0.2277 |
+| 011 | `bidir_rwkv6_cplx_d` | 0.2107 | 0.2349 | 0.2128 | 0.2081 |
+| 011 | `bidir_rwkv6_cplx_b_cos2` | 0.1955 | 0.2272 | 0.1991 | 0.1938 |
+| 012 | `bidir_rwkv6_cplx_d_cos2` | 0.1977 | 0.2276 | 0.2010 | 0.1961 |
+| 012 | `bidir_rwkv6_headscale` | 0.1839 | 0.2160 | 0.1879 | 0.1820 |
+| 013 | `bidir_rwkv6_gaussian` | 0.1861 | 0.2132 | 0.1895 | 0.1846 |
+| 013 | `bidir_rwkv6_dual` | 0.1875 | 0.2184 | 0.1899 | 0.1841 |
+
+---
+
+## Table 3 — Carry-State Chunked CER
+
+Hidden state carried across chunk boundaries (recurrent/SSM models only). Lower carry CER = better use of cross-chunk context.
+
+| Run | Backbone | Full CER | C@2s CER | C@5s CER | C@10s CER |
+|-----|----------|----------|----------|----------|-----------|
+| 003 | `mamba` | 0.2098 | 0.2121 | 0.2102 | 0.2098 |
+| 004 | `mamba` | 0.2125 | 0.2150 | 0.2128 | 0.2125 |
+| 007 | `biwkv6_no_conv_no_gate` | 0.2201 | 0.7122 | 0.7111 | 0.7137 |
+| 007 | `biwkv6` | 0.2211 | 0.7399 | 0.7398 | 0.7400 |
+| 009 | `biwkv6_no_conv_no_gate` (6L/100ep) | 0.1894 | 0.7733 | 0.7705 | 0.7695 |
+
+> **Note**: Bidirectional models (LION and variants) are stateless by design — no carry-state eval applies. BiWKV6 carry-state is degraded (CER >0.7) because the 6-layer serial architecture with untrained carry-state init performs poorly; this was a known issue at time of run-007 evaluation (state init not optimised). Mamba carry-state is near full-utterance CER, confirming its streaming capability.
+
+---
+
+## Table 4 — Carry-State vs Reset-State Δ CER (Reset − Carry)
+
+Positive = carry-state is better than reset; negative = carry-state hurts.
+
+| Run | Backbone | Δ@2s | Δ@5s | Δ@10s |
+|-----|----------|------|------|-------|
+| 003 | `mamba` | +0.0472 | +0.0098 | 0.0000 |
+| 004 | `mamba` | +0.0479 | +0.0100 | 0.0000 |
+| 007 | `biwkv6_no_conv_no_gate` | −0.4618 | −0.4855 | −0.4936 |
+| 007 | `biwkv6` | −0.4895 | −0.5137 | −0.5189 |
+| 009 | `biwkv6_no_conv_no_gate` (6L/100ep) | −0.5520 | −0.5755 | −0.5800 |
+
+---
+
+## Summary — Best CER per Model Family
+
+| Architecture family | Best backbone | Test CER | Run |
+|--------------------|--------------|----------|-----|
+| LION + ConvShift | `bidir_rwkv6_conv_nogate` | **0.1760** | 006 |
+| LION + head mod | `bidir_rwkv6_headscale` | 0.1839 | 012 |
+| LION + spatial mod | `bidir_rwkv6_gaussian` | 0.1861 | 013 |
+| LION (baseline) | `bidir_rwkv6` | 0.1790 | 005 |
+| LION 12-layer | `bidir_rwkv6_conv_nogate` | 0.1816 | 008 |
+| Cos² mask | `bidir_rwkv6_cplx_b_cos2` | 0.1955 | 011 |
+| BiWKV6 6L/100ep | `biwkv6_no_conv_no_gate` | 0.1894 | 009 |
+| Bidir linear attn | `bidir_linear_attention` | 0.2044 | 005 |
+| Mamba (best) | `mamba` (WSD-12) | 0.2098 | 003 |
+| Complex decay | `bidir_rwkv6_cplx_b` | 0.2140 | 010 |

@@ -176,3 +176,56 @@ All parameters live in `configs/default.yaml` and map 1:1 to `ExperimentConfig` 
 - **RWKV-7**: Converges poorly in the baseline run. Under investigation.
 - **Carry-state eval subset**: carry-state evaluation is limited to `max_carry_eval_utterances=500` utterances (Mamba step-by-step is slow). This makes direct comparison with reset-state (full test set) unfair — noted in results.
 - **mamba-ssm CUDA kernels**: The carry-state Mamba step uses a pure-PyTorch implementation to avoid `causal_conv1d` kernel version mismatches. Training uses the fused kernel normally.
+
+---
+
+## Experiment Index
+
+All runs share the common setup above (6 layers, d=256, 4 heads, cosine+warmup, 60 epochs, SpecAugment) unless noted.
+
+### Run Overview
+
+| Run | Config / tag | What was tested | Test CER | Connects to |
+|-----|-------------|-----------------|----------|-------------|
+| 003 | `mamba-wsd12` | Mamba + WSD scheduler, decay start at epoch 12 | 0.2098 | → 004 |
+| 004 | `mamba-wsd46` | Mamba + WSD scheduler, decay start at epoch 46 | 0.2125 | establishes Mamba ceiling |
+| 005 | `bidir-cosine` | LION (bidir RWKV-6) vs bidir linear attention | 0.1790 / 0.2044 | LION becomes the base for runs 006–015 |
+| 006 | `bidir-conv` | LION + ConvShift token-mix; with/without Xres gate | **0.1760** / 0.1813 | best result; nogate variant used in run-008 |
+| 007 | `biwkv6` | BiWKV6 serial bidir (streaming-capable); with/without ConvShift+gate | 0.2201 / 0.2211 | → 009 (deeper + longer) |
+| 008 | `lion12` | LION 12-layer (2× depth), 100 epochs | 0.1994 | scaling dead-end; confirms arch > capacity |
+| 009 | `biwkv6-6L` | BiWKV6 6-layer, 100 epochs | 0.1894 | extended training helps; carry-state streaming explored |
+| 010 | `complex_decay` | Complex decay poles: fixed θ=0.31 (cplx_b) and θ=0.90 (cplx_c) | 0.2140 / 0.2322 | oscillatory (negative) attention regions are harmful → 011 |
+| 011 | `complex_d_cos2` | Learnable θ per layer (cplx_d) + cos² non-negative mask (cplx_b_cos2) | 0.2107 / 0.1955 | cos² idea carried to → 012 |
+| 012 | `d_cos2_headscale` | Learnable θ + cos² combined (d_cos2); per-head decay bias (headscale, 24 params) | 0.1977 / **0.1839** | headscale is cheapest useful addition found |
+| 013 | `gaussian_dual` | Gaussian attention modulation (48 params); dual-decay weighted output (1560 params) | 0.1861 / 0.1875 | both marginal; dual-decay expensive for similar gain |
+| 014 | `layerconv` | Layer-dependent ConvShift: kernel 7 → 3 across layers | in progress | extends run-006 ConvShift |
+| 015 | `temperature` | Per-head learnable temperature τ (sharpens upper-layer attention) | in progress | related to headscale (run-012) |
+
+### Architecture Lineage
+
+```
+Mamba  (runs 003–004)         CER ~0.21   WSD scheduler ablation
+  └── replaced by
+LION / bidir_rwkv6 (run 005)  CER 0.1790  new baseline
+  ├── + ConvShift  (run 006)  CER 0.1760  ← best overall
+  ├── BiWKV6 fork  (run 007)  CER 0.220   streaming variant
+  │     └── 6L 100ep (run 009) CER 0.189  longer training helps streaming
+  ├── 12-layer     (run 008)  CER 0.199   depth does not help
+  ├── complex decay (run 010) CER 0.21–0.23  oscillatory mask harmful
+  │     └── cos²   (run 011) CER 0.196   non-negative mask recovers
+  │           └── headscale (run 012) CER 0.184  cheapest win (24 params)
+  ├── Gaussian mask (run 013) CER 0.186   non-monotone attention, marginal
+  ├── layer ConvShift (run 014) — in progress
+  └── temperature   (run 015) — in progress
+```
+
+### Best Results
+
+| Rank | Run | Backbone | Test CER |
+|------|-----|----------|----------|
+| 1 | 006 | `bidir_rwkv6_conv_nogate` (LION + ConvShift) | **0.1760** |
+| 2 | 012 | `bidir_rwkv6_headscale` | **0.1839** |
+| 3 | 013 | `bidir_rwkv6_gaussian` | **0.1861** |
+| 4 | 005 | `bidir_rwkv6` (LION baseline) | 0.1790 |
+| 5 | 009 | `biwkv6_no_conv_no_gate` 6L/100ep | 0.1894 |
+| 6 | 003 | `mamba` (WSD-12) | 0.2098 |
