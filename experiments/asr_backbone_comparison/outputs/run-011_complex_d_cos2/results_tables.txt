@@ -1,0 +1,13 @@
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance metrics
+Backbone                     Params  BestDev  TestLoss  TestCER  TestWER
+------------------------------------------------------------------------
+bidir_rwkv6_cplx_b_cos2       7.74M   0.1757    0.8546   0.1955   0.7181
+
+  Table 2: Reset-state chunked evaluation
+Backbone                      R@2s_CER    R@2s_WER    R@5s_CER    R@5s_WER   R@10s_CER   R@10s_WER
+--------------------------------------------------------------------------------------------------
+bidir_rwkv6_cplx_b_cos2         0.2272      0.7776      0.1991      0.7206      0.1938      0.7084
