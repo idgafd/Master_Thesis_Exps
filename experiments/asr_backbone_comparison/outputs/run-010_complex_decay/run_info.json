@@ -1,0 +1,10 @@
+{
+  "run_id": "run-010_complex_decay_20260313_0447",
+  "date": "2026-03-13T04:47:44",
+  "platform": "Linux-5.15.0-52-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "torch": "2.7.1+cu128",
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5090",
+  "gpu_vram_gb": 33.7
+}

@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Run-010: Complex-valued decay poles (Configs B & C)
+#   B: theta=0.31 (fixed) → syllable resonance ~203ms
+#   C: theta=0.90 (fixed) → phoneme resonance  ~70ms
+# Standard bidir_rwkv6 settings (no ConvShift, no extra additions).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: cosine
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run-010_complex_decay
+data_dir: ./data/cv_uk
+
+# ── Mozilla Common Voice Download ────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+backbones:
+  - bidir_rwkv6_cplx_b
+  - bidir_rwkv6_cplx_c
