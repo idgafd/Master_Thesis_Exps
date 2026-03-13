@@ -21,6 +21,9 @@ class ASRModel(nn.Module):
         "transformer", "linear_attention", "bidir_linear_attention",
         "mamba", "rwkv6", "rwkv7",
         "bidir_rwkv6", "bidir_rwkv6_conv", "bidir_rwkv6_conv_nogate",
+        "bidir_rwkv6_cplx_b", "bidir_rwkv6_cplx_c",
+        "bidir_rwkv6_cplx_b_cos2", "bidir_rwkv6_cplx_d", "bidir_rwkv6_cplx_d_cos2",
+        "bidir_rwkv6_headscale", "bidir_rwkv6_dual", "bidir_rwkv6_gaussian",
         "biwkv6", "biwkv6_no_conv_no_gate",
         "bidir_vim_rwkv6", "bidir_vim_mamba",
     }
@@ -76,6 +79,38 @@ class ASRModel(nn.Module):
         if backbone_type == "bidir_rwkv6_conv_nogate":
             from asr_exp.models.bidir_rwkv6_conv import BidirRWKV6ConvEncoder
             return BidirRWKV6ConvEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_gate=False)
+
+        if backbone_type == "bidir_rwkv6_cplx_b":
+            from asr_exp.models.bidir_rwkv6_complex import BidirRWKV6ComplexEncoder
+            return BidirRWKV6ComplexEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, theta_init=0.31)
+
+        if backbone_type == "bidir_rwkv6_cplx_c":
+            from asr_exp.models.bidir_rwkv6_complex import BidirRWKV6ComplexEncoder
+            return BidirRWKV6ComplexEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, theta_init=0.90)
+
+        if backbone_type == "bidir_rwkv6_cplx_b_cos2":
+            from asr_exp.models.bidir_rwkv6_complex import BidirRWKV6ComplexEncoder
+            return BidirRWKV6ComplexEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, theta_init=0.31, use_cos2=True)
+
+        if backbone_type == "bidir_rwkv6_cplx_d":
+            from asr_exp.models.bidir_rwkv6_complex import BidirRWKV6ComplexEncoder
+            return BidirRWKV6ComplexEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, theta_init=0.31, learnable_theta=True)
+
+        if backbone_type == "bidir_rwkv6_cplx_d_cos2":
+            from asr_exp.models.bidir_rwkv6_complex import BidirRWKV6ComplexEncoder
+            return BidirRWKV6ComplexEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, theta_init=0.31, learnable_theta=True, use_cos2=True)
+
+        if backbone_type == "bidir_rwkv6_headscale":
+            from asr_exp.models.bidir_rwkv6_multiscale import BidirRWKV6MultiScaleEncoder
+            return BidirRWKV6MultiScaleEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_dual=False)
+
+        if backbone_type == "bidir_rwkv6_dual":
+            from asr_exp.models.bidir_rwkv6_multiscale import BidirRWKV6MultiScaleEncoder
+            return BidirRWKV6MultiScaleEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size, use_dual=True)
+
+        if backbone_type == "bidir_rwkv6_gaussian":
+            from asr_exp.models.bidir_rwkv6_gaussian import BidirRWKV6GaussianEncoder
+            return BidirRWKV6GaussianEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
 
         if backbone_type == "biwkv6":
             from asr_exp.models.biwkv6 import BiWKV6Encoder

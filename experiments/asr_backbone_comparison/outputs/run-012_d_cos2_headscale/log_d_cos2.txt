@@ -1,0 +1,1433 @@
+Config snapshot saved to ./outputs/run-012_d_cos2_headscale/config_snapshot.yaml
+Device: cuda
+GPU: NVIDIA GeForce RTX 5090
+VRAM: 33.7 GB
+Run info saved to ./outputs/run-012_d_cos2_headscale/run_info.json  [run_id=run-012_d_cos2_headscale_20260313_0826]
+Loading Common Voice data from data/cv_uk
+  Loading train.tsv (max 35.0h) ...
+    27,008 utterances | 32.0h
+  Loading dev.tsv (max 5.0h) ...
+    3,761 utterances | 5.0h
+  Loading test.tsv (max 5.0h) ...
+    3,471 utterances | 5.0h
+Vocabulary: 36 tokens
+Vocab saved to ./outputs/run-012_d_cos2_headscale/vocab.json
+
+========================================
+  BACKBONE: BIDIR_RWKV6_CPLX_D_COS2
+========================================
+
+Bidirectional RWKV-6 COMPLEX [cos²] encoder initialized (6 layers, d_model=256, head_size=64, theta_init=0.3100 [learnable], resonance~203ms, extra_params=6)
+Parameters: 7,736,874 (7.74M)
+Scheduler: cosine | warmup=500 steps
+  Epoch 1 | Batch 0 | Loss: 6.6106 | LR: 6.00e-07
+  Epoch 1 | Batch 50 | Loss: 3.4779 | LR: 3.06e-05
+  Epoch 1 | Batch 100 | Loss: 3.1991 | LR: 6.06e-05
+  Epoch 1 | Batch 150 | Loss: 3.2522 | LR: 9.06e-05
+  Epoch 1 | Batch 200 | Loss: 3.2052 | LR: 1.21e-04
+  Epoch 1 | Batch 250 | Loss: 3.3143 | LR: 1.51e-04
+  Epoch 1 | Batch 300 | Loss: 3.2627 | LR: 1.81e-04
+  Epoch 1 | Batch 350 | Loss: 3.1598 | LR: 2.11e-04
+  Epoch 1 | Batch 400 | Loss: 3.1732 | LR: 2.41e-04
+  Epoch 1 | Batch 450 | Loss: 3.1324 | LR: 2.71e-04
+  [dev] Loss: 3.3830 | CER: 0.9610 | WER: 0.9977
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: сс сс
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: ссссссс
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP:  с
+
+Epoch 1/60 | Train loss: 3.3746 | Dev CER: 0.9610 | Dev loss: 3.3830 | Time: 66s
+  theta: L0:0.309(204ms) L1:0.311(202ms) L2:0.311(202ms) L3:0.312(202ms) L4:0.312(202ms) L5:0.311(202ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 2 | Batch 0 | Loss: 3.0540 | LR: 2.92e-04
+  Epoch 2 | Batch 50 | Loss: 2.9655 | LR: 3.00e-04
+  Epoch 2 | Batch 100 | Loss: 2.6642 | LR: 3.00e-04
+  Epoch 2 | Batch 150 | Loss: 2.7167 | LR: 3.00e-04
+  Epoch 2 | Batch 200 | Loss: 2.5455 | LR: 3.00e-04
+  Epoch 2 | Batch 250 | Loss: 2.3521 | LR: 3.00e-04
+  Epoch 2 | Batch 300 | Loss: 2.3283 | LR: 3.00e-04
+  Epoch 2 | Batch 350 | Loss: 2.1835 | LR: 3.00e-04
+  Epoch 2 | Batch 400 | Loss: 2.1318 | LR: 3.00e-04
+  Epoch 2 | Batch 450 | Loss: 1.9695 | LR: 3.00e-04
+  [dev] Loss: 1.8908 | CER: 0.5219 | WER: 0.9974
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: таненедьтсязаб зячімапракприіталолзазсная
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: надзялапасвгаписнізтинібанипозавзвистимосканіся ботабаш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сацянаненоцяті бовтасубугудві
+
+Epoch 2/60 | Train loss: 2.3798 | Dev CER: 0.5219 | Dev loss: 1.8908 | Time: 65s
+  theta: L0:0.291(216ms) L1:0.351(179ms) L2:0.310(203ms) L3:0.308(204ms) L4:0.332(189ms) L5:0.293(214ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 3 | Batch 0 | Loss: 1.8659 | LR: 3.00e-04
+  Epoch 3 | Batch 50 | Loss: 1.9518 | LR: 3.00e-04
+  Epoch 3 | Batch 100 | Loss: 1.7959 | LR: 3.00e-04
+  Epoch 3 | Batch 150 | Loss: 1.8123 | LR: 3.00e-04
+  Epoch 3 | Batch 200 | Loss: 1.8115 | LR: 3.00e-04
+  Epoch 3 | Batch 250 | Loss: 1.7848 | LR: 3.00e-04
+  Epoch 3 | Batch 300 | Loss: 1.5527 | LR: 2.99e-04
+  Epoch 3 | Batch 350 | Loss: 1.5032 | LR: 2.99e-04
+  Epoch 3 | Batch 400 | Loss: 1.6918 | LR: 2.99e-04
+  Epoch 3 | Batch 450 | Loss: 1.6195 | LR: 2.99e-04
+  [dev] Loss: 1.5232 | CER: 0.4192 | WER: 0.9757
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: танененьтце забозачнімаграприьсталало за зосманя
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: напрялакасіміврписьпичото мнім барникозавзвистимосканіщо потапарши
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зацимнаенотети провта зобогодм
+
+Epoch 3/60 | Train loss: 1.7905 | Dev CER: 0.4192 | Dev loss: 1.5232 | Time: 65s
+  theta: L0:0.281(223ms) L1:0.375(168ms) L2:0.312(202ms) L3:0.309(204ms) L4:0.346(182ms) L5:0.286(220ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 4 | Batch 0 | Loss: 1.5498 | LR: 2.99e-04
+  Epoch 4 | Batch 50 | Loss: 1.5124 | LR: 2.99e-04
+  Epoch 4 | Batch 100 | Loss: 1.4228 | LR: 2.99e-04
+  Epoch 4 | Batch 150 | Loss: 1.4928 | LR: 2.99e-04
+  Epoch 4 | Batch 200 | Loss: 1.5789 | LR: 2.99e-04
+  Epoch 4 | Batch 250 | Loss: 1.6248 | LR: 2.99e-04
+  Epoch 4 | Batch 300 | Loss: 1.4202 | LR: 2.99e-04
+  Epoch 4 | Batch 350 | Loss: 1.3816 | LR: 2.99e-04
+  Epoch 4 | Batch 400 | Loss: 1.3253 | LR: 2.98e-04
+  Epoch 4 | Batch 450 | Loss: 1.4739 | LR: 2.98e-04
+  [dev] Loss: 1.4526 | CER: 0.3852 | WER: 0.9667
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нельтце забозачімог гракпритьтсталоло за здосбаня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: на прялекасінівропизьпиче сто нін берне казав звисти москоніще ботопарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сацяногеноцять бровта зобогоди
+
+Epoch 4/60 | Train loss: 1.5628 | Dev CER: 0.3852 | Dev loss: 1.4526 | Time: 65s
+  theta: L0:0.276(228ms) L1:0.388(162ms) L2:0.307(205ms) L3:0.310(203ms) L4:0.355(177ms) L5:0.276(227ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 5 | Batch 0 | Loss: 1.6123 | LR: 2.98e-04
+  Epoch 5 | Batch 50 | Loss: 1.5136 | LR: 2.98e-04
+  Epoch 5 | Batch 100 | Loss: 1.3353 | LR: 2.98e-04
+  Epoch 5 | Batch 150 | Loss: 1.3238 | LR: 2.98e-04
+  Epoch 5 | Batch 200 | Loss: 1.2167 | LR: 2.98e-04
+  Epoch 5 | Batch 250 | Loss: 1.3796 | LR: 2.98e-04
+  Epoch 5 | Batch 300 | Loss: 1.7100 | LR: 2.97e-04
+  Epoch 5 | Batch 350 | Loss: 1.1152 | LR: 2.97e-04
+  Epoch 5 | Batch 400 | Loss: 1.2526 | LR: 2.97e-04
+  Epoch 5 | Batch 450 | Loss: 1.3807 | LR: 2.97e-04
+  [dev] Loss: 1.2865 | CER: 0.3450 | WER: 0.9542
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нельтце забозачімаа грапредітсталоло зазтосвані
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: напрялакаінімропизькиче стонінм бері наказазлистимосконище потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сацінаенацякі провта забогодури
+
+Epoch 5/60 | Train loss: 1.4378 | Dev CER: 0.3450 | Dev loss: 1.2865 | Time: 65s
+  theta: L0:0.268(234ms) L1:0.396(159ms) L2:0.304(207ms) L3:0.309(203ms) L4:0.369(170ms) L5:0.268(235ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 6 | Batch 0 | Loss: 1.5113 | LR: 2.97e-04
+  Epoch 6 | Batch 50 | Loss: 1.5508 | LR: 2.97e-04
+  Epoch 6 | Batch 100 | Loss: 1.4104 | LR: 2.96e-04
+  Epoch 6 | Batch 150 | Loss: 1.4622 | LR: 2.96e-04
+  Epoch 6 | Batch 200 | Loss: 1.3775 | LR: 2.96e-04
+  Epoch 6 | Batch 250 | Loss: 1.3065 | LR: 2.96e-04
+  Epoch 6 | Batch 300 | Loss: 1.4962 | LR: 2.96e-04
+  Epoch 6 | Batch 350 | Loss: 1.2094 | LR: 2.96e-04
+  Epoch 6 | Batch 400 | Loss: 1.0483 | LR: 2.95e-04
+  Epoch 6 | Batch 450 | Loss: 1.2949 | LR: 2.95e-04
+  [dev] Loss: 1.2779 | CER: 0.3308 | WER: 0.9435
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: алненітцезбозачнімоа храпридстал за стосваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: мопрялакасін вірпрізьпичистинін перинаказав злисти мусконюще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зацяммогеноцеть повка забогодуій
+
+Epoch 6/60 | Train loss: 1.3300 | Dev CER: 0.3308 | Dev loss: 1.2779 | Time: 65s
+  theta: L0:0.264(238ms) L1:0.402(156ms) L2:0.299(210ms) L3:0.309(203ms) L4:0.376(167ms) L5:0.260(241ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 7 | Batch 0 | Loss: 1.2258 | LR: 2.95e-04
+  Epoch 7 | Batch 50 | Loss: 1.0418 | LR: 2.95e-04
+  Epoch 7 | Batch 100 | Loss: 1.2208 | LR: 2.95e-04
+  Epoch 7 | Batch 150 | Loss: 1.4315 | LR: 2.94e-04
+  Epoch 7 | Batch 200 | Loss: 1.6228 | LR: 2.94e-04
+  Epoch 7 | Batch 250 | Loss: 1.1716 | LR: 2.94e-04
+  Epoch 7 | Batch 300 | Loss: 1.7117 | LR: 2.94e-04
+  Epoch 7 | Batch 350 | Loss: 1.2200 | LR: 2.93e-04
+  Epoch 7 | Batch 400 | Loss: 1.3963 | LR: 2.93e-04
+  Epoch 7 | Batch 450 | Loss: 1.0722 | LR: 2.93e-04
+  [dev] Loss: 1.1658 | CER: 0.3065 | WER: 0.9249
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нельтце забозичнімола храктридьсталало застосваня 
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: мипряла касі ї ропийзькичистанін беріїнака зав звисти москонюювще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сацям ногеноцяті бовка зобогодуіть
+
+Epoch 7/60 | Train loss: 1.2706 | Dev CER: 0.3065 | Dev loss: 1.1658 | Time: 65s
+  theta: L0:0.265(237ms) L1:0.410(153ms) L2:0.297(212ms) L3:0.307(204ms) L4:0.387(162ms) L5:0.254(248ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 8 | Batch 0 | Loss: 1.1672 | LR: 2.93e-04
+  Epoch 8 | Batch 50 | Loss: 1.2755 | LR: 2.92e-04
+  Epoch 8 | Batch 100 | Loss: 1.5340 | LR: 2.92e-04
+  Epoch 8 | Batch 150 | Loss: 1.2573 | LR: 2.92e-04
+  Epoch 8 | Batch 200 | Loss: 1.1777 | LR: 2.92e-04
+  Epoch 8 | Batch 250 | Loss: 1.1933 | LR: 2.91e-04
+  Epoch 8 | Batch 300 | Loss: 1.0670 | LR: 2.91e-04
+  Epoch 8 | Batch 350 | Loss: 1.4657 | LR: 2.91e-04
+  Epoch 8 | Batch 400 | Loss: 1.3860 | LR: 2.91e-04
+  Epoch 8 | Batch 450 | Loss: 0.8939 | LR: 2.90e-04
+  [dev] Loss: 1.1216 | CER: 0.2951 | WER: 0.9143
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нельтцерзабозачнімала храктридсталало застосваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: мателяла касї й ропийськичистенім періє наказав злистиносколюю ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сацянагеноцять вовко забогодуюй
+
+Epoch 8/60 | Train loss: 1.2234 | Dev CER: 0.2951 | Dev loss: 1.1216 | Time: 67s
+  theta: L0:0.264(238ms) L1:0.411(153ms) L2:0.292(215ms) L3:0.311(202ms) L4:0.394(159ms) L5:0.248(253ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 9 | Batch 0 | Loss: 1.1890 | LR: 2.90e-04
+  Epoch 9 | Batch 50 | Loss: 1.4626 | LR: 2.90e-04
+  Epoch 9 | Batch 100 | Loss: 1.1689 | LR: 2.90e-04
+  Epoch 9 | Batch 150 | Loss: 1.0148 | LR: 2.89e-04
+  Epoch 9 | Batch 200 | Loss: 0.9739 | LR: 2.89e-04
+  Epoch 9 | Batch 250 | Loss: 0.9203 | LR: 2.89e-04
+  Epoch 9 | Batch 300 | Loss: 0.9489 | LR: 2.88e-04
+  Epoch 9 | Batch 350 | Loss: 1.0954 | LR: 2.88e-04
+  Epoch 9 | Batch 400 | Loss: 1.1567 | LR: 2.88e-04
+  Epoch 9 | Batch 450 | Loss: 1.1501 | LR: 2.87e-04
+  [dev] Loss: 1.0902 | CER: 0.2817 | WER: 0.9005
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: алинельтце за бозачнімала гратридсталало застусваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матеряла касів й ропийськичестанім пери наказав злисти москою ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: саця ногеноцять вовко зубогодуюй
+
+Epoch 9/60 | Train loss: 1.1600 | Dev CER: 0.2817 | Dev loss: 1.0902 | Time: 64s
+  theta: L0:0.263(239ms) L1:0.417(151ms) L2:0.289(217ms) L3:0.309(204ms) L4:0.402(156ms) L5:0.243(259ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 10 | Batch 0 | Loss: 0.9535 | LR: 2.87e-04
+  Epoch 10 | Batch 50 | Loss: 1.1779 | LR: 2.87e-04
+  Epoch 10 | Batch 100 | Loss: 0.9702 | LR: 2.86e-04
+  Epoch 10 | Batch 150 | Loss: 1.0406 | LR: 2.86e-04
+  Epoch 10 | Batch 200 | Loss: 1.0567 | LR: 2.86e-04
+  Epoch 10 | Batch 250 | Loss: 1.2281 | LR: 2.85e-04
+  Epoch 10 | Batch 300 | Loss: 1.0244 | LR: 2.85e-04
+  Epoch 10 | Batch 350 | Loss: 1.3561 | LR: 2.85e-04
+  Epoch 10 | Batch 400 | Loss: 1.2732 | LR: 2.84e-04
+  Epoch 10 | Batch 450 | Loss: 1.1260 | LR: 2.84e-04
+  [dev] Loss: 1.0621 | CER: 0.2712 | WER: 0.8887
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нелікце забозачнімала грактривсталало засто свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряле ахівй ропайськичастаним перій наказавзлисти московю ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сатся нагеносять вовка зобогодуюй
+
+Epoch 10/60 | Train loss: 1.1257 | Dev CER: 0.2712 | Dev loss: 1.0621 | Time: 66s
+  theta: L0:0.261(241ms) L1:0.416(151ms) L2:0.283(222ms) L3:0.308(204ms) L4:0.407(154ms) L5:0.238(264ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 11 | Batch 0 | Loss: 1.2473 | LR: 2.84e-04
+  Epoch 11 | Batch 50 | Loss: 0.9875 | LR: 2.83e-04
+  Epoch 11 | Batch 100 | Loss: 1.0323 | LR: 2.83e-04
+  Epoch 11 | Batch 150 | Loss: 1.3996 | LR: 2.83e-04
+  Epoch 11 | Batch 200 | Loss: 1.2433 | LR: 2.82e-04
+  Epoch 11 | Batch 250 | Loss: 1.0866 | LR: 2.82e-04
+  Epoch 11 | Batch 300 | Loss: 0.9337 | LR: 2.82e-04
+  Epoch 11 | Batch 350 | Loss: 1.0339 | LR: 2.81e-04
+  Epoch 11 | Batch 400 | Loss: 0.8709 | LR: 2.81e-04
+  Epoch 11 | Batch 450 | Loss: 0.9956 | LR: 2.80e-04
+  [dev] Loss: 1.0459 | CER: 0.2703 | WER: 0.8857
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нельтце забозачнімала грактревсталало застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряла карсіивй ропайськичестонім берий наказав злисти московюю ще ботроперши
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сатце нагеноцеть вавко зобогодуюй
+
+Epoch 11/60 | Train loss: 1.0901 | Dev CER: 0.2703 | Dev loss: 1.0459 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.421(149ms) L2:0.277(227ms) L3:0.306(205ms) L4:0.413(152ms) L5:0.233(270ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 12 | Batch 0 | Loss: 0.9568 | LR: 2.80e-04
+  Epoch 12 | Batch 50 | Loss: 1.2230 | LR: 2.80e-04
+  Epoch 12 | Batch 100 | Loss: 1.3308 | LR: 2.79e-04
+  Epoch 12 | Batch 150 | Loss: 0.9481 | LR: 2.79e-04
+  Epoch 12 | Batch 200 | Loss: 1.2169 | LR: 2.78e-04
+  Epoch 12 | Batch 250 | Loss: 0.8310 | LR: 2.78e-04
+  Epoch 12 | Batch 300 | Loss: 0.7990 | LR: 2.78e-04
+  Epoch 12 | Batch 350 | Loss: 0.8537 | LR: 2.77e-04
+  Epoch 12 | Batch 400 | Loss: 0.9591 | LR: 2.77e-04
+  Epoch 12 | Batch 450 | Loss: 1.1795 | LR: 2.76e-04
+  [dev] Loss: 1.0060 | CER: 0.2610 | WER: 0.8764
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али нелькь це запозачні мала храктридсталало засто свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряле кархіів ї ропийськичастонім періє наказав злисти москоюю ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: саться ногеноцять повко зубогодуюй
+
+Epoch 12/60 | Train loss: 1.0548 | Dev CER: 0.2610 | Dev loss: 1.0060 | Time: 65s
+  theta: L0:0.259(242ms) L1:0.427(147ms) L2:0.274(230ms) L3:0.306(205ms) L4:0.418(150ms) L5:0.230(274ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 13 | Batch 0 | Loss: 1.0348 | LR: 2.76e-04
+  Epoch 13 | Batch 50 | Loss: 1.1147 | LR: 2.76e-04
+  Epoch 13 | Batch 100 | Loss: 0.8153 | LR: 2.75e-04
+  Epoch 13 | Batch 150 | Loss: 0.9711 | LR: 2.75e-04
+  Epoch 13 | Batch 200 | Loss: 1.0864 | LR: 2.74e-04
+  Epoch 13 | Batch 250 | Loss: 1.0805 | LR: 2.74e-04
+  Epoch 13 | Batch 300 | Loss: 1.0564 | LR: 2.73e-04
+  Epoch 13 | Batch 350 | Loss: 0.9798 | LR: 2.73e-04
+  Epoch 13 | Batch 400 | Loss: 1.0543 | LR: 2.72e-04
+  Epoch 13 | Batch 450 | Loss: 1.5186 | LR: 2.72e-04
+  [dev] Loss: 1.0082 | CER: 0.2568 | WER: 0.8704
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: ало не лтце забозачині мала грактривсталало засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряли касів в й ропийськичастонім берій наказав злисти вмосковюю ще потропарши
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сатця ногиноцять вовко зубогодуюй
+
+Epoch 13/60 | Train loss: 1.0482 | Dev CER: 0.2568 | Dev loss: 1.0082 | Time: 66s
+  theta: L0:0.261(241ms) L1:0.428(147ms) L2:0.269(234ms) L3:0.305(206ms) L4:0.422(149ms) L5:0.226(278ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 14 | Batch 0 | Loss: 0.8666 | LR: 2.72e-04
+  Epoch 14 | Batch 50 | Loss: 0.8755 | LR: 2.71e-04
+  Epoch 14 | Batch 100 | Loss: 0.9616 | LR: 2.71e-04
+  Epoch 14 | Batch 150 | Loss: 0.9334 | LR: 2.70e-04
+  Epoch 14 | Batch 200 | Loss: 0.6727 | LR: 2.70e-04
+  Epoch 14 | Batch 250 | Loss: 1.0139 | LR: 2.69e-04
+  Epoch 14 | Batch 300 | Loss: 0.8354 | LR: 2.69e-04
+  Epoch 14 | Batch 350 | Loss: 1.0843 | LR: 2.68e-04
+  Epoch 14 | Batch 400 | Loss: 0.8602 | LR: 2.68e-04
+  Epoch 14 | Batch 450 | Loss: 1.1658 | LR: 2.67e-04
+  [dev] Loss: 0.9826 | CER: 0.2479 | WER: 0.8522
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: али не літце запозачні мала храктривсталал засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряле арсів в ї ропеськичаста нім пері наказав злистимосковю ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайьця на геноця ть повко зубогодуюй
+
+Epoch 14/60 | Train loss: 1.0078 | Dev CER: 0.2479 | Dev loss: 0.9826 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.434(145ms) L2:0.265(237ms) L3:0.305(206ms) L4:0.427(147ms) L5:0.223(282ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 15 | Batch 0 | Loss: 1.1425 | LR: 2.67e-04
+  Epoch 15 | Batch 50 | Loss: 1.0760 | LR: 2.66e-04
+  Epoch 15 | Batch 100 | Loss: 0.9473 | LR: 2.66e-04
+  Epoch 15 | Batch 150 | Loss: 1.1282 | LR: 2.65e-04
+  Epoch 15 | Batch 200 | Loss: 1.0468 | LR: 2.65e-04
+  Epoch 15 | Batch 250 | Loss: 0.8417 | LR: 2.64e-04
+  Epoch 15 | Batch 300 | Loss: 0.8705 | LR: 2.64e-04
+  Epoch 15 | Batch 350 | Loss: 1.1392 | LR: 2.63e-04
+  Epoch 15 | Batch 400 | Loss: 0.9326 | LR: 2.63e-04
+  Epoch 15 | Batch 450 | Loss: 1.2049 | LR: 2.62e-04
+  [dev] Loss: 0.9772 | CER: 0.2472 | WER: 0.8560
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: ал нельтце забозачні мала грактрив сталаго засто свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряла арахів в ї ропийськичаста нім берій наказав злисти вмосковюю ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: саться ногеноця ть вавко зобогодуюй
+
+Epoch 15/60 | Train loss: 0.9915 | Dev CER: 0.2472 | Dev loss: 0.9772 | Time: 65s
+  theta: L0:0.258(243ms) L1:0.435(145ms) L2:0.264(238ms) L3:0.304(206ms) L4:0.431(146ms) L5:0.220(286ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 16 | Batch 0 | Loss: 1.0433 | LR: 2.62e-04
+  Epoch 16 | Batch 50 | Loss: 1.1055 | LR: 2.61e-04
+  Epoch 16 | Batch 100 | Loss: 0.9570 | LR: 2.61e-04
+  Epoch 16 | Batch 150 | Loss: 0.7406 | LR: 2.60e-04
+  Epoch 16 | Batch 200 | Loss: 0.7617 | LR: 2.60e-04
+  Epoch 16 | Batch 250 | Loss: 1.2211 | LR: 2.59e-04
+  Epoch 16 | Batch 300 | Loss: 0.9267 | LR: 2.58e-04
+  Epoch 16 | Batch 350 | Loss: 0.7044 | LR: 2.58e-04
+  Epoch 16 | Batch 400 | Loss: 0.8578 | LR: 2.57e-04
+  Epoch 16 | Batch 450 | Loss: 1.2092 | LR: 2.57e-04
+  [dev] Loss: 0.9554 | CER: 0.2423 | WER: 0.8509
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелікь це забозачні мала грактрив сталава засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряле архів в ї ропеськойчасти нім пері на казав злисти вмосковюю ще потроперш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце на генаце ть вавка зобоготуюй
+
+Epoch 16/60 | Train loss: 0.9664 | Dev CER: 0.2423 | Dev loss: 0.9554 | Time: 66s
+  theta: L0:0.258(243ms) L1:0.433(145ms) L2:0.262(240ms) L3:0.304(207ms) L4:0.433(145ms) L5:0.217(289ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 17 | Batch 0 | Loss: 0.8748 | LR: 2.56e-04
+  Epoch 17 | Batch 50 | Loss: 0.8591 | LR: 2.56e-04
+  Epoch 17 | Batch 100 | Loss: 1.1244 | LR: 2.55e-04
+  Epoch 17 | Batch 150 | Loss: 1.0076 | LR: 2.55e-04
+  Epoch 17 | Batch 200 | Loss: 0.7801 | LR: 2.54e-04
+  Epoch 17 | Batch 250 | Loss: 0.8399 | LR: 2.53e-04
+  Epoch 17 | Batch 300 | Loss: 0.9539 | LR: 2.53e-04
+  Epoch 17 | Batch 350 | Loss: 0.9411 | LR: 2.52e-04
+  Epoch 17 | Batch 400 | Loss: 0.8206 | LR: 2.52e-04
+  Epoch 17 | Batch 450 | Loss: 0.9480 | LR: 2.51e-04
+  [dev] Loss: 0.9355 | CER: 0.2347 | WER: 0.8321
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелькце за бозачнімала грактрив сталого застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряли архів в ї рописькичастанім берій наказав злистивмоскоюю ще потропаршію
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайьце ногеноця ть вовко зубогодуюй
+
+Epoch 17/60 | Train loss: 0.9452 | Dev CER: 0.2347 | Dev loss: 0.9355 | Time: 66s
+  theta: L0:0.261(241ms) L1:0.435(145ms) L2:0.262(240ms) L3:0.303(207ms) L4:0.435(144ms) L5:0.216(291ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 18 | Batch 0 | Loss: 0.8696 | LR: 2.51e-04
+  Epoch 18 | Batch 50 | Loss: 0.8579 | LR: 2.50e-04
+  Epoch 18 | Batch 100 | Loss: 1.1320 | LR: 2.49e-04
+  Epoch 18 | Batch 150 | Loss: 0.9397 | LR: 2.49e-04
+  Epoch 18 | Batch 200 | Loss: 0.9494 | LR: 2.48e-04
+  Epoch 18 | Batch 250 | Loss: 0.7460 | LR: 2.48e-04
+  Epoch 18 | Batch 300 | Loss: 1.0583 | LR: 2.47e-04
+  Epoch 18 | Batch 350 | Loss: 0.5997 | LR: 2.46e-04
+  Epoch 18 | Batch 400 | Loss: 0.9593 | LR: 2.46e-04
+  Epoch 18 | Batch 450 | Loss: 0.9478 | LR: 2.45e-04
+  [dev] Loss: 0.9402 | CER: 0.2322 | WER: 0.8298
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтьценза бозачні мала грактривсталаво застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: ми тряли рхів в й рописьки чистонім бері неказав злистивмосковію ще потропаршів
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайця ногиноцять вавка зубигодуюй
+
+Epoch 18/60 | Train loss: 0.9212 | Dev CER: 0.2322 | Dev loss: 0.9402 | Time: 67s
+  theta: L0:0.261(241ms) L1:0.437(144ms) L2:0.261(241ms) L3:0.303(207ms) L4:0.438(144ms) L5:0.214(293ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 19 | Batch 0 | Loss: 1.4659 | LR: 2.45e-04
+  Epoch 19 | Batch 50 | Loss: 0.7670 | LR: 2.44e-04
+  Epoch 19 | Batch 100 | Loss: 1.4160 | LR: 2.43e-04
+  Epoch 19 | Batch 150 | Loss: 0.8491 | LR: 2.43e-04
+  Epoch 19 | Batch 200 | Loss: 0.8701 | LR: 2.42e-04
+  Epoch 19 | Batch 250 | Loss: 1.0624 | LR: 2.42e-04
+  Epoch 19 | Batch 300 | Loss: 0.6694 | LR: 2.41e-04
+  Epoch 19 | Batch 350 | Loss: 1.4210 | LR: 2.40e-04
+  Epoch 19 | Batch 400 | Loss: 0.9038 | LR: 2.40e-04
+  Epoch 19 | Batch 450 | Loss: 0.7271 | LR: 2.39e-04
+  [dev] Loss: 0.9161 | CER: 0.2277 | WER: 0.8212
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельть це запозаченямала грактрівісталав засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли рхі в в й рописьки части нім перій наказавзлистивмосковюю ще потропаршію
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце ногеноцять впавко зубоготуюй
+
+Epoch 19/60 | Train loss: 0.8922 | Dev CER: 0.2277 | Dev loss: 0.9161 | Time: 64s
+  theta: L0:0.260(241ms) L1:0.437(144ms) L2:0.261(241ms) L3:0.303(207ms) L4:0.440(143ms) L5:0.213(295ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 20 | Batch 0 | Loss: 0.7736 | LR: 2.39e-04
+  Epoch 20 | Batch 50 | Loss: 1.2265 | LR: 2.38e-04
+  Epoch 20 | Batch 100 | Loss: 0.8751 | LR: 2.37e-04
+  Epoch 20 | Batch 150 | Loss: 0.8423 | LR: 2.37e-04
+  Epoch 20 | Batch 200 | Loss: 0.8321 | LR: 2.36e-04
+  Epoch 20 | Batch 250 | Loss: 1.0461 | LR: 2.35e-04
+  Epoch 20 | Batch 300 | Loss: 0.8285 | LR: 2.35e-04
+  Epoch 20 | Batch 350 | Loss: 0.9381 | LR: 2.34e-04
+  Epoch 20 | Batch 400 | Loss: 0.6883 | LR: 2.33e-04
+  Epoch 20 | Batch 450 | Loss: 0.8320 | LR: 2.33e-04
+  [dev] Loss: 0.9614 | CER: 0.2266 | WER: 0.8256
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельт це за бозачня мала грактривсталав засто свання 
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряли архів ві рописькичаста нім берій на казавзлистивмоскоюю ще потропарші 
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагеноця ть вавко зобоготуюй
+
+Epoch 20/60 | Train loss: 0.8864 | Dev CER: 0.2266 | Dev loss: 0.9614 | Time: 66s
+  theta: L0:0.260(241ms) L1:0.437(144ms) L2:0.259(242ms) L3:0.304(206ms) L4:0.443(142ms) L5:0.211(297ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 21 | Batch 0 | Loss: 0.9230 | LR: 2.32e-04
+  Epoch 21 | Batch 50 | Loss: 0.8110 | LR: 2.31e-04
+  Epoch 21 | Batch 100 | Loss: 1.1185 | LR: 2.31e-04
+  Epoch 21 | Batch 150 | Loss: 0.6751 | LR: 2.30e-04
+  Epoch 21 | Batch 200 | Loss: 0.9313 | LR: 2.29e-04
+  Epoch 21 | Batch 250 | Loss: 0.8272 | LR: 2.29e-04
+  Epoch 21 | Batch 300 | Loss: 1.1611 | LR: 2.28e-04
+  Epoch 21 | Batch 350 | Loss: 0.7424 | LR: 2.27e-04
+  Epoch 21 | Batch 400 | Loss: 1.0866 | LR: 2.27e-04
+  Epoch 21 | Batch 450 | Loss: 0.7572 | LR: 2.26e-04
+  [dev] Loss: 0.9110 | CER: 0.2236 | WER: 0.8153
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: алинелть це запозачнімала грактрівсталов засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла арсів віврописькию частинім перій наказав злистивноскоюю ще потроперші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноця ть вавка зубиготоюй
+
+Epoch 21/60 | Train loss: 0.8770 | Dev CER: 0.2236 | Dev loss: 0.9110 | Time: 65s
+  theta: L0:0.261(240ms) L1:0.437(144ms) L2:0.261(241ms) L3:0.304(207ms) L4:0.442(142ms) L5:0.209(301ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 22 | Batch 0 | Loss: 0.7277 | LR: 2.25e-04
+  Epoch 22 | Batch 50 | Loss: 1.1236 | LR: 2.25e-04
+  Epoch 22 | Batch 100 | Loss: 0.8346 | LR: 2.24e-04
+  Epoch 22 | Batch 150 | Loss: 0.6360 | LR: 2.23e-04
+  Epoch 22 | Batch 200 | Loss: 0.7958 | LR: 2.23e-04
+  Epoch 22 | Batch 250 | Loss: 0.7649 | LR: 2.22e-04
+  Epoch 22 | Batch 300 | Loss: 0.8071 | LR: 2.21e-04
+  Epoch 22 | Batch 350 | Loss: 0.8518 | LR: 2.21e-04
+  Epoch 22 | Batch 400 | Loss: 0.7824 | LR: 2.20e-04
+  Epoch 22 | Batch 450 | Loss: 0.6149 | LR: 2.19e-04
+  [dev] Loss: 0.9023 | CER: 0.2179 | WER: 0.8021
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але неліт це забозачнімала грактривісталого засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла кархів вівропийський частинім бері наказав злисти вмоскоюю ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагинаця ть вавко зобигодуй
+
+Epoch 22/60 | Train loss: 0.8615 | Dev CER: 0.2179 | Dev loss: 0.9023 | Time: 66s
+  theta: L0:0.260(241ms) L1:0.438(143ms) L2:0.259(243ms) L3:0.303(207ms) L4:0.443(142ms) L5:0.208(302ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 23 | Batch 0 | Loss: 0.8716 | LR: 2.19e-04
+  Epoch 23 | Batch 50 | Loss: 0.7573 | LR: 2.18e-04
+  Epoch 23 | Batch 100 | Loss: 0.7612 | LR: 2.17e-04
+  Epoch 23 | Batch 150 | Loss: 0.8159 | LR: 2.16e-04
+  Epoch 23 | Batch 200 | Loss: 1.2482 | LR: 2.16e-04
+  Epoch 23 | Batch 250 | Loss: 0.9703 | LR: 2.15e-04
+  Epoch 23 | Batch 300 | Loss: 0.7585 | LR: 2.14e-04
+  Epoch 23 | Batch 350 | Loss: 0.8295 | LR: 2.13e-04
+  Epoch 23 | Batch 400 | Loss: 0.5276 | LR: 2.13e-04
+  Epoch 23 | Batch 450 | Loss: 0.7394 | LR: 2.12e-04
+  [dev] Loss: 0.8908 | CER: 0.2161 | WER: 0.8059
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельт це забозачнімала грактріві сталого застусваня 
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матеряла тархіві вїв рописькию части нім берії не казав з листивмоскоюю ще потро
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: усайце ногиноцять вавко зобигодой
+
+Epoch 23/60 | Train loss: 0.8324 | Dev CER: 0.2161 | Dev loss: 0.8908 | Time: 66s
+  theta: L0:0.259(242ms) L1:0.440(143ms) L2:0.257(245ms) L3:0.303(207ms) L4:0.443(142ms) L5:0.206(305ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 24 | Batch 0 | Loss: 0.9027 | LR: 2.11e-04
+  Epoch 24 | Batch 50 | Loss: 0.5621 | LR: 2.11e-04
+  Epoch 24 | Batch 100 | Loss: 0.7454 | LR: 2.10e-04
+  Epoch 24 | Batch 150 | Loss: 0.6991 | LR: 2.09e-04
+  Epoch 24 | Batch 200 | Loss: 1.1287 | LR: 2.09e-04
+  Epoch 24 | Batch 250 | Loss: 1.0454 | LR: 2.08e-04
+  Epoch 24 | Batch 300 | Loss: 0.9622 | LR: 2.07e-04
+  Epoch 24 | Batch 350 | Loss: 0.7889 | LR: 2.06e-04
+  Epoch 24 | Batch 400 | Loss: 0.5709 | LR: 2.06e-04
+  Epoch 24 | Batch 450 | Loss: 1.3705 | LR: 2.05e-04
+  [dev] Loss: 0.8845 | CER: 0.2165 | WER: 0.8077
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельт це забозачнімала грактривсталаво застусваняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла рхів вївропийський частинім берій неказав злистивосковюю ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце нагиноцять вавка зобигодоюй
+
+Epoch 24/60 | Train loss: 0.8349 | Dev CER: 0.2165 | Dev loss: 0.8845 | Time: 65s
+  theta: L0:0.258(243ms) L1:0.440(143ms) L2:0.258(244ms) L3:0.302(208ms) L4:0.445(141ms) L5:0.205(306ms)
+  Epoch 25 | Batch 0 | Loss: 0.7945 | LR: 2.04e-04
+  Epoch 25 | Batch 50 | Loss: 0.9240 | LR: 2.04e-04
+  Epoch 25 | Batch 100 | Loss: 0.7611 | LR: 2.03e-04
+  Epoch 25 | Batch 150 | Loss: 0.8293 | LR: 2.02e-04
+  Epoch 25 | Batch 200 | Loss: 0.5981 | LR: 2.01e-04
+  Epoch 25 | Batch 250 | Loss: 0.9705 | LR: 2.00e-04
+  Epoch 25 | Batch 300 | Loss: 0.7862 | LR: 2.00e-04
+  Epoch 25 | Batch 350 | Loss: 1.3789 | LR: 1.99e-04
+  Epoch 25 | Batch 400 | Loss: 1.2605 | LR: 1.98e-04
+  Epoch 25 | Batch 450 | Loss: 0.6361 | LR: 1.97e-04
+  [dev] Loss: 0.8502 | CER: 0.2074 | WER: 0.7841
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтцен запозачні мала грактриві сталого засту сваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в івропийський частинім перій неказав з листивмосковюю ще потропер
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце ногиноця ть вавко зубогодоюй
+
+Epoch 25/60 | Train loss: 0.8180 | Dev CER: 0.2074 | Dev loss: 0.8502 | Time: 66s
+  theta: L0:0.258(244ms) L1:0.442(142ms) L2:0.256(245ms) L3:0.300(209ms) L4:0.448(140ms) L5:0.205(307ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 26 | Batch 0 | Loss: 0.5817 | LR: 1.97e-04
+  Epoch 26 | Batch 50 | Loss: 0.6789 | LR: 1.96e-04
+  Epoch 26 | Batch 100 | Loss: 0.6931 | LR: 1.95e-04
+  Epoch 26 | Batch 150 | Loss: 0.7946 | LR: 1.95e-04
+  Epoch 26 | Batch 200 | Loss: 0.7999 | LR: 1.94e-04
+  Epoch 26 | Batch 250 | Loss: 0.7151 | LR: 1.93e-04
+  Epoch 26 | Batch 300 | Loss: 0.6387 | LR: 1.92e-04
+  Epoch 26 | Batch 350 | Loss: 0.9240 | LR: 1.92e-04
+  Epoch 26 | Batch 400 | Loss: 0.6980 | LR: 1.91e-04
+  Epoch 26 | Batch 450 | Loss: 0.8066 | LR: 1.90e-04
+  [dev] Loss: 0.8763 | CER: 0.2077 | WER: 0.7835
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельть це запозачені мала грактривідсталаво засто свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів вїв рописькию частанім перій наказав зелистивмосковюю ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайця нагеноцять вавка забигодуюй
+
+Epoch 26/60 | Train loss: 0.7937 | Dev CER: 0.2077 | Dev loss: 0.8763 | Time: 67s
+  theta: L0:0.258(243ms) L1:0.445(141ms) L2:0.257(245ms) L3:0.300(209ms) L4:0.448(140ms) L5:0.203(309ms)
+  Epoch 27 | Batch 0 | Loss: 0.6667 | LR: 1.89e-04
+  Epoch 27 | Batch 50 | Loss: 0.7860 | LR: 1.89e-04
+  Epoch 27 | Batch 100 | Loss: 0.9126 | LR: 1.88e-04
+  Epoch 27 | Batch 150 | Loss: 1.0663 | LR: 1.87e-04
+  Epoch 27 | Batch 200 | Loss: 0.7556 | LR: 1.86e-04
+  Epoch 27 | Batch 250 | Loss: 0.6322 | LR: 1.85e-04
+  Epoch 27 | Batch 300 | Loss: 0.6525 | LR: 1.85e-04
+  Epoch 27 | Batch 350 | Loss: 1.0795 | LR: 1.84e-04
+  Epoch 27 | Batch 400 | Loss: 0.8937 | LR: 1.83e-04
+  Epoch 27 | Batch 450 | Loss: 0.8427 | LR: 1.82e-04
+  [dev] Loss: 0.8548 | CER: 0.2044 | WER: 0.7755
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літцен забозачині мала грактрівдсталого засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряли архів в їв рописьк й чистонім берій наказав звестив осковію ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вовко зубогодуюй
+
+Epoch 27/60 | Train loss: 0.7859 | Dev CER: 0.2044 | Dev loss: 0.8548 | Time: 66s
+  theta: L0:0.260(242ms) L1:0.443(142ms) L2:0.257(244ms) L3:0.302(208ms) L4:0.448(140ms) L5:0.202(310ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 28 | Batch 0 | Loss: 0.6479 | LR: 1.82e-04
+  Epoch 28 | Batch 50 | Loss: 0.6102 | LR: 1.81e-04
+  Epoch 28 | Batch 100 | Loss: 0.8826 | LR: 1.80e-04
+  Epoch 28 | Batch 150 | Loss: 1.3999 | LR: 1.79e-04
+  Epoch 28 | Batch 200 | Loss: 0.7748 | LR: 1.79e-04
+  Epoch 28 | Batch 250 | Loss: 0.6833 | LR: 1.78e-04
+  Epoch 28 | Batch 300 | Loss: 0.5056 | LR: 1.77e-04
+  Epoch 28 | Batch 350 | Loss: 1.1342 | LR: 1.76e-04
+  Epoch 28 | Batch 400 | Loss: 1.0251 | LR: 1.75e-04
+  Epoch 28 | Batch 450 | Loss: 0.5506 | LR: 1.75e-04
+  [dev] Loss: 0.8639 | CER: 0.2068 | WER: 0.7884
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце запозаченя мала грактрівд сталого застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в їв ропийський части ніїм берій на казав з лестивносковюю ще потр
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце на геноцять вавка зобигодоютй
+
+Epoch 28/60 | Train loss: 0.7831 | Dev CER: 0.2068 | Dev loss: 0.8639 | Time: 66s
+  theta: L0:0.259(242ms) L1:0.445(141ms) L2:0.257(245ms) L3:0.301(208ms) L4:0.448(140ms) L5:0.201(312ms)
+  Epoch 29 | Batch 0 | Loss: 0.8882 | LR: 1.74e-04
+  Epoch 29 | Batch 50 | Loss: 1.3095 | LR: 1.73e-04
+  Epoch 29 | Batch 100 | Loss: 0.6623 | LR: 1.73e-04
+  Epoch 29 | Batch 150 | Loss: 1.2269 | LR: 1.72e-04
+  Epoch 29 | Batch 200 | Loss: 0.8654 | LR: 1.71e-04
+  Epoch 29 | Batch 250 | Loss: 0.7067 | LR: 1.70e-04
+  Epoch 29 | Batch 300 | Loss: 0.4498 | LR: 1.69e-04
+  Epoch 29 | Batch 350 | Loss: 0.8887 | LR: 1.69e-04
+  Epoch 29 | Batch 400 | Loss: 0.6447 | LR: 1.68e-04
+  Epoch 29 | Batch 450 | Loss: 0.6793 | LR: 1.67e-04
+  [dev] Loss: 0.8438 | CER: 0.2019 | WER: 0.7700
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтце забозачені мала грактріві сталого застусваняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в ів рописький частонім берій никазав злистивосковюю ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце ногиноцять вовка зобигодуютй
+
+Epoch 29/60 | Train loss: 0.7697 | Dev CER: 0.2019 | Dev loss: 0.8438 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.257(245ms) L3:0.302(208ms) L4:0.449(140ms) L5:0.201(312ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 30 | Batch 0 | Loss: 0.8199 | LR: 1.66e-04
+  Epoch 30 | Batch 50 | Loss: 0.7689 | LR: 1.66e-04
+  Epoch 30 | Batch 100 | Loss: 0.7977 | LR: 1.65e-04
+  Epoch 30 | Batch 150 | Loss: 0.8157 | LR: 1.64e-04
+  Epoch 30 | Batch 200 | Loss: 0.5686 | LR: 1.63e-04
+  Epoch 30 | Batch 250 | Loss: 0.6878 | LR: 1.62e-04
+  Epoch 30 | Batch 300 | Loss: 1.0208 | LR: 1.62e-04
+  Epoch 30 | Batch 350 | Loss: 0.8619 | LR: 1.61e-04
+  Epoch 30 | Batch 400 | Loss: 0.6557 | LR: 1.60e-04
+  Epoch 30 | Batch 450 | Loss: 0.5292 | LR: 1.59e-04
+  [dev] Loss: 0.8345 | CER: 0.2001 | WER: 0.7699
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельть цен за бозичні мала грактрі відсталого застусванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в їврописькию чисто нім берії никазав з вестив оскоюю ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайця ногеноцять вавко зобогодуюй
+
+Epoch 30/60 | Train loss: 0.7608 | Dev CER: 0.2001 | Dev loss: 0.8345 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.444(142ms) L2:0.257(244ms) L3:0.302(208ms) L4:0.449(140ms) L5:0.199(315ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 31 | Batch 0 | Loss: 0.7994 | LR: 1.59e-04
+  Epoch 31 | Batch 50 | Loss: 0.7556 | LR: 1.58e-04
+  Epoch 31 | Batch 100 | Loss: 0.7792 | LR: 1.57e-04
+  Epoch 31 | Batch 150 | Loss: 0.7643 | LR: 1.56e-04
+  Epoch 31 | Batch 200 | Loss: 0.8258 | LR: 1.55e-04
+  Epoch 31 | Batch 250 | Loss: 0.7651 | LR: 1.55e-04
+  Epoch 31 | Batch 300 | Loss: 0.6239 | LR: 1.54e-04
+  Epoch 31 | Batch 350 | Loss: 0.6643 | LR: 1.53e-04
+  Epoch 31 | Batch 400 | Loss: 0.8594 | LR: 1.52e-04
+  Epoch 31 | Batch 450 | Loss: 0.8038 | LR: 1.51e-04
+  [dev] Loss: 0.8283 | CER: 0.1975 | WER: 0.7627
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: аленельтцен за бозаченя мала грактриві сталово застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в ів ропизький частонім перій наказав звести в осковюю ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце ногеноцять вавка зобогодоютй
+
+Epoch 31/60 | Train loss: 0.7397 | Dev CER: 0.1975 | Dev loss: 0.8283 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.444(141ms) L2:0.257(245ms) L3:0.303(207ms) L4:0.448(140ms) L5:0.198(317ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 32 | Batch 0 | Loss: 0.7226 | LR: 1.51e-04
+  Epoch 32 | Batch 50 | Loss: 0.7157 | LR: 1.50e-04
+  Epoch 32 | Batch 100 | Loss: 0.6138 | LR: 1.49e-04
+  Epoch 32 | Batch 150 | Loss: 0.7518 | LR: 1.48e-04
+  Epoch 32 | Batch 200 | Loss: 0.5352 | LR: 1.47e-04
+  Epoch 32 | Batch 250 | Loss: 0.6012 | LR: 1.47e-04
+  Epoch 32 | Batch 300 | Loss: 0.5741 | LR: 1.46e-04
+  Epoch 32 | Batch 350 | Loss: 0.8706 | LR: 1.45e-04
+  Epoch 32 | Batch 400 | Loss: 0.6495 | LR: 1.44e-04
+  Epoch 32 | Batch 450 | Loss: 0.6365 | LR: 1.43e-04
+  [dev] Loss: 0.8222 | CER: 0.1971 | WER: 0.7660
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтьцен за бозиченя мала грактривд сталого засту смання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архїв в їв ропийський частоніїм перії наказав з вестивмосковюю ще потроп
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайця нагеноцять вавка зубигодуютй
+
+Epoch 32/60 | Train loss: 0.7384 | Dev CER: 0.1971 | Dev loss: 0.8222 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.444(141ms) L2:0.256(245ms) L3:0.302(208ms) L4:0.450(140ms) L5:0.198(318ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 33 | Batch 0 | Loss: 0.5583 | LR: 1.43e-04
+  Epoch 33 | Batch 50 | Loss: 0.8933 | LR: 1.42e-04
+  Epoch 33 | Batch 100 | Loss: 0.6190 | LR: 1.41e-04
+  Epoch 33 | Batch 150 | Loss: 0.5172 | LR: 1.40e-04
+  Epoch 33 | Batch 200 | Loss: 0.6523 | LR: 1.40e-04
+  Epoch 33 | Batch 250 | Loss: 0.7771 | LR: 1.39e-04
+  Epoch 33 | Batch 300 | Loss: 0.9332 | LR: 1.38e-04
+  Epoch 33 | Batch 350 | Loss: 0.5106 | LR: 1.37e-04
+  Epoch 33 | Batch 400 | Loss: 0.7301 | LR: 1.36e-04
+  Epoch 33 | Batch 450 | Loss: 0.6177 | LR: 1.36e-04
+  [dev] Loss: 0.8509 | CER: 0.1955 | WER: 0.7514
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтьцен забозичня мала грактриві сталого застусванняв 
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли ахів в їврописький часто нім берій никазав злести восковюю ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце ногиноцять вавка зубогодуюй
+
+Epoch 33/60 | Train loss: 0.7251 | Dev CER: 0.1955 | Dev loss: 0.8509 | Time: 64s
+  theta: L0:0.258(243ms) L1:0.445(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.451(139ms) L5:0.197(318ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 34 | Batch 0 | Loss: 0.7738 | LR: 1.35e-04
+  Epoch 34 | Batch 50 | Loss: 0.6777 | LR: 1.34e-04
+  Epoch 34 | Batch 100 | Loss: 1.0510 | LR: 1.33e-04
+  Epoch 34 | Batch 150 | Loss: 0.7891 | LR: 1.33e-04
+  Epoch 34 | Batch 200 | Loss: 0.6037 | LR: 1.32e-04
+  Epoch 34 | Batch 250 | Loss: 1.0352 | LR: 1.31e-04
+  Epoch 34 | Batch 300 | Loss: 0.6828 | LR: 1.30e-04
+  Epoch 34 | Batch 350 | Loss: 0.4124 | LR: 1.29e-04
+  Epoch 34 | Batch 400 | Loss: 0.8507 | LR: 1.29e-04
+  Epoch 34 | Batch 450 | Loss: 0.7498 | LR: 1.28e-04
+  [dev] Loss: 0.7879 | CER: 0.1909 | WER: 0.7489
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтьцен за позичні мала грактріві сталого застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів їв ропийський частонім перій на казав звестивмосковюю ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вовка зобогодуюй
+
+Epoch 34/60 | Train loss: 0.7173 | Dev CER: 0.1909 | Dev loss: 0.7879 | Time: 66s
+  theta: L0:0.258(243ms) L1:0.445(141ms) L2:0.256(246ms) L3:0.302(208ms) L4:0.451(139ms) L5:0.197(319ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 35 | Batch 0 | Loss: 0.4982 | LR: 1.27e-04
+  Epoch 35 | Batch 50 | Loss: 0.7231 | LR: 1.27e-04
+  Epoch 35 | Batch 100 | Loss: 0.8763 | LR: 1.26e-04
+  Epoch 35 | Batch 150 | Loss: 0.9882 | LR: 1.25e-04
+  Epoch 35 | Batch 200 | Loss: 0.9065 | LR: 1.24e-04
+  Epoch 35 | Batch 250 | Loss: 0.8472 | LR: 1.23e-04
+  Epoch 35 | Batch 300 | Loss: 0.4336 | LR: 1.23e-04
+  Epoch 35 | Batch 350 | Loss: 1.0358 | LR: 1.22e-04
+  Epoch 35 | Batch 400 | Loss: 0.4571 | LR: 1.21e-04
+  Epoch 35 | Batch 450 | Loss: 0.4579 | LR: 1.20e-04
+  [dev] Loss: 0.7993 | CER: 0.1904 | WER: 0.7427
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтьце забозичні мала грактрівідсталого застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: митряли архів ів рописькой частонім берій на казав злестивосковюю ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вовка зубигодуюй
+
+Epoch 35/60 | Train loss: 0.7158 | Dev CER: 0.1904 | Dev loss: 0.7993 | Time: 67s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.256(245ms) L3:0.304(207ms) L4:0.451(139ms) L5:0.197(319ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 36 | Batch 0 | Loss: 0.6995 | LR: 1.20e-04
+  Epoch 36 | Batch 50 | Loss: 0.5980 | LR: 1.19e-04
+  Epoch 36 | Batch 100 | Loss: 0.6504 | LR: 1.18e-04
+  Epoch 36 | Batch 150 | Loss: 0.6181 | LR: 1.17e-04
+  Epoch 36 | Batch 200 | Loss: 0.5115 | LR: 1.16e-04
+  Epoch 36 | Batch 250 | Loss: 0.5737 | LR: 1.16e-04
+  Epoch 36 | Batch 300 | Loss: 0.7643 | LR: 1.15e-04
+  Epoch 36 | Batch 350 | Loss: 0.6347 | LR: 1.14e-04
+  Epoch 36 | Batch 400 | Loss: 0.9935 | LR: 1.13e-04
+  Epoch 36 | Batch 450 | Loss: 0.7853 | LR: 1.13e-04
+  [dev] Loss: 0.8197 | CER: 0.1921 | WER: 0.7435
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичні мала грактрі відсталого застосваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів їв ропизьк ю частонім берій наказав з вести в московюю ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагинацять вавка зобогодуюй
+
+Epoch 36/60 | Train loss: 0.7130 | Dev CER: 0.1921 | Dev loss: 0.8197 | Time: 66s
+  theta: L0:0.259(242ms) L1:0.445(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.451(139ms) L5:0.195(321ms)
+  Epoch 37 | Batch 0 | Loss: 0.6199 | LR: 1.12e-04
+  Epoch 37 | Batch 50 | Loss: 0.5943 | LR: 1.11e-04
+  Epoch 37 | Batch 100 | Loss: 0.4932 | LR: 1.10e-04
+  Epoch 37 | Batch 150 | Loss: 0.7146 | LR: 1.10e-04
+  Epoch 37 | Batch 200 | Loss: 0.9247 | LR: 1.09e-04
+  Epoch 37 | Batch 250 | Loss: 0.6766 | LR: 1.08e-04
+  Epoch 37 | Batch 300 | Loss: 0.6529 | LR: 1.07e-04
+  Epoch 37 | Batch 350 | Loss: 0.6743 | LR: 1.07e-04
+  Epoch 37 | Batch 400 | Loss: 0.6953 | LR: 1.06e-04
+  Epoch 37 | Batch 450 | Loss: 0.6965 | LR: 1.05e-04
+  [dev] Loss: 0.8162 | CER: 0.1903 | WER: 0.7383
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтце запозичні мала грактріві стало в застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архівів рописькию частонім перій наказав звестив московію ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: зайце нагиноцять вавка зобигодуюй
+
+Epoch 37/60 | Train loss: 0.7097 | Dev CER: 0.1903 | Dev loss: 0.8162 | Time: 68s
+  theta: L0:0.259(242ms) L1:0.445(141ms) L2:0.256(246ms) L3:0.304(207ms) L4:0.451(139ms) L5:0.195(323ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 38 | Batch 0 | Loss: 0.7848 | LR: 1.05e-04
+  Epoch 38 | Batch 50 | Loss: 0.8029 | LR: 1.04e-04
+  Epoch 38 | Batch 100 | Loss: 0.5674 | LR: 1.03e-04
+  Epoch 38 | Batch 150 | Loss: 0.6292 | LR: 1.02e-04
+  Epoch 38 | Batch 200 | Loss: 0.9266 | LR: 1.01e-04
+  Epoch 38 | Batch 250 | Loss: 0.6896 | LR: 1.01e-04
+  Epoch 38 | Batch 300 | Loss: 0.5290 | LR: 9.99e-05
+  Epoch 38 | Batch 350 | Loss: 0.7009 | LR: 9.92e-05
+  Epoch 38 | Batch 400 | Loss: 0.5365 | LR: 9.84e-05
+  Epoch 38 | Batch 450 | Loss: 0.6847 | LR: 9.77e-05
+  [dev] Loss: 0.8024 | CER: 0.1889 | WER: 0.7341
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нельтцен запозичені мала грактрівідсталов застусвання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в їв рописькию частонім перій неказав звести в московію ще потропе
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагинацять вавка зобиготуюй
+
+Epoch 38/60 | Train loss: 0.6966 | Dev CER: 0.1889 | Dev loss: 0.8024 | Time: 66s
+  theta: L0:0.259(242ms) L1:0.445(141ms) L2:0.256(246ms) L3:0.304(207ms) L4:0.451(139ms) L5:0.194(323ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 39 | Batch 0 | Loss: 0.4515 | LR: 9.71e-05
+  Epoch 39 | Batch 50 | Loss: 0.8268 | LR: 9.64e-05
+  Epoch 39 | Batch 100 | Loss: 0.5642 | LR: 9.56e-05
+  Epoch 39 | Batch 150 | Loss: 0.4301 | LR: 9.49e-05
+  Epoch 39 | Batch 200 | Loss: 0.3504 | LR: 9.41e-05
+  Epoch 39 | Batch 250 | Loss: 0.7738 | LR: 9.34e-05
+  Epoch 39 | Batch 300 | Loss: 0.8984 | LR: 9.26e-05
+  Epoch 39 | Batch 350 | Loss: 0.5345 | LR: 9.19e-05
+  Epoch 39 | Batch 400 | Loss: 0.7086 | LR: 9.12e-05
+  Epoch 39 | Batch 450 | Loss: 0.5913 | LR: 9.04e-05
+  [dev] Loss: 0.7913 | CER: 0.1860 | WER: 0.7339
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітцен забозиченя мала грактри відстало в засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архівв їв ропизькию частонім берій никазав з вести в московюю ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодуюй
+
+Epoch 39/60 | Train loss: 0.6724 | Dev CER: 0.1860 | Dev loss: 0.7913 | Time: 66s
+  theta: L0:0.260(242ms) L1:0.445(141ms) L2:0.255(246ms) L3:0.304(207ms) L4:0.451(139ms) L5:0.195(322ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 40 | Batch 0 | Loss: 0.4472 | LR: 8.99e-05
+  Epoch 40 | Batch 50 | Loss: 0.6358 | LR: 8.91e-05
+  Epoch 40 | Batch 100 | Loss: 0.6585 | LR: 8.84e-05
+  Epoch 40 | Batch 150 | Loss: 0.8607 | LR: 8.77e-05
+  Epoch 40 | Batch 200 | Loss: 0.5205 | LR: 8.70e-05
+  Epoch 40 | Batch 250 | Loss: 0.4192 | LR: 8.62e-05
+  Epoch 40 | Batch 300 | Loss: 0.9092 | LR: 8.55e-05
+  Epoch 40 | Batch 350 | Loss: 0.6129 | LR: 8.48e-05
+  Epoch 40 | Batch 400 | Loss: 0.5340 | LR: 8.41e-05
+  Epoch 40 | Batch 450 | Loss: 0.6452 | LR: 8.33e-05
+  [dev] Loss: 0.7966 | CER: 0.1862 | WER: 0.7362
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітцен забозичні мала грактрі відсталав засту свання
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частинім перій никазав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодуюй
+
+Epoch 40/60 | Train loss: 0.6730 | Dev CER: 0.1862 | Dev loss: 0.7966 | Time: 64s
+  theta: L0:0.260(242ms) L1:0.445(141ms) L2:0.255(246ms) L3:0.304(207ms) L4:0.452(139ms) L5:0.195(322ms)
+  Epoch 41 | Batch 0 | Loss: 0.8240 | LR: 8.28e-05
+  Epoch 41 | Batch 50 | Loss: 0.7549 | LR: 8.21e-05
+  Epoch 41 | Batch 100 | Loss: 0.6857 | LR: 8.14e-05
+  Epoch 41 | Batch 150 | Loss: 0.7604 | LR: 8.07e-05
+  Epoch 41 | Batch 200 | Loss: 0.6998 | LR: 8.00e-05
+  Epoch 41 | Batch 250 | Loss: 0.8708 | LR: 7.92e-05
+  Epoch 41 | Batch 300 | Loss: 0.6927 | LR: 7.85e-05
+  Epoch 41 | Batch 350 | Loss: 0.6649 | LR: 7.78e-05
+  Epoch 41 | Batch 400 | Loss: 0.7792 | LR: 7.71e-05
+  Epoch 41 | Batch 450 | Loss: 0.6865 | LR: 7.64e-05
+  [dev] Loss: 0.7770 | CER: 0.1843 | WER: 0.7275
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце запозачені мала грактрі відстало в засто сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в ів ропиською частиніїм перії наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагиноцять вавка зобигодуюй
+
+Epoch 41/60 | Train loss: 0.6809 | Dev CER: 0.1843 | Dev loss: 0.7770 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.444(141ms) L2:0.255(246ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.195(322ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 42 | Batch 0 | Loss: 0.5136 | LR: 7.59e-05
+  Epoch 42 | Batch 50 | Loss: 0.7997 | LR: 7.52e-05
+  Epoch 42 | Batch 100 | Loss: 0.5217 | LR: 7.45e-05
+  Epoch 42 | Batch 150 | Loss: 1.1693 | LR: 7.38e-05
+  Epoch 42 | Batch 200 | Loss: 0.6565 | LR: 7.32e-05
+  Epoch 42 | Batch 250 | Loss: 0.5561 | LR: 7.25e-05
+  Epoch 42 | Batch 300 | Loss: 0.5882 | LR: 7.18e-05
+  Epoch 42 | Batch 350 | Loss: 0.6257 | LR: 7.11e-05
+  Epoch 42 | Batch 400 | Loss: 0.3458 | LR: 7.04e-05
+  Epoch 42 | Batch 450 | Loss: 0.8059 | LR: 6.97e-05
+  [dev] Loss: 0.7924 | CER: 0.1841 | WER: 0.7278
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичні мала грактрівідсталово застусваня
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів їв рописькию частонім перій наказав звести в осковію ще потропарші
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагиноцять вавка зобиготуюй
+
+Epoch 42/60 | Train loss: 0.6627 | Dev CER: 0.1841 | Dev loss: 0.7924 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.255(246ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(323ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 43 | Batch 0 | Loss: 0.5325 | LR: 6.93e-05
+  Epoch 43 | Batch 50 | Loss: 0.8074 | LR: 6.86e-05
+  Epoch 43 | Batch 100 | Loss: 0.6429 | LR: 6.79e-05
+  Epoch 43 | Batch 150 | Loss: 0.7041 | LR: 6.72e-05
+  Epoch 43 | Batch 200 | Loss: 0.8002 | LR: 6.66e-05
+  Epoch 43 | Batch 250 | Loss: 0.7998 | LR: 6.59e-05
+  Epoch 43 | Batch 300 | Loss: 0.8138 | LR: 6.52e-05
+  Epoch 43 | Batch 350 | Loss: 0.7075 | LR: 6.46e-05
+  Epoch 43 | Batch 400 | Loss: 0.5814 | LR: 6.39e-05
+  Epoch 43 | Batch 450 | Loss: 0.4037 | LR: 6.33e-05
+  [dev] Loss: 0.8000 | CER: 0.1839 | WER: 0.7247
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літцен за бозичня мала грактрі відсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в їв рописькию частонії берій никазав з вести в московію ще потроп
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобогодуюй
+
+Epoch 43/60 | Train loss: 0.6400 | Dev CER: 0.1839 | Dev loss: 0.8000 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.255(246ms) L3:0.303(208ms) L4:0.452(139ms) L5:0.194(323ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 44 | Batch 0 | Loss: 0.9316 | LR: 6.28e-05
+  Epoch 44 | Batch 50 | Loss: 0.5349 | LR: 6.21e-05
+  Epoch 44 | Batch 100 | Loss: 0.6437 | LR: 6.15e-05
+  Epoch 44 | Batch 150 | Loss: 1.0679 | LR: 6.09e-05
+  Epoch 44 | Batch 200 | Loss: 0.5896 | LR: 6.02e-05
+  Epoch 44 | Batch 250 | Loss: 0.8498 | LR: 5.96e-05
+  Epoch 44 | Batch 300 | Loss: 1.6089 | LR: 5.89e-05
+  Epoch 44 | Batch 350 | Loss: 0.5983 | LR: 5.83e-05
+  Epoch 44 | Batch 400 | Loss: 0.6365 | LR: 5.77e-05
+  Epoch 44 | Batch 450 | Loss: 0.5708 | LR: 5.70e-05
+  [dev] Loss: 0.7864 | CER: 0.1836 | WER: 0.7246
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичня мала грактрі відсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряли архів в їв рописькию частонім берій никазав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодуютй
+
+Epoch 44/60 | Train loss: 0.6545 | Dev CER: 0.1836 | Dev loss: 0.7864 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 45 | Batch 0 | Loss: 0.7816 | LR: 5.66e-05
+  Epoch 45 | Batch 50 | Loss: 0.3862 | LR: 5.60e-05
+  Epoch 45 | Batch 100 | Loss: 0.5605 | LR: 5.53e-05
+  Epoch 45 | Batch 150 | Loss: 0.5687 | LR: 5.47e-05
+  Epoch 45 | Batch 200 | Loss: 0.9760 | LR: 5.41e-05
+  Epoch 45 | Batch 250 | Loss: 0.4670 | LR: 5.35e-05
+  Epoch 45 | Batch 300 | Loss: 0.6057 | LR: 5.29e-05
+  Epoch 45 | Batch 350 | Loss: 0.8395 | LR: 5.23e-05
+  Epoch 45 | Batch 400 | Loss: 0.9289 | LR: 5.17e-05
+  Epoch 45 | Batch 450 | Loss: 0.3837 | LR: 5.11e-05
+  [dev] Loss: 0.7990 | CER: 0.1837 | WER: 0.7239
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літьце запозичня мала грактрівідсталав засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: метряла архів в їв рописькию частонім перій никазав з вестив осковію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагиноцять вавко зобиготуюй
+
+Epoch 45/60 | Train loss: 0.6421 | Dev CER: 0.1837 | Dev loss: 0.7990 | Time: 66s
+  theta: L0:0.259(242ms) L1:0.445(141ms) L2:0.256(246ms) L3:0.303(208ms) L4:0.452(139ms) L5:0.194(324ms)
+  Epoch 46 | Batch 0 | Loss: 0.6410 | LR: 5.06e-05
+  Epoch 46 | Batch 50 | Loss: 0.5396 | LR: 5.00e-05
+  Epoch 46 | Batch 100 | Loss: 0.7948 | LR: 4.94e-05
+  Epoch 46 | Batch 150 | Loss: 0.6398 | LR: 4.88e-05
+  Epoch 46 | Batch 200 | Loss: 0.7034 | LR: 4.82e-05
+  Epoch 46 | Batch 250 | Loss: 0.4680 | LR: 4.77e-05
+  Epoch 46 | Batch 300 | Loss: 0.3850 | LR: 4.71e-05
+  Epoch 46 | Batch 350 | Loss: 0.7637 | LR: 4.65e-05
+  Epoch 46 | Batch 400 | Loss: 0.7335 | LR: 4.59e-05
+  Epoch 46 | Batch 450 | Loss: 0.6657 | LR: 4.53e-05
+  [dev] Loss: 0.7837 | CER: 0.1814 | WER: 0.7181
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичні мала грактрі відстало в застусванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частонім перій наказав звести в московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодуюй
+
+Epoch 46/60 | Train loss: 0.6501 | Dev CER: 0.1814 | Dev loss: 0.7837 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(208ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 47 | Batch 0 | Loss: 0.6883 | LR: 4.49e-05
+  Epoch 47 | Batch 50 | Loss: 0.7026 | LR: 4.44e-05
+  Epoch 47 | Batch 100 | Loss: 0.4808 | LR: 4.38e-05
+  Epoch 47 | Batch 150 | Loss: 0.4275 | LR: 4.32e-05
+  Epoch 47 | Batch 200 | Loss: 0.4402 | LR: 4.27e-05
+  Epoch 47 | Batch 250 | Loss: 0.7148 | LR: 4.21e-05
+  Epoch 47 | Batch 300 | Loss: 0.4529 | LR: 4.16e-05
+  Epoch 47 | Batch 350 | Loss: 0.5988 | LR: 4.10e-05
+  Epoch 47 | Batch 400 | Loss: 0.6708 | LR: 4.05e-05
+  Epoch 47 | Batch 450 | Loss: 0.6617 | LR: 3.99e-05
+  [dev] Loss: 0.7858 | CER: 0.1807 | WER: 0.7225
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце запозиченя мала грактрі відсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частонім перій наказав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодують
+
+Epoch 47/60 | Train loss: 0.6250 | Dev CER: 0.1807 | Dev loss: 0.7858 | Time: 67s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 48 | Batch 0 | Loss: 0.5856 | LR: 3.95e-05
+  Epoch 48 | Batch 50 | Loss: 0.5764 | LR: 3.90e-05
+  Epoch 48 | Batch 100 | Loss: 0.6037 | LR: 3.85e-05
+  Epoch 48 | Batch 150 | Loss: 0.8280 | LR: 3.79e-05
+  Epoch 48 | Batch 200 | Loss: 0.7545 | LR: 3.74e-05
+  Epoch 48 | Batch 250 | Loss: 0.5737 | LR: 3.69e-05
+  Epoch 48 | Batch 300 | Loss: 0.4149 | LR: 3.64e-05
+  Epoch 48 | Batch 350 | Loss: 0.4601 | LR: 3.58e-05
+  Epoch 48 | Batch 400 | Loss: 0.7208 | LR: 3.53e-05
+  Epoch 48 | Batch 450 | Loss: 0.4513 | LR: 3.48e-05
+  [dev] Loss: 0.7867 | CER: 0.1805 | WER: 0.7172
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичня мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частиніїм перій наказав звестив московію ще потроп
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодують
+
+Epoch 48/60 | Train loss: 0.6356 | Dev CER: 0.1805 | Dev loss: 0.7867 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 49 | Batch 0 | Loss: 0.6738 | LR: 3.44e-05
+  Epoch 49 | Batch 50 | Loss: 0.7692 | LR: 3.39e-05
+  Epoch 49 | Batch 100 | Loss: 0.4316 | LR: 3.34e-05
+  Epoch 49 | Batch 150 | Loss: 0.7297 | LR: 3.29e-05
+  Epoch 49 | Batch 200 | Loss: 0.7008 | LR: 3.24e-05
+  Epoch 49 | Batch 250 | Loss: 0.4869 | LR: 3.20e-05
+  Epoch 49 | Batch 300 | Loss: 0.8565 | LR: 3.15e-05
+  Epoch 49 | Batch 350 | Loss: 0.2602 | LR: 3.10e-05
+  Epoch 49 | Batch 400 | Loss: 0.4484 | LR: 3.05e-05
+  Epoch 49 | Batch 450 | Loss: 0.4598 | LR: 3.00e-05
+  [dev] Loss: 0.7847 | CER: 0.1801 | WER: 0.7179
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичня мала грактрі відсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частонім берій наказав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодують
+
+Epoch 49/60 | Train loss: 0.6267 | Dev CER: 0.1801 | Dev loss: 0.7847 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 50 | Batch 0 | Loss: 1.0364 | LR: 2.97e-05
+  Epoch 50 | Batch 50 | Loss: 0.7369 | LR: 2.92e-05
+  Epoch 50 | Batch 100 | Loss: 0.3378 | LR: 2.87e-05
+  Epoch 50 | Batch 150 | Loss: 0.4666 | LR: 2.83e-05
+  Epoch 50 | Batch 200 | Loss: 0.8445 | LR: 2.78e-05
+  Epoch 50 | Batch 250 | Loss: 0.6581 | LR: 2.73e-05
+  Epoch 50 | Batch 300 | Loss: 0.6451 | LR: 2.69e-05
+  Epoch 50 | Batch 350 | Loss: 0.3981 | LR: 2.64e-05
+  Epoch 50 | Batch 400 | Loss: 0.6022 | LR: 2.60e-05
+  Epoch 50 | Batch 450 | Loss: 0.6927 | LR: 2.56e-05
+  [dev] Loss: 0.7776 | CER: 0.1797 | WER: 0.7163
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце забозиченя мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частонім берії наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавко зобигодуютй
+
+Epoch 50/60 | Train loss: 0.6390 | Dev CER: 0.1797 | Dev loss: 0.7776 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 51 | Batch 0 | Loss: 0.6081 | LR: 2.52e-05
+  Epoch 51 | Batch 50 | Loss: 0.5699 | LR: 2.48e-05
+  Epoch 51 | Batch 100 | Loss: 0.4019 | LR: 2.44e-05
+  Epoch 51 | Batch 150 | Loss: 0.6663 | LR: 2.39e-05
+  Epoch 51 | Batch 200 | Loss: 0.6064 | LR: 2.35e-05
+  Epoch 51 | Batch 250 | Loss: 0.6699 | LR: 2.31e-05
+  Epoch 51 | Batch 300 | Loss: 0.5466 | LR: 2.27e-05
+  Epoch 51 | Batch 350 | Loss: 0.7059 | LR: 2.22e-05
+  Epoch 51 | Batch 400 | Loss: 0.4910 | LR: 2.18e-05
+  Epoch 51 | Batch 450 | Loss: 0.7280 | LR: 2.14e-05
+  [dev] Loss: 0.7845 | CER: 0.1786 | WER: 0.7117
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце забозичня мала грактрівідсталов застусванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частонім берій наказав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодуюй
+
+Epoch 51/60 | Train loss: 0.6230 | Dev CER: 0.1786 | Dev loss: 0.7845 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 52 | Batch 0 | Loss: 0.6794 | LR: 2.11e-05
+  Epoch 52 | Batch 50 | Loss: 0.6426 | LR: 2.07e-05
+  Epoch 52 | Batch 100 | Loss: 0.6016 | LR: 2.03e-05
+  Epoch 52 | Batch 150 | Loss: 0.7368 | LR: 1.99e-05
+  Epoch 52 | Batch 200 | Loss: 0.4833 | LR: 1.95e-05
+  Epoch 52 | Batch 250 | Loss: 0.8151 | LR: 1.92e-05
+  Epoch 52 | Batch 300 | Loss: 0.5286 | LR: 1.88e-05
+  Epoch 52 | Batch 350 | Loss: 0.6462 | LR: 1.84e-05
+  Epoch 52 | Batch 400 | Loss: 1.0592 | LR: 1.80e-05
+  Epoch 52 | Batch 450 | Loss: 0.7832 | LR: 1.77e-05
+  [dev] Loss: 0.7819 | CER: 0.1794 | WER: 0.7132
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітьце забозичня мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропизькию частоніїм перій наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагиноцять вавка зобигодуюй
+
+Epoch 52/60 | Train loss: 0.6317 | Dev CER: 0.1794 | Dev loss: 0.7819 | Time: 67s
+  theta: L0:0.259(243ms) L1:0.445(141ms) L2:0.256(245ms) L3:0.303(207ms) L4:0.452(139ms) L5:0.194(324ms)
+  Epoch 53 | Batch 0 | Loss: 0.5604 | LR: 1.74e-05
+  Epoch 53 | Batch 50 | Loss: 0.6866 | LR: 1.70e-05
+  Epoch 53 | Batch 100 | Loss: 0.5929 | LR: 1.67e-05
+  Epoch 53 | Batch 150 | Loss: 0.5947 | LR: 1.63e-05
+  Epoch 53 | Batch 200 | Loss: 1.0119 | LR: 1.60e-05
+  Epoch 53 | Batch 250 | Loss: 0.8404 | LR: 1.56e-05
+  Epoch 53 | Batch 300 | Loss: 0.4993 | LR: 1.53e-05
+  Epoch 53 | Batch 350 | Loss: 0.7778 | LR: 1.49e-05
+  Epoch 53 | Batch 400 | Loss: 0.5353 | LR: 1.46e-05
+  Epoch 53 | Batch 450 | Loss: 0.5748 | LR: 1.42e-05
+  [dev] Loss: 0.7855 | CER: 0.1795 | WER: 0.7132
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичні мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв рописькию частонім перій наказав звестив московію ще потропар
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце нагиноцять вавка зобигодуюй
+
+Epoch 53/60 | Train loss: 0.6277 | Dev CER: 0.1795 | Dev loss: 0.7855 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  Epoch 54 | Batch 0 | Loss: 0.6047 | LR: 1.40e-05
+  Epoch 54 | Batch 50 | Loss: 0.6609 | LR: 1.37e-05
+  Epoch 54 | Batch 100 | Loss: 0.5209 | LR: 1.34e-05
+  Epoch 54 | Batch 150 | Loss: 0.6021 | LR: 1.30e-05
+  Epoch 54 | Batch 200 | Loss: 0.6871 | LR: 1.27e-05
+  Epoch 54 | Batch 250 | Loss: 0.8433 | LR: 1.24e-05
+  Epoch 54 | Batch 300 | Loss: 0.5561 | LR: 1.21e-05
+  Epoch 54 | Batch 350 | Loss: 0.3315 | LR: 1.18e-05
+  Epoch 54 | Batch 400 | Loss: 0.7637 | LR: 1.15e-05
+  Epoch 54 | Batch 450 | Loss: 0.6684 | LR: 1.12e-05
+  [dev] Loss: 0.7788 | CER: 0.1789 | WER: 0.7126
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичні мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архівв їв рописькию частонім перій наказав звестив московію ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодують
+
+Epoch 54/60 | Train loss: 0.6180 | Dev CER: 0.1789 | Dev loss: 0.7788 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  Epoch 55 | Batch 0 | Loss: 0.5706 | LR: 1.10e-05
+  Epoch 55 | Batch 50 | Loss: 0.4073 | LR: 1.07e-05
+  Epoch 55 | Batch 100 | Loss: 0.6930 | LR: 1.04e-05
+  Epoch 55 | Batch 150 | Loss: 0.4307 | LR: 1.02e-05
+  Epoch 55 | Batch 200 | Loss: 0.6920 | LR: 9.88e-06
+  Epoch 55 | Batch 250 | Loss: 1.0082 | LR: 9.61e-06
+  Epoch 55 | Batch 300 | Loss: 0.4827 | LR: 9.34e-06
+  Epoch 55 | Batch 350 | Loss: 0.4309 | LR: 9.08e-06
+  Epoch 55 | Batch 400 | Loss: 0.4075 | LR: 8.82e-06
+  Epoch 55 | Batch 450 | Loss: 0.6640 | LR: 8.56e-06
+  [dev] Loss: 0.7800 | CER: 0.1786 | WER: 0.7120
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичня мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архівв їв рописькию частонім перій наказав звестив московію ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодуютй
+
+Epoch 55/60 | Train loss: 0.6102 | Dev CER: 0.1786 | Dev loss: 0.7800 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  Epoch 56 | Batch 0 | Loss: 0.5847 | LR: 8.38e-06
+  Epoch 56 | Batch 50 | Loss: 0.5408 | LR: 8.13e-06
+  Epoch 56 | Batch 100 | Loss: 0.6449 | LR: 7.89e-06
+  Epoch 56 | Batch 150 | Loss: 0.7424 | LR: 7.65e-06
+  Epoch 56 | Batch 200 | Loss: 0.3845 | LR: 7.42e-06
+  Epoch 56 | Batch 250 | Loss: 0.7915 | LR: 7.18e-06
+  Epoch 56 | Batch 300 | Loss: 0.4852 | LR: 6.96e-06
+  Epoch 56 | Batch 350 | Loss: 0.6974 | LR: 6.73e-06
+  Epoch 56 | Batch 400 | Loss: 0.7368 | LR: 6.51e-06
+  Epoch 56 | Batch 450 | Loss: 0.5491 | LR: 6.30e-06
+  [dev] Loss: 0.7826 | CER: 0.1789 | WER: 0.7107
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичня мала грактрі відсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архівв їв рописькию частонім перій наказав звестив московію ще потропарш
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодуютй
+
+Epoch 56/60 | Train loss: 0.6172 | Dev CER: 0.1789 | Dev loss: 0.7826 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  Epoch 57 | Batch 0 | Loss: 0.4124 | LR: 6.15e-06
+  Epoch 57 | Batch 50 | Loss: 0.4588 | LR: 5.94e-06
+  Epoch 57 | Batch 100 | Loss: 0.5010 | LR: 5.74e-06
+  Epoch 57 | Batch 150 | Loss: 0.4534 | LR: 5.54e-06
+  Epoch 57 | Batch 200 | Loss: 0.7311 | LR: 5.34e-06
+  Epoch 57 | Batch 250 | Loss: 0.6683 | LR: 5.15e-06
+  Epoch 57 | Batch 300 | Loss: 0.6084 | LR: 4.97e-06
+  Epoch 57 | Batch 350 | Loss: 0.4685 | LR: 4.78e-06
+  Epoch 57 | Batch 400 | Loss: 0.3622 | LR: 4.61e-06
+  Epoch 57 | Batch 450 | Loss: 0.7954 | LR: 4.43e-06
+  [dev] Loss: 0.7835 | CER: 0.1786 | WER: 0.7117
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце запозичні мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частонім перій наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодуютй
+
+Epoch 57/60 | Train loss: 0.5997 | Dev CER: 0.1786 | Dev loss: 0.7835 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 58 | Batch 0 | Loss: 0.4033 | LR: 4.31e-06
+  Epoch 58 | Batch 50 | Loss: 0.4396 | LR: 4.14e-06
+  Epoch 58 | Batch 100 | Loss: 0.4059 | LR: 3.98e-06
+  Epoch 58 | Batch 150 | Loss: 0.3669 | LR: 3.82e-06
+  Epoch 58 | Batch 200 | Loss: 0.4987 | LR: 3.67e-06
+  Epoch 58 | Batch 250 | Loss: 0.4972 | LR: 3.52e-06
+  Epoch 58 | Batch 300 | Loss: 0.5611 | LR: 3.38e-06
+  Epoch 58 | Batch 350 | Loss: 0.6569 | LR: 3.24e-06
+  Epoch 58 | Batch 400 | Loss: 0.6233 | LR: 3.10e-06
+  Epoch 58 | Batch 450 | Loss: 0.5391 | LR: 2.97e-06
+  [dev] Loss: 0.7801 | CER: 0.1783 | WER: 0.7115
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але не літце запозичні мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частонім перій наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодують
+
+Epoch 58/60 | Train loss: 0.6176 | Dev CER: 0.1783 | Dev loss: 0.7801 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+  Epoch 59 | Batch 0 | Loss: 0.5845 | LR: 2.87e-06
+  Epoch 59 | Batch 50 | Loss: 0.7268 | LR: 2.75e-06
+  Epoch 59 | Batch 100 | Loss: 0.7448 | LR: 2.63e-06
+  Epoch 59 | Batch 150 | Loss: 0.5724 | LR: 2.51e-06
+  Epoch 59 | Batch 200 | Loss: 0.4444 | LR: 2.40e-06
+  Epoch 59 | Batch 250 | Loss: 0.6123 | LR: 2.29e-06
+  Epoch 59 | Batch 300 | Loss: 0.4933 | LR: 2.19e-06
+  Epoch 59 | Batch 350 | Loss: 0.4879 | LR: 2.09e-06
+  Epoch 59 | Batch 400 | Loss: 0.6411 | LR: 1.99e-06
+  Epoch 59 | Batch 450 | Loss: 0.4565 | LR: 1.90e-06
+  [dev] Loss: 0.7827 | CER: 0.1784 | WER: 0.7109
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичня мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частонім перій наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодують
+
+Epoch 59/60 | Train loss: 0.6102 | Dev CER: 0.1784 | Dev loss: 0.7827 | Time: 65s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  Epoch 60 | Batch 0 | Loss: 0.3628 | LR: 1.84e-06
+  Epoch 60 | Batch 50 | Loss: 0.9900 | LR: 1.76e-06
+  Epoch 60 | Batch 100 | Loss: 0.5828 | LR: 1.68e-06
+  Epoch 60 | Batch 150 | Loss: 0.6670 | LR: 1.60e-06
+  Epoch 60 | Batch 200 | Loss: 0.4807 | LR: 1.53e-06
+  Epoch 60 | Batch 250 | Loss: 0.6205 | LR: 1.47e-06
+  Epoch 60 | Batch 300 | Loss: 0.4406 | LR: 1.41e-06
+  Epoch 60 | Batch 350 | Loss: 0.3920 | LR: 1.35e-06
+  Epoch 60 | Batch 400 | Loss: 1.0216 | LR: 1.30e-06
+  Epoch 60 | Batch 450 | Loss: 0.5688 | LR: 1.25e-06
+  [dev] Loss: 0.7804 | CER: 0.1782 | WER: 0.7109
+    REF: але навіть це запозичення мало характер відсталого застосування
+    HYP: але нелітце запозичня мала грактрівідсталов засту сванняв
+
+    REF: матеріали архівів європейської частини імперії наказав звезти в московію ще петр
+    HYP: матряла архів в їв ропийськию частонім перій наказав звестив московію ще потропа
+
+    REF: зайця ноги носять вовка зуби годують
+    HYP: сайце ногиноцять вавка зобигодують
+
+Epoch 60/60 | Train loss: 0.6137 | Dev CER: 0.1782 | Dev loss: 0.7804 | Time: 66s
+  theta: L0:0.259(243ms) L1:0.446(141ms) L2:0.256(246ms) L3:0.303(207ms) L4:0.453(139ms) L5:0.194(324ms)
+  New best! Saved to ./outputs/run-012_d_cos2_headscale/best_bidir_rwkv6_cplx_d_cos2.pt
+
+--- Final Test Evaluation (bidir_rwkv6_cplx_d_cos2) ---
+  [test] Loss: 0.8558 | CER: 0.1977 | WER: 0.7212
+    REF: він хотів стягти її з вагончика
+    HYP: і хотюстігтию зугуншк
+
+    REF: відтоді я встиг об'їхати увесь світ
+    HYP: відтуді ястихобіхоти увей світ
+
+    REF: ох гарні були часи
+    HYP: ох гань бучаси
+
+  Sample predictions saved to ./outputs/run-012_d_cos2_headscale/samples_bidir_rwkv6_cplx_d_cos2.txt
+
+--- Chunked Inference: RESET-STATE (bidir_rwkv6_cplx_d_cos2) ---
+  Chunk 2.0s (reset) ...
+    CER: 0.2276 | WER: 0.7843
+  Chunk 5.0s (reset) ...
+    CER: 0.2010 | WER: 0.7246
+  Chunk 10.0s (reset) ...
+    CER: 0.1961 | WER: 0.7148
+
+  Carry-state: N/A for bidir_rwkv6_cplx_d_cos2 (stateless architecture)
+Results saved to ./outputs/run-012_d_cos2_headscale/results.json
+
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance metrics
+Backbone                     Params  BestDev  TestLoss  TestCER  TestWER
+------------------------------------------------------------------------
+bidir_rwkv6_cplx_d_cos2       7.74M   0.1782    0.8558   0.1977   0.7212
+
+  Table 2: Reset-state chunked evaluation
+Backbone                      R@2s_CER    R@2s_WER    R@5s_CER    R@5s_WER   R@10s_CER   R@10s_WER
+--------------------------------------------------------------------------------------------------
+bidir_rwkv6_cplx_d_cos2         0.2276      0.7843      0.2010      0.7246      0.1961      0.7148
+Tables saved to ./outputs/run-012_d_cos2_headscale/results_tables.txt
+  convergence.pdf / .png
+  chunked_cer_reset.pdf / .png
+  carry_vs_reset: no stateful backbones with results, skipping
+All plots saved to ./outputs/run-012_d_cos2_headscale/plots/
