@@ -283,6 +283,90 @@ RWKV-7's poor convergence was caused by three interacting init problems, not jus
 
 ---
 
+## Run 019 — Plain RWKV-6 / RWKV-7 at 100 Epochs (Cosine, Default SpecAugment)
+
+**Goal:** Re-check the plain unidirectional RWKV encoders under the default ASR
+recipe, but with longer training. The important constraints were: no bidir
+RWKV-6 variants, default SpecAugment retained, cosine scheduler, 100 epochs.
+
+### Results
+
+| Backbone | Best Ep | Best Dev CER | Test CER | Test WER |
+|----------|---------|--------------|----------|----------|
+| `rwkv6` | 87/100 | 0.2163 | 0.2371 | 0.8017 |
+| `rwkv7` | 83/100 | 0.3822 | 0.4000 | 0.9808 |
+
+Carry-state delta (reset − carry):
+
+| Backbone | Δ@2s | Δ@5s | Δ@10s |
+|----------|------|------|-------|
+| `rwkv6` | +0.0149 | -0.0320 | -0.0416 |
+| `rwkv7` | -0.0270 | -0.0395 | -0.0411 |
+
+### RWKV-6 Interpretation
+
+The important RWKV-6 result is **not** the absolute CER value by itself, but
+the mismatch between dev and test movement.
+
+Inside the 100-epoch run:
+
+- dev CER at epoch 60: **0.2286**
+- best dev CER at epoch 87: **0.2163**
+- final test CER: **0.2371**
+
+Relative to the earlier plain-RWKV6 result you already had (~**0.2355** test
+CER at 60 epochs), the 100-epoch rerun lands in essentially the same place on
+test. So extra optimization improves the in-distribution proxy (dev) but does
+not improve real held-out test performance.
+
+This strongly suggests that plain RWKV-6 is hitting a **generalisation ceiling**
+on this 35h setup, not a simple optimisation ceiling. “Data ceiling” is the
+right first explanation, though the more precise statement is:
+
+> The current plain-RWKV6 recipe can still fit train/dev better with more
+> epochs, but that extra fit does not transfer to the test split.
+
+That can be caused by both limited data and dev-test mismatch. The practical
+conclusion is the same: **more epochs alone are not the lever that changes the
+test ceiling for plain RWKV-6.**
+
+### RWKV-7 Interpretation
+
+Stock RWKV-7 remains poor even with 100 epochs:
+
+- `rwkv7` 100ep cosine: **0.4000** test CER
+- `rwkv7_fix_decay` 60ep WSD (run 018): **0.3776**
+- `rwkv7_fix_all` 60ep WSD (run 018): **0.2602**
+
+Longer training does **not** substitute for the init fixes. The stock RWKV-7
+problem is not “needs more epochs”; it is “starts in a bad operating regime.”
+Its carry-state also degrades chunked CER at every tested window, which is the
+opposite of the healthy behaviour seen in `rwkv7_fix_all`.
+
+### Short Answer — Why RWKV-7 Stock Mechanisms Degrade at This Scale
+
+The stock RWKV-7 defaults encode assumptions from larger autoregressive models,
+and those assumptions are harmful in this 6-layer, 256-dim, 35-hour ASR regime:
+
+1. `v_first` is too dominant and suppresses hierarchical feature formation.
+2. `k_a` weakens the already-small attention signal at init.
+3. Stock decay init is too narrow, so the model starts with too little usable memory.
+4. Even after repairs, RWKV-7 stays unidirectional, so it still cannot close the offline-ASR gap to stronger RWKV-6 variants.
+
+The “fixes” are therefore not generic small-scale boosters; they are **RWKV-7-specific repairs**.
+Without them, RWKV-7 degrades. With them, it becomes usable, but still not a
+best-model candidate for this dataset.
+
+### Best Model Choice For Now
+
+The selection rule is now clearer:
+
+1. **Best offline model overall:** keep `bidir_rwkv6_conv_nogate` (run 006, CER **0.1760**).
+2. **Best plain recurrent encoder:** use `rwkv6`, not `rwkv7`.
+3. **If RWKV-7 is revisited:** start from `rwkv7_fix_all`, never from stock `rwkv7`.
+
+---
+
 ## Ideas Evaluated but Not Applicable Now
 
 ### Option C — Top-k Sparse Attention
@@ -324,11 +408,13 @@ Approximation error: $O(1/\sqrt{m})$. At m=256, error ≈ 6%.
 | LION + ConvShift (nogate) | Best absolute CER (0.1760), confirmed useful | Baseline for future runs |
 | Headscale | Cheapest useful head-level modification (24 params, dev 0.1660) | Add to ConvShift, try 100 epochs |
 | Multi-scale depth prior | Confirmed by 5 mechanisms (runs 011, 012, 013, 014, 015) | Already encoded in layerconv + temperature |
+| Plain RWKV-6 | Best simple recurrent encoder; 100ep confirms the test ceiling but keeps it ahead of RWKV-7 | Keep only if unidirectional / carry-state encoder is required |
 
 ### Drop
 | Item | Why |
 |------|-----|
 | Mamba | 17% worse than LION, no carry-state benefit at inference |
+| Stock RWKV-7 | 100 epochs still gives 0.4000 CER; longer training does not replace the init fixes |
 | BiWKV6 (unless streaming needed) | 4% worse than LION, carry-state broken without special training |
 | Complex decay (cos, cos², D-cos²) | All worse; structural cost exceeds benefit |
 | Dual-decay | α never differentiates; 2× compute for marginal gain (0.1875 vs 0.1790) |
