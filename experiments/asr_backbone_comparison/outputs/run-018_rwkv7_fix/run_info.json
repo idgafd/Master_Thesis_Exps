@@ -1,0 +1,10 @@
+{
+  "run_id": "run-018_rwkv7_fix_20260314_0132",
+  "date": "2026-03-14T01:32:52",
+  "platform": "Linux-5.15.0-52-generic-x86_64-with-glibc2.39",
+  "python": "3.12.12",
+  "torch": "2.10.0+cu128",
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5090",
+  "gpu_vram_gb": 33.7
+}

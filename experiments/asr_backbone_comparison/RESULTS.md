@@ -33,6 +33,8 @@ Chunked evaluation: audio split into fixed-length chunks, decoded independently 
 | 016 | `bidir_rwkv6_temperature` | 7.74M | 0.2649 | 1.1899 | 0.2874 | 0.8924 | Strong reg (dropout=0.25, heavy SpecAug) |
 | 017 | `bidir_rwkv6_conv_nogate` | 7.75M | 0.2977 | 1.2390 | 0.3189 | 0.9132 | Strong reg (dropout=0.25, heavy SpecAug) |
 | 017 | `bidir_rwkv6_layerconv` | 7.75M | 0.2978 | 1.2341 | 0.3205 | 0.9020 | Strong reg (dropout=0.25, heavy SpecAug) |
+| 018 | `rwkv7_fix_decay` | 7.14M | 0.3570 | 1.4094 | 0.3776 | 0.9734 | RWKV-7 decay init fix only |
+| 018 | `rwkv7_fix_all` | 7.14M | 0.2388 | 1.0828 | 0.2602 | 0.8597 | RWKV-7 decay + v_first + k_a fixes |
 
 ---
 
@@ -66,6 +68,8 @@ Audio split into chunks decoded independently (no cross-chunk memory). Degradati
 | 016 | `bidir_rwkv6_temperature` (strong reg) | 0.2874 | 0.3172 | 0.2914 | 0.2858 |
 | 017 | `bidir_rwkv6_conv_nogate` (strong reg) | 0.3189 | 0.3408 | 0.3192 | 0.3154 |
 | 017 | `bidir_rwkv6_layerconv` (strong reg) | 0.3205 | 0.3449 | 0.3221 | 0.3170 |
+| 018 | `rwkv7_fix_decay` | 0.3776 | 0.3983 | 0.3808 | 0.3774 |
+| 018 | `rwkv7_fix_all` | 0.2602 | 0.2944 | 0.2655 | 0.2594 |
 
 ---
 
@@ -80,6 +84,8 @@ Hidden state carried across chunk boundaries (recurrent/SSM models only). Lower 
 | 007 | `biwkv6_no_conv_no_gate` | 0.2201 | 0.7122 | 0.7111 | 0.7137 |
 | 007 | `biwkv6` | 0.2211 | 0.7399 | 0.7398 | 0.7400 |
 | 009 | `biwkv6_no_conv_no_gate` (6L/100ep) | 0.1894 | 0.7733 | 0.7705 | 0.7695 |
+| 018 | `rwkv7_fix_decay` | 0.3776 | 0.3833 | 0.3782 | 0.3774 |
+| 018 | `rwkv7_fix_all` | 0.2602 | 0.2629 | 0.2600 | 0.2594 |
 
 > **Note**: Bidirectional models (LION and variants) are stateless by design — no carry-state eval applies. BiWKV6 carry-state is degraded (CER >0.7) because the 6-layer serial architecture with untrained carry-state init performs poorly; this was a known issue at time of run-007 evaluation (state init not optimised). Mamba carry-state is near full-utterance CER, confirming its streaming capability.
 
@@ -96,6 +102,8 @@ Positive = carry-state is better than reset; negative = carry-state hurts.
 | 007 | `biwkv6_no_conv_no_gate` | −0.4618 | −0.4855 | −0.4936 |
 | 007 | `biwkv6` | −0.4895 | −0.5137 | −0.5189 |
 | 009 | `biwkv6_no_conv_no_gate` (6L/100ep) | −0.5520 | −0.5755 | −0.5800 |
+| 018 | `rwkv7_fix_decay` | +0.0149 | +0.0026 | 0.0000 |
+| 018 | `rwkv7_fix_all` | +0.0315 | +0.0054 | 0.0000 |
 
 ---
 
@@ -115,3 +123,4 @@ Positive = carry-state is better than reset; negative = carry-state hurts.
 | Bidir linear attn | `bidir_linear_attention` | 0.2044 | 005 |
 | Mamba (best) | `mamba` (WSD-12) | 0.2098 | 003 |
 | Complex decay | `bidir_rwkv6_cplx_b` | 0.2140 | 010 |
+| RWKV-7 (fixed) | `rwkv7_fix_all` | 0.2602 | 018 |

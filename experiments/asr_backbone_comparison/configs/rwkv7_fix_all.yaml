@@ -1,0 +1,70 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RWKV-7 fix: all three initialization fixes
+#
+# Fixes applied:
+#   1. Decay: w0 += 2.0 → triton decay [0.007, 0.378] (was [0.0009, 0.111])
+#   2. Value residual: v0 = -5.0 → sigmoid = 0.007 (was 0.73, disables v_first)
+#   3. Key scaling: k_a = 0.0 → no init key halving (was k *= 0.5)
+#
+# Compared with rwkv7_fix_decay (fix 1 only) to measure incremental value
+# of disabling v_first and k_a at this model scale.
+# Same training setup as the original default runs (60 ep, WSD, d=256, 6L).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Data ─────────────────────────────────────────────────────────────────────
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+# ── Model ────────────────────────────────────────────────────────────────────
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+# ── LR Scheduler ─────────────────────────────────────────────────────────────
+scheduler_type: wsd
+wsd_decay_epochs: 12
+
+# ── SpecAugment ──────────────────────────────────────────────────────────────
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+# ── Evaluation ───────────────────────────────────────────────────────────────
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+output_dir: ./outputs/run-018_rwkv7_fix
+data_dir: ./data/cv_uk
+
+# ── Common Voice ─────────────────────────────────────────────────────────────
+cv_api_key: ""
+cv_dataset_id: "cmj8u3pys00t5nxxb56wugqgq"
+cv_tarball_name: "Common Voice Scripted Speech 24.0 - Ukrainian.tar.gz"
+
+# ── Backbones ────────────────────────────────────────────────────────────────
+backbones:
+  - rwkv7_fix_all

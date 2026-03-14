@@ -27,6 +27,7 @@ class ASRModel(nn.Module):
         "bidir_rwkv6_layerconv", "bidir_rwkv6_temperature",
         "biwkv6", "biwkv6_no_conv_no_gate",
         "bidir_vim_rwkv6", "bidir_vim_mamba",
+        "rwkv7_fix_decay", "rwkv7_fix_all",
     }
 
     def __init__(self, backbone_type: str, vocab_size: int, cfg: ExperimentConfig):
@@ -68,6 +69,20 @@ class ASRModel(nn.Module):
         if backbone_type == "rwkv7":
             from asr_exp.models.rwkv7 import RWKV7Encoder
             return RWKV7Encoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "rwkv7_fix_decay":
+            from asr_exp.models.rwkv7_fixed import RWKV7FixedEncoder
+            return RWKV7FixedEncoder(
+                cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size,
+                fix_decay=True, fix_vfirst=False, fix_ka=False,
+            )
+
+        if backbone_type == "rwkv7_fix_all":
+            from asr_exp.models.rwkv7_fixed import RWKV7FixedEncoder
+            return RWKV7FixedEncoder(
+                cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size,
+                fix_decay=True, fix_vfirst=True, fix_ka=True,
+            )
 
         if backbone_type == "bidir_rwkv6":
             from asr_exp.models.bidir_rwkv6 import BidirRWKV6Encoder

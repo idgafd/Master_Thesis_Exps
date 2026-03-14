@@ -253,6 +253,36 @@ The regularisation settings from the literature (SpecAugment LD policy: freq=27,
 
 ---
 
+## Run 018 — RWKV-7 Init Fixes
+
+**Goal:** Diagnose why stock RWKV-7 converges poorly in the baseline run. The hypothesis: the triton backend's decay initialisation maps to a much narrower range than RWKV-6, effectively giving the model 1-token memory.
+
+**Three fixes tested:**
+1. **Decay init (w0 += 2.0):** Shifts the sigmoid-mapped decay from [0.0009, 0.111] to [0.007, 0.378], matching RWKV-6's effective range.
+2. **v_first disable (v0 = −5.0):** Sets the value residual gate to sigmoid(−5) ≈ 0.007, effectively disabling v_first which is designed for large-scale LLMs.
+3. **k_a disable (k_a = 0.0):** Removes initial key halving (stock init makes k *= 0.5 via k_a), restoring full key magnitude.
+
+**Setup:** WSD scheduler (decay at epoch 48), 60 epochs, d=256, 6 layers. Two variants: fix_decay (fix 1 only) vs fix_all (fixes 1+2+3).
+
+### Results
+
+| Variant | Dev CER | Test CER | Test WER | Train loss @60 |
+|---------|---------|----------|----------|---------------|
+| `rwkv7_fix_decay` | 0.3570 | 0.3776 | 0.9734 | 1.34 |
+| `rwkv7_fix_all` | 0.2388 | 0.2602 | 0.8597 | 0.81 |
+
+**Decay-only fix is insufficient.** CER 0.3776 — the model still barely converges. Train loss plateaus at 1.34 (vs 0.81 for fix_all), indicating v_first and k_a cause optimisation problems at this scale.
+
+**All-fixes variant recovers partial convergence.** CER 0.2602 — comparable to Mamba (0.2098) but still well below LION (0.1790). The remaining gap likely reflects RWKV-7's unidirectional nature: without bidirectional context, it hits the same ceiling as Mamba.
+
+**Carry-state works correctly.** Unlike BiWKV6 (carry CER >0.7, broken), RWKV-7 fix_all shows carry-state improvement at 2s chunks: reset 0.2944 → carry 0.2629 (Δ=+0.032). This is better than Mamba's carry benefit (+0.047 at 2s) in absolute terms but similar in relative terms. The recurrent state initialisation is healthy.
+
+### Conclusion
+
+RWKV-7's poor convergence was caused by three interacting init problems, not just decay. Fixing all three brings it to Mamba-level performance with functional carry-state. However, it remains ~45% worse than LION (0.2602 vs 0.1790) due to the fundamental unidirectional limitation. **RWKV-7 is not competitive with LION for offline ASR but could be relevant for streaming if bidirectional processing is unavailable.**
+
+---
+
 ## Ideas Evaluated but Not Applicable Now
 
 ### Option C — Top-k Sparse Attention

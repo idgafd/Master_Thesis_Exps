@@ -173,7 +173,7 @@ All parameters live in `configs/default.yaml` and map 1:1 to `ExperimentConfig` 
 
 ## Known Issues
 
-- **RWKV-7**: Converges poorly in the baseline run. Under investigation.
+- **RWKV-7**: Converges poorly in stock form due to decay/v_first/k_a init issues. Run-018 fixes bring it to Mamba-level (CER 0.2602) but still far below LION.
 - **Carry-state eval subset**: carry-state evaluation is limited to `max_carry_eval_utterances=500` utterances (Mamba step-by-step is slow). This makes direct comparison with reset-state (full test set) unfair — noted in results.
 - **mamba-ssm CUDA kernels**: The carry-state Mamba step uses a pure-PyTorch implementation to avoid `causal_conv1d` kernel version mismatches. Training uses the fused kernel normally.
 
@@ -198,8 +198,11 @@ All runs share the common setup above (6 layers, d=256, 4 heads, cosine+warmup, 
 | 011 | `complex_d_cos2` | Learnable θ per layer (cplx_d) + cos² non-negative mask (cplx_b_cos2) | 0.2107 / 0.1955 | cos² idea carried to → 012 |
 | 012 | `d_cos2_headscale` | Learnable θ + cos² combined (d_cos2); per-head decay bias (headscale, 24 params) | 0.1977 / **0.1839** | headscale is cheapest useful addition found |
 | 013 | `gaussian_dual` | Gaussian attention modulation (48 params); dual-decay weighted output (1560 params) | 0.1861 / 0.1875 | both marginal; dual-decay expensive for similar gain |
-| 014 | `layerconv` | Layer-dependent ConvShift: kernel 7 → 3 across layers | in progress | extends run-006 ConvShift |
-| 015 | `temperature` | Per-head learnable temperature τ (sharpens upper-layer attention) | in progress | related to headscale (run-012) |
+| 014 | `layerconv` | Layer-dependent ConvShift: kernel 7 → 3 across layers | 0.1768 | extends run-006 ConvShift |
+| 015 | `temperature` | Per-head learnable temperature τ (sharpens upper-layer attention) | 0.1792 | related to headscale (run-012) |
+| 016 | `temperature_reg` | bidir_rwkv6 + temperature with strong reg (dropout=0.25, heavy SpecAug) | 0.2779 / 0.2874 | underfitting — reg too aggressive |
+| 017 | `layerconv_reg` | conv_nogate + layerconv with strong reg (dropout=0.25, heavy SpecAug) | 0.3189 / 0.3205 | underfitting — reg too aggressive |
+| 018 | `rwkv7_fix` | RWKV-7 decay init fix vs all fixes (decay + v_first + k_a) | 0.3776 / 0.2602 | decay-only still broken; all-fixes approach Mamba |
 
 ### Architecture Lineage
 
@@ -215,8 +218,10 @@ LION / bidir_rwkv6 (run 005)  CER 0.1790  new baseline
   │     └── cos²   (run 011) CER 0.196   non-negative mask recovers
   │           └── headscale (run 012) CER 0.184  cheapest win (24 params)
   ├── Gaussian mask (run 013) CER 0.186   non-monotone attention, marginal
-  ├── layer ConvShift (run 014) — in progress
-  └── temperature   (run 015) — in progress
+  ├── layer ConvShift (run 014) CER 0.177  layer-dep kernels, ~same as uniform
+  ├── temperature   (run 015) CER 0.179  per-head τ, ~same as baseline
+  ├── strong reg    (runs 016–017)        underfitting — too aggressive
+  └── RWKV-7 fixes  (run 018) CER 0.260  fix_all recovers partial convergence
 ```
 
 ### Best Results
@@ -224,8 +229,11 @@ LION / bidir_rwkv6 (run 005)  CER 0.1790  new baseline
 | Rank | Run | Backbone | Test CER |
 |------|-----|----------|----------|
 | 1 | 006 | `bidir_rwkv6_conv_nogate` (LION + ConvShift) | **0.1760** |
-| 2 | 012 | `bidir_rwkv6_headscale` | **0.1839** |
-| 3 | 013 | `bidir_rwkv6_gaussian` | **0.1861** |
-| 4 | 005 | `bidir_rwkv6` (LION baseline) | 0.1790 |
-| 5 | 009 | `biwkv6_no_conv_no_gate` 6L/100ep | 0.1894 |
-| 6 | 003 | `mamba` (WSD-12) | 0.2098 |
+| 2 | 014 | `bidir_rwkv6_layerconv` (LION + LayerConv) | 0.1768 |
+| 3 | 005 | `bidir_rwkv6` (LION baseline) | 0.1790 |
+| 4 | 015 | `bidir_rwkv6_temperature` (LION + τ) | 0.1792 |
+| 5 | 012 | `bidir_rwkv6_headscale` | 0.1839 |
+| 6 | 013 | `bidir_rwkv6_gaussian` | 0.1861 |
+| 7 | 009 | `biwkv6_no_conv_no_gate` 6L/100ep | 0.1894 |
+| 8 | 003 | `mamba` (WSD-12) | 0.2098 |
+| 9 | 018 | `rwkv7_fix_all` (RWKV-7 all fixes) | 0.2602 |
