@@ -7,34 +7,38 @@ Chunked evaluation: audio split into fixed-length chunks, decoded independently 
 
 ## Table 1 — Full-Utterance Metrics
 
-| Run | Backbone | Params | Best Dev CER | Test Loss | Test CER | Test WER | Notes |
-|-----|----------|--------|-------------|-----------|----------|----------|-------|
-| 003 | `mamba` | 7.70M | 0.1971 | 1.2556 | 0.2098 | 0.7599 | WSD decay @ ep 12 |
-| 004 | `mamba` | 7.70M | 0.1997 | 1.2300 | 0.2125 | 0.7688 | WSD decay @ ep 46 |
-| 005 | `bidir_linear_attention` | 7.44M | 0.1911 | 0.9011 | 0.2044 | 0.7673 | LION-D recurrence |
-| 005 | `bidir_rwkv6` | 7.74M | 0.1676 | 0.7988 | 0.1790 | 0.6704 | **LION baseline** |
-| 006 | `bidir_rwkv6_conv_nogate` | 7.75M | 0.1587 | 0.7585 | **0.1760** | **0.6563** | LION + ConvShift, no gate |
-| 006 | `bidir_rwkv6_conv` | 8.14M | 0.1635 | 0.7785 | 0.1813 | 0.6845 | LION + ConvShift + gate |
-| 007 | `biwkv6_no_conv_no_gate` | 7.74M | 0.2011 | 0.9123 | 0.2201 | 0.7788 | BiWKV6 serial bidir |
-| 007 | `biwkv6` | 7.94M | 0.2006 | 0.9340 | 0.2211 | 0.7830 | BiWKV6 + ConvShift + gate |
-| 008 | `bidir_rwkv6_conv_nogate` | 13.58M | 0.1624 | 0.8746 | 0.1816 | 0.6623 | LION 12-layer, 100 ep |
-| 009 | `biwkv6_no_conv_no_gate` | 13.56M | 0.1713 | 0.8185 | 0.1894 | 0.6774 | BiWKV6 6-layer, 100 ep |
-| 010 | `bidir_rwkv6_cplx_b` | 7.74M | 0.1932 | 0.9163 | 0.2140 | 0.7312 | Complex decay θ=0.31 |
-| 010 | `bidir_rwkv6_cplx_c` | 7.74M | 0.2109 | 0.9744 | 0.2322 | 0.7625 | Complex decay θ=0.90 |
-| 011 | `bidir_rwkv6_cplx_d` | 7.74M | 0.1909 | 0.9002 | 0.2107 | 0.7232 | Learnable θ per layer |
-| 011 | `bidir_rwkv6_cplx_b_cos2` | 7.74M | 0.1757 | 0.8546 | 0.1955 | 0.7181 | cos² mask, θ=0.31 |
-| 012 | `bidir_rwkv6_cplx_d_cos2` | 7.74M | 0.1782 | 0.8558 | 0.1977 | 0.7212 | Learnable θ + cos² mask |
-| 012 | `bidir_rwkv6_headscale` | 7.74M | 0.1660 | 0.8082 | 0.1839 | 0.6874 | Per-head decay bias (24 params) |
-| 013 | `bidir_rwkv6_gaussian` | 7.74M | 0.1693 | 0.8027 | 0.1861 | 0.6796 | Gaussian attn modulation |
-| 013 | `bidir_rwkv6_dual` | 7.74M | 0.1696 | 0.8220 | 0.1875 | 0.6903 | Dual-decay weighted output |
-| 014 | `bidir_rwkv6_layerconv` | 7.75M | 0.1574 | 0.7496 | 0.1768 | 0.6548 | Layer-dep ConvShift k=7→3 |
-| 015 | `bidir_rwkv6_temperature` | 7.74M | 0.1606 | 0.7900 | 0.1792 | 0.6681 | Per-head learnable τ |
-| 016 | `bidir_rwkv6` | 7.74M | 0.2546 | 1.1431 | 0.2779 | 0.8733 | Strong reg (dropout=0.25, heavy SpecAug) |
-| 016 | `bidir_rwkv6_temperature` | 7.74M | 0.2649 | 1.1899 | 0.2874 | 0.8924 | Strong reg (dropout=0.25, heavy SpecAug) |
-| 017 | `bidir_rwkv6_conv_nogate` | 7.75M | 0.2977 | 1.2390 | 0.3189 | 0.9132 | Strong reg (dropout=0.25, heavy SpecAug) |
-| 017 | `bidir_rwkv6_layerconv` | 7.75M | 0.2978 | 1.2341 | 0.3205 | 0.9020 | Strong reg (dropout=0.25, heavy SpecAug) |
-| 018 | `rwkv7_fix_decay` | 7.14M | 0.3570 | 1.4094 | 0.3776 | 0.9734 | RWKV-7 decay init fix only |
-| 018 | `rwkv7_fix_all` | 7.14M | 0.2388 | 1.0828 | 0.2602 | 0.8597 | RWKV-7 decay + v_first + k_a fixes |
+Frontend is identical across all runs: **1.90M params** (2-layer CNN + BatchNorm, 80-mel → 256-dim).
+Encoder = backbone only (RWKV / Mamba / attention blocks). Total = Frontend + Encoder + CTC head (~10K).
+Best Ep = best checkpoint epoch / total epochs scheduled.
+
+| Run | Backbone | Encoder | Total | Best Ep | Best Dev CER | Test Loss | Test CER | Test WER | Notes |
+|-----|----------|---------|-------|---------|-------------|-----------|----------|----------|-------|
+| 003 | `mamba` | 5.79M | 7.70M | 60/60 | 0.1971 | 1.2556 | 0.2098 | 0.7599 | WSD decay @ ep 12 |
+| 004 | `mamba` | 5.79M | 7.70M | 58/60 | 0.1997 | 1.2300 | 0.2125 | 0.7688 | WSD decay @ ep 46 |
+| 005 | `bidir_linear_attention` | 5.52M | 7.44M | 59/60 | 0.1911 | 0.9011 | 0.2044 | 0.7673 | LION-D recurrence |
+| 005 | `bidir_rwkv6` | 5.82M | 7.74M | 59/60 | 0.1676 | 0.7988 | 0.1790 | 0.6704 | **LION baseline** |
+| 006 | `bidir_rwkv6_conv_nogate` | 5.83M | 7.75M | 55/60 | 0.1587 | 0.7585 | **0.1760** | **0.6563** | LION + ConvShift, no gate |
+| 006 | `bidir_rwkv6_conv` | 6.23M | 8.14M | 57/60 | 0.1635 | 0.7785 | 0.1813 | 0.6845 | LION + ConvShift + gate |
+| 007 | `biwkv6_no_conv_no_gate` | 5.83M | 7.74M | 55/60 | 0.2011 | 0.9123 | 0.2201 | 0.7788 | BiWKV6 serial bidir |
+| 007 | `biwkv6` | 6.02M | 7.94M | 54/60 | 0.2006 | 0.9340 | 0.2211 | 0.7830 | BiWKV6 + ConvShift + gate |
+| 008 | `bidir_rwkv6_conv_nogate` | 11.66M | 13.58M | 97/100 | 0.1624 | 0.8746 | 0.1816 | 0.6623 | LION 12-layer, 100 ep |
+| 009 | `biwkv6_no_conv_no_gate` | 11.65M | 13.56M | 80/100 | 0.1713 | 0.8185 | 0.1894 | 0.6774 | BiWKV6 6-layer, 100 ep |
+| 010 | `bidir_rwkv6_cplx_b` | 5.82M | 7.74M | 60/60 | 0.1932 | 0.9163 | 0.2140 | 0.7312 | Complex decay θ=0.31 |
+| 010 | `bidir_rwkv6_cplx_c` | 5.82M | 7.74M | 60/60 | 0.2109 | 0.9744 | 0.2322 | 0.7625 | Complex decay θ=0.90 |
+| 011 | `bidir_rwkv6_cplx_d` | 5.82M | 7.74M | 60/60 | 0.1909 | 0.9002 | 0.2107 | 0.7232 | Learnable θ per layer (+6 params) |
+| 011 | `bidir_rwkv6_cplx_b_cos2` | 5.82M | 7.74M | 60/60 | 0.1757 | 0.8546 | 0.1955 | 0.7181 | cos² mask, θ=0.31 |
+| 012 | `bidir_rwkv6_cplx_d_cos2` | 5.82M | 7.74M | 60/60 | 0.1782 | 0.8558 | 0.1977 | 0.7212 | Learnable θ + cos² mask (+6 params) |
+| 012 | `bidir_rwkv6_headscale` | 5.82M | 7.74M | 60/60 | 0.1660 | 0.8082 | 0.1839 | 0.6874 | Per-head decay bias (+24 params) |
+| 013 | `bidir_rwkv6_gaussian` | 5.83M | 7.74M | 60/60 | 0.1693 | 0.8027 | 0.1861 | 0.6796 | Gaussian attn mask (+144 params) |
+| 013 | `bidir_rwkv6_dual` | 5.83M | 7.74M | 60/60 | 0.1696 | 0.8220 | 0.1875 | 0.6903 | Dual-decay weighted output (+144 params) |
+| 014 | `bidir_rwkv6_layerconv` | 5.84M | 7.75M | 60/60 | 0.1574 | 0.7496 | 0.1768 | 0.6548 | Layer-dep ConvShift k=[7,7,5,5,5,3] |
+| 015 | `bidir_rwkv6_temperature` | 5.82M | 7.74M | 60/60 | 0.1606 | 0.7900 | 0.1792 | 0.6681 | Per-head learnable τ (+24 params) |
+| 016 | `bidir_rwkv6` | 5.82M | 7.74M | 76/80 | 0.2546 | 1.1431 | 0.2779 | 0.8733 | Heavy reg: dropout=0.25, freq=27, time=70×5 masks, 80 ep |
+| 016 | `bidir_rwkv6_temperature` | 5.82M | 7.74M | 75/80 | 0.2649 | 1.1899 | 0.2874 | 0.8924 | Heavy reg: dropout=0.25, freq=27, time=70×5 masks, 80 ep |
+| 017 | `bidir_rwkv6_conv_nogate` | 5.83M | 7.75M | 74/80 | 0.2977 | 1.2390 | 0.3189 | 0.9132 | Heavy reg: dropout=0.25, freq=27, time=70×5 masks, 80 ep |
+| 017 | `bidir_rwkv6_layerconv` | 5.84M | 7.75M | 74/80 | 0.2978 | 1.2341 | 0.3205 | 0.9020 | Heavy reg: dropout=0.25, freq=27, time=70×5 masks, 80 ep |
+| 018 | `rwkv7_fix_decay` | 5.22M | 7.14M | 60/60 | 0.3570 | 1.4094 | 0.3776 | 0.9734 | RWKV-7 decay init fix only; standard reg restored (dropout=0.15, freq=15, time=35×2, WSD sched) |
+| 018 | `rwkv7_fix_all` | 5.22M | 7.14M | 60/60 | 0.2388 | 1.0828 | 0.2602 | 0.8597 | RWKV-7 decay + v_first + k_a fixes; standard reg restored (dropout=0.15, freq=15, time=35×2, WSD sched) |
 
 ---
 
