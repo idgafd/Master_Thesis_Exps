@@ -32,7 +32,7 @@ fi
 
 # ── Patch 1: Remove invalid device= kwarg from nn.Dropout ───────────────────
 echo "Applying patch 1: nn.Dropout device= kwarg removal ..."
-python3 - <<'EOF'
+python3 - "$RWKV_DIR" <<'EOF'
 import sys
 from pathlib import Path
 
@@ -55,11 +55,10 @@ for p in root.rglob("*.py"):
         print(f"  patched: {p.relative_to(root)}")
 print(f"Patch 1 done — {patched} file(s) modified.")
 EOF
-"$RWKV_DIR"
 
 # ── Patch 2: Guard reset_parameters() calls in RWKV7 ────────────────────────
 echo "Applying patch 2: RWKV7 reset_parameters() guard ..."
-python3 - <<'EOF'
+python3 - "$RWKV_DIR" <<'EOF'
 import re, sys
 from pathlib import Path
 
@@ -90,14 +89,40 @@ for line in lines:
 path.write_text("".join(out), encoding="utf-8")
 print(f"Patch 2 done — {patched} call(s) guarded in {path.relative_to(root)}")
 EOF
-"$RWKV_DIR"
+
+# ── Bootstrap packaging metadata if upstream repo is source-only ────────────
+if [ ! -f "$RWKV_DIR/pyproject.toml" ] && [ ! -f "$RWKV_DIR/setup.py" ]; then
+    echo "Bootstrapping minimal pyproject.toml for editable install ..."
+    cat > "$RWKV_DIR/pyproject.toml" <<'EOF'
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rwkv-block"
+version = "0.0.0"
+dependencies = [
+    "torch>=2.5.1",
+]
+
+[tool.setuptools]
+packages = ["rwkv_block"]
+
+[tool.setuptools.package-dir]
+"" = "."
+EOF
+fi
 
 # ── Install ───────────────────────────────────────────────────────────────────
 echo "Installing RWKV-block as editable package ..."
+UV_PYTHON="$(pwd)/.venv/bin/python"
+if [ ! -x "$UV_PYTHON" ]; then
+    UV_PYTHON="$(command -v python3)"
+fi
 if command -v uv &>/dev/null; then
-    uv pip install -e "$RWKV_DIR"
+    uv pip install --python "$UV_PYTHON" -e "$RWKV_DIR"
 else
-    pip install -e "$RWKV_DIR"
+    "$UV_PYTHON" -m pip install -e "$RWKV_DIR"
 fi
 
 echo ""

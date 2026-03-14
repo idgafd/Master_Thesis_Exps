@@ -123,16 +123,26 @@ def _download_cv(cfg: ExperimentConfig, data_dir: Path) -> None:
 
 
 def _find_cv_root(data_dir: Path) -> Path:
-    """Return path that contains clips/ and train.tsv, searching under data_dir."""
-    subdirs = list(data_dir.iterdir()) if data_dir.is_dir() else []
-    for candidate in [data_dir, *subdirs]:
-        if isinstance(candidate, Path) and (candidate / "clips").is_dir() and (candidate / "train.tsv").exists():
-            return candidate
-    # Common Voice sometimes nests one level deep (uk/, cv-corpus-*/uk/, etc.)
-    for subdir in sorted(data_dir.rglob("train.tsv")):
-        return subdir.parent
+    """Return path that contains clips/ and train.tsv.
+
+    Search under data_dir first, then fall back to its parent. The downloader
+    extracts the Mozilla archive into data_dir.parent, which can leave the
+    configured data_dir empty on first run.
+    """
+    search_roots = [data_dir]
+    if data_dir.parent != data_dir:
+        search_roots.append(data_dir.parent)
+
+    for root in search_roots:
+        subdirs = list(root.iterdir()) if root.is_dir() else []
+        for candidate in [root, *subdirs]:
+            if isinstance(candidate, Path) and (candidate / "clips").is_dir() and (candidate / "train.tsv").exists():
+                return candidate
+        # Common Voice sometimes nests one level deep (uk/, cv-corpus-*/uk/, etc.)
+        for subdir in sorted(root.rglob("train.tsv")):
+            return subdir.parent
     raise FileNotFoundError(
-        f"Could not find Common Voice split files (train.tsv + clips/) under {data_dir}"
+        f"Could not find Common Voice split files (train.tsv + clips/) under {data_dir} or {data_dir.parent}"
     )
 
 
