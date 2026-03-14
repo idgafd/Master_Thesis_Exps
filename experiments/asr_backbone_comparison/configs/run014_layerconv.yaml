@@ -1,0 +1,48 @@
+# Run 014 — Layer-Dependent ConvShift
+# Lower layers: kernel=7 (broad), upper layers: kernel=3 (local)
+# Based on run-006 ConvShift (best model) with layer-dependent kernel sizes
+# Comparison: bidir_rwkv6_conv_nogate (run-006) used uniform kernel=3
+
+max_train_hours: 35.0
+max_val_hours: 5.0
+max_test_hours: 5.0
+max_audio_sec: 15.0
+min_audio_sec: 0.5
+sample_rate: 16000
+n_mels: 80
+win_length_ms: 25
+hop_length_ms: 10
+
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+ffn_mult: 5
+dropout: 0.15
+conv_channels: 256
+
+batch_max_seconds: 240.0
+num_epochs: 60
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 500
+grad_clip: 5.0
+early_stopping_patience: 15
+seed: 42
+
+scheduler_type: cosine
+
+spec_augment: true
+freq_mask_param: 15
+time_mask_param: 35
+num_freq_masks: 2
+num_time_masks: 2
+
+chunk_sizes_sec: [2.0, 5.0, 10.0]
+max_carry_eval_utterances: 0
+
+output_dir: ./outputs/run-014_layerconv
+data_dir: ./data/cv_uk
+
+backbones:
+  - bidir_rwkv6_layerconv

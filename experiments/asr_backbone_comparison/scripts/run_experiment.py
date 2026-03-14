@@ -248,11 +248,15 @@ def run_backbone(
                 f"Dev CER: {dev_metrics['cer']:.4f} | Dev loss: {dev_metrics['loss']:.4f} | "
                 f"Time: {elapsed:.0f}s"
             )
-            # Log learned theta per layer if backbone supports it (Config D)
+            # Log learned params per layer if backbone supports it
             if hasattr(model.encoder, "get_theta_info"):
                 theta_info = model.encoder.get_theta_info()
                 if theta_info:
                     print(f"  {theta_info}")
+            if hasattr(model.encoder, "get_tau_info"):
+                tau_info = model.encoder.get_tau_info()
+                if tau_info:
+                    print(f"  {tau_info}")
 
             if dev_metrics["cer"] < best_dev_cer:
                 best_dev_cer = dev_metrics["cer"]

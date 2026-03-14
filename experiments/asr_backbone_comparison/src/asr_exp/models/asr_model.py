@@ -24,6 +24,7 @@ class ASRModel(nn.Module):
         "bidir_rwkv6_cplx_b", "bidir_rwkv6_cplx_c",
         "bidir_rwkv6_cplx_b_cos2", "bidir_rwkv6_cplx_d", "bidir_rwkv6_cplx_d_cos2",
         "bidir_rwkv6_headscale", "bidir_rwkv6_dual", "bidir_rwkv6_gaussian",
+        "bidir_rwkv6_layerconv", "bidir_rwkv6_temperature",
         "biwkv6", "biwkv6_no_conv_no_gate",
         "bidir_vim_rwkv6", "bidir_vim_mamba",
     }
@@ -111,6 +112,14 @@ class ASRModel(nn.Module):
         if backbone_type == "bidir_rwkv6_gaussian":
             from asr_exp.models.bidir_rwkv6_gaussian import BidirRWKV6GaussianEncoder
             return BidirRWKV6GaussianEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6_layerconv":
+            from asr_exp.models.bidir_rwkv6_layerconv import BidirRWKV6LayerConvEncoder
+            return BidirRWKV6LayerConvEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6_temperature":
+            from asr_exp.models.bidir_rwkv6_temperature import BidirRWKV6TemperatureEncoder
+            return BidirRWKV6TemperatureEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
 
         if backbone_type == "biwkv6":
             from asr_exp.models.biwkv6 import BiWKV6Encoder
