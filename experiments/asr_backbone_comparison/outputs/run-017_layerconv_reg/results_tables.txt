@@ -1,0 +1,15 @@
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance metrics
+Backbone                     Params  BestDev  TestLoss  TestCER  TestWER
+------------------------------------------------------------------------
+bidir_rwkv6_conv_nogate       7.75M   0.2977    1.2390   0.3189   0.9132
+bidir_rwkv6_layerconv         7.75M   0.2978    1.2341   0.3205   0.9020
+
+  Table 2: Reset-state chunked evaluation
+Backbone                      R@2s_CER    R@2s_WER    R@5s_CER    R@5s_WER   R@10s_CER   R@10s_WER
+--------------------------------------------------------------------------------------------------
+bidir_rwkv6_conv_nogate         0.3408      0.9272      0.3192      0.9085      0.3154      0.9073
+bidir_rwkv6_layerconv           0.3449      0.9196      0.3221      0.9014      0.3170      0.8972

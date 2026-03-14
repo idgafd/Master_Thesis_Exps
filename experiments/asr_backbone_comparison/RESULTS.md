@@ -27,10 +27,12 @@ Chunked evaluation: audio split into fixed-length chunks, decoded independently 
 | 012 | `bidir_rwkv6_headscale` | 7.74M | 0.1660 | 0.8082 | 0.1839 | 0.6874 | Per-head decay bias (24 params) |
 | 013 | `bidir_rwkv6_gaussian` | 7.74M | 0.1693 | 0.8027 | 0.1861 | 0.6796 | Gaussian attn modulation |
 | 013 | `bidir_rwkv6_dual` | 7.74M | 0.1696 | 0.8220 | 0.1875 | 0.6903 | Dual-decay weighted output |
-| 014 | `bidir_rwkv6_layerconv` | — | 0.2691† | — | — | — | Layer-dep ConvShift *(9/60 ep)* |
-| 015 | `bidir_rwkv6_temperature` | — | 0.2602† | — | — | — | Per-head temperature *(9/60 ep)* |
-
-† Best dev CER so far; training in progress.
+| 014 | `bidir_rwkv6_layerconv` | 7.75M | 0.1574 | 0.7496 | 0.1768 | 0.6548 | Layer-dep ConvShift k=7→3 |
+| 015 | `bidir_rwkv6_temperature` | 7.74M | 0.1606 | 0.7900 | 0.1792 | 0.6681 | Per-head learnable τ |
+| 016 | `bidir_rwkv6` | 7.74M | 0.2546 | 1.1431 | 0.2779 | 0.8733 | Strong reg (dropout=0.25, heavy SpecAug) |
+| 016 | `bidir_rwkv6_temperature` | 7.74M | 0.2649 | 1.1899 | 0.2874 | 0.8924 | Strong reg (dropout=0.25, heavy SpecAug) |
+| 017 | `bidir_rwkv6_conv_nogate` | 7.75M | 0.2977 | 1.2390 | 0.3189 | 0.9132 | Strong reg (dropout=0.25, heavy SpecAug) |
+| 017 | `bidir_rwkv6_layerconv` | 7.75M | 0.2978 | 1.2341 | 0.3205 | 0.9020 | Strong reg (dropout=0.25, heavy SpecAug) |
 
 ---
 
@@ -58,6 +60,12 @@ Audio split into chunks decoded independently (no cross-chunk memory). Degradati
 | 012 | `bidir_rwkv6_headscale` | 0.1839 | 0.2160 | 0.1879 | 0.1820 |
 | 013 | `bidir_rwkv6_gaussian` | 0.1861 | 0.2132 | 0.1895 | 0.1846 |
 | 013 | `bidir_rwkv6_dual` | 0.1875 | 0.2184 | 0.1899 | 0.1841 |
+| 014 | `bidir_rwkv6_layerconv` | 0.1768 | 0.2077 | 0.1800 | 0.1739 |
+| 015 | `bidir_rwkv6_temperature` | 0.1792 | 0.2127 | 0.1841 | 0.1781 |
+| 016 | `bidir_rwkv6` (strong reg) | 0.2779 | 0.3041 | 0.2783 | 0.2735 |
+| 016 | `bidir_rwkv6_temperature` (strong reg) | 0.2874 | 0.3172 | 0.2914 | 0.2858 |
+| 017 | `bidir_rwkv6_conv_nogate` (strong reg) | 0.3189 | 0.3408 | 0.3192 | 0.3154 |
+| 017 | `bidir_rwkv6_layerconv` (strong reg) | 0.3205 | 0.3449 | 0.3221 | 0.3170 |
 
 ---
 
@@ -95,10 +103,12 @@ Positive = carry-state is better than reset; negative = carry-state hurts.
 
 | Architecture family | Best backbone | Test CER | Run |
 |--------------------|--------------|----------|-----|
+| LION + LayerConv | `bidir_rwkv6_layerconv` | 0.1768 | 014 |
 | LION + ConvShift | `bidir_rwkv6_conv_nogate` | **0.1760** | 006 |
+| LION + Temperature | `bidir_rwkv6_temperature` | 0.1792 | 015 |
+| LION (baseline) | `bidir_rwkv6` | 0.1790 | 005 |
 | LION + head mod | `bidir_rwkv6_headscale` | 0.1839 | 012 |
 | LION + spatial mod | `bidir_rwkv6_gaussian` | 0.1861 | 013 |
-| LION (baseline) | `bidir_rwkv6` | 0.1790 | 005 |
 | LION 12-layer | `bidir_rwkv6_conv_nogate` | 0.1816 | 008 |
 | Cos² mask | `bidir_rwkv6_cplx_b_cos2` | 0.1955 | 011 |
 | BiWKV6 6L/100ep | `biwkv6_no_conv_no_gate` | 0.1894 | 009 |

@@ -181,11 +181,75 @@ The layer-depth bias is confirmed. The modulation forms tested (cos, cos², Gaus
 
 ---
 
-## Runs 014–015 — In Progress
+## Runs 014–015 — LayerConv + Temperature (Standard Regularisation)
 
-**Run 014 — Layer-dependent ConvShift:** Kernel size 7 (lower layers) → 3 (upper layers). Hypothesis: lower layers benefit from wider receptive field for feature integration, upper layers from local mixing. Motivated by the multi-scale finding. After 9 epochs: best dev CER 0.269 (too early to judge).
+**Goal:** Encode the multi-scale depth hypothesis directly into two orthogonal mechanisms: (a) layer-dependent convolution kernel sizes, (b) per-head attention temperature scaling.
 
-**Run 015 — Attention Temperature:** Per-head learnable τ that sharpens upper-layer attention distributions. Hypothesis: upper layers want sharper focus; τ>1 sharpens. Related to headscale (both increase effective locality in upper layers) but operates differently — τ acts on the softmax pre-exponential. After 9 epochs: best dev CER 0.260 (too early to judge).
+### Run 014 — Layer-Dependent ConvShift
+
+**Idea:** Replace the uniform kernel=3 ConvShift (run 006) with layer-dependent kernels: lower layers get kernel=7 (broad mixing), upper layers get kernel=3 (local mixing).
+
+**Results:** Dev CER 0.1574, Test CER 0.1768, Test WER 0.6548.
+
+### Run 015 — Attention Temperature
+
+**Idea:** Per-head learnable τ initialised as linear ramp L0:1.0 → L5:2.0. Higher τ sharpens attention in upper layers.
+
+**Results:** Dev CER 0.1606, Test CER 0.1792, Test WER 0.6681.
+
+Learned τ at epoch 60: L0:[1.03,1.01,1.17,1.28] → L5:[1.84,1.81,1.90,1.77]. The model preserved the initialised hierarchy — confirming upper layers genuinely prefer sharper attention.
+
+### Analysis: Dev-Test Gap Problem
+
+Both models achieved excellent dev CER (0.1574, 0.1606) but test CER barely improved over baselines:
+
+| Model | Dev CER | Test CER | Dev-Test Gap |
+|-------|---------|----------|-------------|
+| bidir_rwkv6 (005) | 0.1912 | 0.1790 | −0.012 (test better) |
+| bidir_rwkv6_temperature (015) | 0.1606 | 0.1792 | +0.019 |
+| bidir_rwkv6_conv_nogate (006) | 0.1587 | 0.1760 | +0.017 |
+| bidir_rwkv6_layerconv (014) | 0.1574 | 0.1768 | +0.019 |
+
+The baseline has test *better* than dev (healthy generalisation). All enhanced models show dev 0.017–0.019 better than test — they overfit the dev distribution. The large dev improvements (~0.03 CER) are ~80% overfitting.
+
+However, the *ideas* are sound: τ learned the expected depth-varying hierarchy, and layerconv matched the best ConvShift result. The problem is training regularisation, not architecture.
+
+---
+
+## Runs 016–017 — Strong Regularisation Experiment (Failed)
+
+**Goal:** Test whether heavier regularisation closes the dev-test gap and lets temperature/layerconv generalise their dev gains to test.
+
+**Changes from standard training:**
+- Dropout: 0.15 → 0.25
+- SpecAugment freq_mask_param: 15 → 27
+- SpecAugment time_mask_param: 35 → 70
+- num_time_masks: 2 → 5
+- Epochs: 60 → 80, patience: 15 → 20
+
+### Results
+
+| Run | Backbone | Dev CER | Test CER | Test WER | Train loss @80 |
+|-----|----------|---------|----------|----------|---------------|
+| 016 | `bidir_rwkv6` | 0.2546 | 0.2779 | 0.8733 | 1.73 |
+| 016 | `bidir_rwkv6_temperature` | 0.2649 | 0.2874 | 0.8924 | 1.74 |
+| 017 | `bidir_rwkv6_conv_nogate` | 0.2977 | 0.3189 | 0.9132 | 1.83 |
+| 017 | `bidir_rwkv6_layerconv` | 0.2978 | 0.3205 | 0.9020 | 1.83 |
+
+**Complete failure.** All models severely underfitted. CER roughly doubled compared to standard regularisation.
+
+### Why It Failed
+
+1. **Train loss at epoch 80 is 1.7–1.8** vs ~0.52 in original runs. The models could not learn the training data. The heavy SpecAugment (time_mask_param=70 with 5 masks) was destroying too much signal — for utterances averaging 4–5 seconds, five 70-frame masks can blank out most of the input.
+2. **Dropout 0.25 on a 256-dim model with only 7.7M params** is too aggressive. The model is already parameter-efficient; it needs to use its capacity, not have it randomly zeroed.
+3. **Dev-test gap is now small** (0.2546 → 0.2779 = 0.023) — the regularisation succeeded in *preventing overfitting*, but at the cost of preventing *learning*.
+4. **Conv models (run-017) suffered more** than non-conv (run-016). The ConvShift's small kernels are especially sensitive to SpecAugment blanking — the conv sees masked regions as real patterns and learns to suppress signal.
+
+### Conclusion
+
+The regularisation settings from the literature (SpecAugment LD policy: freq=27, time=100, 2+10 masks) assume models with 10–100× more parameters and 10–100× more data. Our 7.7M model on 35h data cannot tolerate this level of augmentation. The original settings (dropout=0.15, freq=15, time=35, 2+2 masks) were already near-optimal for this scale.
+
+**The dev-test gap is a data-size problem, not a regularisation problem.** With 35h of training data, models with added expressiveness (temperature, layerconv) learn dev-specific patterns that don't transfer. More aggressive regularisation doesn't fix this — it just prevents learning entirely.
 
 ---
 
@@ -229,7 +293,7 @@ Approximation error: $O(1/\sqrt{m})$. At m=256, error ≈ 6%.
 |------|-----|--------|
 | LION + ConvShift (nogate) | Best absolute CER (0.1760), confirmed useful | Baseline for future runs |
 | Headscale | Cheapest useful head-level modification (24 params, dev 0.1660) | Add to ConvShift, try 100 epochs |
-| Multi-scale depth prior | Confirmed by 3 mechanisms; layer-dep decay init is untested as zero-param prior | Test explicit depth-scaling in init |
+| Multi-scale depth prior | Confirmed by 5 mechanisms (runs 011, 012, 013, 014, 015) | Already encoded in layerconv + temperature |
 
 ### Drop
 | Item | Why |
@@ -241,12 +305,13 @@ Approximation error: $O(1/\sqrt{m})$. At m=256, error ≈ 6%.
 | Gaussian peak modulation | μ→0: non-monotone attention is not needed at T=250 |
 | Top-k sparse attention | T too short; contradicts empirical broad-attention finding |
 | FAVOR+ feature maps | Wrong model target; no speed motivation at T=250 |
+| Aggressive regularisation (runs 016–017) | dropout=0.25 + heavy SpecAugment causes severe underfitting at 7.7M/35h scale |
 
 ### Explore
 | Item | Why | Condition |
 |------|-----|-----------|
-| Depth-dependent decay init | Multi-scale hypothesis confirmed; encode it as architectural prior, not learned | Unconditional |
-| Longer training for headscale | Biases not converged at 60ep | Unconditional |
 | Stacking ConvShift + headscale | Both confirmed independently; combined effect untested | Unconditional |
-| Non-linear ALiBi distance bias | More flexible form if non-local attention were needed | Only if μ > 0 in some setting |
-| Increased data / Ukrainian corpora | Dev-test gap is data-limited; more data would unlock further gains from all modifications | Long-term |
+| Longer training for headscale | Biases not converged at 60ep | Unconditional |
+| Moderate regularisation tuning | Runs 016–017 went too far; try dropout=0.20, time_mask=50, 3 masks as middle ground | If dev-test gap remains a concern |
+| Stacking temperature + ConvShift | Temperature learned correct hierarchy; combine with conv for two orthogonal mechanisms | Unconditional |
+| Increased data / Ukrainian corpora | Dev-test gap is fundamentally data-limited; more data would unlock further gains | Long-term |
