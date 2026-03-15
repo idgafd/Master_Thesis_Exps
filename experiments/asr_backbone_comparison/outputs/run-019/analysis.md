@@ -62,10 +62,9 @@ Within this 100-epoch run:
 - best dev CER at epoch 87: **0.2163**
 - final test CER: **0.2371**
 
-Compared with the earlier plain-RWKV6 result you already knew about
-(~**0.2355** test CER at 60 epochs), the 100-epoch rerun is effectively the
-same on test. So the bottleneck is probably **not** “the model simply needed
-more optimization.”
+The dev CER improved substantially (0.2286 → 0.2163) between epoch 60 and 87,
+but the final test CER (0.2371) shows no meaningful gain from the extra
+training. The bottleneck is **not** “the model simply needed more optimization.”
 
 The cleaner interpretation is:
 
@@ -77,6 +76,12 @@ The cleaner interpretation is:
 So yes: **data ceiling is the first explanation to take seriously**. More
 precisely, this is a **generalisation ceiling on the current dataset/splits**,
 not a pure optimisation ceiling.
+
+**RWKV-6 carry-state is partially broken.** At 2s chunks, carry helps slightly
+(reset 0.2962 → carry 0.2813, Δ=+0.015). But at 5s and 10s, carry **hurts**
+(Δ=−0.032 and −0.042 respectively). The recurrent state accumulates harmful
+information over longer windows, making it worse than simply resetting. This
+limits RWKV-6's usefulness as a streaming encoder.
 
 ---
 
@@ -120,9 +125,10 @@ bad trade on a small model that already has limited learning signal.
 That makes the recurrent memory too short at the start, so the model behaves as
 if it barely remembers context.
 
-4. Even after fixing the bad init, RWKV-7 is still unidirectional.
-So the fixes help RWKV-7 converge, but they do **not** remove the fundamental
-offline-ASR disadvantage versus stronger bidirectional RWKV-6 variants.
+4. Even after fixing the bad init, RWKV-7 (0.2602) is 10% worse than plain
+RWKV-6 (0.2371) despite both being unidirectional. The gap is architectural:
+RWKV-7's delta-rule recurrence and LoRA-based key scaling add complexity that
+does not pay off at this model size and data scale.
 
 So the fixes are **applicable as RWKV-7-specific repairs**, but they are **not**
 general “small-scale performance boosters.” Without them stock RWKV-7 degrades;
@@ -137,9 +143,12 @@ The decision rule is now clearer:
 
 1. **Best offline model overall:** keep `bidir_rwkv6_conv_nogate` (run 006,
    test CER **0.1760**) as the practical best model.
-2. **Best plain recurrent encoder:** choose `rwkv6`, not `rwkv7`.
+2. **Best plain recurrent encoder:** choose `rwkv6`, not `rwkv7`. But note that
+   RWKV-6 carry-state only helps at 2s chunks (Δ=+0.015) and hurts at 5s+
+   (Δ=−0.032, −0.042), limiting its streaming value.
 3. **Do not use stock `rwkv7` anymore.** If RWKV-7 is revisited, start from
-   `rwkv7_fix_all`, not from the vanilla backbone.
+   `rwkv7_fix_all`, not from the vanilla backbone. Even fixed, it underperforms
+   plain RWKV-6.
 
 For plain `rwkv6`, the 100-epoch run is still useful because it resolves the
 question “was 60 epochs simply too short?” The answer is: **no, not in a way
