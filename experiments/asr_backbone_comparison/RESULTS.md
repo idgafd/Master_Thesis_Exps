@@ -41,6 +41,12 @@ Best Ep = best checkpoint epoch / total epochs scheduled.
 | 018 | `rwkv7_fix_all` | 5.22M | 7.14M | 60/60 | 0.2388 | 1.0828 | 0.2602 | 0.8597 | RWKV-7 decay + v_first + k_a fixes; standard reg restored (dropout=0.15, freq=15, time=35×2, WSD sched) |
 | 019 | `rwkv6` | 5.83M | 7.74M | 87/100 | 0.2163 | 0.9888 | 0.2371 | 0.8017 | Plain RWKV-6 encoder, cosine, 100 ep, default SpecAugment |
 | 019 | `rwkv7` | 5.22M | 7.14M | 83/100 | 0.3822 | 1.4913 | 0.4000 | 0.9808 | Plain stock RWKV-7 encoder, cosine, 100 ep, default SpecAugment |
+| 020 | `rwkv6` | 5.83M | 7.74M | 59/60 | 0.2296 | 1.0111 | 0.2499 | 0.8253 | Matched baseline, cosine 60 ep |
+| 020 | `rwkv6_delta` | 6.04M | 7.94M | 60/60 | 0.2048 | 0.9585 | 0.2249 | 0.7911 | RWKV-6 + Delta Rule (RWKV-7 state erasure) |
+| 020 | `rwkv6_lucid` | 5.84M | 7.74M | 58/60 | 0.1937 | 0.9014 | 0.2121 | 0.7495 | RWKV-6 + LUCID key decorrelation preconditioner |
+| 020 | `bidir_rwkv6` | 5.84M | 7.74M | 59/60 | 0.1652 | 0.8098 | 0.1849 | 0.6807 | Matched baseline, cosine 60 ep |
+| 020 | `bidir_rwkv6_delta` | 6.04M | 7.94M | 57/60 | 0.1813 | 0.9118 | 0.2015 | 0.7124 | LION + Delta Rule (causal + anticausal corrections) |
+| 020 | `bidir_rwkv6_lucid` | 5.84M | 7.74M | 60/60 | 0.1675 | 0.8319 | 0.1859 | 0.6868 | LION + LUCID key decorrelation preconditioner |
 
 ---
 
@@ -78,6 +84,12 @@ Audio split into chunks decoded independently (no cross-chunk memory). Degradati
 | 018 | `rwkv7_fix_all` | 0.2602 | 0.2944 | 0.2655 | 0.2594 |
 | 019 | `rwkv6` | 0.2371 | 0.2962 | 0.2476 | 0.2371 |
 | 019 | `rwkv7` | 0.4000 | 0.4179 | 0.4028 | 0.3998 |
+| 020 | `rwkv6` | 0.2499 | 0.3086 | 0.2598 | 0.2499 |
+| 020 | `rwkv6_delta` | 0.2249 | 0.3138 | 0.2393 | 0.2246 |
+| 020 | `rwkv6_lucid` | 0.2121 | 0.2916 | 0.2261 | 0.2122 |
+| 020 | `bidir_rwkv6` | 0.1849 | 0.2172 | 0.1885 | 0.1828 |
+| 020 | `bidir_rwkv6_delta` | 0.2015 | 0.2777 | 0.2140 | 0.1955 |
+| 020 | `bidir_rwkv6_lucid` | 0.1859 | 0.2219 | 0.1855 | 0.1785 |
 
 ---
 
@@ -96,6 +108,9 @@ Hidden state carried across chunk boundaries (recurrent/SSM models only). Lower 
 | 018 | `rwkv7_fix_all` | 0.2602 | 0.2629 | 0.2600 | 0.2594 |
 | 019 | `rwkv6` | 0.2371 | 0.2813 | 0.2796 | 0.2787 |
 | 019 | `rwkv7` | 0.4000 | 0.4450 | 0.4423 | 0.4409 |
+| 020 | `rwkv6` | 0.2499 | 0.2942 | 0.2901 | 0.2893 |
+| 020 | `rwkv6_delta` | 0.2249 | 0.2832 | 0.2689 | 0.2687 |
+| 020 | `rwkv6_lucid` | 0.2121 | 0.2545 | 0.2463 | 0.2465 |
 
 > **Note**: Bidirectional models (LION and variants) are stateless by design — no carry-state eval applies. BiWKV6 carry-state is degraded (CER >0.7) because the 6-layer serial architecture with untrained carry-state init performs poorly; this was a known issue at time of run-007 evaluation (state init not optimised). Mamba carry-state is near full-utterance CER, confirming its streaming capability.
 
@@ -116,6 +131,9 @@ Positive = carry-state is better than reset; negative = carry-state hurts.
 | 018 | `rwkv7_fix_all` | +0.0315 | +0.0054 | 0.0000 |
 | 019 | `rwkv6` | +0.0149 | −0.0320 | −0.0416 |
 | 019 | `rwkv7` | −0.0270 | −0.0395 | −0.0411 |
+| 020 | `rwkv6` | +0.0144 | −0.0303 | −0.0394 |
+| 020 | `rwkv6_delta` | +0.0306 | −0.0296 | −0.0441 |
+| 020 | `rwkv6_lucid` | +0.0371 | −0.0202 | −0.0343 |
 
 ---
 
@@ -123,18 +141,22 @@ Positive = carry-state is better than reset; negative = carry-state hurts.
 
 | Architecture family | Best backbone | Test CER | Run |
 |--------------------|--------------|----------|-----|
-| LION + LayerConv | `bidir_rwkv6_layerconv` | 0.1768 | 014 |
 | LION + ConvShift | `bidir_rwkv6_conv_nogate` | **0.1760** | 006 |
+| LION + LayerConv | `bidir_rwkv6_layerconv` | 0.1768 | 014 |
 | LION + Temperature | `bidir_rwkv6_temperature` | 0.1792 | 015 |
-| LION (baseline) | `bidir_rwkv6` | 0.1790 | 005 |
+| LION (baseline) | `bidir_rwkv6` | 0.1849 | 020 |
 | LION + head mod | `bidir_rwkv6_headscale` | 0.1839 | 012 |
+| LION + LUCID | `bidir_rwkv6_lucid` | 0.1859 | 020 |
 | LION + spatial mod | `bidir_rwkv6_gaussian` | 0.1861 | 013 |
 | LION 12-layer | `bidir_rwkv6_conv_nogate` | 0.1816 | 008 |
+| LION + Delta Rule | `bidir_rwkv6_delta` | 0.2015 | 020 |
 | Cos² mask | `bidir_rwkv6_cplx_b_cos2` | 0.1955 | 011 |
 | BiWKV6 6L/100ep | `biwkv6_no_conv_no_gate` | 0.1894 | 009 |
 | Bidir linear attn | `bidir_linear_attention` | 0.2044 | 005 |
 | Mamba (best) | `mamba` (WSD-12) | 0.2098 | 003 |
+| RWKV-6 + LUCID | `rwkv6_lucid` | 0.2121 | 020 |
 | Complex decay | `bidir_rwkv6_cplx_b` | 0.2140 | 010 |
-| RWKV-6 (plain recurrent) | `rwkv6` | 0.2371 | 019 |
+| RWKV-6 + Delta Rule | `rwkv6_delta` | 0.2249 | 020 |
+| RWKV-6 (plain recurrent) | `rwkv6` | 0.2499 | 020 |
 | RWKV-7 (fixed) | `rwkv7_fix_all` | 0.2602 | 018 |
 | RWKV-7 (stock) | `rwkv7` | 0.4000 | 019 |

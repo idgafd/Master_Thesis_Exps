@@ -1,0 +1,23 @@
+──────────────────────────────
+  RESULTS SUMMARY
+──────────────────────────────
+
+  Table 1: Full utterance metrics
+Backbone                     Params  BestDev  TestLoss  TestCER  TestWER
+------------------------------------------------------------------------
+rwkv6_delta                   7.94M   0.2048    0.9585   0.2249   0.7911
+
+  Table 2: Reset-state chunked evaluation
+Backbone                      R@2s_CER    R@2s_WER    R@5s_CER    R@5s_WER   R@10s_CER   R@10s_WER
+--------------------------------------------------------------------------------------------------
+rwkv6_delta                     0.3138      0.8556      0.2393      0.7972      0.2246      0.7889
+
+  Table 3: Carry-state chunked evaluation (recurrent/SSM backbones)
+Backbone                      C@2s_CER    C@2s_WER    C@5s_CER    C@5s_WER   C@10s_CER   C@10s_WER
+--------------------------------------------------------------------------------------------------
+rwkv6_delta                     0.2832      0.8421      0.2689      0.8150      0.2687      0.8190
+
+  Table 4: CER improvement from carry-state (Reset − Carry)
+Backbone                        Δ@2s      Δ@5s     Δ@10s
+--------------------------------------------------------
+rwkv6_delta                +  0.0306  -0.0295  -0.0440

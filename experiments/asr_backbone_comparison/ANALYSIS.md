@@ -273,13 +273,13 @@ The regularisation settings from the literature (SpecAugment LD policy: freq=27,
 
 **Decay-only fix is insufficient.** CER 0.3776 — the model still barely converges. Train loss plateaus at 1.34 (vs 0.81 for fix_all), indicating v_first and k_a cause optimisation problems at this scale.
 
-**All-fixes variant recovers partial convergence.** CER 0.2602 — comparable to Mamba (0.2098) but still well below LION (0.1790). The remaining gap likely reflects RWKV-7's unidirectional nature: without bidirectional context, it hits the same ceiling as Mamba.
+**All-fixes variant recovers partial convergence.** CER 0.2602 — still 24% worse than Mamba (0.2098) and well below LION (0.1790). Notably, plain RWKV-6 (0.2371, run 019) also outperforms RWKV-7_fix_all despite both being unidirectional. The remaining gap is not purely about directionality — RWKV-7's architecture is less effective than RWKV-6 at this scale even after fixing the initialisation problems.
 
-**Carry-state works correctly.** Unlike BiWKV6 (carry CER >0.7, broken), RWKV-7 fix_all shows carry-state improvement at 2s chunks: reset 0.2944 → carry 0.2629 (Δ=+0.032). This is better than Mamba's carry benefit (+0.047 at 2s) in absolute terms but similar in relative terms. The recurrent state initialisation is healthy.
+**Carry-state works correctly.** Unlike BiWKV6 (carry CER >0.7, broken), RWKV-7 fix_all shows carry-state improvement at 2s chunks: reset 0.2944 → carry 0.2629 (Δ=+0.032). This is a smaller carry benefit than Mamba's (+0.047 at 2s), but confirms the recurrent state initialisation is healthy — carry helps rather than hurts.
 
 ### Conclusion
 
-RWKV-7's poor convergence was caused by three interacting init problems, not just decay. Fixing all three brings it to Mamba-level performance with functional carry-state. However, it remains ~45% worse than LION (0.2602 vs 0.1790) due to the fundamental unidirectional limitation. **RWKV-7 is not competitive with LION for offline ASR but could be relevant for streaming if bidirectional processing is unavailable.**
+RWKV-7's poor convergence was caused by three interacting init problems, not just decay. Fixing all three recovers usable convergence with functional carry-state. However, it remains ~45% worse than LION (0.2602 vs 0.1790) and 10% worse than plain RWKV-6 (0.2371). The gap to RWKV-6 is architectural, not directional (both are unidirectional). **RWKV-7 is not competitive at this scale — neither with LION for offline ASR, nor with plain RWKV-6 as a recurrent encoder.**
 
 ---
 
@@ -314,14 +314,14 @@ Inside the 100-epoch run:
 - best dev CER at epoch 87: **0.2163**
 - final test CER: **0.2371**
 
-Relative to the earlier plain-RWKV6 result you already had (~**0.2355** test
-CER at 60 epochs), the 100-epoch rerun lands in essentially the same place on
-test. So extra optimization improves the in-distribution proxy (dev) but does
+The dev CER improved substantially (0.2286 → 0.2163) between epoch 60 and 87,
+but the final test CER (0.2371) shows no meaningful gain from the extra
+training. Extra optimisation improves the in-distribution proxy (dev) but does
 not improve real held-out test performance.
 
 This strongly suggests that plain RWKV-6 is hitting a **generalisation ceiling**
-on this 35h setup, not a simple optimisation ceiling. “Data ceiling” is the
-right first explanation, though the more precise statement is:
+on this 35h setup, not a simple optimisation ceiling. The more precise statement
+is:
 
 > The current plain-RWKV6 recipe can still fit train/dev better with more
 > epochs, but that extra fit does not transfer to the test split.
@@ -329,6 +329,13 @@ right first explanation, though the more precise statement is:
 That can be caused by both limited data and dev-test mismatch. The practical
 conclusion is the same: **more epochs alone are not the lever that changes the
 test ceiling for plain RWKV-6.**
+
+**RWKV-6 carry-state is partially broken.** At 2s chunks, carry helps slightly
+(reset 0.2962 → carry 0.2813, Δ=+0.015). But at 5s and 10s, carry **hurts**
+(Δ=−0.032 and −0.042 respectively). This means the recurrent state
+accumulates harmful information over longer windows, making it worse than
+simply resetting. This limits RWKV-6's usefulness as a streaming encoder —
+carry-state only helps at very short windows where context is most scarce.
 
 ### RWKV-7 Interpretation
 
@@ -351,7 +358,7 @@ and those assumptions are harmful in this 6-layer, 256-dim, 35-hour ASR regime:
 1. `v_first` is too dominant and suppresses hierarchical feature formation.
 2. `k_a` weakens the already-small attention signal at init.
 3. Stock decay init is too narrow, so the model starts with too little usable memory.
-4. Even after repairs, RWKV-7 stays unidirectional, so it still cannot close the offline-ASR gap to stronger RWKV-6 variants.
+4. Even after repairs, RWKV-7 (0.2602) is 10% worse than plain RWKV-6 (0.2371) despite both being unidirectional. The gap is architectural: RWKV-7's delta-rule recurrence and LoRA-based key scaling add complexity that does not pay off at this model size and data scale.
 
 The “fixes” are therefore not generic small-scale boosters; they are **RWKV-7-specific repairs**.
 Without them, RWKV-7 degrades. With them, it becomes usable, but still not a
@@ -362,8 +369,54 @@ best-model candidate for this dataset.
 The selection rule is now clearer:
 
 1. **Best offline model overall:** keep `bidir_rwkv6_conv_nogate` (run 006, CER **0.1760**).
-2. **Best plain recurrent encoder:** use `rwkv6`, not `rwkv7`.
-3. **If RWKV-7 is revisited:** start from `rwkv7_fix_all`, never from stock `rwkv7`.
+2. **Best plain recurrent encoder:** use `rwkv6`, not `rwkv7`. But note that RWKV-6 carry-state only helps at 2s chunks and hurts at 5s+, limiting its streaming value.
+3. **If RWKV-7 is revisited:** start from `rwkv7_fix_all`, never from stock `rwkv7`. Even fixed, it underperforms plain RWKV-6.
+
+---
+
+## Run 020 — Delta Rule & LUCID Preconditioner (Cross-Architecture Ablation)
+
+**Goal:** Test two mechanisms — **Delta Rule** (RWKV-7's selective state erasure) and **LUCID preconditioner** (key decorrelation) — on both unidirectional RWKV-6 and bidirectional LION. 2×2 ablation with matched baselines under identical 60-epoch cosine training.
+
+**Setup:** 60 epochs, cosine scheduler, lr=3e-4, d_model=256, 6 layers, dropout=0.15, default SpecAugment. Matched baselines trained under identical conditions.
+
+### Results
+
+| Backbone | Params | Dev CER | Test CER | Test WER |
+|----------|--------|---------|----------|----------|
+| `rwkv6` (baseline) | 7.74M | 0.2296 | 0.2499 | 0.8253 |
+| `rwkv6_delta` | 7.94M | 0.2048 | 0.2249 | 0.7911 |
+| `rwkv6_lucid` | 7.74M | 0.1937 | 0.2121 | 0.7495 |
+| `bidir_rwkv6` (baseline) | 7.74M | 0.1652 | 0.1849 | 0.6807 |
+| `bidir_rwkv6_delta` | 7.94M | 0.1813 | 0.2015 | 0.7124 |
+| `bidir_rwkv6_lucid` | 7.74M | 0.1675 | 0.1859 | 0.6868 |
+
+Relative change vs matched baseline (test CER):
+
+| Mechanism | RWKV-6 (unidir) | LION (bidir) |
+|-----------|-----------------|--------------|
+| Delta Rule | **−10.0%** (0.2499 → 0.2249) | **+9.0%** (0.1849 → 0.2015) |
+| LUCID | **−15.1%** (0.2499 → 0.2121) | **+0.5%** (0.1849 → 0.1859) |
+
+### Interpretation
+
+**LUCID is the clear winner on unidirectional RWKV-6.** Test CER 0.2121 — the largest single-mechanism improvement on the unidirectional encoder in this project (−15.1%). The key decorrelation preconditioner addresses a universal problem (correlated keys degrade attention quality) and costs only 24 learnable parameters.
+
+**Delta Rule helps unidirectional modestly (−10%).** Selective state erasure reduces noise accumulation in the recurrent state, as intended. However, the approximate chunked implementation (intra-chunk correction + inter-chunk aggregate erasure) may limit the full benefit.
+
+**Delta Rule hurts LION (+9%).** The anticausal delta correction (`A_delta_bwd = -triu(A_bwd @ kk_corr_anticausal)`) is an extrapolation with no theoretical backing. LION+Delta trains slower (final train loss 0.574 vs baseline 0.545) — the corrections constrain the attention matrix rather than enhance it.
+
+**LUCID is neutral on LION (+0.5%).** Two hypotheses: (a) LION's exponential decay already implicitly decorrelates keys, making explicit decorrelation redundant; (b) the full-sequence T×T Gram matrix is too coarse — chunked LUCID (within 64-frame windows, matching the unidirectional kernel's chunk size) might capture local correlations more effectively.
+
+**Dev-test gap is dataset-intrinsic.** All 6 models show gap ~0.020 — confirming it's a Common Voice Ukrainian split property, not model-dependent.
+
+### Hypotheses for Future Work
+
+1. **Causal-only delta for LION:** Apply delta corrections to A_fwd only, leave A_bwd unmodified. Tests whether the causal component helps without the harmful anticausal term.
+2. **Chunked LUCID for LION:** Apply preconditioner within 64-frame windows rather than full-sequence. Tests whether LUCID's neutrality on LION is a granularity problem.
+3. **LUCID + ConvShift stacking:** Orthogonal mechanisms (key correlation vs token mixing). ConvShift gave −1.7% on LION (run 006); together they might compound.
+4. **Delta Rule on stock kernel:** Inject only the delta-rule state update into the stock RWKV-block kernel, changing nothing else, for a cleaner controlled experiment.
+5. **LUCID temperature warmup:** Start with weak decorrelation (temp≈0), increase over training. Prevents destabilisation before keys are meaningful.
 
 ---
 
@@ -409,6 +462,7 @@ Approximation error: $O(1/\sqrt{m})$. At m=256, error ≈ 6%.
 | Headscale | Cheapest useful head-level modification (24 params, dev 0.1660) | Add to ConvShift, try 100 epochs |
 | Multi-scale depth prior | Confirmed by 5 mechanisms (runs 011, 012, 013, 014, 015) | Already encoded in layerconv + temperature |
 | Plain RWKV-6 | Best simple recurrent encoder; 100ep confirms the test ceiling but keeps it ahead of RWKV-7 | Keep only if unidirectional / carry-state encoder is required |
+| LUCID on RWKV-6 | −15.1% relative CER improvement, 24 params, cleaner carry-state (run 020) | Test on stock kernel; stack with ConvShift on LION |
 
 ### Drop
 | Item | Why |
@@ -422,10 +476,15 @@ Approximation error: $O(1/\sqrt{m})$. At m=256, error ≈ 6%.
 | Top-k sparse attention | T too short; contradicts empirical broad-attention finding |
 | FAVOR+ feature maps | Wrong model target; no speed motivation at T=250 |
 | Aggressive regularisation (runs 016–017) | dropout=0.25 + heavy SpecAugment causes severe underfitting at 7.7M/35h scale |
+| Delta Rule on LION | +9% degradation; anticausal correction has no theoretical basis and hurts training (run 020) |
 
 ### Explore
 | Item | Why | Condition |
 |------|-----|-----------|
+| Chunked LUCID on LION | Full-sequence preconditioner is neutral; 64-frame windows may capture local correlations better | Run 020 hypothesis B |
+| LUCID + ConvShift on LION | Orthogonal mechanisms; ConvShift improves token mixing, LUCID decorrelates keys | Unconditional |
+| Causal-only delta on LION | Anticausal delta hurts; causal-only might preserve benefit without the noise | Run 020 hypothesis |
+| Delta Rule on stock RWKV-6 kernel | Current −10% gain on reimplemented kernel; stock kernel test isolates the mechanism | Controlled experiment |
 | Stacking ConvShift + headscale | Both confirmed independently; combined effect untested | Unconditional |
 | Longer training for headscale | Biases not converged at 60ep | Unconditional |
 | Moderate regularisation tuning | Runs 016–017 went too far; try dropout=0.20, time_mask=50, 3 masks as middle ground | If dev-test gap remains a concern |

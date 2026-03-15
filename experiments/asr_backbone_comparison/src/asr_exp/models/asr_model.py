@@ -28,6 +28,8 @@ class ASRModel(nn.Module):
         "biwkv6", "biwkv6_no_conv_no_gate",
         "bidir_vim_rwkv6", "bidir_vim_mamba",
         "rwkv7_fix_decay", "rwkv7_fix_all",
+        "rwkv6_delta", "rwkv6_lucid",
+        "bidir_rwkv6_delta", "bidir_rwkv6_lucid",
     }
 
     def __init__(self, backbone_type: str, vocab_size: int, cfg: ExperimentConfig):
@@ -151,6 +153,22 @@ class ASRModel(nn.Module):
         if backbone_type == "bidir_vim_mamba":
             from asr_exp.models.bidir_vim_mamba import BidirVimMambaEncoder
             return BidirVimMambaEncoder(cfg.d_model, cfg.n_layers, cfg.dropout)
+
+        if backbone_type == "rwkv6_delta":
+            from asr_exp.models.rwkv6_delta import RWKV6DeltaEncoder
+            return RWKV6DeltaEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "rwkv6_lucid":
+            from asr_exp.models.rwkv6_lucid import RWKV6LucidEncoder
+            return RWKV6LucidEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6_delta":
+            from asr_exp.models.bidir_rwkv6_delta import BidirRWKV6DeltaEncoder
+            return BidirRWKV6DeltaEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
+
+        if backbone_type == "bidir_rwkv6_lucid":
+            from asr_exp.models.bidir_rwkv6_lucid import BidirRWKV6LucidEncoder
+            return BidirRWKV6LucidEncoder(cfg.d_model, cfg.n_layers, cfg.dropout, head_size=cfg.head_size)
 
         raise ValueError(backbone_type)  # unreachable
 

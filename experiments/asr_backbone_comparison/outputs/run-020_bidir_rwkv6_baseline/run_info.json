@@ -1,0 +1,10 @@
+{
+  "run_id": "run-020_bidir_rwkv6_baseline_20260314_2346",
+  "date": "2026-03-14T23:46:02",
+  "platform": "Linux-5.15.0-52-generic-x86_64-with-glibc2.39",
+  "python": "3.11.14",
+  "torch": "2.7.1+cu128",
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5090",
+  "gpu_vram_gb": 33.7
+}
