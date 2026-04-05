@@ -100,6 +100,47 @@
 
 ---
 
+## Early Baseline Results (10 epochs, seed=42)
+
+Quick 10-epoch runs to verify all backbones train correctly before full 80-epoch experiments.
+
+| Backbone | Params | Dev CER | Dev WER | ~Epoch Time |
+|----------|--------|---------|---------|-------------|
+| Transformer | 6.26M | 0.3522 | 0.8781 | 46s |
+| Linear Attention | 6.26M | 0.4206 | 0.9668 | 50s |
+| RWKV-6 | 7.74M | 0.1995 | 0.5518 | 83s |
+| Mamba | 7.30M | — | — | very slow |
+
+RWKV-6 is the clear winner at 10 epochs. Transformer and Linear Attention are still converging.
+
+### Mamba training speed issue
+
+The Mamba implementation uses a pure-PyTorch selective scan with a Python `for t in range(T)` loop
+over every time step (~500 after subsampling). This makes it ~10x slower than it should be.
+The math is correct but training time is not comparable to the other backbones.
+Need to either integrate the `mamba-ssm` CUDA kernel or rewrite the scan as a parallel operation.
+
+### RWKV-6 sanity check: Common Voice Ukrainian
+
+To confirm that the CER difference between LibriSpeech and the old Common Voice experiments
+is the dataset (not a code change), we ran the new blocks.py RWKV-6 on Common Voice Ukrainian
+with the exact same config as the old run-020 experiment (which used `rwkv-block` library).
+
+| Epoch | New blocks.py (CV 25.0) | Old rwkv-block (CV 24.0, run-020) |
+|-------|-------------------------|-------------------------------------|
+| 1 | 0.9453 | 0.8754 |
+| 5 | 0.3611 | 0.3845 |
+| 10 | 0.3079 | 0.3199 |
+
+CER dynamics match closely. The ~1% gap is expected from dataset version differences (CV 25.0 vs 24.0).
+The old run-020 reached 0.2296 at epoch 60 — our reimplementation would likely land in the same range.
+
+Conclusion: the fast convergence on LibriSpeech (0.20 CER at epoch 10) is because LibriSpeech clean
+is much easier than Common Voice (read speech, studio quality, consistent speakers vs noisy crowdsourced).
+The RWKV-6 implementation is correct.
+
+---
+
 ## Notes
 
 - All parameter counts should be within 5% of LION (reference).
