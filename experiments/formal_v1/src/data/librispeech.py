@@ -40,7 +40,6 @@ def load_librispeech(
         "clean",
         split=hf_split,
         cache_dir=cache_dir,
-        trust_remote_code=True,
     )
 
     entries = []

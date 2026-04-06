@@ -3,6 +3,9 @@
 Implements the Selective Scan (S6) mechanism:
   in_proj -> (x, z) split -> conv1d -> x_proj(dt, B, C) -> SSM -> gate(silu(z)) -> out_proj
 
+Uses a parallel associative scan for O(log T) GPU-friendly computation
+instead of a sequential O(T) Python loop.
+
 Reference: mamba_ssm/modules/mamba_simple.py (Gu & Dao, 2023)
 """
 
@@ -16,10 +19,94 @@ import torch.nn.functional as F
 from einops import rearrange
 
 
+def parallel_scan(gates: torch.Tensor, tokens: torch.Tensor) -> torch.Tensor:
+    """Parallel associative scan (Hillis-Steele inclusive prefix sum).
+
+    Computes the linear recurrence:
+        h_0 = tokens_0
+        h_t = gates_t * h_{t-1} + tokens_t
+
+    Using the associative operator:
+        (a1, b1) ⊕ (a2, b2) = (a2 * a1, a2 * b1 + b2)
+
+    This is the Hillis-Steele variant: O(T log T) work, O(log T) depth.
+    Simple and correct — each round doubles the reach of each element.
+
+    Args:
+        gates:  (B, T, D, N) — multiplicative coefficients (dA)
+        tokens: (B, T, D, N) — additive terms (dB * x)
+
+    Returns:
+        h: (B, T, D, N) — the hidden states at each time step
+    """
+    T = gates.shape[1]
+    a = gates
+    b = tokens
+
+    num_steps = math.ceil(math.log2(max(T, 2)))
+    for d in range(num_steps):
+        stride = 1 << d
+        # Elements at position t (where t >= stride) combine with t-stride
+        # (a_t, b_t) = (a_t * a_{t-stride}, a_t * b_{t-stride} + b_t)
+        a_shifted = F.pad(a[:, :-stride], (0, 0, 0, 0, stride, 0), value=1.0)
+        b_shifted = F.pad(b[:, :-stride], (0, 0, 0, 0, stride, 0), value=0.0)
+        new_a = a * a_shifted
+        new_b = a * b_shifted + b
+        a = new_a
+        b = new_b
+
+    return b
+
+
+def selective_scan_parallel(
+    x: torch.Tensor,      # (B, T, D)
+    dt: torch.Tensor,     # (B, T, D)
+    A: torch.Tensor,      # (D, N) — negative
+    B: torch.Tensor,      # (B, T, N)
+    C: torch.Tensor,      # (B, T, N)
+    state: Optional[torch.Tensor] = None,  # (B, D, N)
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Parallel selective scan — GPU-friendly O(log T) parallel computation.
+
+    Replaces the sequential for-loop over T with a parallel associative scan.
+    """
+    batch, T, D = x.shape
+    N = A.shape[1]
+
+    x = x.float()
+    dt = dt.float()
+    B = B.float()
+    C = C.float()
+
+    # Discretize: dA = exp(dt * A), dB_x = dt * B * x
+    # dt: (B, T, D), A: (D, N) -> dA: (B, T, D, N)
+    dA = torch.exp(dt.unsqueeze(-1) * A.unsqueeze(0).unsqueeze(0))  # (B, T, D, N)
+    dB_x = (dt.unsqueeze(-1) * B.unsqueeze(2)) * x.unsqueeze(-1)   # (B, T, D, N)
+
+    # If we have a carry-in state, prepend it as h_{-1}
+    if state is not None:
+        state = state.float()
+        # Fold initial state into the first time step:
+        # h_0 = dA_0 * state + dB_x_0
+        dB_x[:, 0] = dA[:, 0] * state + dB_x[:, 0]
+
+    # Parallel associative scan
+    h = parallel_scan(dA, dB_x)  # (B, T, D, N)
+
+    # Output: y_t = sum_n(h_{t,d,n} * C_{t,n})
+    y = (h * C.unsqueeze(2)).sum(-1)  # (B, T, D)
+
+    # Return last state for carry
+    new_state = h[:, -1]  # (B, D, N)
+
+    return y, new_state
+
+
 class MambaBlock(nn.Module):
     """Pure PyTorch Mamba SSM block.
 
-    Supports carry-state via step() and sequential scan.
+    Uses parallel associative scan for GPU-efficient training.
+    Supports carry-state via step() for inference.
     No compiled CUDA kernels — fully transparent and modifiable.
     """
 
@@ -122,9 +209,10 @@ class MambaBlock(nn.Module):
         # A
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
 
-        # Sequential SSM scan
-        y, new_ssm_state = self._ssm_scan(
-            x_conv, dt, A, B_ssm, C_ssm, state
+        # Parallel SSM scan
+        ssm_state = state[1] if state is not None else None
+        y, new_ssm_state = selective_scan_parallel(
+            x_conv, dt, A, B_ssm, C_ssm, ssm_state
         )
 
         # Gate and output
@@ -133,51 +221,6 @@ class MambaBlock(nn.Module):
         out = self.out_proj(y)
 
         return out, new_ssm_state
-
-    def _ssm_scan(
-        self,
-        x: torch.Tensor,      # (B, T, d_inner)
-        dt: torch.Tensor,     # (B, T, d_inner)
-        A: torch.Tensor,      # (d_inner, d_state) — negative
-        B: torch.Tensor,      # (B, T, d_state)
-        C: torch.Tensor,      # (B, T, d_state)
-        state: Optional[Tuple] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Selective scan in pure PyTorch (sequential over T)."""
-        batch, T, d_inner = x.shape
-        d_state = A.shape[1]
-
-        if state is not None:
-            _, ssm_state = state
-            ssm_state = ssm_state.float()
-        else:
-            ssm_state = torch.zeros(batch, d_inner, d_state, dtype=torch.float32, device=x.device)
-
-        x = x.float()
-        dt = dt.float()
-        B = B.float()
-        C = C.float()
-
-        outputs = []
-        for t in range(T):
-            x_t = x[:, t, :]       # (B, d_inner)
-            dt_t = dt[:, t, :]     # (B, d_inner)
-            B_t = B[:, t, :]       # (B, d_state)
-            C_t = C[:, t, :]       # (B, d_state)
-
-            # Discretize
-            dA = torch.exp(dt_t.unsqueeze(-1) * A.unsqueeze(0))  # (B, d_inner, d_state)
-            dB = dt_t.unsqueeze(-1) * B_t.unsqueeze(1)           # (B, d_inner, d_state)
-
-            # State update
-            ssm_state = ssm_state * dA + x_t.unsqueeze(-1) * dB
-
-            # Output
-            y_t = (ssm_state * C_t.unsqueeze(1)).sum(-1)  # (B, d_inner)
-            outputs.append(y_t)
-
-        y = torch.stack(outputs, dim=1)  # (B, T, d_inner)
-        return y.to(x.dtype), ssm_state
 
     def step(
         self,

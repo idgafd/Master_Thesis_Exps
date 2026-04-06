@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -39,6 +40,7 @@ def main():
     parser.add_argument("--backbone", required=True)
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--epochs", type=int, default=None)
     args = parser.parse_args()
 
     overrides = {"backbone": args.backbone}
@@ -46,6 +48,8 @@ def main():
         overrides["output_dir"] = args.output_dir
     if args.seed:
         overrides["seed"] = args.seed
+    if args.epochs:
+        overrides["num_epochs"] = args.epochs
 
     cfg = load_config(args.config, overrides)
     if not args.output_dir:
@@ -98,16 +102,19 @@ def main():
     history = []
 
     for epoch in range(1, cfg.num_epochs + 1):
+        t0 = time.time()
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, spec_aug, cfg, epoch, device)
         dev_metrics = evaluate(model, dev_loader, vocab, device, tag="dev")
+        epoch_time = time.time() - t0
 
         entry = {
             "epoch": epoch,
             "train_loss": train_loss,
+            "epoch_time_sec": epoch_time,
             **{f"dev_{k}": v for k, v in dev_metrics.items()},
         }
         history.append(entry)
-        logger.info(f"Epoch {epoch} | Train: {train_loss:.4f} | Dev CER: {dev_metrics['cer']:.4f} | Dev WER: {dev_metrics['wer']:.4f}")
+        logger.info(f"Epoch {epoch} | Train: {train_loss:.4f} | Dev CER: {dev_metrics['cer']:.4f} | Dev WER: {dev_metrics['wer']:.4f} | Time: {epoch_time:.0f}s")
 
         # Checkpointing
         if dev_metrics["cer"] < best_cer:

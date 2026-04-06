@@ -31,6 +31,18 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             expand=cfg.mamba_expand,
         )
 
+    if backbone == "mamba_cuda":
+        from src.models.mamba_cuda_encoder import MambaCudaEncoder
+        return MambaCudaEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            dropout=cfg.dropout,
+            ffn_dim=cfg.ffn_dim,
+            d_state=cfg.mamba_d_state,
+            d_conv=cfg.mamba_d_conv,
+            expand=cfg.mamba_expand,
+        )
+
     if backbone == "mamba_bidir":
         from src.models.mamba_encoder import BidirMambaEncoder
         return BidirMambaEncoder(
