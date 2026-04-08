@@ -41,6 +41,8 @@ def main():
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--compile", action="store_true", help="torch.compile the encoder (~5× training speedup for Mamba)")
+    parser.add_argument("--gpu", type=int, default=None, help="GPU device index (default: auto)")
     args = parser.parse_args()
 
     overrides = {"backbone": args.backbone}
@@ -50,13 +52,19 @@ def main():
         overrides["seed"] = args.seed
     if args.epochs:
         overrides["num_epochs"] = args.epochs
+    if args.compile:
+        overrides["compile_encoder"] = True
 
     cfg = load_config(args.config, overrides)
     if not args.output_dir:
         cfg.output_dir = f"./outputs/{args.backbone}_seed{cfg.seed}"
 
     os.makedirs(cfg.output_dir, exist_ok=True)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if args.gpu is not None:
+        device = torch.device(f"cuda:{args.gpu}")
+        torch.cuda.set_device(device)
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     seed_everything(cfg.seed)
 
     # Vocab
@@ -90,6 +98,11 @@ def main():
     model = ASRModel(vocab_size=vocab.size, cfg=cfg).to(device)
     pc = count_parameters(model)
     logger.info(f"Backbone: {args.backbone} | Params: {format_param_count(pc['total'])}")
+
+    if cfg.compile_encoder:
+        torch.set_float32_matmul_precision("high")
+        logger.info("Compiling encoder with torch.compile (first batch will be slow)...")
+        model.encoder = torch.compile(model.encoder, mode="default")
 
     # Optimizer + scheduler
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)

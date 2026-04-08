@@ -62,6 +62,9 @@ class ExperimentConfig:
     chunk_sizes_sec: List[float] = field(default_factory=lambda: [2.0, 5.0, 10.0])
     max_carry_eval_utterances: int = 500
 
+    # ── Compilation ──────────────────────────────────────────────────────
+    compile_encoder: bool = False  # torch.compile the encoder for ~5× training speedup
+
     # ── Paths ────────────────────────────────────────────────────────────
     output_dir: str = "./outputs/run_default"
     data_cache_dir: str = "./data/librispeech"
