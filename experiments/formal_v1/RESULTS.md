@@ -217,15 +217,35 @@ via the `--compile` flag, which brings PyTorch Mamba to CUDA-level speed.
 The PyTorch version uses gradient checkpointing (recomputes activations in backward)
 to fit in 32 GB. The CUDA version's fused kernels are inherently more memory-efficient.
 
-### torch.compile — not viable for actual training
+### torch.compile — faster than CUDA mamba-ssm, but blocked by VRAM
 
 Micro-benchmarks with fixed tensors (B=8, T=500) showed `torch.compile(encoder)`
-achieving 26ms fwd+bwd vs CUDA's 35ms. However, **it OOMs on real training batches**
-because `torch.compile` is incompatible with gradient checkpointing. Without
-checkpointing, 6 layers of activations exceed 32 GB on the RTX 5090.
+achieving **26ms fwd+bwd vs CUDA's 35ms** — the compiled PyTorch scan is actually
+faster than the CUDA kernels. The problem is purely memory, not compute:
 
-The `--compile` flag remains in the codebase for future use on GPUs with more VRAM
-or with smaller batch configurations.
+1. **Gradient checkpointing saves ~10GB** by recomputing activations during backward
+   instead of storing them. This is what makes eager mode fit in 32GB (~25GB used).
+2. **`torch.compile` is incompatible with gradient checkpointing** — they cannot be
+   used together.
+3. **Without checkpointing**, the full activation graph for 6 Mamba layers with real
+   training batches (duration-based, up to 300s total) needs **>32GB** — so it OOMs
+   on the RTX 5090.
+
+So the bottleneck is the 32GB VRAM limit, not `torch.compile` itself. On a GPU with
+~48GB+ (e.g., A100 40GB/80GB, H100), `torch.compile` would work and give near-CUDA
+or better speed without needing the `mamba-ssm` CUDA kernels at all.
+
+**Possible workarounds (for later):**
+
+1. **Reduce `batch_max_seconds`** from 300 to ~150–200 — smaller batches would fit
+   without checkpointing, making `torch.compile` viable. Tradeoff: more optimizer
+   steps per epoch, potentially different convergence dynamics.
+2. **Compile individual layers** instead of the whole encoder — this might be
+   compatible with gradient checkpointing wrapping the compiled layers.
+3. **Mixed precision (bf16)** — could cut activation memory enough to skip
+   checkpointing entirely.
+
+The `--compile` flag remains in the codebase for future use with any of the above.
 
 ### Key changes made
 
