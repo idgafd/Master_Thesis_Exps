@@ -1,20 +1,18 @@
 """Mamba encoder — unidirectional and bidirectional variants.
 
-Performance note:
-    Wrap the encoder with ``torch.compile(encoder)`` for training-speed parity
-    with the CUDA ``mamba-ssm`` kernels.  The sequential scan inside each
-    MambaBlock fuses into a single kernel under compilation.
+Performance (RTX 5090, 6 layers, d_model=256, LibriSpeech clean-100):
+    PyTorch eager + grad checkpoint:  ~427s/epoch,  ~25 GB VRAM
+    CUDA mamba-ssm:                    ~60s/epoch,   ~8 GB VRAM
 
-    Benchmark (RTX 5090, B=8, T=500, D=256, 6 layers, fwd+bwd):
-        PyTorch eager      ~160 ms
-        torch.compile       ~33 ms
-        mamba-ssm CUDA      ~30 ms
+    Accuracy is near-identical (Test CER 0.186 vs 0.181 at 10 epochs).
+    The 7× speed gap is the cost of a pure-PyTorch scan vs fused CUDA kernels.
 """
 
 from typing import Optional, Tuple, List
 
 import torch
 import torch.nn as nn
+from torch.utils.checkpoint import checkpoint
 
 from src.models.components import SinusoidalPE
 from src.models.mamba_block import MambaBlock
@@ -127,7 +125,12 @@ class MambaEncoder(nn.Module):
 
         for i, layer in enumerate(self.layers):
             layer_state = state[i] if state is not None else None
-            x, ns = layer(x, state=layer_state)
+            if self.training and state is None and not torch.compiler.is_compiling():
+                # Gradient checkpointing saves memory in eager mode.
+                # Skipped under torch.compile (incompatible) and carry-state.
+                x, ns = checkpoint(layer, x, layer_state, use_reentrant=False)
+            else:
+                x, ns = layer(x, state=layer_state)
             x = x * mask_f
             if new_states is not None:
                 new_states.append(ns)

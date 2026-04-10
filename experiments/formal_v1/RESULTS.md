@@ -163,54 +163,77 @@ via the `--compile` flag, which brings PyTorch Mamba to CUDA-level speed.
 
 ### Accuracy comparison (10 epochs, seed=42, LibriSpeech clean-100)
 
-| Epoch | PyTorch Dev CER | CUDA Dev CER | PyTorch Train Loss | CUDA Train Loss |
-|-------|----------------:|-------------:|-------------------:|----------------:|
-| 1     | 0.4726          | 0.4473       | 2.4500             | 2.4152          |
-| 2     | 0.3342          | 0.3185       | 1.6607             | 1.6013          |
-| 3     | 0.2815          | 0.2667       | 1.3737             | 1.3327          |
-| 4     | 0.2475          | 0.2373       | 1.2343             | 1.2049          |
-| 5     | 0.2248          | 0.2160       | 1.1242             | 1.1008          |
-| 6     | 0.2095          | 0.2067       | 1.0466             | 1.0276          |
-| 7     | 0.2018          | 0.1940       | 1.0017             | 0.9864          |
-| 8     | 0.1924          | 0.1880       | 0.9551             | 0.9415          |
-| 9     | 0.1895          | 0.1843       | 0.9387             | 0.9270          |
-| 10    | 0.1889          | 0.1852       | 0.9190             | 0.9076          |
+| Epoch | PyTorch Dev CER | CUDA Dev CER | Delta |
+|-------|----------------:|-------------:|------:|
+| 1     | 0.4735          | 0.4473       | +0.026 |
+| 2     | 0.3312          | 0.3185       | +0.013 |
+| 3     | 0.2810          | 0.2667       | +0.014 |
+| 4     | 0.2467          | 0.2373       | +0.009 |
+| 5     | 0.2272          | 0.2160       | +0.011 |
+| 6     | 0.2104          | 0.2067       | +0.004 |
+| 7     | 0.2025          | 0.1940       | +0.009 |
+| 8     | 0.1936          | 0.1880       | +0.006 |
+| 9     | 0.1898          | 0.1843       | +0.006 |
+| 10    | 0.1892          | 0.1852       | +0.004 |
+
+| Metric | PyTorch | CUDA |
+|--------|--------:|-----:|
+| **Best Dev CER** | 0.1892 | 0.1843 |
+| **Test CER** | 0.1857 | 0.1808 |
+| **Test WER** | 0.5308 | 0.5183 |
+| Params | 7,304,221 | 7,304,221 |
+
+**Chunked evaluation (Dev, reset mode):**
+
+| Chunk | PyTorch | CUDA |
+|-------|--------:|-----:|
+| 2s  | 0.2669 | 0.2614 |
+| 5s  | 0.2119 | 0.2064 |
+| 10s | 0.1945 | 0.1894 |
+
+**Carry-state evaluation (PyTorch only — CUDA wrapper doesn't expose carry-state):**
+
+| Chunk | Carry CER |
+|-------|----------:|
+| 2s  | 0.2709 |
+| 5s  | 0.2267 |
+| 10s | 0.2132 |
 
 **Summary:**
-- Both converge along nearly identical trajectories
-- CUDA is ~0.004 CER ahead at epoch 10 (0.185 vs 0.189) — within noise,
-  likely from different random number generation paths in the two SSM kernels
-- CUDA test CER: **0.1808**, test WER: **0.5183** (7.30M params)
-- PyTorch test evaluation pending (crashed on carry-state eval, bug now fixed)
+- Both converge along nearly identical trajectories (delta narrows from 0.026 to 0.004)
+- The ~0.005 CER gap at convergence is within noise — likely from different
+  numerical paths in the two SSM kernels (discretization order, float accumulation)
+- Chunked eval shows the same ~0.005 consistent gap
+- **Conclusion: the PyTorch reimplementation is accuracy-equivalent to CUDA mamba-ssm**
 
-### Speed comparison (eager mode)
+### Speed comparison
 
 | Metric | PyTorch (eager) | CUDA mamba-ssm |
 |--------|----------------:|---------------:|
-| Avg epoch time | ~380s | ~60s |
-| **Speed ratio** | **6.3× slower** | **1×** |
+| Avg epoch time | **427s** | **60s** |
+| Speed ratio | 7.1× slower | 1× |
+| Peak VRAM | ~25 GB | ~8 GB |
 
-### Speed with torch.compile (benchmark, B=8, T=500, D=256, 6 layers)
+The PyTorch version uses gradient checkpointing (recomputes activations in backward)
+to fit in 32 GB. The CUDA version's fused kernels are inherently more memory-efficient.
 
-| Mode | fwd+bwd | Peak memory |
-|------|--------:|------------:|
-| PyTorch eager | 137 ms | 12 GB |
-| `torch.compile(encoder)` | **26 ms** | 11 GB |
-| CUDA mamba-ssm | 35 ms | 0.6 GB |
+### torch.compile — not viable for actual training
 
-`torch.compile` achieves **better-than-CUDA training speed** (~26ms vs ~35ms)
-at the cost of higher memory (11 GB vs 0.6 GB) and a one-time ~100s compilation
-overhead. The RTX 5090 (32 GB) has sufficient memory.
+Micro-benchmarks with fixed tensors (B=8, T=500) showed `torch.compile(encoder)`
+achieving 26ms fwd+bwd vs CUDA's 35ms. However, **it OOMs on real training batches**
+because `torch.compile` is incompatible with gradient checkpointing. Without
+checkpointing, 6 layers of activations exceed 32 GB on the RTX 5090.
 
-### Key changes that enabled this
+The `--compile` flag remains in the codebase for future use on GPUs with more VRAM
+or with smaller batch configurations.
+
+### Key changes made
 
 1. **Parallel associative scan** (Hillis-Steele) replaced the sequential loop
-2. **Slice-based shifting** replaced `F.pad` in the scan (fewer allocations)
-3. **Chunked scan** (chunk_size=64) bounds memory to O(B×C×D×N) per chunk
-4. **`torch.compile` support** — the parallel scan's 6 iterations (log₂64)
-   are small enough for the compiler to fuse with surrounding ops
-5. **`--compile` flag** added to `run_experiment.py` for easy use
-6. **`--gpu` flag** added for multi-GPU parallel experiment execution
+2. **Chunked scan** (chunk_size=64) bounds memory to O(B×C×D×N) per chunk
+3. **Gradient checkpointing** in eager mode (skipped under torch.compile)
+4. **Carry-state support** via `init_state()` and dict-based state passing
+5. **`--compile` and `--gpu` flags** added to `run_experiment.py`
 
 ---
 

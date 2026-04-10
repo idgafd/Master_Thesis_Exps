@@ -50,13 +50,12 @@ def parallel_scan(gates: torch.Tensor, tokens: torch.Tensor) -> torch.Tensor:
     num_steps = math.ceil(math.log2(max(T, 2)))
     for d in range(num_steps):
         stride = 1 << d
-        # Slice-based shift avoids F.pad allocation overhead
-        a_prev = a[:, :-stride]          # (B, T-stride, D, N)
-        b_prev = b[:, :-stride]
-        a_tail = a[:, stride:] * a_prev  # combine
-        b_tail = a[:, stride:] * b_prev + b[:, stride:]
-        a = torch.cat([a[:, :stride], a_tail], dim=1)
-        b = torch.cat([b[:, :stride], b_tail], dim=1)
+        a_shifted = F.pad(a[:, :-stride], (0, 0, 0, 0, stride, 0), value=1.0)
+        b_shifted = F.pad(b[:, :-stride], (0, 0, 0, 0, stride, 0), value=0.0)
+        new_a = a * a_shifted
+        new_b = a * b_shifted + b
+        a = new_a
+        b = new_b
 
     return b
 
@@ -257,7 +256,7 @@ class MambaBlock(nn.Module):
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
 
         # SSM scan (fused by torch.compile when encoder is compiled)
-        ssm_state = state[1] if state is not None else None
+        ssm_state = state.get("ssm") if state is not None else None
         y, new_ssm_state = selective_scan(
             x_conv, dt, A, B_ssm, C_ssm, ssm_state
         )
@@ -267,7 +266,7 @@ class MambaBlock(nn.Module):
         y = y + self.D.unsqueeze(0).unsqueeze(0) * x_conv  # skip connection
         out = self.out_proj(y)
 
-        return out, new_ssm_state
+        return out, {"ssm": new_ssm_state}
 
     def step(
         self,
