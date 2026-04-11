@@ -1,7 +1,22 @@
+# Python
 __pycache__/
 *.pyc
 *.egg-info/
-outputs/
+
+# Data cache (large, regenerable)
 data/librispeech/
+
+# Binary model weights — regenerable from git_sha + config
 *.pt
 *.bin
+*.safetensors
+
+# torch.compile Inductor cache — run-local
+.inductor_cache/
+**/.inductor_cache/
+
+# Everything else under outputs/ IS committed to git:
+#   - results.json, history.csv, metrics.jsonl, train.log.gz
+#   - plots/*.png, config.yaml, cli_args.txt, git_sha.txt
+#   - _index.csv, _plots/*.png, _streaming_memory.csv
+# The binary *.pt rule above keeps checkpoints out.

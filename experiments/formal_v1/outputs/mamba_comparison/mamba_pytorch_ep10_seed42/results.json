@@ -1,0 +1,120 @@
+{
+  "backbone": "mamba",
+  "params": {
+    "total": 7304221,
+    "trainable": 7304221,
+    "frontend": 1903616,
+    "encoder": 5392640,
+    "ctc_head": 7965
+  },
+  "best_dev_cer": 0.1892,
+  "test": {
+    "loss": 0.659337640818903,
+    "cer": 0.18569225075139914,
+    "wer": 0.5308413992188826
+  },
+  "chunked": {
+    "2.0s_reset": {
+      "cer": 0.26692649956740866,
+      "wer": 0.6371479571598572,
+      "n_evaluated": 2642
+    },
+    "2.0s_carry": {
+      "cer": 0.2708677453792383,
+      "wer": 0.6335224232045381,
+      "n_evaluated": 500
+    },
+    "5.0s_reset": {
+      "cer": 0.21189189977499684,
+      "wer": 0.5668583895279651,
+      "n_evaluated": 2642
+    },
+    "5.0s_carry": {
+      "cer": 0.2266986483378585,
+      "wer": 0.5870705340896928,
+      "n_evaluated": 500
+    },
+    "10.0s_reset": {
+      "cer": 0.1944541910190256,
+      "wer": 0.5417691392304641,
+      "n_evaluated": 2642
+    },
+    "10.0s_carry": {
+      "cer": 0.21318479019015268,
+      "wer": 0.5686610296478647,
+      "n_evaluated": 500
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.4504,
+      "dev_cer": 0.4735,
+      "dev_wer": 0.9455,
+      "epoch_time_sec": 421.0
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.6602,
+      "dev_cer": 0.3312,
+      "dev_wer": 0.7751,
+      "epoch_time_sec": 423.0
+    },
+    {
+      "epoch": 3,
+      "train_loss": 1.3735,
+      "dev_cer": 0.281,
+      "dev_wer": 0.7063,
+      "epoch_time_sec": 422.0
+    },
+    {
+      "epoch": 4,
+      "train_loss": 1.2352,
+      "dev_cer": 0.2467,
+      "dev_wer": 0.6417,
+      "epoch_time_sec": 426.0
+    },
+    {
+      "epoch": 5,
+      "train_loss": 1.1254,
+      "dev_cer": 0.2272,
+      "dev_wer": 0.6073,
+      "epoch_time_sec": 428.0
+    },
+    {
+      "epoch": 6,
+      "train_loss": 1.0465,
+      "dev_cer": 0.2104,
+      "dev_wer": 0.5804,
+      "epoch_time_sec": 430.0
+    },
+    {
+      "epoch": 7,
+      "train_loss": 1.002,
+      "dev_cer": 0.2025,
+      "dev_wer": 0.5585,
+      "epoch_time_sec": 430.0
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.9558,
+      "dev_cer": 0.1936,
+      "dev_wer": 0.5428,
+      "epoch_time_sec": 429.0
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.939,
+      "dev_cer": 0.1898,
+      "dev_wer": 0.5347,
+      "epoch_time_sec": 429.0
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.9192,
+      "dev_cer": 0.1892,
+      "dev_wer": 0.5347,
+      "epoch_time_sec": 429.0
+    }
+  ]
+}

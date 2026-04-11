@@ -1,0 +1,92 @@
+2026-04-07 22:31:28,603 INFO Loading LibriSpeech split=train.100 from HuggingFace...
+2026-04-07 22:31:28,943 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-07 22:31:28,943 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-07 22:31:28,996 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-07 22:31:29,172 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:31:29,692 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:31:30,399 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/revision/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 "HTTP/1.1 200 OK"
+2026-04-07 22:31:30,578 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-07 22:31:30,938 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-07 22:31:31,127 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftest?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-07 22:31:31,301 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-04-07 22:31:31,488 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.100?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-07 22:33:31,661 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.360?recursive=true&expand=false "HTTP/1.1 504 Gateway Time-out"
+Using the latest cached version of the dataset since openslr/librispeech_asr couldn't be found on the Hugging Face Hub
+2026-04-07 22:33:31,663 WARNING Using the latest cached version of the dataset since openslr/librispeech_asr couldn't be found on the Hugging Face Hub
+Found the latest cached dataset configuration 'clean' at data/librispeech/openslr___librispeech_asr/clean/0.0.0/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 (last modified on Mon Apr  6 15:21:37 2026).
+2026-04-07 22:33:31,664 WARNING Found the latest cached dataset configuration 'clean' at data/librispeech/openslr___librispeech_asr/clean/0.0.0/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 (last modified on Mon Apr  6 15:21:37 2026).
+2026-04-07 22:36:14,149 INFO Loaded 28538 utterances from train.100 (skipped 1 outside [0.5s, 20.0s])
+2026-04-07 22:36:14,272 INFO Loading LibriSpeech split=validation from HuggingFace...
+2026-04-07 22:36:14,626 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-07 22:36:14,679 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-07 22:36:14,898 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:15,463 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:15,708 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:16,058 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-07 22:36:16,247 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.360?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-07 22:36:16,440 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Fvalidation?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-07 22:36:16,615 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:25,872 INFO Loaded 2642 utterances from validation (skipped 61 outside [0.5s, 20.0s])
+2026-04-07 22:36:25,877 INFO Loading LibriSpeech split=test from HuggingFace...
+2026-04-07 22:36:26,228 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-07 22:36:26,280 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-07 22:36:26,455 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:26,985 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:27,173 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:27,497 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-07 22:36:27,681 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-07 22:36:36,722 INFO Loaded 2528 utterances from test (skipped 92 outside [0.5s, 20.0s])
+2026-04-07 22:36:37,094 INFO Backbone: mamba | Params: 7.30M
+Traceback (most recent call last):
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/scripts/run_experiment.py", line 161, in <module>
+    main()
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/scripts/run_experiment.py", line 106, in main
+    train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, spec_aug, cfg, epoch, device)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/training/train.py", line 39, in train_one_epoch
+    log_probs, output_lengths, _ = model(mels, mel_lengths)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/asr_model.py", line 42, in forward
+    x, new_state = self.encoder(x, lengths, state=state)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/mamba_encoder.py", line 115, in forward
+    x, ns = layer(x, state=layer_state)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/mamba_encoder.py", line 59, in forward
+    mamba_out, new_state = self.mamba(self.ln1(x), state=state)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/mamba_block.py", line 231, in forward
+    y, new_ssm_state = selective_scan_parallel(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/mamba_block.py", line 107, in selective_scan_parallel
+    h_chunk = parallel_scan(dA_chunk, dB_x_chunk)  # (B, C, D, N)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/Master_Thesis_Exps/experiments/formal_v1/src/models/mamba_block.py", line 54, in parallel_scan
+    new_b = a * b_shifted + b
+            ~~~~~~~~~~~~~~^~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 80.00 MiB. GPU 0 has a total capacity of 31.36 GiB of which 80.94 MiB is free. Including non-PyTorch memory, this process has 31.27 GiB memory in use. Of the allocated memory 29.77 GiB is allocated by PyTorch, and 931.43 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
