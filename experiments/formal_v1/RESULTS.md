@@ -40,63 +40,82 @@
 
 ---
 
-## Table 1: Core Baselines (Full-Utterance Evaluation)
+## Group A — Causal / Streaming-capable (full-utterance)
 
-| # | Backbone | Dev CER | Dev WER | Test CER | Test WER | Best Epoch |
-|---|----------|---------|---------|----------|----------|------------|
-| 1 | transformer | — | — | — | — | — |
-| 2 | rwkv6 | — | — | — | — | — |
-| 3 | mamba | — | — | — | — | — |
-| 4 | lion | — | — | — | — | — |
-| 5 | lion_convshift | — | — | — | — | — |
+Populated automatically from `outputs/_index.csv` by
+`python -m src.reporting.tables`. Edit the surrounding narrative freely;
+the table between the AUTOGEN markers is overwritten on each reporting
+pass.
 
-## Table 2: LION + Mechanism Improvements
+<!-- AUTOGEN:TABLE name=group_a -->
 
-| # | Backbone | Dev CER | Dev WER | Test CER | Test WER | Delta vs LION |
-|---|----------|---------|---------|----------|----------|---------------|
-| 6 | lion_lucid | — | — | — | — | — |
-| 7 | lion_lucid_chunked | — | — | — | — | — |
-| 8 | lion_delta | — | — | — | — | — |
-| 9 | lion_convshift_headscale | — | — | — | — | — |
+_No completed runs in this group yet._
 
-## Table 3: RWKV-6 (Recurrent) + Mechanisms
+<!-- /AUTOGEN:TABLE -->
 
-| # | Backbone | Dev CER | Dev WER | Test CER | Test WER | Delta vs rwkv6 |
-|---|----------|---------|---------|----------|----------|----------------|
-| 10 | rwkv6_lucid | — | — | — | — | — |
-| 11 | rwkv6_delta | — | — | — | — | — |
-| 12 | rwkv6_lucid_delta | — | — | — | — | — |
+## Group B — Bidirectional / Offline (full-utterance)
 
-## Table 4: Bidirectional Mamba
+<!-- AUTOGEN:TABLE name=group_b -->
 
-| # | Backbone | Dev CER | Dev WER | Test CER | Test WER | Delta vs mamba |
-|---|----------|---------|---------|----------|----------|----------------|
-| 13 | mamba_bidir | — | — | — | — | — |
+_No completed runs in this group yet._
 
-## Table 5: Chunked Evaluation (Dev, Reset Mode)
+<!-- /AUTOGEN:TABLE -->
 
-| Backbone | Full | 2s | 5s | 10s |
-|----------|------|-----|-----|------|
-| transformer | — | — | — | — |
-| rwkv6 | — | — | — | — |
-| mamba | — | — | — | — |
-| lion | — | — | — | — |
-| lion_convshift | — | — | — | — |
+## Chunked Reset-Mode Evaluation
 
-## Table 6: Chunked Evaluation (Dev, Carry-State)
+Split each utterance into fixed-length chunks, run each chunk independently,
+concatenate the outputs. Bidirectional models lose long-range context here;
+causal models lose long-range past.
 
-| Backbone | Full | 2s | 5s | 10s |
-|----------|------|-----|-----|------|
-| rwkv6 | — | — | — | — |
-| mamba | — | — | — | — |
+<!-- AUTOGEN:TABLE name=chunked -->
 
----
+| Run                       | Backbone   |   Full Test CER |   2 s reset |   5 s reset |   10 s reset |
+|---------------------------|------------|-----------------|-------------|-------------|--------------|
+| mamba_cuda_ep10_seed42    | mamba_cuda |          0.1799 |      0.2603 |      0.2059 |       0.1894 |
+| mamba_cuda_ep10_seed42    | mamba_cuda |          0.1808 |      0.2614 |      0.2064 |       0.1894 |
+| mamba_pytorch_ep10_seed42 | mamba      |          0.1857 |      0.2669 |      0.2119 |       0.1945 |
 
-## Table 7: Statistical Validation (Top-5 x 3 seeds)
+<!-- /AUTOGEN:TABLE -->
 
-| Backbone | Seed 42 CER | Seed 123 CER | Seed 777 CER | Mean | Std |
-|----------|-------------|--------------|--------------|------|-----|
-| — | — | — | — | — | — |
+## Carry-State Evaluation (Group A only)
+
+Streaming evaluation with per-utterance state carried across chunk
+boundaries. Only meaningful for causal recurrent encoders (RWKV-6, Mamba)
+and causal Transformer with KV cache. Bidirectional models are not listed.
+
+<!-- AUTOGEN:TABLE name=carry_state -->
+
+_No Group A runs with carry-state eval yet._
+
+<!-- /AUTOGEN:TABLE -->
+
+## Parameter Count Parity
+
+All backbones target ~7 M params for a fair comparison.
+
+<!-- AUTOGEN:TABLE name=param_counts -->
+
+| Backbone   |   Params total |   Encoder | vs LION %   |
+|------------|----------------|-----------|-------------|
+| mamba      |      7,304,221 | 5,392,640 | +0.0%       |
+| mamba_cuda |      7,304,221 | 5,392,640 | +0.0%       |
+
+<!-- /AUTOGEN:TABLE -->
+
+## Training Time
+
+Average epoch time and peak VRAM per run. Compile-enabled Mamba skipped
+on 32 GB hardware — see INFRASTRUCTURE_PLAN.md §2.1.
+
+<!-- AUTOGEN:TABLE name=timing -->
+
+| Run                       | Backbone   |   Epochs | Avg epoch   | Total train   | Peak VRAM   |
+|---------------------------|------------|----------|-------------|---------------|-------------|
+| mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 602 s         | 0.0 GB      |
+| mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 605 s         | 0.0 GB      |
+| mamba_pytorch_ep10_seed42 | mamba      |       10 | 427 s       | 4267 s        | 0.0 GB      |
+
+<!-- /AUTOGEN:TABLE -->
 
 ---
 

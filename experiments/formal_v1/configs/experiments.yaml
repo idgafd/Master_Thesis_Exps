@@ -1,0 +1,43 @@
+# Single source of truth for the 16-run formal comparison.
+#
+# Each entry fully specifies a run. The executor (scripts/run_registry.py)
+# validates `backbone` against the encoder factory, resolves the default
+# config, applies per-entry overrides, and writes outputs to `outputs/{id}/`.
+#
+# Fields:
+#   id          - unique run identifier. Output dir is outputs/{id}/.
+#   backbone    - must match a factory key in src/models/encoder.py
+#   seed        - random seed
+#   epochs      - number of training epochs
+#   tags        - list of tags for filtering (groupA, groupB, baseline, ...)
+#   shortlist   - if true, carry-state eval and multi-seed validation run
+#
+# Tag semantics:
+#   groupA      - causal / streaming-capable (full, reset, and carry eval)
+#   groupB      - bidirectional / offline (full and reset eval only)
+#   baseline    - architectural baseline within a group
+#   mechanism   - mechanism ablation on an existing backbone
+#   recurrent   - causal recurrent model (constant-state streaming)
+#   bidir       - bidirectional model
+#   stacking    - combines two or more mechanisms
+
+experiments:
+  # ═══ Group A — causal / streaming-capable ═══════════════════════════════
+  - {id: exp01_transformer_causal, backbone: transformer_causal, seed: 42, epochs: 80, tags: [groupA, baseline],            shortlist: true}
+  - {id: exp02_rwkv6,              backbone: rwkv6,              seed: 42, epochs: 80, tags: [groupA, baseline, recurrent], shortlist: true}
+  - {id: exp03_mamba_cuda,         backbone: mamba_cuda,         seed: 42, epochs: 80, tags: [groupA, baseline, recurrent], shortlist: true}
+  - {id: exp04_mamba_pytorch,      backbone: mamba,              seed: 42, epochs: 80, tags: [groupA, recurrent, reimplementation]}
+  - {id: exp05_rwkv6_lucid,        backbone: rwkv6_lucid,        seed: 42, epochs: 80, tags: [groupA, mechanism]}
+  - {id: exp06_rwkv6_delta,        backbone: rwkv6_delta,        seed: 42, epochs: 80, tags: [groupA, mechanism]}
+  - {id: exp07_rwkv6_lucid_delta,  backbone: rwkv6_lucid_delta,  seed: 42, epochs: 80, tags: [groupA, mechanism, stacking]}
+
+  # ═══ Group B — bidirectional / offline ════════════════════════════════
+  - {id: exp08_transformer,                backbone: transformer,                seed: 42, epochs: 80, tags: [groupB, baseline], shortlist: true}
+  - {id: exp09_lion,                       backbone: lion,                       seed: 42, epochs: 80, tags: [groupB, baseline], shortlist: true}
+  - {id: exp10_mamba_bidir,                backbone: mamba_bidir,                seed: 42, epochs: 80, tags: [groupB, baseline]}
+  - {id: exp11_lion_convshift,             backbone: lion_convshift,             seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp12_lion_lucid,                 backbone: lion_lucid,                 seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp13_lion_lucid_chunked,         backbone: lion_lucid_chunked,         seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp14_lion_delta,                 backbone: lion_delta,                 seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp15_lion_headscale,             backbone: lion_headscale,             seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp16_lion_convshift_headscale,   backbone: lion_convshift_headscale,   seed: 42, epochs: 80, tags: [groupB, mechanism, stacking]}

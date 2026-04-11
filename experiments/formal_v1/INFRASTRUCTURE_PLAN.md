@@ -417,14 +417,13 @@ read this section and know exactly where to resume.
 - [x] B7. `src/reporting/plots/streaming_memory.py` → `outputs/_plots/streaming_memory_vs_duration.png`
 
 ### Phase C — Registry + reporting
-- [ ] C1. `configs/experiments.yaml` (16 entries)
-- [ ] C2. `scripts/run_registry.py`
-- [ ] C3. `reporting.collect`
-- [ ] C4. `reporting.tables` with AUTOGEN markers in `RESULTS.md`
-- [ ] C5. `reporting.plots` (cross-run)
-- [ ] C6. Smoke test: 2 epochs of each backbone through the registry on
-  the RTX 5090, verify `_index.csv`, tables, plots regenerate cleanly
-- [ ] C7. Resume-from-crash test
+- [x] C1. `configs/experiments.yaml` — 16 entries, causal/bidirectional split
+- [x] C2. `scripts/run_registry.py` — `--all`, `--ids`, `--tag`, `--shortlist`, `--seeds`, `--gpus`, `--parallel`, `--dry-run`, `--resume`
+- [x] C3. `src/reporting/collect.py` — scans `outputs/*/results.json` → `outputs/_index.csv`
+- [x] C4. `src/reporting/tables.py` — rewrites AUTOGEN blocks in `RESULTS.md` (6 tables: group_a, group_b, chunked, carry_state, param_counts, timing)
+- [x] C5. `src/reporting/plots/cross_run.py` — 5 PNGs (convergence per group, CER vs params, chunked CER vs chunk size, training time bar)
+- [x] C6. Harness validation: dry-run registry (16 runs planned), filters (`--shortlist` → 5, `--tag mechanism` → 9), end-to-end reporting on 3 legacy Mamba runs. **Full 2-epoch-per-backbone smoke test deferred to Phase D** (start of big-GPU runs).
+- [ ] C7. Resume-from-crash test (defer until Phase D start — `--resume` code is in run_experiment.py from Phase A)
 
 ### Phase D — Full training on the big GPU
 - [ ] D1. Verify `run_mamba_compiled.py` speed on the target GPU
