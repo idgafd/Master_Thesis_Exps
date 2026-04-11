@@ -43,11 +43,14 @@ from src.models.encoder import build_encoder
 
 SUPPORTED_BACKBONES = ["mamba", "rwkv6", "transformer_causal"]
 
-# The chunk lengths we sweep, in seconds of raw audio. With the standard
-# 10 ms hop and 4× downsampling in the frontend, each chunk corresponds to
-# chunk_sec * 25 post-frontend frames.
-CHUNK_SECONDS = [0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
-TOTAL_DURATION_SEC = 30.0
+# Total durations swept to show state-size-vs-duration. Each entry is the
+# amount of streamed audio the encoder is forced to carry state through.
+DURATIONS_SEC = [1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 120.0]
+
+# Streaming chunk length (fixed across durations). 2 s is roughly the
+# latency budget of typical real-time ASR; the plot shape does not depend
+# on this value for constant-state backbones.
+CHUNK_SEC = 2.0
 
 
 def _state_bytes(state) -> int:
@@ -79,25 +82,31 @@ def _make_fake_frontend_output(
 def measure_backbone(
     backbone: str,
     device: torch.device,
-    chunk_seconds: Iterable[float] = CHUNK_SECONDS,
-    total_duration_sec: float = TOTAL_DURATION_SEC,
+    durations_sec: Iterable[float] = DURATIONS_SEC,
+    chunk_sec: float = CHUNK_SEC,
 ) -> list[dict]:
-    """Stream a simulated utterance through an encoder, measure state size."""
+    """Sweep total-audio-duration, measure encoder carry-state size.
+
+    For each target duration, the encoder is streamed through ``duration_sec``
+    of synthetic post-frontend features in chunks of length ``chunk_sec`` and
+    the final carry state is measured. Constant-state backbones (Mamba,
+    RWKV-6) produce a flat line; growing-state backbones (causal Transformer
+    with KV cache) produce a linear line.
+    """
     cfg = ExperimentConfig()
     cfg.backbone = backbone
     encoder = build_encoder(cfg).to(device).eval()
 
     rows: list[dict] = []
 
-    for chunk_sec in chunk_seconds:
-        x_full = _make_fake_frontend_output(total_duration_sec, cfg, device)
+    for duration_sec in durations_sec:
+        x_full = _make_fake_frontend_output(duration_sec, cfg, device)
         T_full = x_full.shape[1]
-
-        # Number of frames per chunk, clamped to at least 1.
         chunk_frames = max(1, int(chunk_sec * 1000 / cfg.hop_length_ms) // 4)
 
         state = encoder.init_state(batch_size=1, device=device)
-        torch.cuda.reset_peak_memory_stats(device) if device.type == "cuda" else None
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
 
         frames_seen = 0
         final_state = state

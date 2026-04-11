@@ -71,6 +71,8 @@ def render(input_csv: Path, output_png: Path) -> None:
     })
     fig, ax = plt.subplots()
 
+    # Use measured points only; the script sweeps duration explicitly so
+    # the shape of each line is a direct measurement, not a projection.
     for backbone, sub in df.groupby("backbone"):
         sub_sorted = sub.sort_values("duration_sec")
         style = BACKBONE_STYLE.get(backbone, {"label": backbone, "color": "tab:gray"})
@@ -79,23 +81,10 @@ def render(input_csv: Path, output_png: Path) -> None:
             marker="o", label=style["label"], color=style["color"], linewidth=2,
         )
 
-        # For the causal Transformer, project a theoretical growth line
-        # from the smallest-chunk data point out to a longer duration.
-        if backbone == "transformer_causal" and len(sub_sorted) >= 1:
-            point = sub_sorted.iloc[0]
-            bytes_per_sec = point["state_bytes"] / max(point["duration_sec"], 1e-6)
-            proj_x = [1, 5, 10, 30, 60, 300, 1800]
-            proj_y = [bytes_per_sec * d for d in proj_x]
-            ax.plot(
-                proj_x, proj_y, "--",
-                color=style["color"], alpha=0.5, linewidth=1.2,
-                label=f"{style['label']} (projected, linear growth)",
-            )
-
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.set_xlabel("Audio duration streamed (s)")
-    ax.set_ylabel("Encoder state size (bytes, log scale)")
+    ax.set_ylabel("Encoder carry-state size (bytes, log scale)")
     ax.set_title("Streaming-inference state size vs audio duration")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(_fmt_bytes))
     ax.legend(loc="upper left", framealpha=0.9)
