@@ -177,11 +177,17 @@ def main():
                         help="Launch runs in parallel across --gpus. Requires --gpus.")
     parser.add_argument("--resume", action="store_true",
                         help="Pass --resume to each run (resume from last_model.pt).")
+    parser.add_argument("--epochs-override", type=int, default=None,
+                        help="Override registry epochs for every run (useful for smoke tests).")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print commands without executing.")
     args = parser.parse_args()
 
     experiments = load_registry(args.config)
+
+    if args.epochs_override is not None:
+        for e in experiments:
+            e.epochs = args.epochs_override
 
     ids = [x.strip() for x in args.ids.split(",")] if args.ids else None
     selected = filter_experiments(

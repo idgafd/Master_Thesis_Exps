@@ -9,12 +9,16 @@ context.
 **Audience.** AI researcher running the 16-run comparison and producing the
 thesis chapter.
 
-**Status.** The code for all backbones exists and trains correctly. The
-Mamba PyTorch vs CUDA comparison (10 epochs, seed=42) is complete and
-accuracy-equivalent. What is missing is (a) the research harness that turns
-raw runs into analysis-ready artifacts, (b) the causal-Transformer baseline
-that closes the causal comparison group, and (c) two correctness fixes in
-Mamba carry-state handling. See §7 for the execution checklist.
+**Status.** Phases A, B, and C are complete. The harness, the carry-state
+fixes, the causal Transformer baseline, the streaming-memory demonstration,
+and the registry/reporting pipeline all work end-to-end on the RTX 5090.
+Validation on real training runs produced `outputs/exp09_lion_seed42/`
+(2 epochs, 89 s/epoch, dev CER 0.40 after 2 epochs — converging as
+expected). A parallel run of `exp02_rwkv6_seed42` was killed after epoch 1
+because it exposed a large speed regression in the self-contained RWKV-6
+recurrent kernel: see §9 for details. **Phase D is blocked on fixing that
+regression** — the existing harness is ready to execute the 16-run campaign
+as soon as the RWKV-6 kernel is brought back to expected throughput.
 
 ---
 
@@ -426,6 +430,8 @@ read this section and know exactly where to resume.
 - [ ] C7. Resume-from-crash test (defer until Phase D start — `--resume` code is in run_experiment.py from Phase A)
 
 ### Phase D — Full training on the big GPU
+**Blocked on:** D0 (RWKV-6 kernel speed regression — see §9).
+- [ ] D0. Fix RWKV-6 recurrent kernel speed (see §9 for details)
 - [ ] D1. Verify `run_mamba_compiled.py` speed on the target GPU
 - [ ] D2. `run_registry.py --all --epochs 80` — Group A
 - [ ] D3. `run_registry.py --all --epochs 80` — Group B
@@ -447,3 +453,86 @@ read this section and know exactly where to resume.
   `reporting.tables` run.
 - A reviewer browsing the repo on GitHub sees convergence curves for every
   run without cloning or running anything locally.
+
+---
+
+## 9. Open issue — RWKV-6 recurrent kernel speed regression
+
+**Discovered at the end of Phase C** during the smoke-test of the registry
+on two backbones (`exp02_rwkv6` and `exp09_lion`) run in parallel on GPUs 0
+and 1, each capped at 2 epochs via `--epochs-override 2`.
+
+### Observed numbers
+
+| Backbone | Model size | Epoch time | Tokens/sec | Peak VRAM |
+|---|---:|---:|---:|---:|
+| LION (bidirectional RWKV-6) | 7.74 M | **89 s** | ~497 k | 3.6 GB |
+| RWKV-6 (recurrent) | 7.74 M | **1220 s** | ~35 k | 6.3 GB |
+| Expected RWKV-6 (`RESULTS.md` early baseline) | 7.74 M | ~83 s | — | — |
+
+The 1220 s / 89 s ratio is **13.7×** at identical parameter count, and
+the current 1220 s is **14.7×** slower than the 83 s figure recorded for
+`rwkv6` in the earlier draft baselines. LION, which is the *bidirectional*
+variant of the same RWKV-6 TimeMix, is at the expected speed — so the
+regression is specifically in the **recurrent-mode code path**
+(`RWKV6TimeMix._forward_recurrent`).
+
+Likely cause: the self-contained WKV kernel in `src/models/rwkv6_time_mix.py`
+uses a Python loop over time steps for the chunked WKV scan. LION bypasses
+this entirely via `_forward_lion`, which is a parallel T×T attention that
+GPU-tiles cleanly. The early baseline may have been measured against a
+different implementation (the old `rwkv-block` external library had a
+compiled kernel) or against a version with a vectorized inner loop that
+has since been simplified.
+
+### Why this blocks Phase D
+
+At 1220 s / epoch, the full 80-epoch campaign for a single RWKV-6 variant
+would take ~27 hours. We have 4 RWKV-6 variants in Group A
+(`rwkv6`, `rwkv6_lucid`, `rwkv6_delta`, `rwkv6_lucid_delta`). Even with
+parallel GPUs, the RWKV-6 portion alone would dominate the entire
+compute budget. LION variants at ~90 s/epoch finish in ~2 hours each, so
+Group B is feasible as-is.
+
+### Fix options (to decide before Phase D)
+
+1. **Vectorize the chunked WKV scan.** Replace the Python for-loop with a
+   Hillis-Steele parallel associative scan, same pattern we used for the
+   Mamba selective scan in Phase B. Pure-PyTorch, no custom kernels.
+   Expected speedup: 5–15×, bringing epoch time toward ~80–150 s.
+2. **Reuse the LION parallel kernel with a causal mask.** LION already
+   does the full T×T attention fast; restricting it to the lower
+   triangle is a one-line change and would give LION-level throughput.
+   Downside: still O(T²) memory, which is what recurrent mode is supposed
+   to avoid in principle. Acceptable at T≤750 post-frontend frames.
+3. **Triton/CUDA custom kernel.** The draft codebase had one via
+   `rwkv-block`. Out of scope per §5 item 4 (we said no custom kernels),
+   so this is the last resort.
+
+My recommendation is **option 1** (vectorized associative scan) — same
+technique we used successfully for Mamba, keeps the code self-contained
+and pure PyTorch, gives the biggest speedup without introducing an
+O(T²) memory footprint that could OOM on long utterances later.
+
+### State of the LION validation run (preserved)
+
+`outputs/exp09_lion_seed42/` contains a complete 2-epoch run that
+exercised the full harness end-to-end:
+
+| Epoch | Train loss | Dev CER | Dev WER | Epoch time | Peak VRAM |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 2.587 | 0.527 | 0.994 | 90 s | 3.6 GB |
+| 2 | 1.852 | 0.404 | 0.869 | 88 s | 3.6 GB |
+
+Also produced: `best_model.pt`, `last_model.pt`, `checkpoint_ep{1,2}.pt`,
+`history.csv`, `metrics.jsonl` (2472 steps), four in-run plots, `results.json`
+with test CER 0.4007 and the full chunked-reset evaluation.
+
+`outputs/exp02_rwkv6_seed42/` has a partial run killed mid-epoch 2:
+`checkpoint_ep1.pt`, `history.csv` (1 row), `metrics.jsonl` (1236 steps),
+in-run plots, and `config.yaml`/`git_sha.txt`. No `results.json` (by
+design — failed runs are visible to the reporter as missing).
+
+The reporting pipeline was regenerated on this partial state
+(`outputs/_index.csv` now has 4 rows including the LION run, and
+`outputs/_plots/convergence_groupB.png` has its first real data point).

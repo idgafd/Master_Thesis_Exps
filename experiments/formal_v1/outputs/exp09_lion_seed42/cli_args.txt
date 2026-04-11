@@ -1,0 +1,1 @@
+--config configs/default.yaml --backbone lion --epochs 2 --seed 42 --output-dir outputs/exp09_lion_seed42 --gpu 1

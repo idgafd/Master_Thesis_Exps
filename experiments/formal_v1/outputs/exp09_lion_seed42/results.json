@@ -1,0 +1,131 @@
+{
+  "backbone": "lion",
+  "params": {
+    "total": 7735069,
+    "trainable": 7735069,
+    "frontend": 1903616,
+    "encoder": 5823488,
+    "ctc_head": 7965
+  },
+  "best_dev_cer": 0.4043049919874948,
+  "test": {
+    "loss": 1.4586885803836886,
+    "cer": 0.40065625416770695,
+    "wer": 0.8675072168449652
+  },
+  "chunked": {
+    "2.0s_reset": {
+      "cer": 0.4507288215040027,
+      "wer": 0.8957508294980199,
+      "n_evaluated": 500
+    },
+    "5.0s_reset": {
+      "cer": 0.42713142557701356,
+      "wer": 0.8760569410253666,
+      "n_evaluated": 500
+    },
+    "10.0s_reset": {
+      "cer": 0.4224583573499628,
+      "wer": 0.8738092689714224,
+      "n_evaluated": 500
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.586727897519047,
+      "train_loss_std": 0.3056532055320863,
+      "dev_loss": 1.9035428899233455,
+      "dev_cer": 0.5268182389954077,
+      "dev_wer": 0.9941689805632684,
+      "epoch_time_sec": 90.17807626724245,
+      "learning_rate_end": 0.0002814339980876,
+      "grad_norm_mean": 0.9986247150739804,
+      "tokens_per_sec": 496968.7044326658,
+      "peak_mem_gb": 3.591840768,
+      "last_step": 1236
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.8518948951392495,
+      "train_loss_std": 0.1739376784301464,
+      "dev_loss": 1.503948522395775,
+      "dev_cer": 0.4043049919874948,
+      "dev_wer": 0.8689805632685442,
+      "epoch_time_sec": 88.0979208946228,
+      "learning_rate_end": 1e-06,
+      "grad_norm_mean": 0.9603490498170112,
+      "tokens_per_sec": 496902.2439952988,
+      "peak_mem_gb": 3.591873024,
+      "last_step": 2472
+    }
+  ],
+  "git_sha": "93a2ac1e60424a5eae7780da337037c4cc350dea",
+  "torch_version": "2.11.0+cu130",
+  "cuda_version": "13.0",
+  "gpu_name": "NVIDIA GeForce RTX 5090",
+  "config_snapshot": {
+    "dataset": "librispeech_clean",
+    "max_audio_sec": 20.0,
+    "min_audio_sec": 0.5,
+    "sample_rate": 16000,
+    "n_mels": 80,
+    "win_length_ms": 25,
+    "hop_length_ms": 10,
+    "d_model": 256,
+    "n_layers": 6,
+    "n_heads": 4,
+    "head_size": 64,
+    "dropout": 0.1,
+    "conv_channels": 256,
+    "backbone": "lion",
+    "rwkv_mode": "lion",
+    "conv_shift": false,
+    "headscale": false,
+    "delta_rule": false,
+    "lucid": false,
+    "lucid_chunk_size": null,
+    "temperature": false,
+    "mamba_d_state": 16,
+    "mamba_d_conv": 4,
+    "mamba_expand": 2,
+    "batch_max_seconds": 300,
+    "num_epochs": 2,
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "warmup_steps": 1000,
+    "grad_clip": 5.0,
+    "early_stopping_patience": 15,
+    "seed": 42,
+    "spec_augment": true,
+    "freq_mask_param": 27,
+    "time_mask_param": 100,
+    "num_freq_masks": 2,
+    "num_time_masks": 2,
+    "chunk_sizes_sec": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "max_carry_eval_utterances": 500,
+    "max_reset_eval_utterances": 500,
+    "chunked_eval_batch_size": 16,
+    "compile_encoder": false,
+    "output_dir": "outputs/exp09_lion_seed42",
+    "data_cache_dir": "./data/librispeech"
+  },
+  "cli_args": [
+    "--config",
+    "configs/default.yaml",
+    "--backbone",
+    "lion",
+    "--epochs",
+    "2",
+    "--seed",
+    "42",
+    "--output-dir",
+    "outputs/exp09_lion_seed42",
+    "--gpu",
+    "1"
+  ]
+}

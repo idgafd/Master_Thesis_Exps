@@ -57,7 +57,9 @@ _No completed runs in this group yet._
 
 <!-- AUTOGEN:TABLE name=group_b -->
 
-_No completed runs in this group yet._
+| Run               | Backbone   |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
+|-------------------|------------|-----------|-----------|------------|------------|--------------|
+| exp09_lion_seed42 | lion       | 7,735,069 |    0.4043 |     0.4007 |     0.8675 |            2 |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -71,6 +73,7 @@ causal models lose long-range past.
 
 | Run                       | Backbone   |   Full Test CER |   2 s reset |   5 s reset |   10 s reset |
 |---------------------------|------------|-----------------|-------------|-------------|--------------|
+| exp09_lion_seed42         | lion       |          0.4007 |      0.4507 |      0.4271 |       0.4225 |
 | mamba_cuda_ep10_seed42    | mamba_cuda |          0.1799 |      0.2603 |      0.2059 |       0.1894 |
 | mamba_cuda_ep10_seed42    | mamba_cuda |          0.1808 |      0.2614 |      0.2064 |       0.1894 |
 | mamba_pytorch_ep10_seed42 | mamba      |          0.1857 |      0.2669 |      0.2119 |       0.1945 |
@@ -97,8 +100,9 @@ All backbones target ~7 M params for a fair comparison.
 
 | Backbone   |   Params total |   Encoder | vs LION %   |
 |------------|----------------|-----------|-------------|
-| mamba      |      7,304,221 | 5,392,640 | +0.0%       |
-| mamba_cuda |      7,304,221 | 5,392,640 | +0.0%       |
+| lion       |      7,735,069 | 5,823,488 | +0.0%       |
+| mamba      |      7,304,221 | 5,392,640 | -5.6%       |
+| mamba_cuda |      7,304,221 | 5,392,640 | -5.6%       |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -113,6 +117,7 @@ on 32 GB hardware — see INFRASTRUCTURE_PLAN.md §2.1.
 |---------------------------|------------|----------|-------------|---------------|-------------|
 | mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 602 s         | 0.0 GB      |
 | mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 605 s         | 0.0 GB      |
+| exp09_lion_seed42         | lion       |        2 | 89 s        | 178 s         | 3.6 GB      |
 | mamba_pytorch_ep10_seed42 | mamba      |       10 | 427 s       | 4267 s        | 0.0 GB      |
 
 <!-- /AUTOGEN:TABLE -->
