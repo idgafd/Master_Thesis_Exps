@@ -401,11 +401,11 @@ Unchecked items are open work; checked items are done. Any contributor can
 read this section and know exactly where to resume.
 
 ### Phase A — Harness scaffolding (RTX 5090)
-- [ ] A1. `pyproject.toml` + `uv.lock`
-- [ ] A2. `MetricLogger` (jsonl + csv, no TensorBoard)
-- [ ] A3. Checkpointing + `--resume` flag
-- [ ] A4. In-run plot generation at epoch end
-- [ ] A5. `.gitignore` update for binary weights
+- [x] A1. `pyproject.toml` + `uv.lock`
+- [x] A2. `MetricLogger` (`src/training/metrics.py`, jsonl + csv, no TensorBoard)
+- [x] A3. Checkpointing (`src/training/checkpoint.py`) + `--resume` flag
+- [x] A4. In-run plot generation (`src/training/run_plots.py`) at epoch end
+- [x] A5. `.gitignore` update: exclude `*.pt`/`*.bin`/`*.safetensors`, track `outputs/`
 
 ### Phase B — Carry-state correctness + causal Transformer
 - [ ] B1. Fix Mamba `conv_state` carry
