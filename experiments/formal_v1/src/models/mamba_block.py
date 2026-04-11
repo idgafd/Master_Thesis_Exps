@@ -222,51 +222,102 @@ class MambaBlock(nn.Module):
         self.out_proj = nn.Linear(self.d_inner, self.d_model, bias=bias, **factory_kwargs)
         self.act = nn.SiLU()
 
+    def init_state(self, batch_size: int, device: torch.device) -> dict:
+        """Zero-initialized carry state for this block.
+
+        Returns a dict with:
+            conv : (B, d_inner, d_conv - 1) — tail of x_inner for conv context
+            ssm  : (B, d_inner, d_state)    — S6 hidden state
+        """
+        return {
+            "conv": torch.zeros(
+                batch_size, self.d_inner, self.d_conv - 1,
+                device=device, dtype=torch.float32,
+            ),
+            "ssm": torch.zeros(
+                batch_size, self.d_inner, self.d_state,
+                device=device, dtype=torch.float32,
+            ),
+        }
+
     def forward(
         self,
         x: torch.Tensor,
-        state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
-    ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, torch.Tensor]]]:
+        state: Optional[dict] = None,
+    ) -> Tuple[torch.Tensor, dict]:
         """
         x: (B, T, D)
-        state: optional (conv_state, ssm_state) for carry
-        Returns: (B, T, D), new_state_or_None
+        state: optional {"conv": (B, d_inner, d_conv - 1),
+                         "ssm":  (B, d_inner, d_state)} for carry
+        Returns: (B, T, D), new_state
         """
         B, T, D = x.shape
 
         xz = self.in_proj(x)  # (B, T, 2*d_inner)
         x_inner, z = xz.chunk(2, dim=-1)  # each (B, T, d_inner)
 
-        # Conv1d (causal)
-        x_conv = x_inner.transpose(1, 2)  # (B, d_inner, T)
-        x_conv = self.act(self.conv1d(x_conv)[..., :T])  # causal: trim padding
-        x_conv = x_conv.transpose(1, 2)  # (B, T, d_inner)
+        # ── Causal Conv1d with carry-state support ────────────────────────
+        # x_inner is (B, T, d_inner); conv1d wants (B, d_inner, T).
+        x_inner_bdt = x_inner.transpose(1, 2)  # (B, d_inner, T)
 
-        # Project to dt, B, C
+        conv_prefix_len = 0
+        if state is not None and state.get("conv") is not None:
+            # Prepend the last (d_conv - 1) frames from the previous chunk
+            # so the conv sees real history instead of zero padding.
+            conv_prefix = state["conv"].to(x_inner_bdt.dtype)  # (B, d_inner, d_conv-1)
+            x_inner_bdt = torch.cat([conv_prefix, x_inner_bdt], dim=-1)
+            conv_prefix_len = conv_prefix.shape[-1]
+
+        # Apply conv. With kernel=d_conv and padding=d_conv-1, a non-carry
+        # call produces T+d_conv-1 outputs; slicing [:T] is the causal trim.
+        # When carrying, we prepended d_conv-1 real frames and want exactly
+        # the T outputs that correspond to the new chunk.
+        conv_out_all = self.conv1d(x_inner_bdt)
+        if conv_prefix_len > 0:
+            # Skip the outputs that depend on prepended frames only.
+            # With padding=d_conv-1 and kernel=d_conv, output length is
+            # x_inner_bdt.shape[-1] + d_conv - 1 = (T + d_conv - 1) + d_conv - 1.
+            # The outputs corresponding to the new chunk's frames are
+            # indices [conv_prefix_len : conv_prefix_len + T].
+            conv_out = conv_out_all[..., conv_prefix_len : conv_prefix_len + T]
+        else:
+            conv_out = conv_out_all[..., :T]  # causal trim, as before
+
+        x_conv = self.act(conv_out).transpose(1, 2)  # (B, T, d_inner)
+
+        # New conv state = last (d_conv - 1) frames of x_inner (pre-conv).
+        # We take from the original x_inner (B, T, d_inner), tail-padded on
+        # the left if T < d_conv - 1.
+        tail_len = self.d_conv - 1
+        if T >= tail_len:
+            new_conv_state = x_inner[:, -tail_len:, :].transpose(1, 2).contiguous()
+        else:
+            pad = torch.zeros(
+                B, tail_len - T, self.d_inner,
+                device=x_inner.device, dtype=x_inner.dtype,
+            )
+            new_conv_state = torch.cat([pad, x_inner], dim=1).transpose(1, 2).contiguous()
+
+        # ── Project to dt, B, C ───────────────────────────────────────────
         x_dbl = self.x_proj(x_conv)  # (B, T, dt_rank + 2*d_state)
         dt, B_ssm, C_ssm = torch.split(
             x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=-1
         )
-
-        # dt projection and softplus
-        dt = self.dt_proj(dt)  # (B, T, d_inner)
-        dt = F.softplus(dt)
-
-        # A
+        dt = F.softplus(self.dt_proj(dt))  # (B, T, d_inner)
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
 
-        # SSM scan (fused by torch.compile when encoder is compiled)
+        # ── SSM scan (fused by torch.compile when encoder is compiled) ────
         ssm_state = state.get("ssm") if state is not None else None
         y, new_ssm_state = selective_scan(
             x_conv, dt, A, B_ssm, C_ssm, ssm_state
         )
 
-        # Gate and output
+        # ── Gate and output ───────────────────────────────────────────────
         y = y * self.act(z)
         y = y + self.D.unsqueeze(0).unsqueeze(0) * x_conv  # skip connection
         out = self.out_proj(y)
 
-        return out, {"ssm": new_ssm_state}
+        return out, {"conv": new_conv_state, "ssm": new_ssm_state}
 
     def step(
         self,

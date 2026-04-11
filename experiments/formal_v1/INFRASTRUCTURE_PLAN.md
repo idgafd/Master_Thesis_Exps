@@ -408,13 +408,13 @@ read this section and know exactly where to resume.
 - [x] A5. `.gitignore` update: exclude `*.pt`/`*.bin`/`*.safetensors`, track `outputs/`
 
 ### Phase B — Carry-state correctness + causal Transformer
-- [ ] B1. Fix Mamba `conv_state` carry
-- [ ] B2. Fix `MambaEncoder.init_state()`
-- [ ] B3. Equivalence test (full vs chunked forward)
-- [ ] B4. Batched `evaluate_chunked` with `max_utterances` cap
-- [ ] B5. `transformer_causal.py` + factory registration
-- [ ] B6. `scripts/measure_streaming_memory.py`
-- [ ] B7. Streaming-memory plot module
+- [x] B1. Fix Mamba `conv_state` carry (tail of `x_inner` prepended to next chunk; exact chunked↔full equivalence verified to 7e-7)
+- [x] B2. Fix `MambaEncoder.init_state()` — now returns `{"layers": [...], "offset": int}` with real zero-state dicts; `pos_enc` uses the offset so chunks see absolute positions
+- [x] B3. Equivalence tests (Mamba and causal Transformer — both pass)
+- [x] B4. Batched `evaluate_chunked` reset mode + `max_utterances`/`batch_size` config
+- [x] B5. `transformer_causal.py` + factory registration (KV-cache, `supports_carry_state=True`)
+- [x] B6. `scripts/measure_streaming_memory.py` → `outputs/_streaming_memory.csv`
+- [x] B7. `src/reporting/plots/streaming_memory.py` → `outputs/_plots/streaming_memory_vs_duration.png`
 
 ### Phase C — Registry + reporting
 - [ ] C1. `configs/experiments.yaml` (16 entries)

@@ -106,36 +106,54 @@ class MambaEncoder(nn.Module):
             for i in range(n_layers)
         ])
 
-    def init_state(self, batch_size: int, device: torch.device) -> List:
-        """Create zero-initialized carry state for all layers."""
-        return [None] * self.n_layers
+    def init_state(self, batch_size: int, device: torch.device) -> dict:
+        """Create zero-initialized carry state for the whole encoder.
+
+        Returns a dict:
+            layers : list of per-layer dicts ({"conv", "ssm"})
+            offset : int — absolute position for sinusoidal PE across chunks
+        """
+        return {
+            "layers": [
+                layer.mamba.init_state(batch_size, device)
+                for layer in self.layers
+            ],
+            "offset": 0,
+        }
 
     def forward(
         self,
         x: torch.Tensor,
         lengths: torch.Tensor,
-        state: Optional[List] = None,
-    ) -> Tuple[torch.Tensor, Optional[List]]:
-        x = self.pos_enc(x)
+        state: Optional[dict] = None,
+    ) -> Tuple[torch.Tensor, Optional[dict]]:
         B, T, _ = x.shape
+        offset = state["offset"] if state is not None else 0
+        layer_states = state["layers"] if state is not None else None
+
+        x = self.pos_enc(x, offset=offset)
         mask = torch.arange(T, device=x.device).unsqueeze(0) < lengths.unsqueeze(1)
         mask_f = mask.unsqueeze(-1).float()
 
-        new_states = [] if state is not None else None
+        new_layer_states: Optional[list] = [] if state is not None else None
 
         for i, layer in enumerate(self.layers):
-            layer_state = state[i] if state is not None else None
+            ls = layer_states[i] if layer_states is not None else None
             if self.training and state is None and not torch.compiler.is_compiling():
                 # Gradient checkpointing saves memory in eager mode.
                 # Skipped under torch.compile (incompatible) and carry-state.
-                x, ns = checkpoint(layer, x, layer_state, use_reentrant=False)
+                x, ns = checkpoint(layer, x, ls, use_reentrant=False)
             else:
-                x, ns = layer(x, state=layer_state)
+                x, ns = layer(x, state=ls)
             x = x * mask_f
-            if new_states is not None:
-                new_states.append(ns)
+            if new_layer_states is not None:
+                new_layer_states.append(ns)
 
-        return x, new_states
+        new_state: Optional[dict] = None
+        if new_layer_states is not None:
+            new_state = {"layers": new_layer_states, "offset": offset + T}
+
+        return x, new_state
 
 
 class BidirMambaEncoder(nn.Module):

@@ -19,6 +19,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             dropout=cfg.dropout,
         )
 
+    if backbone == "transformer_causal":
+        from src.models.transformer_causal import CausalTransformerEncoder
+        return CausalTransformerEncoder(
+            d_model=cfg.d_model,
+            n_heads=cfg.n_heads,
+            n_layers=cfg.n_layers,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+        )
+
     if backbone == "mamba":
         from src.models.mamba_encoder import MambaEncoder
         return MambaEncoder(
