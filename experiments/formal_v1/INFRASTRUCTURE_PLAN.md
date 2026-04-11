@@ -1,569 +1,450 @@
 # Formal v1 — Infrastructure Plan for Full-Scale Training
 
-**Audience:** AI researcher running and reporting a 15+ model ASR comparison study.
-**Goal:** Build a unified framework that (a) trains any model reproducibly,
-(b) captures every metric and artifact we'll want later, and (c) turns raw runs
-into analysis-ready reports with zero manual glue.
+**Purpose.** Describe the research harness, experiment design, and execution
+plan for the ASR encoder comparison study. Written so that any contributor
+(or a future self) can pick up from the last completed step, understand the
+rationale behind every decision, and continue without reconstructing lost
+context.
 
-Current state: we have a working codebase for all backbones, a clean Mamba
-comparison (PyTorch eager vs CUDA mamba-ssm) and a `torch.compile` path that is
-ready for the move to a bigger GPU. What's missing is the *research harness*
-around the training loop — metric tracking, checkpoint management, plotting,
-and the experiment registry that will make the thesis chapter writable in a
-day instead of a week.
+**Audience.** AI researcher running the 16-run comparison and producing the
+thesis chapter.
 
----
-
-## 1. Move to a bigger GPU — what changes
-
-**Context.** The 32 GB RTX 5090 cannot run PyTorch Mamba with `torch.compile`
-because `torch.compile` is incompatible with gradient checkpointing, and
-without checkpointing the 6-layer activation graph for a `batch_max_seconds=300`
-batch exceeds 32 GB. On A100 40/80 GB or H100 we expect `torch.compile` to
-match or beat the CUDA `mamba-ssm` kernels (microbenchmark shows 26 ms vs 35 ms
-fwd+bwd).
-
-**Deliverable now — `scripts/run_mamba_compiled.py`** (already created):
-- Forces `torch.compile(encoder, mode=...)` with `default` / `reduce-overhead` /
-  `max-autotune` selectable at the CLI.
-- Uses a persistent `TORCHINDUCTOR_CACHE_DIR` under the run's output dir, so
-  reruns reuse the compiled graph.
-- Adds **bf16 autocast** by default. bf16 halves activation memory (making it
-  useful even on A100 40 GB) and is numerically safer than fp16 for CTC losses.
-  CTC loss is computed in fp32.
-- Accepts `--batch-max-seconds` override for falling back on smaller GPUs.
-- Gradient checkpointing is already auto-disabled under compile via
-  `torch.compiler.is_compiling()` in `MambaEncoder`.
-
-**Expected first-run compile cost:** ~100 s for `default`, ~5–10 min for
-`max-autotune`. Cached afterwards.
-
-**Why a separate script instead of just flags on `run_experiment.py`:**
-`run_experiment.py` is the generic entry point; `run_mamba_compiled.py` is
-a performance-hardened path that also enables AMP, custom CTC-fp32 handling,
-and a persistent Inductor cache. Keeping them separate lets the generic
-runner stay simple and readable for non-Mamba backbones.
+**Status.** The code for all backbones exists and trains correctly. The
+Mamba PyTorch vs CUDA comparison (10 epochs, seed=42) is complete and
+accuracy-equivalent. What is missing is (a) the research harness that turns
+raw runs into analysis-ready artifacts, (b) the causal-Transformer baseline
+that closes the causal comparison group, and (c) two correctness fixes in
+Mamba carry-state handling. See §7 for the execution checklist.
 
 ---
 
-## 2. `pyproject.toml` / dependencies — what to add
+## 1. Framing: two comparison groups
 
-Current `pyproject.toml` has the minimum: torch, torchaudio, datasets, jiwer,
-matplotlib, pyyaml, einops, soundfile.
+Prior drafts mixed causal and bidirectional encoders in one results table.
+This is unfair and makes the thesis narrative muddy. The formal comparison
+is split into two coherent groups, each with its own baseline, its own
+evaluation protocol, and its own headline claim.
 
-**Additions needed for the research harness:**
+### Group A — Causal / streaming-capable
 
-```toml
-dependencies = [
-    # Existing
-    "torch>=2.2.0",
-    "torchaudio>=2.2.0",
-    "datasets>=2.18.0",
-    "jiwer>=3.0.0",
-    "matplotlib>=3.8.0",
-    "pyyaml>=6.0",
-    "einops>=0.7.0",
-    "soundfile>=0.12.0",
+All encoders are trained with causal information flow. Each has a
+well-defined recurrent state that can be propagated across chunk boundaries,
+so the streaming eval is meaningful.
 
-    # Research harness (no TensorBoard — everything is flat files in git)
-    "numpy>=1.26",              # was implicit via torch, pin explicitly
-    "pandas>=2.2",              # results DataFrame, CSV export for thesis tables
-    "seaborn>=0.13",            # convergence + chunked-eval plots
-    "tqdm>=4.66",               # replace ad-hoc logging every 50 batches
-    "rich>=13.7",               # pretty run summaries on the console
-    "tabulate>=0.9",            # markdown tables for RESULTS.md autogen
-    "psutil>=5.9",              # RAM / CPU monitoring in metrics
-]
+| Backbone | Role | Training state |
+|---|---|---|
+| `transformer_causal` | causal baseline | **to add** (~50 lines on top of existing Transformer) |
+| `rwkv6` | recurrent RWKV-6 | already trained |
+| `mamba` (PyTorch) | open-box Mamba | trained 10 ep; needs conv_state fix |
+| `mamba_cuda` | fast Mamba | trained 10 ep; no carry-state (CUDA wrapper limitation) |
+| `rwkv6_lucid`, `rwkv6_delta`, `rwkv6_lucid_delta` | mechanism ablations | to train |
 
-[project.optional-dependencies]
-cuda-mamba = ["mamba-ssm>=2.0.0"]  # keep CUDA kernels as an optional backend
-```
+**Claim for Group A:** RWKV-6 and Mamba match a causal Transformer on
+accuracy while using constant (rather than linearly-growing) state memory.
 
-**Rationale (AI researcher lens):**
-- `pandas` + `tabulate` are the difference between copy-pasting 15 numbers into
-  a markdown table by hand and running `python -m src.reporting.make_tables`.
-- `seaborn` gives us paper-quality convergence plots with minimal code.
-- `rich` for the summary table at the end of each run is low-cost polish that
-  saves several seconds per glance.
-- **No TensorBoard.** We store everything as flat files committed to git:
-  `history.csv` for per-epoch data, `metrics.jsonl` for per-step data, and
-  pre-rendered PNG plots under `plots/` in each run dir. Rationale: git is
-  the single source of truth, plots render in the GitHub web UI, and a
-  reviewer reading the repo never has to run a local process. For
-  mid-training debugging we have `tail -f history.csv` and `rich`-rendered
-  console summaries — enough to catch divergence without a web UI.
-- Keep `mamba-ssm` as an **optional extra**, not a core dep: core install must
-  succeed on any CUDA box, optional extras cover the fast backend.
+### Group B — Bidirectional / offline-only
 
-**Lock file:** commit `uv.lock` (currently untracked). Without it we cannot
-reproduce exact dependency versions three months from now when writing up.
+All encoders use past + future context. None has a meaningful carry state;
+streaming is only tested via chunked reset mode.
 
----
-
-## 3. Metrics — what to track, why, and how often
-
-The draft-phase runs logged only `train_loss`, `dev_cer`, `dev_wer`, and
-`epoch_time_sec`. That's enough for a rough comparison but far too little for
-the analysis we need to write. Here's a layered scheme.
-
-### 3.1 Per-step metrics (appended to `metrics.jsonl`, one JSON line per step logged)
-
-Logged every N=50 steps. `.jsonl` is chosen because it's append-only
-(crash-safe), grep-able, and `pandas.read_json(lines=True)` loads it in one
-call. File size for an 80-epoch run at 50-step granularity is ~2 MB — fits
-comfortably in git.
-
-| Metric | Why |
+| Backbone | Role |
 |---|---|
-| `step`, `epoch` | index |
-| `train_loss` | catch divergence instantly, not once per epoch |
-| `lr` | verify schedule is doing what we think |
-| `grad_norm` (post-clip) | detect exploding grads, especially in Delta/LUCID |
-| `grad_norm_raw` (pre-clip) | see how often clipping fires — if every step, the clip value is too tight |
-| `tokens_per_sec` | throughput; needed to compare backbones fairly |
-| `batch_duration_sec` | verify the DurationBatchSampler is packing efficiently |
-| `gpu_mem_gb` | for the OOM / memory section of the thesis |
+| `transformer` | bidirectional baseline |
+| `lion` | bidirectional RWKV-6 (central thesis candidate) |
+| `mamba_bidir` | bidirectional Mamba (forward + backward SSM) |
+| `lion_convshift`, `lion_lucid`, `lion_lucid_chunked`, `lion_delta`, `lion_headscale`, `lion_convshift_headscale` | LION + mechanism ablations |
 
-**Design note:** these are *not* saved in `history[]`. `history[]` has one
-entry per epoch so that `history.csv` stays readable and thesis tables can
-be built from it directly. Fine-grained data lives in `metrics.jsonl` and is
-only loaded on demand by the plotting code.
+**Claim for Group B:** LION with corrected LUCID and causal-only Delta Rule
+is the best lightweight offline encoder for LibriSpeech clean.
 
-### 3.2 Per-epoch metrics (saved in `history[]` + TensorBoard)
+### Why two groups and not one
 
-| Metric | Why |
-|---|---|
-| `epoch` | index |
-| `train_loss` (mean over epoch) | the smoothed signal for the thesis curve |
-| `train_loss_std` | quantify within-epoch noise |
-| `dev_loss` | CTC loss on dev — correlates with CER but sometimes diverges late |
-| `dev_cer`, `dev_wer` | primary metrics |
-| `epoch_time_sec` | for throughput tables |
-| `learning_rate_end` | schedule sanity check |
-| `grad_norm_mean` | regime summary (did grads settle?) |
-| `peak_mem_gb` | for the memory-vs-compute plot |
+1. **Fair evaluation.** A causal model cannot attend to future context; a
+   bidirectional model cannot stream. Comparing them head-to-head on one
+   axis hides the real tradeoff.
+2. **Two independent narratives.** Each group supports a separable thesis
+   claim. A reader can read one group without the other.
+3. **Clean memory-footprint plot.** The KV-cache-vs-constant-state
+   demonstration lives entirely in Group A, where the causal Transformer
+   is an honest data point and not a hypothetical one.
+4. **Free ablation.** Training both `transformer` and `transformer_causal`
+   gives the delta "how much does removing future context hurt a
+   Transformer on ASR?" without extra design work.
 
-### 3.3 Final metrics (saved once, in `results.json`)
-
-| Metric | Why |
-|---|---|
-| `test_cer`, `test_wer` | the headline numbers |
-| `best_dev_cer`, `best_dev_epoch` | which checkpoint we're reporting |
-| `total_train_time_sec` | wall clock for one full run |
-| `params {total, encoder, frontend, ctc_head}` | parity sanity check |
-| `chunked.{2s,5s,10s}.{reset,carry}.{cer,wer}` | streaming robustness |
-| `git_sha`, `torch_version`, `cuda_version`, `gpu_name` | reproducibility |
-| `config_snapshot` | the full resolved config at run time |
-| `cli_args` | exactly how it was launched |
-
-### 3.4 What we intentionally don't log
-- Per-batch reference/hypothesis pairs — huge, low value, easy to regenerate
-  from the checkpoint.
-- Per-parameter statistics (mean/std per tensor) — `grad_norm` is sufficient;
-  per-param adds megabytes of metrics and helps ~never.
-- Attention visualizations — expensive, only generate on demand for the paper.
-
-**Researcher rationale:** every metric above answers a specific question we
-know we'll need to answer. Anything else we add "just in case" bloats the
-artifact and signals that we don't know what we're measuring.
+Carry-state for bidirectional models is out of scope: there is no
+well-defined quantity to propagate forward in time for a model that was
+trained assuming it sees its future. Our code already marks these
+`supports_carry_state = False`.
 
 ---
 
-## 4. Checkpointing strategy
+## 2. Training infrastructure
 
-Current code saves only `best_model.pt` (by dev CER). That's enough to reproduce
-the reported number, but insufficient for the kind of post-hoc analysis a
-thesis needs.
+### 2.1 Canonical runner and the big-GPU path
 
-### 4.1 What to save
+`scripts/run_experiment.py` is the generic entry point. It accepts
+`--backbone`, `--seed`, `--epochs`, `--gpu`, `--compile`, and `--resume`.
+The `--compile` flag wraps the encoder with `torch.compile(encoder)`; on
+the current RTX 5090 this OOMs because `torch.compile` is incompatible with
+gradient checkpointing, so it is only used once we move to a larger GPU.
 
-| File | When | In git? | Why |
-|---|---|---|---|
-| `best_model.pt` | whenever `dev_cer` improves | **no** (gitignored, ~36 MB) | the number we report |
-| `last_model.pt` | every epoch (overwrite) | no | resume-on-interrupt |
-| `checkpoint_ep{N}.pt` | at epochs {1, 5, 10, 20, 40, final} | no | **snapshots for convergence analysis** — we can re-run chunked eval at intermediate epochs without re-training |
-| `optimizer_last.pt` | every epoch (overwrite) | no | resume-on-interrupt |
-| `results.json` | end of run | **yes** | analysis artifact (~10 KB) |
-| `history.csv` | updated every epoch | **yes** | tail-able, pandas-readable, <5 KB |
-| `metrics.jsonl` | appended every 50 steps | **yes** | step-granularity curves, ~2 MB per 80-epoch run |
-| `plots/*.png` | rendered at end of each epoch, overwritten | **yes** | convergence curves, grad-norm, LR schedule — viewable directly on GitHub |
-| `config.yaml` | start of run (snapshot the resolved config) | **yes** | reproducibility |
-| `cli_args.txt` | start of run | **yes** | exactly how it was launched |
-| `git_sha.txt` | start of run | **yes** | code version at run time |
-| `train.log` | streaming | **yes** (gzipped on success) | debugging |
+`scripts/run_mamba_compiled.py` is a hardened Mamba-only path with bf16
+autocast, a persistent Inductor cache under the run directory, and CTC
+loss computed in fp32. Kept separate so the generic runner stays readable.
 
-**Binary exclusion rule:** anything `.pt`, `.bin`, `.safetensors` is in
-`.gitignore`. The trained weights are regenerable from `git_sha + config`
-at the cost of compute. If we ever need weights versioned for a specific
-release, we publish them as a GitHub Release asset, not in the repo itself.
+**Expected speed at full scale (H100, 80 epochs, `batch_max_seconds=300`):**
 
-### 4.2 Checkpoint file format
+| Backbone | Eager + checkpoint | `torch.compile` + bf16 (target) |
+|---|---:|---:|
+| Mamba PyTorch | ~420 s/epoch | ~60 s/epoch |
+| Mamba CUDA | ~60 s/epoch | n/a |
+| RWKV-6 / LION / Transformer | ~60–120 s/epoch | — |
 
-A checkpoint is a single `.pt` containing:
-```python
-{
-    "epoch": int,
-    "model": state_dict,
-    "optimizer": state_dict,
-    "scheduler_state": dict,
-    "rng_state": {"python", "numpy", "torch", "cuda"},
-    "best_cer": float,
-    "patience_counter": int,
-    "config": dict,  # snapshot of the full resolved config
-    "git_sha": str,
-}
-```
+### 2.2 Checkpointing and resumability
 
-This makes training **resumable after a crash or preemption** — not optional
-for the 80-epoch runs. The draft experiments had to be restarted from scratch
-on every CUDA driver hiccup; we're not doing that again.
+Long runs crash. Every run writes:
 
-### 4.3 Disk budget
+| File | Cadence | In git |
+|---|---|---|
+| `best_model.pt` | whenever dev CER improves | no (binary) |
+| `last_model.pt` | every epoch | no |
+| `checkpoint_ep{N}.pt` at {1, 5, 10, 20, 40, final} | sparse snapshots | no |
+| `optimizer_last.pt` | every epoch | no |
+| `history.csv` | every epoch | yes |
+| `metrics.jsonl` | every 50 steps | yes |
+| `plots/*.png` | end of each epoch, overwritten | yes |
+| `results.json` | end of run | yes |
+| `config.yaml`, `cli_args.txt`, `git_sha.txt` | start of run | yes |
+| `train.log.gz` | end of run | yes |
 
-With 15 planned backbones × 6 saved checkpoints × 36 MB ≈ 3.2 GB total.
-Easily manageable. The `last_model.pt` for each run gets overwritten so no
-additional cost.
+Each checkpoint contains `{epoch, model, optimizer, scheduler, rng_state,
+best_cer, patience_counter, config, git_sha}` so `--resume` restarts from
+the exact pre-crash state. Required for 80-epoch runs.
 
----
+**Binary exclusion:** `*.pt`, `*.bin`, `*.safetensors` are in `.gitignore`.
+Weights are regenerable from `git_sha + config`. Anything we want versioned
+permanently goes as a GitHub Release asset, not in the repo.
 
-## 5. Chunked evaluation & the carry-state story
+### 2.3 Metrics and artifacts — no TensorBoard
 
-This is the single most important section of the thesis's practical-relevance
-claim, so it deserves a careful rework — not just "is it worth 20 minutes of
-compute".
+All artifacts are plain files committed to git. No TensorBoard process,
+no web UI. Rationale: git is the single source of truth, PNG plots render
+in the GitHub web UI, and a reviewer reading the repo never has to run a
+local service. For live debugging we have `tail -f history.csv` and
+`rich`-rendered console summaries at epoch boundaries.
 
-### 5.1 What each mode measures
+**Three metric tiers:**
 
-- **Full-utterance eval.** The whole utterance goes through the encoder in
-  one forward pass. "Offline ASR" — the standard benchmark setting.
-- **Chunked, reset mode.** Split the utterance into 2 s / 5 s / 10 s chunks,
-  run each chunk independently, concatenate the CTC outputs. **Streaming
-  without memory.** Bidirectional models (LION, Mamba bidir, Transformer with
-  full attention) are strictly disadvantaged — they lose their long-range view.
-- **Chunked, carry-state mode.** Same chunks, but recurrent encoders propagate
-  their internal state across chunks. **Streaming with memory.** The number
-  that matters for a real-time system.
+*Per-step* (flushed every 50 steps to `metrics.jsonl`):
+`step, epoch, train_loss, lr, grad_norm, grad_norm_raw, tokens_per_sec,
+batch_duration_sec, gpu_mem_gb`. Used for curves; loaded on demand by
+plotting code.
 
-### 5.2 Is our current implementation correct? — two bugs to fix
+*Per-epoch* (one row in `history.csv` and one entry in `results.json.history`):
+`epoch, train_loss, train_loss_std, dev_loss, dev_cer, dev_wer,
+epoch_time_sec, learning_rate_end, grad_norm_mean, peak_mem_gb`. The
+thesis curves are built from this.
 
-I audited the code. Carry-state *runs* but has two correctness issues we
-need to fix before reporting numbers.
+*Final* (top level of `results.json`): `test_cer, test_wer, best_dev_cer,
+best_dev_epoch, total_train_time_sec, params {total, encoder, frontend,
+ctc_head}, chunked.{2s,5s,10s}.{reset,carry}.{cer,wer}, git_sha,
+torch_version, cuda_version, gpu_name, config_snapshot, cli_args`.
 
-**Bug 1 — Mamba does not carry the `conv_state`.**
-
-`MambaBlock.forward()` applies a causal depthwise `Conv1d` with kernel=4
-before the SSM. The conv's boundary is handled by PyTorch's implicit zero
-padding at the start of each chunk. In the carry-state code path, we carry
-`ssm_state` (the S6 hidden state) but we do *not* carry the last `d_conv - 1`
-frames of the conv input. That means the first three frames of every new
-chunk see a zero history for the conv instead of the real previous-chunk
-frames, producing a small but systematic discontinuity at chunk boundaries.
-
-*Fix:* extend the returned state to `{"ssm": ssm_state, "conv": last_conv_tail}`
-where `last_conv_tail = x_inner[:, -(d_conv-1):]`. On the next call, prepend
-this to the chunk's input before the conv, then slice off the prepended
-frames from the conv output. Already prototyped in the existing `step()`
-method, just needs to be lifted into the chunked forward path.
-
-**Bug 2 — `MambaEncoder.init_state()` returns `[None] * n_layers`**,
-not actual zero-valued state tuples. Works today because `MambaBlock.forward()`
-treats `state=None` as "no carry", but it means the *first* chunk and all
-subsequent chunks take different code paths. Harmless numerically; ugly
-as an API. *Fix:* return a list of `{"ssm": zeros, "conv": zeros}` dicts
-and let the forward pass handle them uniformly.
-
-**RWKV-6** looks correct to me: `init_state` returns the right `(B, H, K, K)`
-zero tensors, and `_forward_recurrent` accepts and returns them. Good.
-
-### 5.3 Keep / drop decision, per backbone
-
-| Backbone | Full | Reset | Carry | Reasoning |
-|---|---|---|---|---|
-| Transformer | keep | keep | **n/a** | Bidirectional attention, no notion of carry state in our setup. |
-| RWKV-6 (recurrent) | keep | keep | **keep** | Designed to be streaming. Carry is the headline use case. |
-| Mamba (PyTorch) | keep | keep | **keep (after fix)** | Same as RWKV-6. Fix conv_state carry first. |
-| Mamba (CUDA) | keep | keep | **n/a** | CUDA wrapper doesn't expose carry. Report only full + reset. |
-| LION (bidirectional) | keep | keep | **n/a** | Bidirectional by construction. Reset looks bad — that's the finding. |
-| LION + mechanisms | keep | keep | **n/a** | Same as LION. |
-| Mamba bidir | keep | keep | **n/a** | Bidirectional — same story as LION. |
-
-### 5.4 The memory-footprint demonstration — is it worth it?
-
-**Short answer: yes, and it's the strongest practical argument in the thesis.**
-But we need to frame it carefully and not overclaim.
-
-**The honest story (numbers below assume our config: d_model=256, H=4, d_k=64,
-6 layers, bf16).**
-
-| Backbone | State type | Size per sample | Scales with audio length? |
-|---|---|---|---|
-| RWKV-6 (recurrent) | per-layer WKV state `(H, K, K)` = `(4, 64, 64)` bf16 | ~32 KB / layer, **~192 KB total** | **no** — constant |
-| Mamba (PyTorch) | per-layer `{ssm: (d_inner, d_state), conv: (d_inner, d_conv-1)}` = `(512, 16) + (512, 3)` bf16 | ~19 KB / layer, **~114 KB total** | **no** — constant |
-| Bidirectional Transformer, chunked+overlap | re-computed per chunk, **no state carried** | activation-only, `O(T_chunk²)` for attention | chunk size, not total audio |
-| Causal Transformer with KV cache *(hypothetical)* | per-layer `(T, H, d_k × 2)` | **24 KB × T frames**, e.g. 6 MB at 10 s, 36 MB at 60 s, 1.4 GB at 40 min | **yes — linearly** |
-
-The dramatic "KV cache explodes" framing applies to *causal* Transformers
-(decoder-only LLMs, autoregressive speech models). Our Transformer baseline
-is *bidirectional*, so strictly speaking it carries no state — it just
-re-runs attention on the next chunk. If we want the comparison to land hard
-we need to either:
-
-1. **Reframe as "streaming state vs audio duration"** and plot theoretical
-   numbers for a causal-Transformer baseline alongside the actual measured
-   Mamba / RWKV-6 state sizes. Clearly label the causal Transformer as
-   *hypothetical* ("what you'd need if you made it streaming").
-2. **Actually implement a causal-mask Transformer variant** and measure it.
-   ~50 lines of code: swap `nn.MultiheadAttention` for a KV-cache-aware
-   causal attention. We don't need to train it — just measure its state
-   size and peak VRAM during streaming inference on a long-audio sample.
-3. **Do both.** Theoretical curve + one measured point at, say, 30 seconds
-   audio, to validate the theoretical model.
-
-**My recommendation: option 3.** The causal Transformer variant is small,
-reusable (we can also use it as an ablation: "does causal attention hurt
-offline CER?"), and the measured point gives the theoretical curve its
-credibility. The whole demonstration is maybe half a day of work and one
-dedicated figure in the thesis. For the practical-relevance claim, it's
-worth it.
-
-### 5.5 What we will *measure* and *plot*
-
-A new evaluation script `scripts/measure_streaming_memory.py` runs this
-once per backbone:
-
-1. Take a single 30-second LibriSpeech utterance (pad/crop).
-2. For each chunk size in `[0.5, 1, 2, 5, 10, 30]` s:
-   - Stream the utterance through the encoder with `carry_state=True`
-     (or equivalent for bidirectional models: re-run on a sliding window).
-   - At each chunk boundary, measure `sum(t.numel() * t.element_size() for t in state)`.
-   - Measure peak GPU memory during the forward pass with `torch.cuda.max_memory_allocated()`.
-3. Write one row per (backbone, chunk_size) to `outputs/_streaming_memory.csv`.
-4. Produce `outputs/_plots/streaming_memory_vs_duration.png`: state size on
-   the y-axis (log scale), audio duration on the x-axis, one line per
-   backbone. Mamba/RWKV-6 flat. Causal Transformer linear. Bidirectional
-   Transformer and LION: dashed flat lines annotated "no cross-chunk
-   state (recomputation)".
-
-This figure is the thesis's single strongest argument for recurrent
-encoders in streaming ASR and it fits in one plot.
-
-### 5.6 Optimizations for the regular chunked-eval loop (orthogonal)
-
-Independent of the memory story, the current `evaluate_chunked` is slow
-(20 min / run). Make it faster but don't drop it:
-
-1. **Batch the chunked inference for reset mode.** Today it processes one
-   utterance at a time. We can pad a mini-batch of chunks from different
-   utterances and run them all in one forward pass — ~20× faster.
-2. **Cap reset-mode eval at 500 stratified-by-length utterances.** Dev-clean
-   has 2642 utterances, which is overkill for a stable CER; 500 keeps the
-   standard error below the inter-model gap.
-3. **Only run carry-mode on the shortlist.** Top-5 configurations get full
-   chunked+carry. Everyone else gets full + reset only.
-
-### 5.7 Deliverables
-
-1. Fix Mamba conv_state carry + `init_state()`. Add a numerical test:
-   concatenated chunks must match full-utterance output to within float
-   tolerance for a randomly-initialized Mamba.
-2. Rewrite `evaluate_chunked` with batched reset mode and `max_utterances`.
-3. New `scripts/measure_streaming_memory.py` (see §5.5).
-4. New `src/models/transformer_causal.py` for the hypothetical-comparison
-   measurement point (~50 lines).
-5. New plot module `src/reporting/plots/streaming_memory.py`.
+**Not logged:** per-batch reference/hypothesis pairs, per-parameter
+statistics, attention visualizations. These are regenerable from a
+checkpoint on demand.
 
 ---
 
-## 6. The unified research framework — what to build
+## 3. Evaluation protocol
 
-This is the core of the plan. Right now every run is a self-contained script
-output directory. To make the thesis chapter writable we need three layers
-on top:
+### 3.1 What gets evaluated, per group
 
-```
-Experiment registry  →  Run executor  →  Analysis / reporting
-```
+| Mode | Group A (causal) | Group B (bidirectional) |
+|---|---|---|
+| Full utterance | ✓ headline | ✓ headline |
+| Chunked reset (2 / 5 / 10 s) | ✓ (robustness) | ✓ (context-window sensitivity) |
+| Chunked carry-state (2 / 5 / 10 s) | ✓ (streaming; skipped for `mamba_cuda`) | — not meaningful |
+| Streaming memory vs duration | ✓ (Group A only) | — |
 
-### 6.1 Layer 1 — Experiment registry (`configs/experiments.yaml`)
+Carry-state is reported only for backbones whose `supports_carry_state`
+flag is True **and** which are in the run registry's shortlist (§4).
 
-A single YAML file that lists every run we plan to do:
+### 3.2 Carry-state correctness — two fixes required before reporting
+
+Audit of the current code identified two issues to fix before any
+carry-state numbers are trusted:
+
+1. **Mamba does not carry the depthwise conv state.** `MambaBlock` applies
+   a causal `Conv1d(kernel=d_conv=4)` before the SSM. The existing carry
+   path propagates `ssm_state` but not the last `d_conv - 1` frames of the
+   conv input, so each new chunk starts with zero-padded conv history and
+   produces a discontinuity at every chunk boundary. Fix: extend the
+   returned state to `{"ssm": ssm_state, "conv": x_inner[:, -(d_conv-1):]}`
+   and prepend the previous tail on the next call. The existing `step()`
+   method already handles this correctly for single-step inference and
+   can be lifted.
+
+2. **`MambaEncoder.init_state()` returns `[None] * n_layers`** instead of
+   actual zero-state dicts. Harmless today (the block treats `None` as
+   "no carry") but means chunk 0 and chunks 1+ take different code paths.
+   Fix: return a list of zero-state dicts and make the forward pass
+   uniform.
+
+**Equivalence test** (required before merging the fix): for a randomly
+initialized Mamba, output of full-utterance forward pass must match
+concatenated chunked forward pass to within float tolerance.
+
+RWKV-6 recurrent carry-state path was audited and is correct.
+
+### 3.3 Chunked evaluation cost
+
+Current `evaluate_chunked` processes one utterance at a time and takes
+~20 minutes per run. Three optimizations, all orthogonal to correctness:
+
+1. **Batch the reset mode.** Pad chunks from different utterances into a
+   mini-batch of fixed chunk length, process in one forward pass. Target
+   ~20× speedup. Carry mode must stay sequential per utterance.
+2. **Cap reset-mode eval at 500 utterances** (stratified by length).
+   Dev-clean has 2642 utterances; 500 makes the standard error smaller
+   than the inter-model gap.
+3. **Run carry-mode only on `shortlist=true` runs** in the registry.
+
+### 3.4 Streaming-memory demonstration (Group A only)
+
+A separate script `scripts/measure_streaming_memory.py` runs once per
+Group A backbone after training:
+
+1. Take one 30-second LibriSpeech utterance.
+2. For each chunk length in `[0.5, 1, 2, 5, 10, 30]` s, stream the
+   utterance through the encoder with carry-state enabled.
+3. Record `sum(t.numel() * t.element_size() for t in state)` and
+   `torch.cuda.max_memory_allocated()` after each chunk boundary.
+4. Append one row per (backbone, chunk_length) to
+   `outputs/_streaming_memory.csv`.
+
+Plot `outputs/_plots/streaming_memory_vs_duration.png`: log-scale y-axis
+(bytes), linear x-axis (audio duration). Expected shape:
+
+- `rwkv6`, `mamba` — flat horizontal lines at ~100–200 KB
+- `transformer_causal` — linearly growing line (KV cache scales with
+  tokens seen so far; ~6 MB at 10 s, ~1.4 GB at 40 min for our config)
+
+This is the single strongest figure for the streaming-practical-relevance
+claim in the thesis, and it lives entirely within Group A.
+
+---
+
+## 4. Unified research framework
+
+Four layers, each runnable independently.
+
+### 4.1 Experiment registry — `configs/experiments.yaml`
+
+Single source of truth for the 16-run plan. Each entry fully specifies a
+run; the executor validates against the backbone factory to catch typos.
 
 ```yaml
 experiments:
-  - id: exp001_transformer
-    backbone: transformer
-    seed: 42
-    epochs: 80
-    tags: [baseline]
-    shortlist: false
+  # ── Group A: causal / streaming-capable ──────────────────
+  - {id: exp01_transformer_causal,  backbone: transformer_causal, seed: 42, epochs: 80, tags: [groupA, baseline],            shortlist: true}
+  - {id: exp02_rwkv6,                backbone: rwkv6,              seed: 42, epochs: 80, tags: [groupA, baseline, recurrent], shortlist: true}
+  - {id: exp03_mamba_cuda,           backbone: mamba_cuda,         seed: 42, epochs: 80, tags: [groupA, baseline, recurrent], shortlist: true}
+  - {id: exp04_mamba_pytorch,        backbone: mamba,              seed: 42, epochs: 80, tags: [groupA, reimplementation]}
+  - {id: exp05_rwkv6_lucid,          backbone: rwkv6_lucid,        seed: 42, epochs: 80, tags: [groupA, mechanism]}
+  - {id: exp06_rwkv6_delta,          backbone: rwkv6_delta,        seed: 42, epochs: 80, tags: [groupA, mechanism]}
+  - {id: exp07_rwkv6_lucid_delta,    backbone: rwkv6_lucid_delta,  seed: 42, epochs: 80, tags: [groupA, mechanism, stacking]}
 
-  - id: exp002_rwkv6
-    backbone: rwkv6
-    seed: 42
-    epochs: 80
-    tags: [baseline, recurrent]
-    shortlist: true   # top-5 — runs with all evaluations
-
-  - id: exp003_mamba_cuda
-    backbone: mamba_cuda
-    seed: 42
-    epochs: 80
-    tags: [baseline, recurrent]
-
-  - id: exp004_lion
-    backbone: lion
-    seed: 42
-    epochs: 80
-    tags: [baseline, bidir]
-    shortlist: true
-
-  - id: exp005_lion_convshift
-    backbone: lion_convshift
-    seed: 42
-    epochs: 80
-    tags: [mechanism, bidir]
-
-  # …
+  # ── Group B: bidirectional / offline ─────────────────────
+  - {id: exp08_transformer,          backbone: transformer,                 seed: 42, epochs: 80, tags: [groupB, baseline],   shortlist: true}
+  - {id: exp09_lion,                  backbone: lion,                        seed: 42, epochs: 80, tags: [groupB, baseline],   shortlist: true}
+  - {id: exp10_mamba_bidir,           backbone: mamba_bidir,                 seed: 42, epochs: 80, tags: [groupB, baseline]}
+  - {id: exp11_lion_convshift,        backbone: lion_convshift,              seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp12_lion_lucid,            backbone: lion_lucid,                  seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp13_lion_lucid_chunked,    backbone: lion_lucid_chunked,          seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp14_lion_delta,            backbone: lion_delta,                  seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp15_lion_headscale,        backbone: lion_headscale,              seed: 42, epochs: 80, tags: [groupB, mechanism]}
+  - {id: exp16_lion_convshift_headscale, backbone: lion_convshift_headscale, seed: 42, epochs: 80, tags: [groupB, mechanism, stacking]}
 ```
 
-Each entry produces one run directory `outputs/{id}/`. Re-running the same id
-resumes from `last_model.pt` if present.
+Each entry produces `outputs/{id}/`. Re-running the same id resumes from
+`last_model.pt` if present. The `shortlist` flag controls whether
+carry-state eval and multi-seed validation run for that backbone.
 
-**Why a registry and not just shell scripts:**
-- Prevents typos: the backbone name is validated against the factory.
-- The same file drives training, reporting, and the final thesis table —
-  one source of truth.
-- Easy to filter (`--tag mechanism`, `--shortlist`) without rewriting
-  commands.
+### 4.2 Run executor — `scripts/run_registry.py`
 
-### 6.2 Layer 2 — Run executor (`scripts/run_registry.py`)
+Invocations:
 
 ```
 uv run scripts/run_registry.py --all
-uv run scripts/run_registry.py --ids exp004_lion,exp005_lion_convshift
+uv run scripts/run_registry.py --ids exp09_lion,exp11_lion_convshift
 uv run scripts/run_registry.py --tag mechanism --gpu 1
 uv run scripts/run_registry.py --shortlist --seeds 42,123,777
 ```
 
-Behavior:
+Contract:
 - Resolves each id to a fully-loaded `ExperimentConfig`.
-- Writes `config.yaml`, `git_sha`, `cli_args` to the run dir **before** the
-  first training step (so even a 30-second crash leaves a trail).
-- Runs training. On failure, leaves `results.json` absent so the reporter
-  can mark it as "failed" rather than silently missing.
-- On success, writes `results.json` and appends one row to
-  `outputs/_index.csv` (the master table).
+- Writes `config.yaml`, `git_sha.txt`, `cli_args.txt` before the first
+  training step so even a 30-second crash leaves a trail.
+- Runs training; on failure leaves `results.json` absent so the reporter
+  marks the run as failed rather than silently missing.
+- On success appends one row to `outputs/_index.csv`.
 - Emits a compact final summary with `rich`.
 
-### 6.3 Layer 3 — Analysis / reporting (`src/reporting/`)
+### 4.3 Reporting — `src/reporting/`
 
-Four modules, each one a plain Python script invocable as `python -m`:
+All modules run offline on the artifacts in `outputs/`; no GPU, no
+dataset, no training code imported.
 
-| Module | Produces | Committed to git? |
+| Module | Output | In git |
 |---|---|---|
-| `reporting.collect` | Scans `outputs/*/results.json`, builds a master `pandas.DataFrame` and writes `outputs/_index.csv` | yes, `_index.csv` is the single source of truth for tables |
-| `reporting.tables` | Reads `_index.csv`, emits markdown tables into `RESULTS.md` between `<!-- AUTOGEN: ... -->` markers. Idempotent. | yes, `RESULTS.md` is regenerated in-place |
-| `reporting.plots` | Produces `outputs/_plots/*.png`: convergence curves (all backbones overlaid), CER vs params scatter, chunked-CER vs chunk-size lines, training time vs backbone bar, streaming-memory vs duration | yes, PNGs committed |
-| `reporting.diff` | `python -m src.reporting.diff exp004 exp005` — pairwise comparison with per-epoch CER delta and final test gap | no, ad-hoc tool |
+| `reporting.collect` | `outputs/_index.csv` | yes |
+| `reporting.tables` | Markdown tables written into `RESULTS.md` between `<!-- AUTOGEN: ... -->` markers | yes |
+| `reporting.plots` | `outputs/_plots/*.png` (convergence overlay, CER-vs-params, chunked CER vs chunk size, streaming memory vs duration, training time bar) | yes |
+| `reporting.diff` | `python -m src.reporting.diff exp09 exp11` — pairwise per-epoch comparison | ad-hoc |
 
-**In-run plots** (written under each run's own `plots/` directory, not
-`_plots/`): `loss_curve.png`, `cer_curve.png`, `lr_schedule.png`,
-`grad_norm.png`. Regenerated at the end of every epoch, overwriting
-previous versions. These are committed to git per run so a reviewer
-browsing `outputs/exp004_lion/plots/cer_curve.png` on the GitHub web UI
-sees the training dynamics immediately.
+In-run plots (per run directory, not per reporting pass): `loss_curve.png`,
+`cer_curve.png`, `lr_schedule.png`, `grad_norm.png`. Rendered at the end
+of each epoch, overwritten in place, committed. A reviewer browsing
+`outputs/exp09_lion/plots/cer_curve.png` on the GitHub web UI sees the
+training dynamics immediately.
 
-**Why separate from training:** reporting must be runnable without a GPU,
-without the dataset, on just the output artifacts. If a reviewer asks a
-question six months from now you should be able to answer it by running
-`python -m src.reporting.tables` on your laptop. Since all plots are
-pre-rendered PNGs committed to git, even the laptop-regeneration is
-optional — the figures are already there.
+### 4.4 Dependencies
 
-### 6.4 Layer 4 — The `RESULTS.md` auto-update (optional but valuable)
+Additions to `pyproject.toml` (no TensorBoard):
 
-`RESULTS.md` is currently hand-edited. Long-term: mark sections with HTML
-comments like `<!-- AUTOGEN: core_baselines -->` and have
-`reporting.tables` rewrite between the markers. The thesis narrative stays
-hand-written, but the numbers never drift.
+```toml
+dependencies = [
+    # existing: torch, torchaudio, datasets, jiwer, matplotlib, pyyaml, einops, soundfile
+    "numpy>=1.26",
+    "pandas>=2.2",      # _index.csv, thesis tables
+    "seaborn>=0.13",    # paper-quality plots
+    "tqdm>=4.66",       # training progress
+    "rich>=13.7",       # console run summaries
+    "tabulate>=0.9",    # markdown tables for RESULTS.md autogen
+    "psutil>=5.9",      # CPU/RAM in metrics
+]
+
+[project.optional-dependencies]
+cuda-mamba = ["mamba-ssm>=2.0.0"]
+```
+
+`uv.lock` will be committed so exact versions reproduce three months from
+now when writing up.
 
 ---
 
-## 7. Concrete next steps (ordered, each ≤ 1 day)
+## 5. What we deliberately do not do
 
-**Phase A — Harness scaffolding (before the big GPU is ready)**
+Scope limits, stated explicitly so the project does not drift:
 
-1. Update `pyproject.toml` with the new deps (no TensorBoard). Commit `uv.lock`.
-2. Add a `MetricLogger` class in `src/training/metrics.py` that writes
-   `metrics.jsonl` (per-step) + `history.csv` (per-epoch). No TensorBoard.
-   Wire into `train.py`. Backwards-compatible with `run_experiment.py`.
-3. Upgrade checkpointing: `last_model.pt`, `optimizer_last.pt`,
-   epoch-snapshots `{1,5,10,20,40,final}`, `config.yaml`, `git_sha.txt`,
-   `cli_args.txt`. Add `--resume` flag.
-4. Add in-run plot generation at epoch end: `plots/loss_curve.png`,
-   `plots/cer_curve.png`, `plots/lr_schedule.png`, `plots/grad_norm.png`.
-   Committed to git under the run dir.
-5. Update `.gitignore`: exclude `*.pt`, `*.bin`, `*.safetensors`. Include
-   everything else under `outputs/`.
+1. **No DDP / multi-GPU training.** 7 M-param models on 100 h of audio do
+   not benefit from data parallelism; per-step compute is too small to
+   hide gradient-sync latency. Revisit only if we scale to LibriSpeech-960.
+2. **No hyperparameter sweeps.** The canonical config is fixed. Sweeps
+   belong in a follow-up study.
+3. **No LibriSpeech-other.** The noisy subset can be added as another
+   dataset id after the clean comparison is complete.
+4. **No Triton / custom CUDA kernels for the PyTorch Mamba scan.** The
+   `torch.compile` path on a bigger GPU plus `mamba-ssm` as fallback
+   covers the speed story.
+5. **No training of bidirectional Transformer with KV cache.** Bidirectional
+   attention has no KV cache in our setup; the causal Transformer covers
+   that axis.
+6. **No evaluation of carry-state on bidirectional models.** Not
+   meaningful for models that were trained assuming access to future
+   frames.
 
-**Phase B — Carry-state correctness + memory demonstration**
+---
 
-6. Fix Mamba `conv_state` carry-through (see §5.2 Bug 1). Add numerical
-   equivalence test: concatenated-chunks output matches full-utterance output.
-7. Fix `MambaEncoder.init_state()` to return dicts of zero tensors (§5.2 Bug 2).
-8. Add `src/models/transformer_causal.py` — a minimal causal-attention
-   Transformer variant with KV-cache support. Not for training, for
-   measurement only.
-9. Write `scripts/measure_streaming_memory.py` (§5.5): produces
-   `outputs/_streaming_memory.csv` and
-   `outputs/_plots/streaming_memory_vs_duration.png`.
-10. Rewrite `evaluate_chunked` with batched reset mode and `max_utterances`.
-    Add equivalence test against the old single-utterance path.
+## 6. Deliverables (what to build)
 
-**Phase C — Registry + reporting**
+Grouped by area. Each deliverable is a small, reviewable unit.
 
-11. Write `configs/experiments.yaml` for the 15-run plan.
-12. Write `scripts/run_registry.py` with `--all`, `--ids`, `--tag`,
-    `--shortlist`, `--seeds` filters.
-13. Write `src/reporting/collect.py` — scans `outputs/*/results.json` and
-    produces `outputs/_index.csv`.
-14. Write `src/reporting/tables.py` — regenerates markdown tables in
-    `RESULTS.md` between `<!-- AUTOGEN: ... -->` markers from `_index.csv`.
-15. Write `src/reporting/plots.py` — produces cross-run comparison PNGs
-    under `outputs/_plots/`. All committed.
-16. Smoke test: 2-epoch run of each backbone on RTX 5090 through the
-    registry. Verify `_index.csv`, plots, tables regenerate cleanly.
-    Resume-from-crash test: kill a run mid-training, resume, check continuity.
+**Harness.**
+- [ ] `pyproject.toml` updates + commit `uv.lock`
+- [ ] `src/training/metrics.py` — `MetricLogger` (step + epoch, jsonl + csv)
+- [ ] `src/training/checkpoint.py` — save/load with full state, `--resume`
+- [ ] In-run plot generation at epoch end (matplotlib, overwritten PNGs)
+- [ ] `.gitignore` update: exclude `*.pt`, `*.bin`, `*.safetensors`
 
-**Phase D — Full training on the big GPU**
+**Carry-state correctness.**
+- [ ] Fix Mamba `conv_state` carry-through in `MambaBlock.forward()`
+- [ ] Fix `MambaEncoder.init_state()` to return real zero-state dicts
+- [ ] Equivalence test: chunked forward matches full-utterance forward
+- [ ] Rewrite `evaluate_chunked` with batched reset mode + `max_utterances`
 
-17. Move to A100/H100. Verify `run_mamba_compiled.py` gives the target
-    speedup. Compare 10-epoch CER against the CUDA kernels on the new GPU.
-18. Run `scripts/run_registry.py --all --epochs 80`. Expected wall-clock:
-    ~20 h on a single H100 for the baseline set, another ~30 h for mechanisms.
-19. Run `scripts/measure_streaming_memory.py` for all backbones.
-20. Run the shortlist with 3 seeds for statistical validation.
-21. Generate final tables / plots, update `RESULTS.md`. Commit the whole
-    `outputs/` tree (except `.pt` files).
+**Causal Transformer.**
+- [ ] `src/models/transformer_causal.py` — causal-masked attention with
+  KV-cache support for inference-time state measurement
+- [ ] Register as backbone `transformer_causal` in the encoder factory
 
-**Success criteria**
-- One command reproduces every number and plot in the thesis chapter.
+**Streaming memory demonstration.**
+- [ ] `scripts/measure_streaming_memory.py`
+- [ ] `outputs/_streaming_memory.csv` schema
+- [ ] `src/reporting/plots/streaming_memory.py`
+
+**Registry and reporting.**
+- [ ] `configs/experiments.yaml` — the 16-run plan
+- [ ] `scripts/run_registry.py` — executor with filters
+- [ ] `src/reporting/collect.py` — scans `outputs/*/results.json` to
+  `_index.csv`
+- [ ] `src/reporting/tables.py` — autogen markdown into `RESULTS.md`
+- [ ] `src/reporting/plots.py` — cross-run comparison plots
+
+---
+
+## 7. Execution phases
+
+Ordered so each phase produces a self-contained, committable result.
+Unchecked items are open work; checked items are done. Any contributor can
+read this section and know exactly where to resume.
+
+### Phase A — Harness scaffolding (RTX 5090)
+- [ ] A1. `pyproject.toml` + `uv.lock`
+- [ ] A2. `MetricLogger` (jsonl + csv, no TensorBoard)
+- [ ] A3. Checkpointing + `--resume` flag
+- [ ] A4. In-run plot generation at epoch end
+- [ ] A5. `.gitignore` update for binary weights
+
+### Phase B — Carry-state correctness + causal Transformer
+- [ ] B1. Fix Mamba `conv_state` carry
+- [ ] B2. Fix `MambaEncoder.init_state()`
+- [ ] B3. Equivalence test (full vs chunked forward)
+- [ ] B4. Batched `evaluate_chunked` with `max_utterances` cap
+- [ ] B5. `transformer_causal.py` + factory registration
+- [ ] B6. `scripts/measure_streaming_memory.py`
+- [ ] B7. Streaming-memory plot module
+
+### Phase C — Registry + reporting
+- [ ] C1. `configs/experiments.yaml` (16 entries)
+- [ ] C2. `scripts/run_registry.py`
+- [ ] C3. `reporting.collect`
+- [ ] C4. `reporting.tables` with AUTOGEN markers in `RESULTS.md`
+- [ ] C5. `reporting.plots` (cross-run)
+- [ ] C6. Smoke test: 2 epochs of each backbone through the registry on
+  the RTX 5090, verify `_index.csv`, tables, plots regenerate cleanly
+- [ ] C7. Resume-from-crash test
+
+### Phase D — Full training on the big GPU
+- [ ] D1. Verify `run_mamba_compiled.py` speed on the target GPU
+- [ ] D2. `run_registry.py --all --epochs 80` — Group A
+- [ ] D3. `run_registry.py --all --epochs 80` — Group B
+- [ ] D4. `measure_streaming_memory.py` for Group A
+- [ ] D5. Multi-seed validation: `--shortlist --seeds 42,123,777`
+- [ ] D6. Final `reporting.tables` + `reporting.plots` refresh
+- [ ] D7. Commit `outputs/` (excluding `.pt`) and push
+
+---
+
+## 8. Success criteria
+
+- One command reproduces every number and plot in the thesis chapter
+  (`python -m src.reporting.tables && python -m src.reporting.plots`).
 - A crash at epoch 40 of 80 costs no more than 30 minutes of lost compute.
-- Adding a new mechanism means: one new encoder file, one new entry in the
-  registry, one `run_registry.py --ids exp016_newthing`, and the tables
-  update themselves.
-
----
-
-## 8. Out of scope for this plan
-
-- Multi-GPU DDP training. 7 M-param models on 100 h of audio do not benefit
-  from data parallelism — the per-step compute is too small to hide the
-  gradient-sync latency. If we scale up to LibriSpeech-960, revisit.
-- Hyperparameter sweeps. The canonical config is deliberately fixed to keep
-  the comparison meaningful; sweeps belong in a follow-up.
-- LibriSpeech-other (noisy subset). Can be added as another dataset id once
-  the clean comparison is complete.
-- Triton / custom CUDA kernels for the PyTorch Mamba scan. Not worth the
-  engineering cost now that the `torch.compile` path is the plan for the big
-  GPU and CUDA `mamba-ssm` is the fallback on the RTX 5090.
+- Adding a new mechanism means: one new encoder file, one new entry in
+  `configs/experiments.yaml`, one `run_registry.py --ids exp17_newthing`
+  invocation, and the tables update themselves on the next
+  `reporting.tables` run.
+- A reviewer browsing the repo on GitHub sees convergence curves for every
+  run without cloning or running anything locally.
