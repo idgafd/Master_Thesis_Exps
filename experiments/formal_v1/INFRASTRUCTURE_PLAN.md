@@ -429,16 +429,21 @@ read this section and know exactly where to resume.
 - [x] C6. Harness validation: dry-run registry (16 runs planned), filters (`--shortlist` → 5, `--tag mechanism` → 9), end-to-end reporting on 3 legacy Mamba runs. **Full 2-epoch-per-backbone smoke test deferred to Phase D** (start of big-GPU runs).
 - [ ] C7. Resume-from-crash test (defer until Phase D start — `--resume` code is in run_experiment.py from Phase A)
 
-### Phase D — Full training on the big GPU
-**Blocked on:** D0 (RWKV-6 kernel speed regression — see §9).
-- [ ] D0. Fix RWKV-6 recurrent kernel speed (see §9 for details)
-- [ ] D1. Verify `run_mamba_compiled.py` speed on the target GPU
-- [ ] D2. `run_registry.py --all --epochs 80` — Group A
-- [ ] D3. `run_registry.py --all --epochs 80` — Group B
-- [ ] D4. `measure_streaming_memory.py` for Group A
-- [ ] D5. Multi-seed validation: `--shortlist --seeds 42,123,777`
-- [ ] D6. Final `reporting.tables` + `reporting.plots` refresh
-- [ ] D7. Commit `outputs/` (excluding `.pt`) and push
+### Phase D — Full training on the big GPU (A100/H100, ≥48 GB VRAM)
+**Blocked on:** D0 (RWKV-6 kernel speed — fix committed, needs benchmark).
+- [ ] D0. Benchmark RWKV-6 recurrent kernel fix (expect ~80–120 s/epoch, was 1220 s)
+- [ ] D1. Verify `run_mamba_compiled.py` speed — `torch.compile` should work on ≥48 GB
+      (incompatible with gradient checkpointing, OOMs on 32 GB; on bigger GPU no
+      checkpointing needed → compile fuses scan → expect ~60 s/epoch matching CUDA mamba-ssm)
+- [ ] D2. Reinstall `mamba-ssm` CUDA backend (`uv sync --extra cuda-mamba`) — was
+      broken by CUDA 12/13 version mismatch on RTX 5090; may resolve on new instance
+- [ ] D3. `run_registry.py --tag groupA --gpus 0,1 --parallel` — 7 runs × 80 epochs.
+      Use `--compile` for `exp04_mamba_pytorch` if D1 confirms speed parity.
+- [ ] D4. `run_registry.py --tag groupB --gpus 0,1 --parallel` — 9 runs × 80 epochs
+- [ ] D5. `measure_streaming_memory.py` for Group A (with trained models)
+- [ ] D6. Multi-seed validation: `--shortlist --seeds 42,123,777`
+- [ ] D7. Final `reporting.tables` + `reporting.plots` refresh
+- [ ] D8. Commit `outputs/` (excluding `.pt`) and push
 
 ---
 
