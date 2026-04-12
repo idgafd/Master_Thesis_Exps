@@ -121,6 +121,13 @@ class RWKV6TimeMix(nn.Module):
                 torch.zeros(D_DECAY_DIM, hidden_size_att, dtype=dtype).uniform_(-0.01, 0.01)
             )
 
+            # Bonus term (u in RWKV notation, time_faaaa in code)
+            tmp = torch.zeros(hidden_size_att, dtype=dtype)
+            for n in range(hidden_size_att):
+                zigzag = ((n + 1) % 3 - 1) * 0.1
+                tmp[n] = ratio_0_to_1 * (1 - (n / (hidden_size_att - 1))) + zigzag
+            self.time_faaaa = nn.Parameter(tmp.reshape(n_head, head_size))
+
         # ── Linear projections ───────────────────────────────────────────
         self.receptance = nn.Linear(hidden_size, hidden_size_att, bias=False, dtype=dtype)
         self.key = nn.Linear(hidden_size, hidden_size_att, bias=False, dtype=dtype)
@@ -269,7 +276,7 @@ class RWKV6TimeMix(nn.Module):
         w: torch.Tensor,  # already log-decay (negative)
         state: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Sequential causal WKV with carry state. Pure PyTorch."""
+        """Chunked parallel WKV with carry state (SmerkyG algorithm)."""
         B, H, T, K = r.shape
 
         if state is None:
@@ -277,7 +284,8 @@ class RWKV6TimeMix(nn.Module):
         else:
             wkv_state = state.float()
 
-        y, wkv_state = _sequential_wkv(r.float(), k.float(), v.float(), w.float(), wkv_state)
+        u = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
+        y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
         return y, wkv_state
 
     def _forward_bidir_serial(
@@ -304,31 +312,122 @@ class RWKV6TimeMix(nn.Module):
         return y_fwd + y_bwd
 
 
-def _sequential_wkv(
-    r: torch.Tensor,
+def _chunked_wkv(
+    r: torch.Tensor,   # (B, H, T, K)
     k: torch.Tensor,
     v: torch.Tensor,
-    w: torch.Tensor,
-    state: torch.Tensor,
+    w: torch.Tensor,   # log-decay (negative)
+    u: torch.Tensor,   # (1, H, 1, K) bonus term
+    wkv_state: torch.Tensor,  # (B, H, K, K)
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    """Sequential WKV for small chunks or reference."""
+    """Chunked parallel WKV with carry-state (SmerkyG algorithm).
+
+    Processes T tokens using decreasing chunk sizes for GPU-parallel
+    intra-chunk attention with sequential inter-chunk state updates.
+    """
     B, H, T, K = r.shape
-    wkv_state = state.float()
-    outputs = []
 
-    for t in range(T):
-        r_t = r[:, :, t, :]  # (B, H, K)
-        k_t = k[:, :, t, :]
-        v_t = v[:, :, t, :]
-        w_t = w[:, :, t, :]  # log-decay
+    processed = 0
+    remaining = T
+    out_parts = []
+    state = wkv_state
 
-        # Decay state
-        wkv_state = wkv_state * torch.exp(w_t).unsqueeze(-1)  # row-wise decay
-        # Add new key-value
-        wkv_state = wkv_state + k_t.unsqueeze(-1) * v_t.unsqueeze(-2)  # (B,H,K,1)*(B,H,1,K)
-        # Output
-        y_t = (r_t.unsqueeze(-2) @ wkv_state).squeeze(-2)  # (B, H, K)
-        outputs.append(y_t)
+    for chunk_len in [128, 16, 2, 1]:
+        while remaining >= chunk_len:
+            mul = remaining // chunk_len
+            seg_len = chunk_len * mul
 
-    y = torch.stack(outputs, dim=2)  # (B, H, T, K)
-    return y, wkv_state
+            out, state = _wkv_subchunk(
+                r[:, :, processed:processed + seg_len],
+                k[:, :, processed:processed + seg_len],
+                v[:, :, processed:processed + seg_len],
+                w[:, :, processed:processed + seg_len],
+                u, state,
+                chunk_len=chunk_len,
+            )
+            out_parts.append(out)
+            processed += seg_len
+            remaining -= seg_len
+
+    return torch.cat(out_parts, dim=2), state
+
+
+def _wkv_subchunk(
+    r: torch.Tensor,   # (B, H, L, K) — L must be exact multiple of chunk_len
+    k: torch.Tensor,
+    v: torch.Tensor,
+    w: torch.Tensor,   # log-decay (negative)
+    u: torch.Tensor,   # (1, H, 1, K)
+    wkv_state: torch.Tensor,  # (B, H, K, K)
+    chunk_len: int = 128,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Parallel intra-chunk + recurrent inter-chunk WKV.
+
+    Direct port of RWKVx060_subchunk_torch_inner from RWKV-block.
+    """
+    B, H, L, K = k.shape
+    V = v.size(-1)
+    T = chunk_len
+
+    # Single token: simple step
+    if L == 1:
+        kv = k.mT @ v
+        out = r @ (wkv_state + u.mT * kv)
+        wkv_state = torch.exp(w).mT * wkv_state + kv
+        return out, wkv_state
+
+    assert L % T == 0
+    N = L // T
+
+    # Numerical stability: clamp decay factor
+    precision_min_val = 0.005
+    precision_dtype = torch.float64 if T > 24 else torch.float32
+    # w is log-decay (negative): decay = exp(w) in (0, 1)
+    w_decay = torch.exp(w).clamp(min=precision_min_val)
+
+    # Cumulative log-decay
+    w_log = w_decay.float().log()
+    wc_log = w_log.view(w.size(0), H, N, T, K)
+    wc_log_cum = wc_log.cumsum(dim=-2)
+    shifted_wc_log_cum = F.pad(wc_log_cum, (0, 0, 1, -1))
+
+    # Pre-compute decay weights
+    ws = wc_log.sum(dim=-2, keepdim=True)
+    w_inter = ws - wc_log_cum
+    w_intra = wc_log_cum - wc_log
+
+    ws_list = list(ws.mT.exp().to(r.dtype).unbind(dim=-3))
+    w_inter = w_inter.exp().to(r.dtype)
+    w_intra = w_intra.exp().to(r.dtype)
+
+    # Reshape to chunks
+    r = r.view(B, H, N, T, K)
+    k = k.view(B, H, N, T, K)
+    v = v.view(B, H, N, T, V)
+    u_c = u.unsqueeze(2).to(r.dtype)
+
+    # Parallel intra-chunk attention
+    wc_log_offset = shifted_wc_log_cum[..., T // 2:T // 2 + 1, :]
+    r_decay = (shifted_wc_log_cum - wc_log_offset).to(precision_dtype).exp()
+    k_inv_decay = (wc_log_offset - wc_log_cum).to(precision_dtype).exp()
+    a = ((r * r_decay) @ (k * k_inv_decay).mT).to(r.dtype).tril(-1)
+    # Add bonus term on diagonal
+    a = a + torch.einsum('bhntk,bhntk->bhnt', r, u_c * k).diag_embed()
+    out = a @ v
+
+    # Pre-compute chunked kv products for state update
+    wkv = (k * w_inter).mT @ v
+    wkv_list = list(wkv.unbind(dim=-3))
+
+    # Recurrent inter-chunk state
+    states = []
+    for i in range(N):
+        states.append(wkv_state)
+        wkv_state = wkv_state * ws_list[i] + wkv_list[i]
+    states = torch.stack(states, dim=2)
+
+    # Apply state to output
+    out = out + (r * w_intra) @ states
+    out = out.view(B, H, L, V)
+
+    return out, wkv_state
