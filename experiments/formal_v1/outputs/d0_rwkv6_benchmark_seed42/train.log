@@ -1,0 +1,157 @@
+2026-04-12 16:11:27,311 INFO Loading LibriSpeech split=train.100 from HuggingFace...
+2026-04-12 16:11:27,621 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-12 16:11:27,711 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-12 16:11:27,746 INFO HTTP Request: GET https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-12 16:11:27,857 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:11:28,105 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:11:28,241 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/revision/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 "HTTP/1.1 200 OK"
+2026-04-12 16:11:28,352 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-12 16:11:28,557 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-12 16:11:28,667 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftest?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-12 16:11:28,769 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-04-12 16:11:28,878 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.100?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-12 16:11:28,988 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.360?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-12 16:11:29,101 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Fvalidation?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-12 16:11:29,209 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-12 16:11:29,329 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/test/0000.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:29,442 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/xet-read-token/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 "HTTP/1.1 200 OK"
+2026-04-12 16:11:32,182 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0000.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:32,183 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-12 16:11:35,115 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0001.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:39,443 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0002.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:41,769 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0003.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:44,305 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0004.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:46,844 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0005.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:50,176 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0006.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:53,105 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0007.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:11:56,634 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0008.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:00,568 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0009.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:05,719 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0010.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:09,246 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0011.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:11,574 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0012.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:14,705 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.100/0013.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:19,039 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0000.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:22,770 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0001.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:27,101 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0002.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:29,634 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0003.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:32,973 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0004.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:37,302 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0005.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:41,429 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0006.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:45,563 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0007.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:48,692 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0008.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:51,028 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0009.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:55,157 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0010.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:12:57,487 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0011.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:01,985 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0012.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:04,490 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0013.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:07,209 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0014.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:09,907 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0015.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:12,404 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0016.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:18,262 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0017.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:21,162 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0018.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:23,678 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0019.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:26,003 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0020.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:28,524 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0021.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:31,858 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0022.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:34,391 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0023.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:46,536 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0024.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:49,266 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0025.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:51,598 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0026.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:53,934 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0027.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:13:58,265 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0028.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:01,795 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0029.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:04,325 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0030.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:07,667 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0031.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:10,416 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0032.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:12,944 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0033.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:16,076 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0034.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:18,410 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0035.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:20,949 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0036.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:23,476 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0037.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:27,210 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0038.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:29,740 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0039.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:32,270 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0040.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:36,207 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0041.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:38,940 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0042.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:41,270 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0043.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:43,799 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0044.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:47,528 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0045.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:52,057 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0046.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:56,185 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/train.360/0047.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:14:58,515 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean/validation/0000.parquet "HTTP/1.1 302 Found"
+2026-04-12 16:18:26,135 INFO Loaded 28538 utterances from train.100 (skipped 1 outside [0.5s, 20.0s])
+2026-04-12 16:18:26,309 INFO Loading LibriSpeech split=validation from HuggingFace...
+2026-04-12 16:18:26,506 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-12 16:18:26,517 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-12 16:18:26,621 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:26,859 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:26,981 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:27,249 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-12 16:18:27,368 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:36,367 INFO Loaded 2642 utterances from validation (skipped 61 outside [0.5s, 20.0s])
+2026-04-12 16:18:36,377 INFO Loading LibriSpeech split=test from HuggingFace...
+2026-04-12 16:18:36,715 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-12 16:18:36,725 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-12 16:18:37,052 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:37,687 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:37,809 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:37,906 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-12 16:18:38,023 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-12 16:18:46,939 INFO Loaded 2528 utterances from test (skipped 92 outside [0.5s, 20.0s])
+2026-04-12 16:18:47,808 INFO Backbone: rwkv6 | Params: 7.74M
+2026-04-12 16:18:47,808 INFO   Frontend: 1.90M | Encoder: 5.83M | Head: 8.0K
+2026-04-12 16:18:50,146 INFO Epoch 1 | Batch 0 | Loss: 4.1267 | LR: 3.00e-07
+2026-04-12 16:18:53,231 INFO Epoch 1 | Batch 50 | Loss: 2.9446 | LR: 1.53e-05
+2026-04-12 16:18:56,287 INFO Epoch 1 | Batch 100 | Loss: 2.9254 | LR: 3.03e-05
+2026-04-12 16:18:59,146 INFO Epoch 1 | Batch 150 | Loss: 2.8760 | LR: 4.53e-05
+2026-04-12 16:19:02,004 INFO Epoch 1 | Batch 200 | Loss: 2.8414 | LR: 6.03e-05
+2026-04-12 16:19:04,978 INFO Epoch 1 | Batch 250 | Loss: 2.8532 | LR: 7.53e-05
+2026-04-12 16:19:07,970 INFO Epoch 1 | Batch 300 | Loss: 2.8479 | LR: 9.03e-05
+2026-04-12 16:19:10,958 INFO Epoch 1 | Batch 350 | Loss: 2.8523 | LR: 1.05e-04
+2026-04-12 16:19:13,935 INFO Epoch 1 | Batch 400 | Loss: 2.8637 | LR: 1.20e-04
+2026-04-12 16:19:16,953 INFO Epoch 1 | Batch 450 | Loss: 2.6996 | LR: 1.35e-04
+2026-04-12 16:19:19,953 INFO Epoch 1 | Batch 500 | Loss: 2.6734 | LR: 1.50e-04
+2026-04-12 16:19:22,784 INFO Epoch 1 | Batch 550 | Loss: 2.6150 | LR: 1.65e-04
+2026-04-12 16:19:25,602 INFO Epoch 1 | Batch 600 | Loss: 2.6456 | LR: 1.80e-04
+2026-04-12 16:19:28,453 INFO Epoch 1 | Batch 650 | Loss: 2.4666 | LR: 1.95e-04
+2026-04-12 16:19:31,335 INFO Epoch 1 | Batch 700 | Loss: 2.4657 | LR: 2.10e-04
+2026-04-12 16:19:34,234 INFO Epoch 1 | Batch 750 | Loss: 2.4082 | LR: 2.25e-04
+2026-04-12 16:19:37,255 INFO Epoch 1 | Batch 800 | Loss: 2.5629 | LR: 2.40e-04
+2026-04-12 16:19:40,424 INFO Epoch 1 | Batch 850 | Loss: 2.2621 | LR: 2.55e-04
+2026-04-12 16:19:43,355 INFO Epoch 1 | Batch 900 | Loss: 2.3519 | LR: 2.70e-04
+2026-04-12 16:19:46,321 INFO Epoch 1 | Batch 950 | Loss: 2.1993 | LR: 2.85e-04
+2026-04-12 16:19:49,212 INFO Epoch 1 | Batch 1000 | Loss: 2.0283 | LR: 3.00e-04
+2026-04-12 16:19:52,053 INFO Epoch 1 | Batch 1050 | Loss: 2.1395 | LR: 2.99e-04
+2026-04-12 16:19:54,850 INFO Epoch 1 | Batch 1100 | Loss: 2.1677 | LR: 2.97e-04
+2026-04-12 16:19:57,686 INFO Epoch 1 | Batch 1150 | Loss: 2.2633 | LR: 2.92e-04
+2026-04-12 16:20:00,595 INFO Epoch 1 | Batch 1200 | Loss: 2.1720 | LR: 2.86e-04
+2026-04-12 16:20:10,162 INFO Epoch 1 | Train: 2.5571 | Dev CER: 0.5080 | Dev WER: 0.9705 | Time: 82s | Peak: 4.6 GB
+2026-04-12 16:20:10,162 INFO   New best CER: 0.5080
+2026-04-12 16:20:12,390 INFO Epoch 2 | Batch 0 | Loss: 1.9982 | LR: 2.81e-04
+2026-04-12 16:20:15,391 INFO Epoch 2 | Batch 50 | Loss: 2.2400 | LR: 2.73e-04
+2026-04-12 16:20:18,426 INFO Epoch 2 | Batch 100 | Loss: 2.1531 | LR: 2.63e-04
+2026-04-12 16:20:21,441 INFO Epoch 2 | Batch 150 | Loss: 2.0725 | LR: 2.52e-04
+2026-04-12 16:20:24,389 INFO Epoch 2 | Batch 200 | Loss: 1.9040 | LR: 2.40e-04
+2026-04-12 16:20:27,408 INFO Epoch 2 | Batch 250 | Loss: 1.6910 | LR: 2.26e-04
+2026-04-12 16:20:30,341 INFO Epoch 2 | Batch 300 | Loss: 1.8691 | LR: 2.12e-04
+2026-04-12 16:20:33,306 INFO Epoch 2 | Batch 350 | Loss: 1.8892 | LR: 1.97e-04
+2026-04-12 16:20:36,269 INFO Epoch 2 | Batch 400 | Loss: 1.6812 | LR: 1.82e-04
+2026-04-12 16:20:39,260 INFO Epoch 2 | Batch 450 | Loss: 1.7566 | LR: 1.66e-04
+2026-04-12 16:20:42,438 INFO Epoch 2 | Batch 500 | Loss: 1.7623 | LR: 1.50e-04
+2026-04-12 16:20:45,436 INFO Epoch 2 | Batch 550 | Loss: 1.9987 | LR: 1.34e-04
+2026-04-12 16:20:48,456 INFO Epoch 2 | Batch 600 | Loss: 1.7991 | LR: 1.19e-04
+2026-04-12 16:20:51,474 INFO Epoch 2 | Batch 650 | Loss: 1.9495 | LR: 1.03e-04
+2026-04-12 16:20:54,512 INFO Epoch 2 | Batch 700 | Loss: 2.2271 | LR: 8.83e-05
+2026-04-12 16:20:57,510 INFO Epoch 2 | Batch 750 | Loss: 1.8003 | LR: 7.42e-05
+2026-04-12 16:21:00,480 INFO Epoch 2 | Batch 800 | Loss: 1.5728 | LR: 6.09e-05
+2026-04-12 16:21:03,535 INFO Epoch 2 | Batch 850 | Loss: 1.8875 | LR: 4.87e-05
+2026-04-12 16:21:06,534 INFO Epoch 2 | Batch 900 | Loss: 1.7335 | LR: 3.76e-05
+2026-04-12 16:21:09,536 INFO Epoch 2 | Batch 950 | Loss: 1.6184 | LR: 2.78e-05
+2026-04-12 16:21:12,491 INFO Epoch 2 | Batch 1000 | Loss: 2.3259 | LR: 1.94e-05
+2026-04-12 16:21:15,486 INFO Epoch 2 | Batch 1050 | Loss: 1.8297 | LR: 1.25e-05
+2026-04-12 16:21:18,546 INFO Epoch 2 | Batch 1100 | Loss: 1.7171 | LR: 7.16e-06
+2026-04-12 16:21:21,584 INFO Epoch 2 | Batch 1150 | Loss: 1.6060 | LR: 3.45e-06
+2026-04-12 16:21:24,623 INFO Epoch 2 | Batch 1200 | Loss: 1.7047 | LR: 1.42e-06
+2026-04-12 16:21:34,497 INFO Epoch 2 | Train: 1.8250 | Dev CER: 0.3978 | Dev WER: 0.8699 | Time: 84s | Peak: 4.6 GB
+2026-04-12 16:21:34,497 INFO   New best CER: 0.3978
+2026-04-12 16:43:13,046 INFO Done. Best dev CER: 0.3978 | Test CER: 0.3922

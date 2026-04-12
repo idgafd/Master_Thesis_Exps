@@ -437,13 +437,49 @@ read this section and know exactly where to resume.
       checkpointing needed → compile fuses scan → expect ~60 s/epoch matching CUDA mamba-ssm)
 - [ ] D2. Reinstall `mamba-ssm` CUDA backend (`uv sync --extra cuda-mamba`) — was
       broken by CUDA 12/13 version mismatch on RTX 5090; may resolve on new instance
-- [ ] D3. `run_registry.py --tag groupA --gpus 0,1 --parallel` — 7 runs × 80 epochs.
-      Use `--compile` for `exp04_mamba_pytorch` if D1 confirms speed parity.
-- [ ] D4. `run_registry.py --tag groupB --gpus 0,1 --parallel` — 9 runs × 80 epochs
+- [x] D0. Benchmark RWKV-6 recurrent kernel fix — **82–85 s/epoch** (was 1220 s),
+      14.7× speedup confirmed. Accuracy matches original baseline (dev CER 0.201
+      at 10 epochs vs 0.200 reference).
+- [x] D1. `torch.compile` for Mamba — **not viable**. `dynamic=True` produced
+      shape-generic kernels 5–40× slower than eager mode; without `dynamic`,
+      every batch triggered recompilation. OOMed at 85 GB even with bf16 autocast
+      on 96 GB GPU. Use `mamba-ssm` CUDA backend or eager mode instead.
+- [x] D2. Reinstall `mamba-ssm` CUDA backend — installed successfully on
+      RTX PRO 6000 (CUDA 13.0 / PyTorch 2.11).
+- [ ] D3. `run_registry.py --tag groupA --gpu 0` — 7 runs × 80 epochs (running)
+- [ ] D4. `run_registry.py --tag groupB --gpu 1` — 9 runs × 80 epochs (running)
 - [ ] D5. `measure_streaming_memory.py` for Group A (with trained models)
 - [ ] D6. Multi-seed validation: `--shortlist --seeds 42,123,777`
 - [ ] D7. Final `reporting.tables` + `reporting.plots` refresh
 - [ ] D8. Commit `outputs/` (excluding `.pt`) and push
+
+---
+
+## 10. Parameter count mismatch — attention point for Phase E
+
+The Transformer baseline has **25% fewer encoder parameters** than RWKV-6
+and LION (4.35M vs 5.82M encoder; 6.26M vs 7.74M total). The gap stems
+from architectural differences, not a configuration error:
+
+1. RWKV-6 TimeMix uses 5 projections (r, k, v, gate, output) vs
+   Transformer's 3 (Q, K, V fused into `in_proj`).
+2. RWKV-6 has data-dependent LoRA mixing matrices (`time_maa_w1/w2`,
+   `time_decay_w1/w2`) with no Transformer equivalent.
+3. RWKV-6 ChannelMix uses 3 linear layers (key, receptance, value) vs
+   Transformer FFN's 2 (linear1, linear2).
+
+This exceeds the 5% tolerance stated in the plan. Current results cannot
+isolate architecture quality from capacity difference.
+
+**Resolution (Phase E, after the current campaign):**
+
+1. Keep existing baselines as valid data points.
+2. Add parameter-matched Transformer variants by increasing FFN dim
+   until total params reach ~7.74M.
+3. Train each architecture at 3–4 parameter budgets (scale `d_model`
+   with fixed `head_size=64`) and report CER-vs-params scaling curves.
+   This is the strongest evidence for parameter efficiency and removes
+   the single-point comparison weakness entirely.
 
 ---
 

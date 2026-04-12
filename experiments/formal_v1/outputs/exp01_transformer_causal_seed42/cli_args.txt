@@ -1,0 +1,1 @@
+--config configs/default.yaml --backbone transformer_causal --epochs 80 --seed 42 --output-dir outputs/exp01_transformer_causal_seed42 --gpu 0 --resume

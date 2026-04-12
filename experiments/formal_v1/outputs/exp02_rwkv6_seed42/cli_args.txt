@@ -1,1 +1,1 @@
---config configs/default.yaml --backbone rwkv6 --epochs 2 --seed 42 --output-dir outputs/exp02_rwkv6_seed42 --gpu 0
+--config configs/default.yaml --backbone rwkv6 --epochs 80 --seed 42 --output-dir outputs/exp02_rwkv6_seed42 --gpu 0 --resume

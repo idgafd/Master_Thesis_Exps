@@ -161,7 +161,7 @@ def main():
     if cfg.compile_encoder:
         torch.set_float32_matmul_precision("high")
         logger.info("Compiling encoder with torch.compile (first batch will be slow)...")
-        model.encoder = torch.compile(model.encoder, mode="default")
+        model.encoder = torch.compile(model.encoder, mode="default", dynamic=True)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
     total_steps = len(train_loader) * cfg.num_epochs

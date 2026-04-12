@@ -1,0 +1,1 @@
+--backbone rwkv6 --epochs 10 --seed 42 --gpu 0 --output-dir outputs/d0_rwkv6_ep10_seed42

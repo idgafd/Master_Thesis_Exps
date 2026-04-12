@@ -1,0 +1,144 @@
+{
+  "backbone": "rwkv6",
+  "params": {
+    "total": 7736605,
+    "trainable": 7736605,
+    "frontend": 1903616,
+    "encoder": 5825024,
+    "ctc_head": 7965
+  },
+  "best_dev_cer": 0.3977970267694064,
+  "test": {
+    "loss": 1.4167751922445782,
+    "cer": 0.3922444665794522,
+    "wer": 0.8698845304805569
+  },
+  "chunked": {
+    "2.0s_reset": {
+      "cer": 0.4793957072295085,
+      "wer": 0.8855827892539869,
+      "n_evaluated": 500
+    },
+    "2.0s_carry": {
+      "cer": 0.4493171228689648,
+      "wer": 0.9078454457882907,
+      "n_evaluated": 500
+    },
+    "5.0s_reset": {
+      "cer": 0.430601225909141,
+      "wer": 0.8810874451460987,
+      "n_evaluated": 500
+    },
+    "5.0s_carry": {
+      "cer": 0.4225822905250144,
+      "wer": 0.8854757572514181,
+      "n_evaluated": 500
+    },
+    "10.0s_reset": {
+      "cer": 0.41684713823056074,
+      "wer": 0.8793749331049984,
+      "n_evaluated": 500
+    },
+    "10.0s_carry": {
+      "cer": 0.41536340698668006,
+      "wer": 0.8790538370972921,
+      "n_evaluated": 500
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.5571086631430777,
+      "train_loss_std": 0.3147299136907698,
+      "dev_loss": 1.860202031057389,
+      "dev_cer": 0.5079586138146301,
+      "dev_wer": 0.9705474018246728,
+      "epoch_time_sec": 82.3495602607727,
+      "learning_rate_end": 0.0002814339980876,
+      "grad_norm_mean": 0.9824272726080756,
+      "tokens_per_sec": 553278.448027532,
+      "peak_mem_gb": 4.639488,
+      "last_step": 1236
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.8249653672323256,
+      "train_loss_std": 0.176481390592617,
+      "dev_loss": 1.464443497970456,
+      "dev_cer": 0.3977970267694064,
+      "dev_wer": 0.8698532328441094,
+      "epoch_time_sec": 83.65229630470276,
+      "learning_rate_end": 1e-06,
+      "grad_norm_mean": 1.006282335780199,
+      "tokens_per_sec": 538548.1254611845,
+      "peak_mem_gb": 4.639444992,
+      "last_step": 2472
+    }
+  ],
+  "git_sha": "08691816629a9be4a96e57f1d5a2f1ddc8c915df",
+  "torch_version": "2.11.0+cu130",
+  "cuda_version": "13.0",
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+  "config_snapshot": {
+    "dataset": "librispeech_clean",
+    "max_audio_sec": 20.0,
+    "min_audio_sec": 0.5,
+    "sample_rate": 16000,
+    "n_mels": 80,
+    "win_length_ms": 25,
+    "hop_length_ms": 10,
+    "d_model": 256,
+    "n_layers": 6,
+    "n_heads": 4,
+    "head_size": 64,
+    "dropout": 0.1,
+    "conv_channels": 256,
+    "backbone": "rwkv6",
+    "rwkv_mode": "lion",
+    "conv_shift": false,
+    "headscale": false,
+    "delta_rule": false,
+    "lucid": false,
+    "lucid_chunk_size": null,
+    "temperature": false,
+    "mamba_d_state": 16,
+    "mamba_d_conv": 4,
+    "mamba_expand": 2,
+    "batch_max_seconds": 300,
+    "num_epochs": 2,
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "warmup_steps": 1000,
+    "grad_clip": 5.0,
+    "early_stopping_patience": 15,
+    "seed": 42,
+    "spec_augment": true,
+    "freq_mask_param": 27,
+    "time_mask_param": 100,
+    "num_freq_masks": 2,
+    "num_time_masks": 2,
+    "chunk_sizes_sec": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "max_carry_eval_utterances": 500,
+    "max_reset_eval_utterances": 500,
+    "chunked_eval_batch_size": 16,
+    "compile_encoder": false,
+    "output_dir": "outputs/d0_rwkv6_benchmark_seed42",
+    "data_cache_dir": "./data/librispeech"
+  },
+  "cli_args": [
+    "--backbone",
+    "rwkv6",
+    "--epochs",
+    "2",
+    "--seed",
+    "42",
+    "--gpu",
+    "0",
+    "--output-dir",
+    "outputs/d0_rwkv6_benchmark_seed42"
+  ]
+}

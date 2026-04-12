@@ -143,7 +143,7 @@ def main():
     # Compile the encoder. Gradient checkpointing inside MambaEncoder is
     # auto-disabled via torch.compiler.is_compiling() check.
     logger.info(f"Compiling encoder with torch.compile(mode={args.compile_mode!r})...")
-    model.encoder = torch.compile(model.encoder, mode=args.compile_mode)
+    model.encoder = torch.compile(model.encoder, mode=args.compile_mode, dynamic=True)
 
     # ── Optim ──────────────────────────────────────────────────────────────
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
