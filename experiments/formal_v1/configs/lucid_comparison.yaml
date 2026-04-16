@@ -1,0 +1,14 @@
+# LUCID comparison experiments — 30 epochs, seed=42
+# 4 runs: {rwkv6, lion} × {baseline, lucid}
+#
+# GPU 0: rwkv6 baseline, lion baseline (sequential)
+# GPU 1: rwkv6_lucid, lion_lucid (sequential)
+
+experiments:
+  # ── GPU 0: Baselines ──────────────────────────────────────────────
+  - {id: lucid_exp01_rwkv6,       backbone: rwkv6,       seed: 42, epochs: 30, tags: [lucid_cmp, baseline, recurrent]}
+  - {id: lucid_exp02_lion,        backbone: lion,         seed: 42, epochs: 30, tags: [lucid_cmp, baseline, bidir]}
+
+  # ── GPU 1: LUCID variants ────────────────────────────────────────
+  - {id: lucid_exp03_rwkv6_lucid, backbone: rwkv6_lucid,  seed: 42, epochs: 30, tags: [lucid_cmp, lucid, recurrent]}
+  - {id: lucid_exp04_lion_lucid,  backbone: lion_lucid,    seed: 42, epochs: 30, tags: [lucid_cmp, lucid, bidir]}

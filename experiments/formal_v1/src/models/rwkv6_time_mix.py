@@ -155,7 +155,12 @@ class RWKV6TimeMix(nn.Module):
 
         # ── Mechanism: LUCID ─────────────────────────────────────────────
         if self.use_lucid:
-            self.lucid_temperature = nn.Parameter(torch.zeros(n_head))
+            # Init so softplus(param) = 1.0, matching the paper's unit scaling
+            # softplus(x) = 1.0 → x = ln(e - 1) ≈ 0.5413
+            import math
+            self.lucid_temperature = nn.Parameter(
+                torch.full((n_head,), math.log(math.e - 1))
+            )
 
         # ── Mechanism: Temperature ───────────────────────────────────────
         if self.use_temperature:
@@ -285,7 +290,14 @@ class RWKV6TimeMix(nn.Module):
             wkv_state = state.float()
 
         u = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
-        y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
+
+        if self.use_lucid:
+            # LUCID in recurrent mode: precondition values before WKV
+            temp = F.softplus(self.lucid_temperature)
+            v_precond = _apply_lucid_recurrent(k, v, temp, self.lucid_chunk_size or 64)
+            y, wkv_state = _chunked_wkv(r, k, v_precond, w, u, wkv_state)
+        else:
+            y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
         return y, wkv_state
 
     def _forward_bidir_serial(
@@ -310,6 +322,56 @@ class RWKV6TimeMix(nn.Module):
         y_bwd = y_bwd.flip(2)
 
         return y_fwd + y_bwd
+
+
+def _apply_lucid_recurrent(
+    k: torch.Tensor,   # (B, H, T, K)
+    v: torch.Tensor,   # (B, H, T, K)
+    temp: torch.Tensor, # (H,) — per-head temperature (already softplus'd)
+    chunk_size: int = 64,
+) -> torch.Tensor:
+    """Paper-faithful LUCID preconditioner for recurrent RWKV-6.
+
+    Applies the LUCID preconditioner within fixed-size chunks:
+        P = exp(K_RN @ K_RN^T / sqrt(d) - sqrt(d))  (unit diagonal)
+        Solve P · Y = V for Y
+
+    This preconditions the values BEFORE they enter the WKV state,
+    matching the paper's formulation: O = A · P^{-1} · V.
+
+    The inter-chunk recurrent state dynamics are unchanged.
+    """
+    B, H, T, K = k.shape
+    sqrt_d = K ** 0.5
+
+    # Reshape temp for broadcasting: (H,) -> (1, H, 1, 1)
+    if temp.dim() == 1:
+        temp = temp.view(1, H, 1, 1)
+
+    v_out = torch.zeros_like(v)
+
+    for start in range(0, T, chunk_size):
+        end = min(start + chunk_size, T)
+        k_c = k[:, :, start:end, :]  # (B, H, cs, K)
+        v_c = v[:, :, start:end, :]
+
+        # RMSNorm: k_rn = sqrt(d) * k / ||k||_2
+        k_rn = sqrt_d * F.normalize(k_c, dim=-1)
+
+        # Gram matrix: diagonal = d
+        gram = k_rn @ k_rn.transpose(-2, -1)  # (B, H, cs, cs)
+
+        # Paper: exp(gram / sqrt(d) - sqrt(d)) — unit diagonal
+        scaled = (temp * (gram / sqrt_d - sqrt_d)).clamp(-30, 30)
+        P = torch.exp(scaled.float())  # (B, H, cs, cs)
+
+        # Regularize for numerical stability (ensures P is always invertible)
+        P = P + 1e-6 * torch.eye(end - start, device=P.device, dtype=P.dtype)
+
+        # Solve P · Y = V for preconditioned values
+        v_out[:, :, start:end, :] = torch.linalg.solve(P, v_c.float()).to(v.dtype)
+
+    return v_out
 
 
 def _chunked_wkv(

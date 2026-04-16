@@ -7,12 +7,12 @@ dependencies = [
     # Core: training + audio
     "torch>=2.2.0",
     "torchaudio>=2.2.0",
-    "torchcodec>=0.1",      # audio decoding backend for HF datasets
-    "datasets>=2.18.0",
+    "datasets>=2.18.0,<4.0",
     "jiwer>=3.0.0",
     "pyyaml>=6.0",
     "einops>=0.7.0",
     "soundfile>=0.12.0",
+    "librosa>=0.10.0",
 
     # Research harness (flat-file artifacts, no TensorBoard)
     "numpy>=1.26",

@@ -112,15 +112,21 @@ def lion_attention_with_lucid(
     lucid_temp: torch.Tensor,  # (H,) or (1, H, 1, 1) — per-head temperature
     chunk_size: int | None = None,
 ) -> torch.Tensor:
-    """LION attention with LUCID preconditioner (CORRECTED).
+    """LION attention with paper-faithful LUCID preconditioner.
 
-    CORRECTED formulation: Y = P^{-1} @ (A @ V)
-    (decorrelate the attention output, not the values)
+    Paper formulation (Eq. 5, Section 2.3):
+        Step 1: Solve P · Y = V  for Y  (precondition values)
+        Step 2: Output = A · Y           (attend over preconditioned values)
 
-    Draft (wrong): Y = A @ P^{-1} @ V
+    where P = exp(K_RN @ K_RN^T / sqrt(d) - sqrt(d)), unit diagonal.
+
+    For LION (bidirectional), P is full (no causal mask) since attention
+    is bidirectional. The lucid_temp parameter allows learned scaling
+    instead of the fixed 1/sqrt(d).
 
     Args:
-        lucid_temp: learnable per-head temperature (positive, via softplus)
+        lucid_temp: learnable per-head temperature (positive, via softplus).
+                    Replaces the paper's fixed 1/sqrt(d) for flexibility.
         chunk_size: if not None, apply LUCID within windows of this size
     """
     B, H, T, K = r.shape
@@ -155,32 +161,56 @@ def lion_attention_with_lucid(
     )
 
     A = A_fwd + A_bwd
-    Y_raw = A @ v  # (B, H, T, K)
 
-    # Apply LUCID preconditioner: P^{-1} @ Y_raw
+    # Step 1: Precondition values — solve P · Y = V
     if chunk_size is None:
-        Y_out = _apply_lucid_preconditioner(k, Y_raw, lucid_temp)
+        Y = _apply_lucid_preconditioner(k, v, lucid_temp)
     else:
-        # Chunked LUCID: apply within windows
-        Y_out = torch.zeros_like(Y_raw)
+        Y = torch.zeros_like(v)
         for start in range(0, T, chunk_size):
             end = min(start + chunk_size, T)
-            k_chunk = k[:, :, start:end, :]
-            y_chunk = Y_raw[:, :, start:end, :]
-            Y_out[:, :, start:end, :] = _apply_lucid_preconditioner(
-                k_chunk, y_chunk, lucid_temp
+            Y[:, :, start:end, :] = _apply_lucid_preconditioner(
+                k[:, :, start:end, :], v[:, :, start:end, :], lucid_temp
             )
 
-    return Y_out
+    # Step 2: Attend over preconditioned values
+    return A @ Y
 
 
 def _apply_lucid_preconditioner(
     k: torch.Tensor,      # (B, H, T_chunk, K)
-    y: torch.Tensor,      # (B, H, T_chunk, K)
+    v: torch.Tensor,      # (B, H, T_chunk, K) — values to precondition
     temp: torch.Tensor,   # (1, H, 1, 1)
 ) -> torch.Tensor:
-    """Apply LUCID: P = I + exp(tau * K_norm @ K_norm^T), solve P @ Y_out = Y."""
-    k_norm = torch.nn.functional.normalize(k, dim=-1)
-    gram = k_norm @ k_norm.transpose(-2, -1)  # (B, H, T_chunk, T_chunk)
-    P = torch.eye(gram.size(-1), device=gram.device, dtype=gram.dtype) + torch.exp(temp * gram)
-    return torch.linalg.solve(P, y)
+    """Paper-faithful LUCID: P = exp(K_RN K_RN^T / sqrt(d) - sqrt(d)).
+
+    K_RN = sqrt(d) * K / ||K||_2  (RMSNorm scaled by sqrt(d))
+    Then K_RN K_RN^T has diagonal = d, so K_RN K_RN^T / sqrt(d) - sqrt(d)
+    has diagonal = 0, giving P_ii = exp(0) = 1 (unit diagonal).
+
+    We use a learnable temperature `temp` instead of the fixed 1/sqrt(d)
+    for flexibility, but preserve the unit-diagonal property via the
+    -sqrt(d) offset structure.
+
+    Solve P · Y = V for Y via torch.linalg.solve.
+    """
+    K = k.size(-1)  # head_size = d
+    sqrt_d = K ** 0.5
+
+    # RMSNorm: k_rn = sqrt(d) * k / ||k||_2
+    k_rn = sqrt_d * torch.nn.functional.normalize(k, dim=-1)  # (B, H, T, K)
+
+    # Gram: K_RN @ K_RN^T — diagonal entries = d
+    gram = k_rn @ k_rn.transpose(-2, -1)  # (B, H, T, T)
+
+    # Paper: exp(gram / sqrt(d) - sqrt(d)) — unit diagonal
+    # With learnable temp: exp(temp * (gram / sqrt(d) - sqrt(d)))
+    # When temp=1 this matches the paper exactly
+    scaled = (temp * (gram / sqrt_d - sqrt_d)).clamp(-30, 30)
+    P = torch.exp(scaled)  # (B, H, T, T) — unit diagonal
+
+    # Regularize for numerical stability
+    T_chunk = k.size(-2)
+    P = P + 1e-6 * torch.eye(T_chunk, device=P.device, dtype=P.dtype)
+
+    return torch.linalg.solve(P, v)
