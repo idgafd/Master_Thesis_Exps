@@ -26,6 +26,7 @@ class RWKV6Block(nn.Module):
         delta_rule: bool = False,
         lucid: bool = False,
         lucid_chunk_size: Optional[int] = None,
+        lucid_self_reg: bool = False,
         temperature: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
@@ -50,6 +51,7 @@ class RWKV6Block(nn.Module):
             delta_rule=delta_rule,
             lucid=lucid,
             lucid_chunk_size=lucid_chunk_size,
+            lucid_self_reg=lucid_self_reg,
             temperature=temperature,
             dtype=dtype,
         )

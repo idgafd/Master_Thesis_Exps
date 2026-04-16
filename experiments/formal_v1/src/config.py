@@ -35,6 +35,7 @@ class ExperimentConfig:
     delta_rule: bool = False
     lucid: bool = False
     lucid_chunk_size: Optional[int] = None  # None = full-sequence
+    lucid_self_reg: bool = False  # RKHS delta rule self-regulation in state
     temperature: bool = False
     # Mamba-specific
     mamba_d_state: int = 16

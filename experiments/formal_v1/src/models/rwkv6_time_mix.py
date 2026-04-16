@@ -61,6 +61,7 @@ class RWKV6TimeMix(nn.Module):
         delta_rule: bool = False,
         lucid: bool = False,
         lucid_chunk_size: Optional[int] = None,
+        lucid_self_reg: bool = False,
         temperature: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
@@ -75,6 +76,7 @@ class RWKV6TimeMix(nn.Module):
         self.use_delta_rule = delta_rule
         self.use_lucid = lucid
         self.lucid_chunk_size = lucid_chunk_size
+        self.use_lucid_self_reg = lucid_self_reg
         self.use_temperature = temperature
         self.layer_id = layer_id
 
@@ -291,7 +293,11 @@ class RWKV6TimeMix(nn.Module):
 
         u = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
 
-        if self.use_lucid:
+        if self.use_lucid_self_reg:
+            # RKHS delta rule: self-regulating state update
+            # The state only accumulates prediction errors, not redundant info
+            y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state, self_reg=True)
+        elif self.use_lucid:
             # LUCID in recurrent mode: precondition values before WKV
             temp = F.softplus(self.lucid_temperature)
             v_precond = _apply_lucid_recurrent(k, v, temp, self.lucid_chunk_size or 64)
@@ -381,11 +387,16 @@ def _chunked_wkv(
     w: torch.Tensor,   # log-decay (negative)
     u: torch.Tensor,   # (1, H, 1, K) bonus term
     wkv_state: torch.Tensor,  # (B, H, K, K)
+    self_reg: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Chunked parallel WKV with carry-state (SmerkyG algorithm).
 
     Processes T tokens using decreasing chunk sizes for GPU-parallel
     intra-chunk attention with sequential inter-chunk state updates.
+
+    If self_reg=True, applies the RKHS delta rule self-regulation:
+    the inter-chunk state update accumulates prediction errors instead
+    of raw key-value products, suppressing redundant updates.
     """
     B, H, T, K = r.shape
 
@@ -406,6 +417,7 @@ def _chunked_wkv(
                 w[:, :, processed:processed + seg_len],
                 u, state,
                 chunk_len=chunk_len,
+                self_reg=self_reg,
             )
             out_parts.append(out)
             processed += seg_len
@@ -422,10 +434,17 @@ def _wkv_subchunk(
     u: torch.Tensor,   # (1, H, 1, K)
     wkv_state: torch.Tensor,  # (B, H, K, K)
     chunk_len: int = 128,
+    self_reg: bool = False,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Parallel intra-chunk + recurrent inter-chunk WKV.
 
     Direct port of RWKVx060_subchunk_torch_inner from RWKV-block.
+
+    If self_reg=True, applies the RKHS delta rule (erase-then-write):
+      Standard:  S_new = decay * S + K^T @ V
+      Self-reg:  S_new = decay * S + K^T @ (V - S @ K_norm^T)
+    The state only accumulates prediction errors, suppressing
+    redundant updates when the state already encodes the association.
     """
     B, H, L, K = k.shape
     V = v.size(-1)
@@ -434,6 +453,11 @@ def _wkv_subchunk(
     # Single token: simple step
     if L == 1:
         kv = k.mT @ v
+        if self_reg:
+            k_norm = F.normalize(k, dim=-1)
+            prediction = (wkv_state @ k_norm.mT).mT  # (B,H,1,V)
+            error = v - prediction
+            kv = k.mT @ error
         out = r @ (wkv_state + u.mT * kv)
         wkv_state = torch.exp(w).mT * wkv_state + kv
         return out, wkv_state
@@ -477,16 +501,39 @@ def _wkv_subchunk(
     a = a + torch.einsum('bhntk,bhntk->bhnt', r, u_c * k).diag_embed()
     out = a @ v
 
-    # Pre-compute chunked kv products for state update
-    wkv = (k * w_inter).mT @ v
-    wkv_list = list(wkv.unbind(dim=-3))
+    if not self_reg:
+        # ── Standard state update ──────────────────────────────────
+        wkv = (k * w_inter).mT @ v
+        wkv_list = list(wkv.unbind(dim=-3))
 
-    # Recurrent inter-chunk state
-    states = []
-    for i in range(N):
-        states.append(wkv_state)
-        wkv_state = wkv_state * ws_list[i] + wkv_list[i]
-    states = torch.stack(states, dim=2)
+        states = []
+        for i in range(N):
+            states.append(wkv_state)
+            wkv_state = wkv_state * ws_list[i] + wkv_list[i]
+        states = torch.stack(states, dim=2)
+    else:
+        # ── Self-regulating state update (RKHS delta rule) ─────────
+        # S_new = decay * S + K^T @ (V - S @ K_norm^T)
+        # The state suppresses updates for associations it already knows.
+        states = []
+        for i in range(N):
+            states.append(wkv_state)
+            k_i = k[:, :, i]         # (B, H, T, K)
+            v_i = v[:, :, i]         # (B, H, T, V)
+            w_inter_i = w_inter[:, :, i]  # (B, H, T, K)
+
+            # What the state predicts for these keys
+            k_norm_i = F.normalize(k_i.float(), dim=-1)
+            # state @ k_norm^T → (B,H,K,K) @ (B,H,K,T) = (B,H,K,T)
+            prediction = (wkv_state @ k_norm_i.mT).mT.to(v_i.dtype)  # (B,H,T,V)
+
+            # Prediction error: only accumulate what's new
+            error = v_i - prediction  # (B, H, T, V)
+
+            # State update with error instead of raw values
+            wkv_i = (k_i * w_inter_i).mT @ error
+            wkv_state = wkv_state * ws_list[i] + wkv_i.float()
+        states = torch.stack(states, dim=2)
 
     # Apply state to output
     out = out + (r * w_intra) @ states

@@ -70,6 +70,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     mode_map = {
         "rwkv6": "recurrent",
         "rwkv6_lucid": "recurrent",
+        "rwkv6_lucid_sr": "recurrent",
         "rwkv6_delta": "recurrent",
         "rwkv6_lucid_delta": "recurrent",
         "lion": "lion",
@@ -90,6 +91,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     headscale = "headscale" in backbone or cfg.headscale
     delta_rule = "delta" in backbone or cfg.delta_rule
     lucid = "lucid" in backbone or cfg.lucid
+    lucid_self_reg = "lucid_sr" in backbone or cfg.lucid_self_reg
     temperature = "temperature" in backbone or cfg.temperature
     lucid_chunk_size = 64 if "chunked" in backbone else cfg.lucid_chunk_size
 
@@ -105,5 +107,6 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         delta_rule=delta_rule,
         lucid=lucid,
         lucid_chunk_size=lucid_chunk_size,
+        lucid_self_reg=lucid_self_reg,
         temperature=temperature,
     )
