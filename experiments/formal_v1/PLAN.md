@@ -460,3 +460,64 @@ correlations.
 - No large-scale training (>10 epochs)
 - No paper writing
 - No analysis of results beyond "does it converge?"
+
+---
+
+## Next Steps — RWKV Improvements (post-Stage 1, post lucid_comparison)
+
+Based on the `lucid_*` 30-epoch results (LION baseline 0.107 dev CER, ConvShift
+the only mechanism that clearly beats LION at 0.104, LUCID neutral on LION,
+LUCID self-reg actively regressing, and `lion_delta`/`lion_headscale` still
+untrained), the following directions are prioritized for the next experimental
+campaign on RWKV/LION.
+
+### 1. Combine the winners — `lion_convshift + {delta, headscale}`
+ConvShift is the only mechanism that gave a clear win on LION (~3% rel. CER
+improvement) at no compute cost. Stacking another orthogonal mechanism on top
+is the cheapest path to a new best point.
+- New backbones: `lion_convshift_delta`, `lion_convshift_headscale`
+- Requires one extra entry per backbone in `encoder.py`'s `mode_map`; mechanism
+  flags are already derived via substring matching.
+
+### 2. Train `lion_delta` standalone
+Currently missing from the formal results table. Without this run we cannot
+claim Delta Rule is or isn't transferable to LION (the corrected causal-only
+formulation has never been measured end-to-end at 30 epochs).
+
+### 3. `lion_lucid_chunked` chunk-size sweep
+Full T×T LUCID washes out local correlations and was approximately neutral on
+LION. A small window may recover the −15% draft gain.
+- Sweep `chunk ∈ {16, 32, 64}` as separate runs.
+
+### 4. Headscale on causal RWKV-6
+Cheap, never tried. New backbone `rwkv6_headscale`.
+
+### 5. Drop `lucid_self_reg` from the campaign (or rederive it)
+Currently a confirmed regression: rwkv6_lucid_sr at 0.148 dev CER vs rwkv6
+baseline at 0.126 (+17% rel. CER). The RKHS erase-then-write formulation in
+`_wkv_subchunk` plausibly over-erases in the small-T regime. Either remove it
+from `experiments.yaml` or rederive the update rule before re-running.
+
+### 6. Hybrid layer schedule — recurrent bottom + lion top
+Bottom 3 layers `recurrent`, top 3 `lion`. The multi-scale depth hierarchy
+claim from the draft predicts this should match LION accuracy at lower
+streaming memory cost.
+- Requires `RWKV6Encoder` to accept a per-layer `mode` list.
+
+### 7. Multi-seed validation (42, 123, 777) for the top-2 configs
+Once a winner is identified, run 3 seeds. The current LION vs lion_lucid gap
+(0.0014 dev CER) is inside seed noise and cannot be relied on without
+statistical validation.
+
+### Suggested registry additions
+
+```yaml
+- {id: rwkv_imp01_lion_delta,             backbone: lion_delta,                 seed: 42, epochs: 30, tags: [rwkv_imp]}
+- {id: rwkv_imp02_lion_convshift_delta,   backbone: lion_convshift_delta,       seed: 42, epochs: 30, tags: [rwkv_imp, stacking]}
+- {id: rwkv_imp03_lion_convshift_hs,      backbone: lion_convshift_headscale,   seed: 42, epochs: 30, tags: [rwkv_imp, stacking]}
+- {id: rwkv_imp04_lion_lucid_chunked16,   backbone: lion_lucid_chunked,         seed: 42, epochs: 30, tags: [rwkv_imp, lucid_sweep]}
+- {id: rwkv_imp05_lion_lucid_chunked32,   backbone: lion_lucid_chunked,         seed: 42, epochs: 30, tags: [rwkv_imp, lucid_sweep]}
+- {id: rwkv_imp06_lion_lucid_chunked64,   backbone: lion_lucid_chunked,         seed: 42, epochs: 30, tags: [rwkv_imp, lucid_sweep]}
+- {id: rwkv_imp07_rwkv6_headscale,        backbone: rwkv6_headscale,            seed: 42, epochs: 30, tags: [rwkv_imp]}
+- {id: rwkv_imp08_lion_recurrent_hybrid,  backbone: lion_recurrent_hybrid,      seed: 42, epochs: 30, tags: [rwkv_imp, hybrid]}
+```
