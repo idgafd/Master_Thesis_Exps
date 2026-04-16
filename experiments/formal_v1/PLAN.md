@@ -521,3 +521,220 @@ statistical validation.
 - {id: rwkv_imp07_rwkv6_headscale,        backbone: rwkv6_headscale,            seed: 42, epochs: 30, tags: [rwkv_imp]}
 - {id: rwkv_imp08_lion_recurrent_hybrid,  backbone: lion_recurrent_hybrid,      seed: 42, epochs: 30, tags: [rwkv_imp, hybrid]}
 ```
+
+---
+
+## Stage 2 — Higher-Order Discretization for Causal Linear-State Recurrences
+
+### 1. Refocused research question
+
+The unifying claim of the discretization study:
+
+> *Higher-order discretization (trapezoidal, generalized 2-step, Adams-Bashforth)
+> is a free expressivity boost in causal linear-state recurrences (RWKV-6,
+> Mamba, linear attention), orthogonal to other mechanism choices.*
+
+Why **causal first**, LION later:
+1. Trapezoidal/AB3 are concepts about how to integrate a continuous-time ODE
+   step-by-step. Bidirectional LION already attends across the full sequence,
+   so the "ZOH expressivity gap" argument is structurally weaker there.
+2. The streaming-practical-relevance narrative (`INFRASTRUCTURE_PLAN.md §3.4`)
+   lives entirely in Group A. Discretization improvements directly speak to
+   that axis.
+3. The clean baseline → variant story per family is more falsifiable than
+   "stack one more bidir mechanism on LION".
+
+### 2. Mathematical formulation
+
+Treat every causal linear recurrence as a discretized continuous-time system:
+
+  dS/dt = -A(t) S(t) + b(t),       b(t) = k(t) v(t)^T
+
+with `A(t) = exp(w_t)` for RWKV-6, the SSM `A`-matrix for Mamba, and
+`A = 0` for linear attention.
+
+**Generalized linear multistep state update** (the unifying object — covers
+ZOH, RWKV's bonus term `u`, trapezoidal, and Adams-Bashforth as special
+cases of one coefficient family):
+
+  S_t = W_t ⊙ S_{t-1}  +  Σ_{i=0}^{p-1}  α_i · W̃_t^{i/p} ⊙ b_{t-i}
+
+| Scheme | p | Coefficients | Identification |
+|---|---|---|---|
+| ZOH (vanilla RWKV-6) | 1 | α₀ = 1 | current code |
+| ZOH + bonus `u` | 1 | α₀ = 1, extra `u·b_t` in readout only | current code |
+| **Pure trapezoidal** | 2 | α₀ = α₁ = ½ | new |
+| **Generalized 2-step** | 2 | α₀, α₁ learnable per head | new |
+| **Adams-Bashforth-3** | 3 | (23/12, −16/12, 5/12) | new |
+
+#### Two refinements that matter
+
+1. **Variable-decay correction.** RWKV-6's `w_t` is data-dependent, so the
+   standard trapezoidal derivation (which assumes constant `A` on `[t−Δ, t]`)
+   is biased. Use the **geometric-mean decay** on the lookback term:
+       W̃_t = sqrt(W_t ⊙ W_{t-1}),    S_t = W_t S_{t-1} + ½(b_t + W̃_t ⊙ b_{t-1})
+   This is the proper "exponential-trapezoidal" rule for time-varying A.
+   Tested as a separate variant (`rwkv6_trap_var`) so its contribution can
+   be isolated from the basic trapezoidal correction.
+
+2. **Per-channel learnable order.** Instead of fixing the scheme, let the
+   network choose its discretization per channel via learnable mix
+   parameters:
+       S_t = W_t S_{t-1} + α₀(θ) · b_t + α₁(θ) · W̃_t · b_{t-1}
+   This subsumes ZOH (α₀ → 1, α₁ → 0) and trapezoidal (α₀ = α₁ = ½) and
+   lets ablation reveal what the model actually wants per channel.
+
+#### Relation to existing RWKV-6 components
+
+- The bonus term `u` (`time_faaaa`) is mathematically a **rescaled α₀**
+  applied at the readout (not the state update). When testing pure
+  trapezoidal we therefore **ablate `u`**: keeping it would conflate a
+  state-side and a readout-side α₀ contribution.
+- ConvShift is a learned 3-tap depthwise convolution on `x` BEFORE the
+  k/v projection — i.e., a learned discretization filter on the **input**
+  side. Stage 2's discretization variants act on the **state-update**
+  side. The `rwkv6_convshift_trap` cell tests whether the two sides are
+  complementary or redundant.
+
+### 3. Implementation strategy (efficient, single-kernel)
+
+The recurrence S_t = W_t S_{t-1} + drive_t is **linear in the drive**, so
+the multi-step drive Σ α_i W̃_t^{i/p} ⊙ b_{t-i} can be implemented as the
+sum of `p` parallel scans with the same `W_t` schedule:
+
+- Scan 0: drive = α₀ · k_t v_t^T            → standard chunked WKV
+- Scan 1: drive = α₁ · W̃_t · k_{t-1} v_{t-1}^T → shifted-by-1 chunked WKV
+- Scan 2 (AB3 only): drive = α₂ · W̃_t² · k_{t-2} v_{t-2}^T
+
+The decay factor W̃_t is per-channel (K-dim) and absorbs cleanly into the
+shifted `k_lag` row scaling: `k_b[i] = α₁ · W̃_t[i] · k_{t-1}[i]`. Output
+and state of the parallel scans are summed (linearity).
+
+This keeps the existing fast `_chunked_wkv` (SmerkyG algorithm) intact
+and costs only a 2× scan budget for trapezoidal (3× for AB3). Expected
+epoch time: ~150 s (vs 80 s baseline) at 30 epochs ≈ 75 min/run.
+
+For inference / carry-state, the encoder state extends from `S` only to
+`(S, k_{t-1}, v_{t-1})` for trapezoidal and `(S, k_{t-1}, v_{t-1}, k_{t-2}, v_{t-2})`
+for AB3. The extra cache is `O(p · H · K)` per layer (KB scale, not MB).
+
+### 4. Potential dangers (must be addressed in the implementation)
+
+These three concerns are real and the implementation must explicitly
+handle them. Each variant's success criterion includes "did training
+remain stable" alongside CER.
+
+1. **AB3 absolute-stability region is small.** Adams-Bashforth-3 is an
+   explicit higher-order multistep; its region of absolute stability is
+   roughly half that of AB1/ZOH. Combined with data-dependent step sizes
+   (`exp(w_t)`) this can produce exploding gradients or oscillatory
+   training. **Mitigations:**
+   - Clamp decay strictly: `w_clamp = w.clamp(min=ln(0.5))` so step size
+     `Δ ≤ 0.7` per token.
+   - Train AB3 in fp32 only (no autocast on the WKV scan) — already true
+     for the current `_chunked_wkv` which casts to fp64 for chunk_len > 24.
+   - Monitor `grad_norm` per epoch; auto-halve LR if it exceeds 50 for
+     two consecutive epochs.
+   - If unstable: drop AB3 from the campaign and report it as a negative
+     result — that itself is a useful contribution.
+
+2. **Inference memory cost of the lookback cache.** During autoregressive
+   decoding (and chunked carry-state evaluation), the recurrent state
+   grows from `(S)` to `(S, k_lag, v_lag, [k_lag2, v_lag2])`. For RWKV-6
+   with H=4, K=64, this adds 4 × 64 × 4 bytes = 1 KB per layer for
+   trapezoidal, 2 KB for AB3. **Negligible vs. the S matrix (16 KB/layer)
+   but must be reported alongside any expressivity gain.** Add these
+   numbers to the streaming-memory plot
+   (`outputs/_plots/streaming_memory_vs_duration.png`).
+
+3. **`gen2` initialization must start at ZOH, not uniform.** A uniform
+   softmax init (θ₀ = θ₁) puts the model at α₀ = α₁ = ½ — already the
+   trapezoidal prior — and makes the "pure ZOH" attractor harder to
+   reach. **Initialize θ such that `softplus(θ₀)/Σ = 1, softplus(θ₁)/Σ ≈ 0`
+   (i.e. ZOH start), and let gradient pull α₁ up if needed.** The
+   alternative (init at trapezoidal) is also valid; we run both as a
+   tiny ablation (`rwkv6_gen2_zoh_init`, `rwkv6_gen2_trap_init`).
+
+### 5. Experiment matrix (causal first, then transfer)
+
+**Phase 1 — causal RWKV-6 (the proper testbed):**
+
+| ID | Backbone | Coefficients | Question |
+|----|----------|--------------|----------|
+| disc01 | `rwkv6` | baseline ZOH+u | reference (~0.126 dev CER, 30 ep) |
+| disc02 | `rwkv6_trap` | α₀=α₁=½, no `u`, current decay | does pure trapezoidal beat ZOH+u? |
+| disc03 | `rwkv6_trap_var` | α₀=α₁=½, no `u`, geometric-mean W̃ | does the variable-decay correction matter? |
+| disc04 | `rwkv6_gen2` | learnable α₀, α₁, ZOH init, keep `u` | what does the model want? |
+| disc05 | `rwkv6_ab3` | (23/12, −16/12, 5/12), no `u`, decay clamped | does higher order help (or explode)? |
+| disc06 | `rwkv6_convshift_trap` | trap_var + ConvShift | input-side + state-side filtering: complementary? |
+
+**Phase 2 — transfer the winning scheme to LION (only if Phase 1 shows signal):**
+
+| ID | Backbone | Notes |
+|----|----------|-------|
+| disc07 | `lion_trap` | symmetric trapezoidal on forward and backward sweeps |
+| disc08 | `lion_convshift_trap` | with ConvShift, the current Group B winner |
+
+**Routing note:** `lion_trap` and `lion_convshift_trap` route through
+`mode="bidir_serial"` (not `mode="lion"`). LION's parallel T×T attention
+has no explicit recurrence and therefore no discretization concept to
+modify. `bidir_serial` runs the recurrent scan twice (forward + flipped),
+so the trapezoidal update applies cleanly on each sweep and the two are
+summed. This is a slower path than parallel LION but it is the only
+mathematically meaningful way to extend a discretization study to a
+bidirectional model in this codebase.
+
+**Phase 3 — Mamba (separate, after Phase 1):**
+- `mamba_trap`: replace ZOH with exponential-trapezoidal in selective scan.
+  Cleanest test of the discretization claim because Mamba has explicit `A`,
+  `B`, `Δ`. Implementation lives in `mamba_block.py`.
+
+**Phase 4 — Linear attention (control):**
+- Add a `linatt` backbone (already in `blocks.py` — needs a Phase-D-style
+  factory entry) and a `linatt_trap` variant. Predicted to be marginal
+  (no decay → trapezoidal collapses to a 2-tap moving average that the
+  input projection already represents). A null result here *strengthens*
+  the claim that the gain comes from the discretization-of-decay
+  interaction.
+
+### 6. Registry entries
+
+```yaml
+# ── Stage 2: Discretization study (causal first) ─────────────────
+- {id: disc01_rwkv6_baseline,        backbone: rwkv6,                 seed: 42, epochs: 30, tags: [disc, baseline, recurrent]}
+- {id: disc02_rwkv6_trap,            backbone: rwkv6_trap,            seed: 42, epochs: 30, tags: [disc, trap, recurrent]}
+- {id: disc03_rwkv6_trap_var,        backbone: rwkv6_trap_var,        seed: 42, epochs: 30, tags: [disc, trap, recurrent]}
+- {id: disc04_rwkv6_gen2,            backbone: rwkv6_gen2,            seed: 42, epochs: 30, tags: [disc, gen2, recurrent]}
+- {id: disc05_rwkv6_ab3,             backbone: rwkv6_ab3,             seed: 42, epochs: 30, tags: [disc, ab3, recurrent]}
+- {id: disc06_rwkv6_convshift_trap,  backbone: rwkv6_convshift_trap,  seed: 42, epochs: 30, tags: [disc, stacking, recurrent]}
+- {id: disc07_lion_trap,             backbone: lion_trap,             seed: 42, epochs: 30, tags: [disc, trap, bidir]}
+- {id: disc08_lion_convshift_trap,   backbone: lion_convshift_trap,   seed: 42, epochs: 30, tags: [disc, stacking, bidir]}
+```
+
+### 7. 2-GPU launch plan
+
+8 runs split across 2 GPUs as 4-and-4 sequential per device,
+~75 min/run ≈ 5 h per GPU:
+
+  GPU 0 (causal core):    disc01 → disc02 → disc03 → disc04
+  GPU 1 (causal+transfer): disc05 → disc06 → disc07 → disc08
+
+`scripts/launch_discretization.sh` implements this. Logs land in
+`outputs/logs/disc_gpu{0,1}.log`. Each run writes to
+`outputs/disc{NN}_<backbone>_seed42/` and (on success) appends one row
+to `outputs/_index.csv`. AB3 is intentionally placed on GPU 1 first so
+that if it explodes the rest of the GPU 1 queue still proceeds.
+
+### 8. Success criteria
+
+- Phase 1 finishes without manual intervention on AB3 (no NaN, no LR
+  rollback). Trapezoidal variants reach a final dev CER within ±10% of
+  the `rwkv6` baseline (sanity check that we did not break the model).
+- At least one of {`rwkv6_trap`, `rwkv6_trap_var`, `rwkv6_gen2`} beats
+  the `rwkv6` baseline by ≥ 1.5% relative dev CER.
+- The `rwkv6_convshift_trap` cell reveals whether input-side (ConvShift)
+  and state-side (trapezoidal) discretization filters are complementary
+  (gain stacks) or redundant (gain dominated by one).
+- The `gen2` learned coefficients are inspected post-hoc: histogram of
+  α₁/α₀ across heads/layers tells us whether the model uses the
+  flexibility or stays close to ZOH.

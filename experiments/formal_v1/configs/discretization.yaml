@@ -1,0 +1,21 @@
+# Stage 2 — Higher-order discretization study (causal-first).
+#
+# 6 causal RWKV-6 variants + 2 LION transfer variants, 30 epochs each, seed=42.
+# Total wall-clock: ~5 h per GPU on a 5090-class device (estimated).
+#
+# See PLAN.md "Stage 2 — Higher-Order Discretization for Causal Linear-State
+# Recurrences" for the math, dangers (AB3 stability, inference memory cost,
+# gen2 init), and full motivation.
+
+experiments:
+  # ── Phase 1: causal RWKV-6 (the proper testbed) ─────────────────────
+  - {id: disc01_rwkv6_baseline,        backbone: rwkv6,                seed: 42, epochs: 30, tags: [disc, baseline, recurrent]}
+  - {id: disc02_rwkv6_trap,            backbone: rwkv6_trap,           seed: 42, epochs: 30, tags: [disc, trap, recurrent]}
+  - {id: disc03_rwkv6_trap_var,        backbone: rwkv6_trap_var,       seed: 42, epochs: 30, tags: [disc, trap, recurrent]}
+  - {id: disc04_rwkv6_gen2,            backbone: rwkv6_gen2,           seed: 42, epochs: 30, tags: [disc, gen2, recurrent]}
+  - {id: disc05_rwkv6_ab3,             backbone: rwkv6_ab3,            seed: 42, epochs: 30, tags: [disc, ab3, recurrent]}
+  - {id: disc06_rwkv6_convshift_trap,  backbone: rwkv6_convshift_trap, seed: 42, epochs: 30, tags: [disc, stacking, recurrent]}
+
+  # ── Phase 2: transfer to LION (run only after Phase 1 shows signal) ─
+  - {id: disc07_lion_trap,             backbone: lion_trap,            seed: 42, epochs: 30, tags: [disc, trap, bidir]}
+  - {id: disc08_lion_convshift_trap,   backbone: lion_convshift_trap,  seed: 42, epochs: 30, tags: [disc, stacking, bidir]}

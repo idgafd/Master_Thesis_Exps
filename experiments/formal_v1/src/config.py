@@ -37,6 +37,16 @@ class ExperimentConfig:
     lucid_chunk_size: Optional[int] = None  # None = full-sequence
     lucid_self_reg: bool = False  # RKHS delta rule self-regulation in state
     temperature: bool = False
+    # Stage 2 discretization scheme — overrides the standard ZOH state update.
+    # Values: "zoh" | "trap" | "trap_var" | "gen2" | "ab3"
+    #   zoh:      S_t = W S_{t-1} + k_t v_t^T            (current default)
+    #   trap:     S_t = W S_{t-1} + ½(k_t v_t^T + W k_{t-1} v_{t-1}^T)
+    #   trap_var: trap with geometric-mean decay W̃ = sqrt(W_t W_{t-1})
+    #   gen2:     learnable α₀, α₁ per head (initialized to ZOH or trap)
+    #   ab3:      Adams-Bashforth 3-step (23/12, -16/12, 5/12), decay clamped
+    discretization: str = "zoh"
+    discretization_init: str = "zoh"  # "zoh" | "trap" — only used by gen2
+    discretization_drop_u: bool = False  # ablate the bonus term `u` (time_faaaa)
     # Mamba-specific
     mamba_d_state: int = 16
     mamba_d_conv: int = 4

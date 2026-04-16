@@ -63,6 +63,9 @@ class RWKV6TimeMix(nn.Module):
         lucid_chunk_size: Optional[int] = None,
         lucid_self_reg: bool = False,
         temperature: bool = False,
+        discretization: str = "zoh",
+        discretization_init: str = "zoh",
+        drop_u: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -78,6 +81,9 @@ class RWKV6TimeMix(nn.Module):
         self.lucid_chunk_size = lucid_chunk_size
         self.use_lucid_self_reg = lucid_self_reg
         self.use_temperature = temperature
+        self.discretization = discretization
+        self.discretization_init = discretization_init
+        self.drop_u = drop_u
         self.layer_id = layer_id
 
         hidden_size_att = hidden_size
@@ -167,6 +173,23 @@ class RWKV6TimeMix(nn.Module):
         # ── Mechanism: Temperature ───────────────────────────────────────
         if self.use_temperature:
             self.attention_temperature = nn.Parameter(torch.ones(1, n_head, 1, 1))
+
+        # ── Stage 2: Discretization scheme ───────────────────────────────
+        # `gen2` adds learnable α₀, α₁ per head. Initialized from `discretization_init`:
+        #   "zoh"  → α₀ ≈ 1, α₁ ≈ 0  (start as ZOH, learn to add lookback)
+        #   "trap" → α₀ ≈ ½, α₁ ≈ ½  (start as trapezoidal)
+        # Param values are pre-softplus. softplus(2) ≈ 2.13, softplus(-3) ≈ 0.05.
+        if self.discretization == "gen2":
+            if self.discretization_init == "trap":
+                init_a0, init_a1 = 0.5413, 0.5413  # softplus(0.5413) ≈ 1.0, then /2 in code
+            else:  # "zoh"
+                init_a0, init_a1 = 2.0, -3.0
+            self.disc_alpha0_raw = nn.Parameter(
+                torch.full((n_head,), init_a0, dtype=dtype)
+            )
+            self.disc_alpha1_raw = nn.Parameter(
+                torch.full((n_head,), init_a1, dtype=dtype)
+            )
 
     def _token_shift(self, x: torch.Tensor) -> torch.Tensor:
         """Compute dxprev based on mode and conv_shift setting."""
@@ -283,7 +306,15 @@ class RWKV6TimeMix(nn.Module):
         w: torch.Tensor,  # already log-decay (negative)
         state: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Chunked parallel WKV with carry state (SmerkyG algorithm)."""
+        """Chunked parallel WKV with carry state (SmerkyG algorithm).
+
+        Dispatches on `self.discretization`:
+          "zoh"      — standard RWKV-6 update (with bonus `u`)
+          "trap"     — trapezoidal (½, ½) with current decay W
+          "trap_var" — trapezoidal with geometric-mean decay W̃ = sqrt(W_t W_{t-1})
+          "gen2"     — learnable α₀, α₁ per head (preserves bonus `u`)
+          "ab3"      — Adams-Bashforth-3 (decay clamped for stability)
+        """
         B, H, T, K = r.shape
 
         if state is None:
@@ -291,20 +322,67 @@ class RWKV6TimeMix(nn.Module):
         else:
             wkv_state = state.float()
 
-        u = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
+        # Bonus term — ablated for trap/trap_var/ab3 (would conflate with α₀)
+        if self.drop_u:
+            u = torch.zeros(1, H, 1, K, dtype=r.dtype, device=r.device)
+        else:
+            u = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
 
+        # ── LUCID self-reg (legacy path) ─────────────────────────────────
         if self.use_lucid_self_reg:
-            # RKHS delta rule: self-regulating state update
-            # The state only accumulates prediction errors, not redundant info
             y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state, self_reg=True)
-        elif self.use_lucid:
-            # LUCID in recurrent mode: precondition values before WKV
+            return y, wkv_state
+
+        # ── LUCID preconditioner (legacy path) ───────────────────────────
+        if self.use_lucid:
             temp = F.softplus(self.lucid_temperature)
             v_precond = _apply_lucid_recurrent(k, v, temp, self.lucid_chunk_size or 64)
             y, wkv_state = _chunked_wkv(r, k, v_precond, w, u, wkv_state)
-        else:
+            return y, wkv_state
+
+        # ── Stage 2 discretization variants ──────────────────────────────
+        if self.discretization == "zoh":
             y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
-        return y, wkv_state
+            return y, wkv_state
+
+        if self.discretization == "gen2":
+            sp0 = F.softplus(self.disc_alpha0_raw).view(1, H, 1, 1).to(r.dtype)
+            sp1 = F.softplus(self.disc_alpha1_raw).view(1, H, 1, 1).to(r.dtype)
+            denom = sp0 + sp1 + 1e-6
+            alpha_0, alpha_1 = sp0 / denom, sp1 / denom
+            y, wkv_state = _multistep_wkv(
+                r, k, v, w, u, wkv_state,
+                alphas=(alpha_0, alpha_1),
+                var_decay=True,
+            )
+            return y, wkv_state
+
+        if self.discretization == "trap":
+            y, wkv_state = _multistep_wkv(
+                r, k, v, w, u, wkv_state,
+                alphas=(0.5, 0.5), var_decay=False,
+            )
+            return y, wkv_state
+
+        if self.discretization == "trap_var":
+            y, wkv_state = _multistep_wkv(
+                r, k, v, w, u, wkv_state,
+                alphas=(0.5, 0.5), var_decay=True,
+            )
+            return y, wkv_state
+
+        if self.discretization == "ab3":
+            # Adams-Bashforth-3 — explicit, conditionally stable.
+            # Clamp decay so step size Δ = -log(W) ≤ 0.7 → W ≥ exp(-0.7) ≈ 0.5.
+            w_clamped = w.clamp(min=-0.7)
+            y, wkv_state = _multistep_wkv(
+                r, k, v, w_clamped, u, wkv_state,
+                alphas=(23.0 / 12.0, -16.0 / 12.0, 5.0 / 12.0),
+                var_decay=True,
+            )
+            return y, wkv_state
+
+        raise ValueError(f"Unknown discretization: {self.discretization}")
 
     def _forward_bidir_serial(
         self,
@@ -540,3 +618,106 @@ def _wkv_subchunk(
     out = out.view(B, H, L, V)
 
     return out, wkv_state
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Stage 2: Generalized linear-multistep state update
+# ────────────────────────────────────────────────────────────────────────
+#
+# S_t = W_t S_{t-1} + Σ_i α_i · W̃_t^{i/p} ⊙ b_{t-i}     where b_t = k_t v_t^T
+#
+# Implemented as `p` parallel calls to the existing chunked WKV scan,
+# exploiting linearity of the recurrence in the drive:
+#
+#   S = Σ_i S^(i),   where each S^(i) is driven by   α_i · W̃_t^{i/p} ⊙ b_{t-i}
+#
+# Each shifted drive becomes a re-scaled (k_lag, v_lag) pair fed through
+# the SAME _chunked_wkv with the SAME `w` decay schedule.
+#
+# Output: y = Σ_i y^(i), state = Σ_i S^(i)_T  (linearity).
+#
+# Carry-state: this implementation re-runs the lookback drive from a
+# zero state and discards the small boundary error at the chunk seam
+# (k_{-1}, k_{-2} from the previous chunk). For long-utterance training
+# this is exact within a forward pass; for streaming inference it
+# introduces a one-token transient at each chunk boundary. A cleaner
+# carry-state implementation that propagates the per-scan substate is
+# tracked in the discretization study's follow-up work.
+
+
+def _shift_lag(x: torch.Tensor, k: int) -> torch.Tensor:
+    """Shift along time axis (dim=2) by k steps, zero-pad the front."""
+    if k <= 0:
+        return x
+    return F.pad(x[:, :, :-k, :], (0, 0, k, 0))
+
+
+def _multistep_wkv(
+    r: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    w: torch.Tensor,
+    u: torch.Tensor,
+    wkv_state: torch.Tensor,
+    alphas,
+    var_decay: bool = False,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Linear-multistep WKV: sum of `p` parallel chunked scans.
+
+    Args:
+        r, k, v: (B, H, T, K) — receptance, key, value
+        w:       (B, H, T, K) — log-space decay (negative)
+        u:       (1, H, 1, K) — bonus term applied to current step at readout
+        wkv_state: (B, H, K, K) — carry-state input
+        alphas:  tuple of length p — coefficients (α₀, α₁, [α₂, ...]).
+                 Each is either a Python float OR a tensor broadcastable
+                 to (B, H, T, K) — supports per-head learnable α (gen2).
+        var_decay: if True use geometric-mean decay W̃_t = sqrt(W_t W_{t-1});
+                   if False use the current decay W_t for the lookback.
+
+    Returns: (y, new_state) of shapes (B, H, T, K), (B, H, K, K).
+    """
+    p = len(alphas)
+    B, H, T, K = k.shape
+
+    if var_decay:
+        w_lag1 = _shift_lag(w, 1)
+        w_geo1 = (w + w_lag1) * 0.5  # log-space geometric mean for lag-1
+    else:
+        w_geo1 = w  # use current decay for the lookback weighting
+
+    # Scan 0 — current step. α₀ scales the drive (k v^T), bonus `u` retained.
+    a0 = alphas[0]
+    if isinstance(a0, float):
+        k0 = k * a0
+    else:
+        k0 = k * a0.to(k.dtype)
+    y, state_total = _chunked_wkv(r, k0, v, w, u, wkv_state)
+
+    # Lookback scans — α_i and W̃^i absorbed into the shifted k_lag.
+    # Lookback drives carry no bonus term (u was a current-step extra weight).
+    zero_u = torch.zeros_like(u)
+    zero_state = torch.zeros_like(wkv_state)
+    for i in range(1, p):
+        a_i = alphas[i]
+        k_lag = _shift_lag(k, i)
+        v_lag = _shift_lag(v, i)
+        # W̃^i along K dim — exp in log-space then accumulate
+        if i == 1:
+            decay_factor = torch.exp(w_geo1.float()).to(k.dtype)
+        else:
+            # Higher-order lookback: composed geometric-mean decay over `i` steps.
+            # For AB3 this is W̃² ≈ exp((w_t + w_{t-1} + w_{t-2})/2 · 2/i).
+            # We approximate as i × w_geo1 (sufficient for stability-bounded AB3
+            # since the additional approximation error is dominated by truncation).
+            decay_factor = torch.exp((w_geo1.float() * i)).to(k.dtype)
+        if isinstance(a_i, float):
+            scale = decay_factor * a_i
+        else:
+            scale = decay_factor * a_i.to(k.dtype)
+        k_b = k_lag * scale
+        y_i, s_i = _chunked_wkv(r, k_b, v_lag, w, zero_u, zero_state.clone())
+        y = y + y_i
+        state_total = state_total + s_i
+
+    return y, state_total

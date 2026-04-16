@@ -73,14 +73,31 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_lucid_sr": "recurrent",
         "rwkv6_delta": "recurrent",
         "rwkv6_lucid_delta": "recurrent",
+        "rwkv6_headscale": "recurrent",
+        # Stage 2 discretization variants (causal)
+        "rwkv6_trap": "recurrent",
+        "rwkv6_trap_var": "recurrent",
+        "rwkv6_gen2": "recurrent",
+        "rwkv6_gen2_zoh_init": "recurrent",
+        "rwkv6_gen2_trap_init": "recurrent",
+        "rwkv6_ab3": "recurrent",
+        "rwkv6_convshift_trap": "recurrent",
+        # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
         "lion_lucid": "lion",
         "lion_lucid_chunked": "lion",
         "lion_delta": "lion",
+        "lion_convshift_delta": "lion",
         "lion_headscale": "lion",
         "lion_convshift_headscale": "lion",
         "lion_temperature": "lion",
+        # Stage 2 transfer to LION — route through bidir_serial so the
+        # discretization fires on both forward and backward recurrent sweeps.
+        # (Pure LION uses parallel T×T attention, which has no recurrence
+        #  and therefore no discretization concept to ablate.)
+        "lion_trap": "bidir_serial",
+        "lion_convshift_trap": "bidir_serial",
         "bidir_serial": "bidir_serial",
     }
 
@@ -94,6 +111,30 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     lucid_self_reg = "lucid_sr" in backbone or cfg.lucid_self_reg
     temperature = "temperature" in backbone or cfg.temperature
     lucid_chunk_size = 64 if "chunked" in backbone else cfg.lucid_chunk_size
+
+    # Stage 2 discretization — derive from backbone name (substring match).
+    # Order matters: gen2 wins over trap (so "gen2_trap_init" stays gen2).
+    if "ab3" in backbone:
+        discretization = "ab3"
+    elif "gen2" in backbone:
+        discretization = "gen2"
+    elif "trap_var" in backbone:
+        discretization = "trap_var"
+    elif "trap" in backbone:
+        discretization = "trap"
+    else:
+        discretization = cfg.discretization
+
+    if "trap_init" in backbone:
+        discretization_init = "trap"
+    elif "zoh_init" in backbone:
+        discretization_init = "zoh"
+    else:
+        discretization_init = cfg.discretization_init
+
+    # Trap/AB3 ablate the bonus `u` (it would conflate readout α₀ with state α₀).
+    # gen2 keeps `u` because it learns α₀ on top.
+    drop_u = discretization in ("trap", "trap_var", "ab3") or cfg.discretization_drop_u
 
     from src.models.rwkv6_encoder import RWKV6Encoder
     return RWKV6Encoder(
@@ -109,4 +150,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         lucid_chunk_size=lucid_chunk_size,
         lucid_self_reg=lucid_self_reg,
         temperature=temperature,
+        discretization=discretization,
+        discretization_init=discretization_init,
+        drop_u=drop_u,
     )

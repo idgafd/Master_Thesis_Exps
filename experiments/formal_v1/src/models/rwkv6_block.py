@@ -28,6 +28,9 @@ class RWKV6Block(nn.Module):
         lucid_chunk_size: Optional[int] = None,
         lucid_self_reg: bool = False,
         temperature: bool = False,
+        discretization: str = "zoh",
+        discretization_init: str = "zoh",
+        drop_u: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -53,6 +56,9 @@ class RWKV6Block(nn.Module):
             lucid_chunk_size=lucid_chunk_size,
             lucid_self_reg=lucid_self_reg,
             temperature=temperature,
+            discretization=discretization,
+            discretization_init=discretization_init,
+            drop_u=drop_u,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(
