@@ -1,0 +1,1 @@
+--backbone lion_convshift --epochs 30 --output-dir outputs/lucid_exp05_lion_convshift_seed42 --gpu 0

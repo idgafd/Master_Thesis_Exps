@@ -1,0 +1,1 @@
+--backbone rwkv6 --epochs 30 --output-dir outputs/lucid_exp01_rwkv6_seed42 --gpu 0

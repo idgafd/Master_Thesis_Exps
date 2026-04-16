@@ -1,0 +1,1 @@
+--backbone lion_lucid --epochs 30 --output-dir outputs/lucid_exp04_lion_lucid_seed42 --gpu 1
