@@ -1,0 +1,1 @@
+--backbone rwkv6_gen2 --epochs 30 --output-dir outputs/disc04_rwkv6_gen2_seed42 --gpu 1
