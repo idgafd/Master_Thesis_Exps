@@ -49,7 +49,9 @@ pass.
 
 <!-- AUTOGEN:TABLE name=group_a -->
 
-_No completed runs in this group yet._
+| Run                             | Backbone           |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
+|---------------------------------|--------------------|-----------|-----------|------------|------------|--------------|
+| exp01_transformer_causal_seed42 | transformer_causal | 6,256,669 |     0.131 |     0.1292 |        0.4 |           75 |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -57,9 +59,10 @@ _No completed runs in this group yet._
 
 <!-- AUTOGEN:TABLE name=group_b -->
 
-| Run               | Backbone   |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
-|-------------------|------------|-----------|-----------|------------|------------|--------------|
-| exp09_lion_seed42 | lion       | 7,735,069 |    0.4043 |     0.4007 |     0.8675 |            2 |
+| Run                      | Backbone    |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
+|--------------------------|-------------|-----------|-----------|------------|------------|--------------|
+| exp09_lion_seed42        | lion        | 7,736,605 |    0.0711 |     0.0708 |     0.2109 |           78 |
+| exp08_transformer_seed42 | transformer | 6,256,669 |    0.1112 |     0.1115 |     0.3455 |           80 |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -71,12 +74,28 @@ causal models lose long-range past.
 
 <!-- AUTOGEN:TABLE name=chunked -->
 
-| Run                       | Backbone   |   Full Test CER |   2 s reset |   5 s reset |   10 s reset |
-|---------------------------|------------|-----------------|-------------|-------------|--------------|
-| exp09_lion_seed42         | lion       |          0.4007 |      0.4507 |      0.4271 |       0.4225 |
-| mamba_cuda_ep10_seed42    | mamba_cuda |          0.1799 |      0.2603 |      0.2059 |       0.1894 |
-| mamba_cuda_ep10_seed42    | mamba_cuda |          0.1808 |      0.2614 |      0.2064 |       0.1894 |
-| mamba_pytorch_ep10_seed42 | mamba      |          0.1857 |      0.2669 |      0.2119 |       0.1945 |
+| Run                                | Backbone             |   Full Test CER |   2 s reset |   5 s reset |   10 s reset |
+|------------------------------------|----------------------|-----------------|-------------|-------------|--------------|
+| exp01_transformer_causal_seed42    | transformer_causal   |          0.1292 |      0.27   |      0.1781 |       0.1534 |
+| exp09_lion_seed42                  | lion                 |          0.0708 |      0.1418 |      0.0962 |       0.0855 |
+| exp08_transformer_seed42           | transformer          |          0.1115 |      0.1794 |      0.1413 |       0.1281 |
+| lucid_exp05_lion_convshift_seed42  | lion_convshift       |          0.1044 |      0.1801 |      0.1294 |       0.1188 |
+| lucid_exp02_lion_seed42            | lion                 |          0.1073 |      0.1819 |      0.1342 |       0.1237 |
+| lucid_exp04_lion_lucid_seed42      | lion_lucid           |          0.1074 |      0.1824 |      0.1343 |       0.1236 |
+| disc06_rwkv6_convshift_trap_seed42 | rwkv6_convshift_trap |          0.115  |      0.2262 |      0.1552 |       0.1355 |
+| lucid_exp03_rwkv6_lucid_seed42     | rwkv6_lucid          |          0.1216 |      0.2584 |      0.1669 |       0.1411 |
+| lucid_exp01_rwkv6_seed42           | rwkv6                |          0.1263 |      0.2641 |      0.1716 |       0.1468 |
+| disc03_rwkv6_trap_var_seed42       | rwkv6_trap_var       |          0.1259 |      0.2654 |      0.1719 |       0.1467 |
+| disc02_rwkv6_trap_seed42           | rwkv6_trap           |          0.1254 |      0.2659 |      0.1717 |       0.1474 |
+| disc04_rwkv6_gen2_seed42           | rwkv6_gen2           |          0.1254 |      0.2654 |      0.1704 |       0.146  |
+| disc05_rwkv6_ab3_seed42            | rwkv6_ab3            |          0.1285 |      0.2665 |      0.1757 |       0.1519 |
+| lion_delta_seed42                  | lion_delta           |          0.1373 |      0.2403 |      0.1729 |       0.1562 |
+| lucid_exp06_rwkv6_lucid_sr_seed42  | rwkv6_lucid_sr       |          0.1483 |      0.2646 |      0.2012 |       0.1677 |
+| mamba_cuda_ep10_seed42             | mamba_cuda           |          0.1799 |      0.2603 |      0.2059 |       0.1894 |
+| mamba_cuda_ep10_seed42             | mamba_cuda           |          0.1808 |      0.2614 |      0.2064 |       0.1894 |
+| mamba_pytorch_ep10_seed42          | mamba                |          0.1857 |      0.2669 |      0.2119 |       0.1945 |
+| d0_rwkv6_ep10_seed42               | rwkv6                |          0.2017 |      0.3263 |      0.2436 |       0.2222 |
+| d0_rwkv6_benchmark_seed42          | rwkv6                |          0.3922 |      0.4794 |      0.4306 |       0.4168 |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -88,7 +107,9 @@ and causal Transformer with KV cache. Bidirectional models are not listed.
 
 <!-- AUTOGEN:TABLE name=carry_state -->
 
-_No Group A runs with carry-state eval yet._
+| Run                             | Backbone           |   2 s carry |   5 s carry |   10 s carry |
+|---------------------------------|--------------------|-------------|-------------|--------------|
+| exp01_transformer_causal_seed42 | transformer_causal |      0.1491 |      0.1483 |       0.1479 |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -98,11 +119,24 @@ All backbones target ~7 M params for a fair comparison.
 
 <!-- AUTOGEN:TABLE name=param_counts -->
 
-| Backbone   |   Params total |   Encoder | vs LION %   |
-|------------|----------------|-----------|-------------|
-| lion       |      7,735,069 | 5,823,488 | +0.0%       |
-| mamba      |      7,304,221 | 5,392,640 | -5.6%       |
-| mamba_cuda |      7,304,221 | 5,392,640 | -5.6%       |
+| Backbone             |   Params total |   Encoder | vs LION %   |
+|----------------------|----------------|-----------|-------------|
+| lion                 |      7,736,605 | 5,825,024 | +0.0%       |
+| lion_convshift       |      7,741,213 | 5,829,632 | +0.1%       |
+| lion_delta           |      7,937,821 | 6,026,240 | +2.6%       |
+| lion_lucid           |      7,736,629 | 5,825,048 | +0.0%       |
+| mamba                |      7,304,221 | 5,392,640 | -5.6%       |
+| mamba_cuda           |      7,304,221 | 5,392,640 | -5.6%       |
+| rwkv6                |      7,736,605 | 5,825,024 | +0.0%       |
+| rwkv6_ab3            |      7,736,605 | 5,825,024 | +0.0%       |
+| rwkv6_convshift_trap |      7,741,213 | 5,829,632 | +0.1%       |
+| rwkv6_gen2           |      7,736,653 | 5,825,072 | +0.0%       |
+| rwkv6_lucid          |      7,736,629 | 5,825,048 | +0.0%       |
+| rwkv6_lucid_sr       |      7,736,629 | 5,825,048 | +0.0%       |
+| rwkv6_trap           |      7,736,605 | 5,825,024 | +0.0%       |
+| rwkv6_trap_var       |      7,736,605 | 5,825,024 | +0.0%       |
+| transformer          |      6,256,669 | 4,345,088 | -19.1%      |
+| transformer_causal   |      6,256,669 | 4,345,088 | -19.1%      |
 
 <!-- /AUTOGEN:TABLE -->
 
@@ -113,12 +147,28 @@ on 32 GB hardware — see INFRASTRUCTURE_PLAN.md §2.1.
 
 <!-- AUTOGEN:TABLE name=timing -->
 
-| Run                       | Backbone   |   Epochs | Avg epoch   | Total train   | Peak VRAM   |
-|---------------------------|------------|----------|-------------|---------------|-------------|
-| mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 602 s         | 0.0 GB      |
-| mamba_cuda_ep10_seed42    | mamba_cuda |       10 | 60 s        | 605 s         | 0.0 GB      |
-| exp09_lion_seed42         | lion       |        2 | 89 s        | 178 s         | 3.6 GB      |
-| mamba_pytorch_ep10_seed42 | mamba      |       10 | 427 s       | 4267 s        | 0.0 GB      |
+| Run                                | Backbone             |   Epochs | Avg epoch   | Total train   | Peak VRAM   |
+|------------------------------------|----------------------|----------|-------------|---------------|-------------|
+| exp01_transformer_causal_seed42    | transformer_causal   |       80 | 51 s        | 4055 s        | 2.7 GB      |
+| mamba_cuda_ep10_seed42             | mamba_cuda           |       10 | 60 s        | 602 s         | 0.0 GB      |
+| mamba_cuda_ep10_seed42             | mamba_cuda           |       10 | 60 s        | 605 s         | 0.0 GB      |
+| exp08_transformer_seed42           | transformer          |       80 | 61 s        | 4870 s        | 2.5 GB      |
+| lion_delta_seed42                  | lion_delta           |       30 | 69 s        | 2065 s        | 4.5 GB      |
+| exp09_lion_seed42                  | lion                 |       82 | 73 s        | 6003 s        | 3.6 GB      |
+| lucid_exp05_lion_convshift_seed42  | lion_convshift       |       30 | 79 s        | 2373 s        | 3.6 GB      |
+| lucid_exp02_lion_seed42            | lion                 |       30 | 79 s        | 2383 s        | 3.6 GB      |
+| d0_rwkv6_ep10_seed42               | rwkv6                |       10 | 82 s        | 817 s         | 4.6 GB      |
+| d0_rwkv6_benchmark_seed42          | rwkv6                |        2 | 83 s        | 166 s         | 4.6 GB      |
+| lucid_exp01_rwkv6_seed42           | rwkv6                |       30 | 110 s       | 3306 s        | 4.6 GB      |
+| disc02_rwkv6_trap_seed42           | rwkv6_trap           |       30 | 112 s       | 3346 s        | 6.5 GB      |
+| disc06_rwkv6_convshift_trap_seed42 | rwkv6_convshift_trap |       30 | 117 s       | 3517 s        | 6.5 GB      |
+| disc03_rwkv6_trap_var_seed42       | rwkv6_trap_var       |       30 | 117 s       | 3524 s        | 6.5 GB      |
+| disc04_rwkv6_gen2_seed42           | rwkv6_gen2           |       30 | 119 s       | 3584 s        | 6.5 GB      |
+| lucid_exp04_lion_lucid_seed42      | lion_lucid           |       30 | 135 s       | 4060 s        | 5.3 GB      |
+| lucid_exp06_rwkv6_lucid_sr_seed42  | rwkv6_lucid_sr       |       30 | 149 s       | 4456 s        | 4.7 GB      |
+| disc05_rwkv6_ab3_seed42            | rwkv6_ab3            |       30 | 151 s       | 4541 s        | 8.4 GB      |
+| lucid_exp03_rwkv6_lucid_seed42     | rwkv6_lucid          |       30 | 175 s       | 5254 s        | 5.0 GB      |
+| mamba_pytorch_ep10_seed42          | mamba                |       10 | 427 s       | 4267 s        | 0.0 GB      |
 
 <!-- /AUTOGEN:TABLE -->
 
