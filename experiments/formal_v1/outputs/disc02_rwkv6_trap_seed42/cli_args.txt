@@ -1,0 +1,1 @@
+--backbone rwkv6_trap --epochs 30 --output-dir outputs/disc02_rwkv6_trap_seed42 --gpu 0
