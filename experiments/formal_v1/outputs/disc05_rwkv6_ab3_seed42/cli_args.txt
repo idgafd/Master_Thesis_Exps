@@ -1,0 +1,1 @@
+--backbone rwkv6_ab3 --epochs 30 --output-dir outputs/disc05_rwkv6_ab3_seed42 --gpu 1
