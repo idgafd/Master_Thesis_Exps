@@ -5,8 +5,9 @@ description = "Formal ASR backbone comparison experiments — Master Thesis"
 requires-python = ">=3.10"
 dependencies = [
     # Core: training + audio
-    "torch>=2.2.0",
-    "torchaudio>=2.2.0",
+    # Pinned to torch 2.7.x (cu128) — driver 570/CUDA 12.8 cannot run cu130 wheels.
+    "torch>=2.7.0,<2.8.0",
+    "torchaudio>=2.7.0,<2.8.0",
     "datasets>=2.18.0,<4.0",
     "jiwer>=3.0.0",
     "pyyaml>=6.0",
@@ -32,3 +33,14 @@ cuda-mamba = ["mamba-ssm>=2.0.0"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+# uv index configuration: pull torch/torchaudio from the cu128 index
+# (driver 570 / CUDA 12.8; Blackwell sm_120 requires cu128+).
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128" }]
+torchaudio = [{ index = "pytorch-cu128" }]

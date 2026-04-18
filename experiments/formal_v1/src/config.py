@@ -47,6 +47,15 @@ class ExperimentConfig:
     discretization: str = "zoh"
     discretization_init: str = "zoh"  # "zoh" | "trap" — only used by gen2
     discretization_drop_u: bool = False  # ablate the bonus term `u` (time_faaaa)
+    # ── Stage 3 RSE (Rotational State Evolution) ─────────────────────────
+    # Replaces scalar diagonal decay with 2x2 block-diagonal SO(2)×R+ transition.
+    # Each head's K dim splits into K/2 blocks of 2 rows; each block has a
+    # data-dependent rotation angle θ in addition to the scalar decay.
+    # See ProposalA.md for the full mathematical specification.
+    rse: bool = False
+    # Multi-Rate RSE: M independent (lambda_m, theta_m) scales with
+    # query-conditional softmax mixer.  M = 1 reproduces single-scale RSE.
+    rse_n_scales: int = 1
     # Mamba-specific
     mamba_d_state: int = 16
     mamba_d_conv: int = 4

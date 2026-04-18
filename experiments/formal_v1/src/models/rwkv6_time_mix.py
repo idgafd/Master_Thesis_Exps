@@ -1,12 +1,13 @@
 """Unified RWKV-6 TimeMix block — supports recurrent, LION, and bidir_serial modes.
 
 Self-contained implementation (no external rwkv-block dependency).
-All mechanism flags (conv_shift, headscale, delta_rule, lucid, temperature) are
-compositional and can be combined freely.
+All mechanism flags (conv_shift, headscale, delta_rule, lucid, temperature, rse)
+are compositional and can be combined freely.
 
-Reference: RWKV-6 (Peng et al. 2024), LION (Afzal et al. 2025)
+Reference: RWKV-6 (Peng et al. 2024), LION (Afzal et al. 2025), RSE (ProposalA, 2026)
 """
 
+import math
 from typing import Optional, Tuple
 
 import torch
@@ -66,6 +67,17 @@ class RWKV6TimeMix(nn.Module):
         discretization: str = "zoh",
         discretization_init: str = "zoh",
         drop_u: bool = False,
+        rse: bool = False,
+        # θ_init scale: acoustic prior says useful angular frequencies for
+        # syllable/formant-envelope dynamics are 1–10 Hz. At 100-fps frames
+        # that maps to per-step θ in [0.06, 0.6] rad. U(-π/16, π/16) ≈ ±0.2
+        # gives the right initial spread without saturating phase.
+        rse_theta_init_scale: float = math.pi / 16,
+        # θ_clip: bounds learned per-step rotation. π/4 ≈ 0.78 rad/step caps
+        # at ~12 Hz at 100 fps — well above formant-envelope rates, leaves
+        # head-room without aliasing into per-step phase wraps.
+        rse_theta_clip: float = math.pi / 4,
+        rse_n_scales: int = 1,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -84,7 +96,15 @@ class RWKV6TimeMix(nn.Module):
         self.discretization = discretization
         self.discretization_init = discretization_init
         self.drop_u = drop_u
+        self.use_rse = rse
+        self.rse_theta_clip = rse_theta_clip
+        self.rse_n_scales = rse_n_scales
         self.layer_id = layer_id
+
+        if self.use_rse:
+            assert head_size % 2 == 0, "RSE requires even head_size (2x2 blocks)"
+            assert mode == "recurrent", "RSE currently supports only mode='recurrent'"
+            assert rse_n_scales >= 1
 
         hidden_size_att = hidden_size
 
@@ -154,7 +174,8 @@ class RWKV6TimeMix(nn.Module):
 
         # ── Mechanism: Headscale ─────────────────────────────────────────
         if self.use_headscale:
-            self.head_decay_bias = nn.Parameter(torch.zeros(1, 1, n_head, head_size))
+            # (1, H, 1, K) for broadcasting against w_h of shape (B, H, T, K).
+            self.head_decay_bias = nn.Parameter(torch.zeros(1, n_head, 1, head_size))
 
         # ── Mechanism: Delta Rule ────────────────────────────────────────
         if self.use_delta_rule:
@@ -165,7 +186,6 @@ class RWKV6TimeMix(nn.Module):
         if self.use_lucid:
             # Init so softplus(param) = 1.0, matching the paper's unit scaling
             # softplus(x) = 1.0 → x = ln(e - 1) ≈ 0.5413
-            import math
             self.lucid_temperature = nn.Parameter(
                 torch.full((n_head,), math.log(math.e - 1))
             )
@@ -190,6 +210,74 @@ class RWKV6TimeMix(nn.Module):
             self.disc_alpha1_raw = nn.Parameter(
                 torch.full((n_head,), init_a1, dtype=dtype)
             )
+
+        # ── RSE: rotation parameters (θ) for 2x2 block-diagonal transition ──
+        # Each head has B = head_size // 2 blocks. Per block: (lambda, theta).
+        # lambda is reused from the existing per-channel decay (averaged over
+        # adjacent pairs); theta is a new data-dependent angle via LoRA.
+        if self.use_rse:
+            n_blocks = head_size // 2
+            theta_init = torch.empty(n_head, n_blocks, dtype=dtype).uniform_(
+                -rse_theta_init_scale, rse_theta_init_scale
+            )
+            self.time_theta = nn.Parameter(
+                theta_init.reshape(1, 1, n_head * n_blocks)
+            )
+            D_THETA_DIM = 32
+            self.time_theta_w1 = nn.Parameter(
+                torch.zeros(hidden_size, D_THETA_DIM, dtype=dtype)
+            )
+            self.time_theta_w2 = nn.Parameter(
+                torch.zeros(D_THETA_DIM, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+            )
+
+            # ── Multi-Rate RSE: extra scales 1..M-1 with independent (λ, θ) ──
+            # Each extra scale gets its own per-block (lambda, theta) LoRA pair.
+            # Scale 0 reuses the existing time_decay path (averaged into Bk blocks)
+            # and the time_theta path defined just above.
+            if rse_n_scales > 1:
+                D_LAM_DIM = 32
+                D_THE_DIM = 32
+                self.rse_extra_lambda_base = nn.ParameterList()
+                self.rse_extra_lambda_w1 = nn.ParameterList()
+                self.rse_extra_lambda_w2 = nn.ParameterList()
+                self.rse_extra_theta_base = nn.ParameterList()
+                self.rse_extra_theta_w1 = nn.ParameterList()
+                self.rse_extra_theta_w2 = nn.ParameterList()
+                for m in range(1, rse_n_scales):
+                    # Per-block λ_base — slow-decay bias for higher scales
+                    # so they tend to act as longer-context channels.
+                    # softplus(λ_base) ≈ 0.5 / (m+1)  →  pre-softplus value
+                    target = 0.5 / (m + 1)
+                    init_lam = math.log(math.exp(target) - 1.0)  # inverse softplus
+                    self.rse_extra_lambda_base.append(nn.Parameter(
+                        torch.full((n_head, n_blocks), init_lam, dtype=dtype)
+                    ))
+                    self.rse_extra_lambda_w1.append(nn.Parameter(
+                        torch.zeros(hidden_size, D_LAM_DIM, dtype=dtype)
+                    ))
+                    self.rse_extra_lambda_w2.append(nn.Parameter(
+                        torch.zeros(D_LAM_DIM, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+                    ))
+                    # Per-block θ_base — same warm-init range as scale 0
+                    theta_init_m = torch.empty(n_head, n_blocks, dtype=dtype).uniform_(
+                        -rse_theta_init_scale, rse_theta_init_scale
+                    )
+                    self.rse_extra_theta_base.append(nn.Parameter(theta_init_m))
+                    self.rse_extra_theta_w1.append(nn.Parameter(
+                        torch.zeros(hidden_size, D_THE_DIM, dtype=dtype)
+                    ))
+                    self.rse_extra_theta_w2.append(nn.Parameter(
+                        torch.zeros(D_THE_DIM, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+                    ))
+
+                # Query-conditional softmax mixer over scales: β_t = softmax(W_β x_t)
+                # Initialized small so the model starts ~uniform across scales.
+                self.rse_mixer = nn.Linear(
+                    hidden_size, n_head * rse_n_scales, bias=True, dtype=dtype
+                )
+                nn.init.zeros_(self.rse_mixer.weight)
+                nn.init.zeros_(self.rse_mixer.bias)
 
     def _token_shift(self, x: torch.Tensor) -> torch.Tensor:
         """Compute dxprev based on mode and conv_shift setting."""
@@ -226,6 +314,14 @@ class RWKV6TimeMix(nn.Module):
         w = self.time_decay + torch.tanh(xw @ self.time_decay_w1) @ self.time_decay_w2
         w = w.to(r.dtype)
 
+        if self.use_rse:
+            # Reuse the xw mixing path for theta (the rotation degree of freedom
+            # is informationally analogous to decay — both modulate the transition).
+            theta_lora = torch.tanh(xw @ self.time_theta_w1) @ self.time_theta_w2
+            theta = self.rse_theta_clip * torch.tanh(self.time_theta + theta_lora)
+            theta = theta.to(r.dtype)
+            return r, k, v, g, w, theta
+
         return r, k, v, g, w
 
     def forward(
@@ -237,7 +333,11 @@ class RWKV6TimeMix(nn.Module):
         H = self.n_head
         K = self.head_size
 
-        r, k, v, g, w = self._compute_rkv_gw(x)
+        if self.use_rse:
+            r, k, v, g, w, theta = self._compute_rkv_gw(x)
+        else:
+            r, k, v, g, w = self._compute_rkv_gw(x)
+            theta = None
 
         # Reshape to (B, H, T, K)
         r_h = r.view(B, T, H, K).transpose(1, 2)
@@ -258,7 +358,19 @@ class RWKV6TimeMix(nn.Module):
 
         # Dispatch to mode-specific attention
         new_state = None
-        if self.mode == "lion":
+        if self.use_rse:
+            # theta arrives as (B, T, H*Bk); reshape to (B, H, T, Bk)
+            n_blocks = K // 2
+            theta_h = theta.view(B, T, H, n_blocks).transpose(1, 2)
+            if self.rse_n_scales == 1:
+                y, new_state = self._forward_recurrent_rse(
+                    r_h, k_h, v_h, w_h, theta_h, state
+                )
+            else:
+                y, new_state = self._forward_recurrent_rse_multi(
+                    r_h, k_h, v_h, w_h, theta_h, x, state
+                )
+        elif self.mode == "lion":
             y = self._forward_lion(r_h, k_h, v_h, w_h)
         elif self.mode == "recurrent":
             y, new_state = self._forward_recurrent(r_h, k_h, v_h, w_h, state)
@@ -383,6 +495,202 @@ class RWKV6TimeMix(nn.Module):
             return y, wkv_state
 
         raise ValueError(f"Unknown discretization: {self.discretization}")
+
+    def _forward_recurrent_rse(
+        self,
+        r: torch.Tensor,      # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,      # log-decay (negative), per-channel (K)
+        theta: torch.Tensor,  # (B, H, T, Bk) — rotation angle per 2x2 block
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Chunked RSE scan via complex-number reformulation.
+
+        SO(2)×R+ acting on a 2-vector is multiplication by a complex scalar
+        z_t = exp(-lambda_t + i*theta_t).  Pack each row-pair (S[2b], S[2b+1])
+        into a complex c[b] and the recurrence S_t = G_t S_{t-1} + k v^T
+        becomes c_t = z_t * c_{t-1} + k_c_t * v_t  (k_c_t = k[2b] + i*k[2b+1]).
+        Readout y_t = r^T S_t = sum_b Re(conj(r_c_t[b]) * c_t[b, :]).
+
+        Within a chunk of size T_c, the attention coefficient
+            A[t, s, b] = z_t z_{t-1} ... z_{s+1} = exp(cumlog_z[t] - cumlog_z[s])
+        is a complex scalar and the chunk is computed in parallel.  Inter-chunk
+        state c is carried serially.  Bonus term `u` (real, current-step
+        shortcut) is preserved per Proposal A §3.5.
+        """
+        B, H, T, K = r.shape
+        Bk = K // 2
+        device, in_dtype = r.device, r.dtype
+        chunk_size = 64
+
+        # Per-block log-decay (average of channel pairs).  RSE trades the
+        # within-block decay asymmetry for the rotation angle.
+        log_decay_block = w.view(B, H, T, Bk, 2).mean(dim=-1).float()  # (B,H,T,Bk)
+
+        # log z = -lambda + i*theta  (lambda = -log_decay > 0 since w is negative)
+        log_z = torch.complex(log_decay_block, theta.float())          # (B,H,T,Bk)
+
+        # Pack r and k into complex pairs along K dim
+        r_pairs = r.float().view(B, H, T, Bk, 2)
+        k_pairs = k.float().view(B, H, T, Bk, 2)
+        r_c = torch.complex(r_pairs[..., 0], r_pairs[..., 1])          # (B,H,T,Bk)
+        k_c = torch.complex(k_pairs[..., 0], k_pairs[..., 1])          # (B,H,T,Bk)
+        v_f = v.float()                                                # (B,H,T,K)
+
+        # Initial state as complex
+        if state is None:
+            c_state = torch.zeros(B, H, Bk, K, dtype=torch.complex64, device=device)
+        else:
+            S0 = state.float().view(B, H, Bk, 2, K)
+            c_state = torch.complex(S0[..., 0, :], S0[..., 1, :])      # (B,H,Bk,K)
+
+        # Bonus term `u` (real, per-channel)
+        u_hk = None if self.drop_u else self.time_faaaa.view(1, H, 1, K).float()
+
+        out = torch.zeros(B, H, T, K, dtype=torch.float32, device=device)
+
+        cur = 0
+        while cur < T:
+            tc = min(chunk_size, T - cur)
+            log_z_c = log_z[:, :, cur:cur + tc]                        # (B,H,tc,Bk)
+            k_c_c = k_c[:, :, cur:cur + tc]                            # (B,H,tc,Bk)
+            r_c_c = r_c[:, :, cur:cur + tc]                            # (B,H,tc,Bk)
+            v_c = v_f[:, :, cur:cur + tc]                              # (B,H,tc,K)
+
+            # Cumulative log-z (inclusive): cum[t] = sum_{i<=t} log_z[i]
+            cumlog = log_z_c.cumsum(dim=2)                             # (B,H,tc,Bk)
+
+            # Within-chunk attention A[t, s, b] = exp(cumlog[t] - cumlog[s])
+            #   for s == t: factor 1 (current-step direct write)
+            #   for s <  t: product G_{s+1}..G_t
+            #   for s >  t: zero (above-diagonal positions would have positive
+            #               real-part exponent → inf → inf*0 = NaN; clamp before exp)
+            diff = cumlog.unsqueeze(3) - cumlog.unsqueeze(2)           # (B,H,tc,tc,Bk)
+            mask = torch.tril(
+                torch.ones(tc, tc, device=device, dtype=torch.bool)
+            ).view(1, 1, tc, tc, 1)
+            # Force real part to a very negative number above diagonal so exp underflows.
+            real_part = diff.real.masked_fill(~mask, -60.0)
+            A = torch.exp(torch.complex(real_part, diff.imag))         # (B,H,tc,tc,Bk)
+
+            # S_intra[t, b, c] = sum_s A[t,s,b] * k_c[s,b] * v[s,c]
+            scaled_k = A * k_c_c.unsqueeze(2)                          # (B,H,tc,tc,Bk)
+            v_c_complex = v_c.to(torch.complex64)
+            S_intra = torch.einsum(
+                'bhtsk,bhsc->bhtkc', scaled_k, v_c_complex
+            )                                                          # (B,H,tc,Bk,K)
+
+            # Inter-chunk: prior state contribution = exp(cumlog[t]) * c_state
+            decay_to_t = torch.exp(cumlog)                             # (B,H,tc,Bk)
+            prior_contrib = decay_to_t.unsqueeze(-1) * c_state.unsqueeze(2)  # (B,H,tc,Bk,K)
+
+            S_total = prior_contrib + S_intra                          # (B,H,tc,Bk,K)
+
+            # Readout: y[t,c] = Re( sum_b conj(r_c[t,b]) * S_total[t,b,c] )
+            y_chunk = torch.einsum(
+                'bhtk,bhtkc->bhtc', r_c_c.conj(), S_total
+            ).real                                                     # (B,H,tc,K)
+
+            # Bonus current-step shortcut (real)
+            if u_hk is not None:
+                r_t_r = r.float()[:, :, cur:cur + tc]
+                k_t_r = k.float()[:, :, cur:cur + tc]
+                scalar = (r_t_r * u_hk[:, :, 0:1] * k_t_r).sum(dim=-1, keepdim=True)
+                y_chunk = y_chunk + scalar * v_c
+
+            out[:, :, cur:cur + tc] = y_chunk
+
+            # Carry state forward = S_total at last index of chunk
+            c_state = S_total[:, :, -1]                                # (B,H,Bk,K)
+
+            cur += tc
+
+        # Convert final state back to real (B,H,K,K) for caller
+        final_state = torch.zeros(B, H, K, K, dtype=torch.float32, device=device)
+        final_view = final_state.view(B, H, Bk, 2, K)
+        final_view[..., 0, :] = c_state.real
+        final_view[..., 1, :] = c_state.imag
+
+        return out.to(in_dtype), final_state
+
+    def _forward_recurrent_rse_multi(
+        self,
+        r: torch.Tensor,         # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,         # log-decay (negative), per-channel (K) — for scale 0
+        theta_scale0: torch.Tensor,  # (B, H, T, Bk) — for scale 0
+        x_in: torch.Tensor,      # (B, T, D) — original input for mixer
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Multi-Rate RSE: M parallel rotation-decay scans with query-conditional mixer.
+
+        Each scale m has independent (lambda_m, theta_m) per-block parameters
+        and a fully separate complex state.  Outputs are mixed by
+        β_t = softmax(W_β x_t) ∈ Δ^{M-1} (per head).
+
+        State carried: (M, B, H, K, K) for streaming.
+        """
+        B, H, T, K = r.shape
+        Bk = K // 2
+        M = self.rse_n_scales
+        device = r.device
+
+        # ── Compute (log_decay, theta) per scale ──────────────────────────
+        # Scale 0 — reuse channel-w averaged into Bk blocks, and theta from caller.
+        log_dec_per_scale = [w.view(B, H, T, Bk, 2).mean(dim=-1).float()]   # (B,H,T,Bk)
+        theta_per_scale = [theta_scale0.float()]                            # (B,H,T,Bk)
+
+        # Scales 1..M-1 — independent LoRA-derived (lambda, theta).
+        for idx, m in enumerate(range(1, M)):
+            lam_lora = torch.tanh(x_in @ self.rse_extra_lambda_w1[idx]) @ self.rse_extra_lambda_w2[idx]
+            lam_base = self.rse_extra_lambda_base[idx].view(1, 1, H * Bk)
+            lam_pre = lam_base + lam_lora                                   # (B, T, H*Bk)
+            # softplus → positive lambda; negate for log_decay (negative real part)
+            lam_pos = F.softplus(lam_pre).view(B, T, H, Bk).transpose(1, 2)  # (B,H,T,Bk)
+            log_dec_per_scale.append(-lam_pos)                              # (B,H,T,Bk)
+
+            the_lora = torch.tanh(x_in @ self.rse_extra_theta_w1[idx]) @ self.rse_extra_theta_w2[idx]
+            the_base = self.rse_extra_theta_base[idx].view(1, 1, H * Bk)
+            theta_m = self.rse_theta_clip * torch.tanh(the_base + the_lora)
+            theta_per_scale.append(theta_m.view(B, T, H, Bk).transpose(1, 2))  # (B,H,T,Bk)
+
+        # ── Mixer: β_t = softmax(W_β x_t), per-head over scales ───────────
+        # Shape (B, T, H*M) → (B, H, T, M)
+        beta_logits = self.rse_mixer(x_in).view(B, T, H, M).transpose(1, 2)
+        beta = F.softmax(beta_logits, dim=-1)                               # (B,H,T,M)
+
+        # ── Initial state per scale ──────────────────────────────────────
+        if state is None:
+            states_in = [None] * M
+        else:
+            # state is (M, B, H, K, K); split per scale
+            states_in = [state[m].contiguous() for m in range(M)]
+
+        # ── Run M parallel scans (independent state, shared k/v) ─────────
+        ys, states_out = [], []
+        for m in range(M):
+            log_dec_m = log_dec_per_scale[m]          # (B,H,T,Bk) negative
+            theta_m = theta_per_scale[m]              # (B,H,T,Bk)
+            # Reconstruct a "w_per_channel" view by repeating each block decay
+            # across its 2 channels.  _forward_recurrent_rse averages it back.
+            w_m = log_dec_m.unsqueeze(-1).expand(B, H, T, Bk, 2).reshape(B, H, T, K)
+            y_m, s_m = self._forward_recurrent_rse(
+                r, k, v, w_m, theta_m, states_in[m]
+            )
+            ys.append(y_m)
+            states_out.append(s_m)
+
+        # ── Mix outputs by β ─────────────────────────────────────────────
+        # ys[m] is (B,H,T,K); beta[..., m] is (B,H,T)
+        y_stack = torch.stack(ys, dim=-1)            # (B,H,T,K,M)
+        y = (y_stack * beta.unsqueeze(-2)).sum(dim=-1)  # (B,H,T,K)
+
+        # Pack final states into (M, B, H, K, K)
+        new_state = torch.stack(states_out, dim=0)
+
+        return y, new_state
 
     def _forward_bidir_serial(
         self,

@@ -32,6 +32,8 @@ class RWKV6Encoder(nn.Module):
         discretization: str = "zoh",
         discretization_init: str = "zoh",
         drop_u: bool = False,
+        rse: bool = False,
+        rse_n_scales: int = 1,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -65,6 +67,8 @@ class RWKV6Encoder(nn.Module):
                     discretization=discretization,
                     discretization_init=discretization_init,
                     drop_u=drop_u,
+                    rse=rse,
+                    rse_n_scales=rse_n_scales,
                     dtype=dtype,
                 )
             )

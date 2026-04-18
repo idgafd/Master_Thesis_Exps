@@ -82,6 +82,14 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_gen2_trap_init": "recurrent",
         "rwkv6_ab3": "recurrent",
         "rwkv6_convshift_trap": "recurrent",
+        # Stage 3 RSE variants (causal recurrent only)
+        "rwkv6_rse": "recurrent",
+        "rwkv6_rse_convshift": "recurrent",
+        "rwkv6_rse_headscale": "recurrent",
+        "rwkv6_rse_convshift_headscale": "recurrent",
+        "rwkv6_rse_m2": "recurrent",
+        "rwkv6_rse_m2_convshift": "recurrent",
+        "rwkv6_rse_m4": "recurrent",
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -136,6 +144,15 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # gen2 keeps `u` because it learns α₀ on top.
     drop_u = discretization in ("trap", "trap_var", "ab3") or cfg.discretization_drop_u
 
+    # Stage 3: RSE (rotational state evolution) — substring trigger on backbone name.
+    rse = ("rse" in backbone.split("_")) or cfg.rse
+    # Multi-Rate RSE: substring "m{N}" in backbone name overrides cfg.rse_n_scales.
+    rse_n_scales = cfg.rse_n_scales
+    import re
+    m_match = re.search(r"_m(\d+)(?:_|$)", backbone)
+    if m_match:
+        rse_n_scales = int(m_match.group(1))
+
     from src.models.rwkv6_encoder import RWKV6Encoder
     return RWKV6Encoder(
         d_model=cfg.d_model,
@@ -153,4 +170,6 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         discretization=discretization,
         discretization_init=discretization_init,
         drop_u=drop_u,
+        rse=rse,
+        rse_n_scales=rse_n_scales,
     )
