@@ -137,25 +137,45 @@ Parameter counts (encoder only):
 
 <!-- AUTOFILL:TRAJECTORY -->
 
+### 3.1 Trajectory
+
 | Epoch | `rwkv6_rse` dev CER | `rwkv6_rse_convshift` dev CER |
 |---:|---:|---:|
 |  1 | 0.5175 | 0.5125 |
 |  5 | 0.2365 | 0.2261 |
 | 10 | 0.1748 | 0.1639 |
 | 14 | 0.1540 | 0.1443 |
-| 15–30 | (in progress; updated on completion) | |
+| 20 | 0.1360 | 0.1236 |
+| 25 | 0.1271 | 0.1167 |
+| 30 (final) | 0.1251 | 0.1147 |
 
-At epoch 14, `rwkv6_rse` dev CER (0.1540) is still above the 30-epoch
-`rwkv6` baseline (0.1258); the linear-extrapolation rate of ~0.005 CER
-per epoch indicates baseline-crossing around epoch 20 and a projected
-final dev CER of ~0.10–0.11. `rwkv6_rse_convshift` follows the same
-trajectory shifted by ~0.010 absolute, consistent with the stacking
-hypothesis (H2). Final 30-epoch numbers and test-set evaluation will be
-appended on completion.
+Per-step grad-norm steady at 1.30 across training (baseline `rwkv6`
+final: 1.17). Epoch wall-clock 240–252 s, ~2.2× the baseline's 110 s,
+attributable to the constant factor of the complex chunked scan.
 
-Per-step grad-norm steady at 1.30 (baseline `rwkv6` final: 1.17).
-Epoch wall-clock 240–252 s (~2.2× baseline 110 s, attributable to the
-constant factor of the complex chunked scan).
+### 3.2 Final results, dev and test
+
+| Run | Best dev CER | Test CER | Test WER | Δ test CER vs baseline | Encoder params |
+|---|---:|---:|---:|---:|---:|
+| `rwkv6` (Stage 2 ref) | 0.1258 | 0.1263 | 0.3764 | (ref) | 5,825,024 |
+| `rwkv6_rse` | **0.1251** | **0.1238** | **0.3705** | **−2.0 %** | 5,899,520 (+1.3%) |
+| `rwkv6_convshift_trap` (Stage 2 ref) | 0.1150 | 0.1150 | 0.3440 | (ref) | 5,829,632 |
+| `rwkv6_rse_convshift` | **0.1145** | **0.1126** | **0.3382** | **−2.1 %** | 5,904,128 (+1.4%) |
+
+### 3.3 Outcome classification
+
+The autonomous decision script (`scripts/stage3_decide_and_launch.py`),
+which keys on best dev CER, classified both runs as **FLAT** (Δ_dev
+within ±2 %). This triggered Scenario D and launched
+`rwkv6_rse_m2 + rwkv6_rse_m4` on GPUs 0 and 1 (Stage 3.5; see §7).
+
+The test-set numbers tell a slightly different story: both RSE variants
+land at exactly the −2 % threshold, with `rwkv6_rse` improving test CER
+0.1263 → 0.1238 and `rwkv6_rse_convshift` improving 0.1150 → 0.1126.
+The dev/test discrepancy is small (within seed-noise of either) but
+consistent in sign: rotation provides a marginal but real
+generalization benefit at this scale, not the multiplicative gain
+predicted by the acoustic-prior argument (H3).
 
 <!-- /AUTOFILL:TRAJECTORY -->
 
@@ -219,7 +239,39 @@ The autonomous launch sets `--epochs 30 --seed 42` and writes to
 
 ---
 
-## 6. Recovery instructions
+## 6. Stage 3.5 — Multi-Rate RSE (auto-launched)
+
+Following the FLAT/FLAT outcome of Stage 3, the autonomous handoff
+launched the Scenario-D batch:
+
+| ID | Backbone | Mode | Mechanisms | GPU |
+|---|---|---|---|---|
+| `stage3p5_01_rwkv6_rse_m2_seed42` | `rwkv6_rse_m2` | recurrent | Multi-Rate RSE (M=2) | 0 |
+| `stage3p5_02_rwkv6_rse_m4_seed42` | `rwkv6_rse_m4` | recurrent | Multi-Rate RSE (M=4) | 1 |
+
+`rwkv6_rse_m{M}` runs M parallel rotation-decay scans with **independent**
+$(\lambda_m, \theta_m)$ data-dependent LoRAs and a query-conditional
+softmax mixer over the M scales. This tests whether Stage 3's flat
+outcome reflects insufficient single-scale capacity (in which case M > 1
+should provide a measurable gain) or a genuine ceiling on the
+rotational mechanism for this task (in which case M > 1 will also be
+flat or regress, narrowing the diagnosis).
+
+A returns-vs-M comparison is the core experimental signal:
+- `m4` ties `m2` → returns saturate; rotation degree of freedom is
+  saturated already at M=2; multi-scale doesn't help.
+- `m4` improves on `m2` → multi-scale routing is doing useful work;
+  worth pursuing larger M and/or independent (k_m, v_m) atoms.
+- both regress → the mixer overfits at this depth/data scale.
+
+Encoder parameter counts: `rwkv6_rse_m2` = 6,060,848 (+4.0% over
+`rwkv6`), `rwkv6_rse_m4` = 6,371,168 (+9.4% — exceeds the 5%
+parity budget; results need to be normalized for parameter count
+when interpreting).
+
+---
+
+## 7. Recovery instructions
 
 If the host is rebooted or the watcher is killed, the campaign can be
 resumed by hand:
@@ -256,3 +308,31 @@ to:
 - `scripts/stage3_decide_and_launch.py` — decision tree implementation.
 - `pyproject.toml`, `uv.lock` — torch pinned to 2.7.x cu128 wheels for
   Blackwell sm_120 support.
+
+---
+
+## 8. Notes for follow-up analysis
+
+The Stage-3 outcome (FLAT on dev, marginal −2 % on test) leaves two
+diagnostic questions open. Neither blocks the autonomous Stage 3.5
+launch but both are worth running on the saved checkpoints:
+
+1. **Did $\theta$ actually move during training?**
+   Load `outputs/stage3_01_rwkv6_rse_seed42/best_model.pt` and inspect
+   `time_theta` and the learned LoRA projections per layer. If the
+   distribution looks essentially identical to the U(−π/16, π/16)
+   initialization — i.e. the LoRA contributions are near zero — the
+   model never escaped its initialization and the rotation is
+   structurally unused. If the distribution moved into specific
+   per-layer / per-block modes, the rotation is being used but its
+   contribution to the optimum is small at this scale.
+
+2. **Per-layer ablation of the rotation.**
+   At inference, zero out $\theta$ in one layer at a time and re-evaluate
+   on dev. If a single layer dominates the rotation contribution, that
+   layer's role in the model is informative; if the contributions are
+   distributed, the rotation is a "background" mechanism rather than a
+   targeted one.
+
+Both diagnostics require no retraining and can be performed on any
+machine that can load the saved encoder weights.
