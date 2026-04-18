@@ -77,6 +77,8 @@ class RWKV6TimeMix(nn.Module):
         # at ~12 Hz at 100 fps — well above formant-envelope rates, leaves
         # head-room without aliasing into per-step phase wraps.
         rse_theta_clip: float = math.pi / 4,
+        # LoRA dim for the θ projection (default 32 matches Stage 3 RSE).
+        rse_theta_lora_dim: int = 32,
         rse_n_scales: int = 1,
         dtype: torch.dtype = torch.float32,
     ):
@@ -223,7 +225,7 @@ class RWKV6TimeMix(nn.Module):
             self.time_theta = nn.Parameter(
                 theta_init.reshape(1, 1, n_head * n_blocks)
             )
-            D_THETA_DIM = 32
+            D_THETA_DIM = rse_theta_lora_dim
             self.time_theta_w1 = nn.Parameter(
                 torch.zeros(hidden_size, D_THETA_DIM, dtype=dtype)
             )

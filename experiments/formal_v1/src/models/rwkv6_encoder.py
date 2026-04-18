@@ -34,6 +34,7 @@ class RWKV6Encoder(nn.Module):
         drop_u: bool = False,
         rse: bool = False,
         rse_n_scales: int = 1,
+        rse_per_layer_overrides: list = None,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -48,6 +49,7 @@ class RWKV6Encoder(nn.Module):
         self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
         self.layers = nn.ModuleList()
         for i in range(n_layers):
+            per_layer = (rse_per_layer_overrides or [{}] * n_layers)[i]
             self.layers.append(
                 RWKV6Block(
                     hidden_size=d_model,
@@ -69,6 +71,9 @@ class RWKV6Encoder(nn.Module):
                     drop_u=drop_u,
                     rse=rse,
                     rse_n_scales=rse_n_scales,
+                    rse_theta_init_scale=per_layer.get("theta_init_scale"),
+                    rse_theta_clip=per_layer.get("theta_clip"),
+                    rse_theta_lora_dim=per_layer.get("theta_lora_dim"),
                     dtype=dtype,
                 )
             )

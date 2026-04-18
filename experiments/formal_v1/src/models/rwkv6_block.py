@@ -33,6 +33,9 @@ class RWKV6Block(nn.Module):
         drop_u: bool = False,
         rse: bool = False,
         rse_n_scales: int = 1,
+        rse_theta_init_scale: float = None,
+        rse_theta_clip: float = None,
+        rse_theta_lora_dim: int = None,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -44,6 +47,13 @@ class RWKV6Block(nn.Module):
         else:
             self.ln0 = nn.Identity()
 
+        rse_kwargs = {}
+        if rse_theta_init_scale is not None:
+            rse_kwargs["rse_theta_init_scale"] = rse_theta_init_scale
+        if rse_theta_clip is not None:
+            rse_kwargs["rse_theta_clip"] = rse_theta_clip
+        if rse_theta_lora_dim is not None:
+            rse_kwargs["rse_theta_lora_dim"] = rse_theta_lora_dim
         self.att = RWKV6TimeMix(
             hidden_size=hidden_size,
             n_head=n_head,
@@ -63,6 +73,7 @@ class RWKV6Block(nn.Module):
             drop_u=drop_u,
             rse=rse,
             rse_n_scales=rse_n_scales,
+            **rse_kwargs,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(

@@ -90,6 +90,9 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_rse_m2": "recurrent",
         "rwkv6_rse_m2_convshift": "recurrent",
         "rwkv6_rse_m4": "recurrent",
+        # Stage 4 (refined) — per-layer depth-graded rotation budget
+        "rwkv6_rse_depth": "recurrent",
+        "rwkv6_rse_strong": "recurrent",
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -153,6 +156,28 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     if m_match:
         rse_n_scales = int(m_match.group(1))
 
+    # Stage 4 — depth-graded rotation budget per layer.
+    # Diagnosed in scripts/rse_theta_diagnostic.py: deeper layers learn larger
+    # data-dependent rotation contributions; uniform per-layer budget under-
+    # serves L4–L5. Override schedule applies only when backbone name asks.
+    import math as _math
+    rse_per_layer_overrides = None
+    if backbone == "rwkv6_rse_depth":
+        # 6-layer linear gradient L0..L5
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+        ]
+    elif backbone == "rwkv6_rse_strong":
+        # Uniform but expanded budget: doubles clip and LoRA dim, keeps init small.
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 48}
+        ] * cfg.n_layers
+
     from src.models.rwkv6_encoder import RWKV6Encoder
     return RWKV6Encoder(
         d_model=cfg.d_model,
@@ -172,4 +197,5 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         drop_u=drop_u,
         rse=rse,
         rse_n_scales=rse_n_scales,
+        rse_per_layer_overrides=rse_per_layer_overrides,
     )
