@@ -337,15 +337,34 @@ the architectural prior that deeper layers be granted larger
 rotation budget than shallower layers.** Param count, complexity
 order, and streaming property are all unchanged from baseline RWKV-6.
 
-### 6.5 Concurrent control: `rwkv6_rse_strong`
+### 6.5 Concurrent control: `rwkv6_rse_strong` — also wins
 
 A second Stage-4 variant, `rwkv6_rse_strong`, runs a *uniform but
 expanded* budget (clip = π/2, LoRA = 48 across all 6 layers,
 ~+0.6 % parameters). This control isolates whether the Stage-4 win
 comes from the *non-uniform* allocation (depth's contribution) or
 from simply allowing more rotation budget anywhere (strong's
-contribution). At time of writing, `rwkv6_rse_strong` is at ep 15
-with dev CER 0.1430, tracking the same trajectory as depth so far.
+contribution).
+
+Final result: **dev 0.1192 / test 0.1188 / WER 0.3579** — also a
+clear ceiling break, slightly better raw CER than depth (test 0.1188
+vs 0.1200) but at +0.6 % more parameters (5,936,384 vs 5,899,520).
+
+The 2×2 outcome matrix collapses to *both wins*. Per-parameter
+efficiency is comparable (depth: $-0.0048$ test CER per +1 %
+parameters; strong: $-0.0040$). The Stage-3 plateau at 0.125 was
+therefore not a Lie-group expressivity ceiling but a
+*parameterization ceiling* imposed by the conservative uniform
+defaults. Two remedies work:
+
+- Lift the cap *everywhere* (strong): straightforward, costs ~0.6 %
+  parameters.
+- Lift the cap *only where it binds* (depth): same deep-layer
+  benefit at zero extra parameters, slightly better per-parameter
+  efficiency.
+
+A full per-mechanism comparison is in `RSE_DISTRIBUTION_ANALYSIS.md`
+§6.2.
 
 ---
 

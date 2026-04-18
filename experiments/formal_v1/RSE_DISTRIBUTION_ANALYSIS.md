@@ -407,8 +407,8 @@ matrix the data lands in.
 | 15 | 0.1485 | 0.1484 | 0.1437 | 0.1430 |
 | 19 | 0.1367 |   —    | 0.1317 | 0.1304 |
 | 20 | 0.1360 |   —    | 0.1294 | 0.1280 |
-| 25 | 0.1271 |   —    | 0.1223 | TBD |
-| 30 | 0.1251 |   —    | 0.1208 | TBD (in flight) |
+| 25 | 0.1271 |   —    | 0.1223 | 0.1214 |
+| 30 | 0.1251 |   —    | 0.1208 | 0.1197 |
 
 The Stage-3.5 multi-rate variant `rwkv6_rse_m2` is included as the
 crucial "more capacity, same allocation policy" control: extra state
@@ -425,7 +425,7 @@ ep 15 onward and converged to the same plateau — establishing that
 | `rwkv6_rse` (Stage 3, uniform) | 0.1251 | 0.1238 | 0.3705 | −2.0 % | 5,899,520 |
 | `rwkv6_rse_m2` (Stage 3.5) | TBD | TBD | TBD | TBD | 6,060,848 |
 | **`rwkv6_rse_depth`** | **0.1207** | **0.1200** | **0.3593** | **−5.0 %** | **5,899,520** |
-| `rwkv6_rse_strong` | TBD (in flight) | TBD | TBD | TBD | 5,936,384 |
+| **`rwkv6_rse_strong`** | **0.1192** | **0.1188** | **0.3579** | **−5.9 %** | **5,936,384** |
 
 `rwkv6_rse_depth` produces a clean −5.0 % test improvement at
 *identical encoder parameter count* to `rwkv6_rse`. The improvement
@@ -474,17 +474,57 @@ transient-early-convergence reading.
   Stage-4 confirmed that imposing the same gradient as an
   architectural prior produces the predicted gain.
 
-### 6.2 Open question awaiting `rwkv6_rse_strong` final result
+### 6.2 Resolved: both refinement axes are productive
 
-Whether the Stage-4 win is fully attributable to the *non-uniform*
-allocation, or whether the *uniform-larger* allocation
-(+0.6 % parameters, $\gamma_\theta = \pi/2$ across all layers,
-LoRA = 48 across all layers) also produces a comparable gain. The
-ep-19 trajectory ($\Delta = −0.0063$ for `strong` vs −0.0050 for
-`depth`) suggests both will land in the same band; the final test
-CER and the per-layer θ-mobility post-mortem on the trained
-`strong` checkpoint will resolve which mechanism is the productive
-one — and whether they are the same mechanism dressed differently.
+`rwkv6_rse_strong` final landed at **dev 0.1192 / test 0.1188**
+(−5.9 % test improvement vs `rwkv6`), slightly better than
+`rwkv6_rse_depth` (test 0.1200, −5.0 %) but at +0.6 % more encoder
+parameters (5,936,384 vs 5,899,520). The 2×2 outcome matrix
+collapses to *both wins*, so the question becomes parameter
+efficiency rather than mechanism existence.
+
+| Variant | Test CER Δ vs `rwkv6` | Encoder param Δ vs `rwkv6` | Δ test CER per +1 % param |
+|---|---:|---:|---:|
+| `rwkv6_rse` (Stage 3 uniform-small) | −0.0025 (−2.0 %) | +1.3 % | −0.0019 |
+| `rwkv6_rse_depth` (Stage 4 graded) | −0.0063 (−5.0 %) | +1.3 % | **−0.0048** |
+| `rwkv6_rse_strong` (Stage 4 uniform-large) | −0.0075 (−5.9 %) | +1.9 % | −0.0040 |
+
+Two facts emerge:
+
+1. **Lifting the uniform $\gamma_\theta$ ceiling alone (Stage 3 →
+   strong) improves CER nearly threefold.** Going from clip $\pi/4$
+   / LoRA 32 (Stage 3) to clip $\pi/2$ / LoRA 48 across all layers
+   produces $-0.0050$ extra test-CER improvement at $+0.6\%$ extra
+   parameters. The Stage-3 ceiling at 0.125 was *not* the
+   Lie-group ceiling that Theorem 1 promised — it was a
+   parameterization ceiling imposed by the conservative defaults.
+
+2. **Re-allocating budget along depth at unchanged parameter count
+   (Stage 3 → depth) also improves CER nearly threefold.** From
+   the same Stage-3 starting point, depth produces $-0.0038$ extra
+   test-CER improvement at *zero* extra parameters. The
+   diagnostic-revealed depth preference is real and exploitable.
+
+Per-parameter, depth is marginally more efficient ($-0.0048$ vs
+$-0.0040$ test-CER per +1 % parameters) — the difference is within
+seed-noise but consistent in sign.
+
+**Mechanism interpretation.** The Stage-3 uniform-small parameter-
+ization left the rotation budget too tight at *all* layers, but
+especially at deep layers (where the diagnostic revealed the
+binding constraint). The model, under uniform constraint, allocates
+its remaining gradient capacity asymmetrically — growing the
+data-dependent LoRA more at deep layers than shallow — but cannot
+fully escape the cap. Two complementary remedies work:
+- *Lift the cap everywhere* (`strong`): wasteful at shallow layers
+  (the model has to learn to suppress unused rotation budget), but
+  the deep-layer benefit alone is worth the extra parameters.
+- *Lift the cap only where it binds* (`depth`): produces nearly the
+  same deep-layer benefit at no extra parameter cost.
+
+Both confirm the same underlying truth: **the Stage-3 plateau at
+0.125 was a parameterization artifact, not the irreducible
+expressivity ceiling of RSE on this task.**
 
 ### 6.3 Implications for the chapter
 
