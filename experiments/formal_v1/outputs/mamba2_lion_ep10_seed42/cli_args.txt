@@ -1,0 +1,1 @@
+--backbone mamba2_lion --epochs 10 --seed 42 --output-dir outputs/mamba2_lion_ep10_seed42

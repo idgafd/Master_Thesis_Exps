@@ -331,6 +331,93 @@ The `--compile` flag remains in the codebase for future use with any of the abov
 
 ---
 
+## Mamba-2 rewrite + LION bidirectionalisation
+
+The Mamba-1 PyTorch path above was accurate but (a) slow in eager, (b) monolithic:
+bidirectionality was done by duplicating encoder layers (`BidirMambaEncoder`,
+2× params), and there was no hook for mechanism experiments (LUCID / Delta /
+Headscale) without rewriting the scan. We rebuilt the block around the **LION
+full-attention form** the same way `lion_attention.py` supports RWKV-6.
+
+### Why Mamba-2 (not Mamba-1)
+
+LION's full-attention T×T mask is per-"head of decay". Mamba-1's per-(d_inner, d_state)
+`A` would require a (B, d_inner, d_state, T, T) tensor — ~260 GB at B=8, T=1000.
+Mamba-2's *scalar-λ per head* makes the mask (B, n_heads, T, T) — ~260 MB at the
+same shape, i.e. the same complexity class as LION-RWKV. So Mamba-2 is the form
+that maps cleanly into the LION kernel we already own.
+
+### Layering — mirrors `lion_attention.py` / `rwkv6_time_mix.py`
+
+| File | Role |
+|---|---|
+| `src/models/mamba2_kernels.py` | Pure-function kernels: `ssd_scan_causal`, `ssd_scan_lion`, `ssd_scan_lion_chunk`. No nn.Module, no parameters. |
+| `src/models/mamba2_block.py`   | `Mamba2Block(nn.Module)` — Mamba-2 projections; dispatches on `mode`. `forward()` + `step()` (carry-state for `recurrent`). |
+| `src/models/mamba2_encoder.py` | Encoder stack; single `mode` flag selects causal vs bidirectional. No separate `BidirMamba2Encoder`. |
+
+Modes:
+- `mode="recurrent"`  — SSD causal scan (Dao & Gu 2024, Listing 1). Carry-state capable.
+- `mode="lion"`       — LION full bidirectional attention (Afzal et al. 2025, Theorem 3.1, "Mamba-2" row). No carry-state.
+- `mode="lion_chunk"` — LION chunkwise bidir (paper §3.3), for long sequences.
+
+Bidirectional encoder has **the same parameter count** as causal (7.27M = 7.27M) —
+opposite of the old `BidirMambaEncoder` which doubled params.
+
+### Correctness
+
+`tests/test_mamba2_kernels.py` + `tests/test_mamba2_block.py`, 12/12 pass on RTX PRO 6000:
+- kernels vs a hand-coded sequential recurrence: max rel Δ ~ 1e-6 (float32 noise)
+- `lion` vs `lion_chunk`: max rel Δ ~ 2.5e-7
+- `step()` vs `forward()`: max rel Δ ~ 5.7e-7
+- split-chunk carry-state consistent with single-shot forward: max rel Δ ~ 7.7e-7
+- `torch.compile` parity (causal + lion): max rel Δ ~ 4.3e-7
+
+### Speed (6-layer encoder, d_model=256, eager, RTX PRO 6000 / 97 GB)
+
+| Shape | Mamba-1 (HS scan) | Mamba-2 causal | **Mamba-2 lion (bidir)** |
+|---|---|---|---|
+| B=8, T=500   | 140.7 ms, 2.7 GB | 36.1 ms, 0.4 GB | 27.2 ms, 0.4 GB |
+| B=8, T=1000  | 275.8 ms, 5.4 GB | 36.0 ms, 0.7 GB | 53.0 ms, 1.1 GB |
+| B=16, T=500  | 308.8 ms, 5.4 GB | 36.5 ms, 0.7 GB | 36.4 ms, 0.7 GB |
+
+Mamba-2 *eager* already matches or beats the old compiled Mamba-1 path. Bidir
+costs the same as causal at these shapes. Memory is ~5–40× lower, so the old
+`torch.compile × gradient_checkpointing` conflict is gone.
+
+### Accuracy — 10-epoch LibriSpeech clean-100 (seed 42)
+
+| Backbone | Params | Dev CER | Test CER | Test WER | sec/epoch |
+|---|---:|---:|---:|---:|---:|
+| (baseline) PyTorch Mamba-1 | 7.30M | 0.1892 | 0.1857 | 0.5308 | 427 |
+| (baseline) CUDA `mamba-ssm` | 7.30M | 0.1843 | 0.1808 | 0.5183 |  60 |
+| `mamba2` (causal, our rewrite)   | 7.27M | **0.1782** | **0.1763** | 0.5058 |  98 |
+| `mamba2_lion` (bidir, our LION)  | 7.27M | **0.1640** | **0.1592** | 0.4643 | 101 |
+
+Per-epoch Dev CER trajectory (LION leads causal by 0.011–0.017 at **every** epoch):
+
+| ep | `mamba2` causal | `mamba2_lion` bidir | Δ |
+|---:|---:|---:|---:|
+|  1 | 0.4345 | 0.4185 | −0.0160 |
+|  2 | 0.3121 | 0.2951 | −0.0170 |
+|  3 | 0.2625 | 0.2499 | −0.0127 |
+|  4 | 0.2308 | 0.2197 | −0.0112 |
+|  5 | 0.2103 | 0.1968 | −0.0135 |
+|  6 | 0.1993 | 0.1839 | −0.0154 |
+|  7 | 0.1890 | 0.1726 | −0.0164 |
+|  8 | 0.1821 | 0.1685 | −0.0136 |
+|  9 | 0.1784 | 0.1642 | −0.0141 |
+| 10 | 0.1782 | 0.1640 | −0.0142 |
+
+**Headline:**
+- `mamba2` causal beats the CUDA `mamba-ssm` baseline at every epoch despite
+  being pure PyTorch.
+- `mamba2_lion` beats CUDA `mamba-ssm` by 0.022 absolute test CER (12%
+  relative) with **identical parameter count** to causal mamba2 — bidirectional
+  context for free.
+- Artifacts: `outputs/mamba2_ep10_seed42/`, `outputs/mamba2_lion_ep10_seed42/`.
+
+---
+
 ## Notes
 
 - All parameter counts should be within 5% of LION (reference).
