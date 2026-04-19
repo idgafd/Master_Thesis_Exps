@@ -65,6 +65,30 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             expand=cfg.mamba_expand,
         )
 
+    # ── Mamba-2 family (LION-compatible bidirectional via `mode`) ──────────
+    # Naming: `mamba2` (causal), `mamba2_lion` (full bidir attention),
+    # `mamba2_lion_chunk` (chunkwise bidir, long sequences).
+    if backbone in ("mamba2", "mamba2_lion", "mamba2_lion_chunk"):
+        from src.models.mamba2_encoder import Mamba2Encoder
+        mode_for_backbone = {
+            "mamba2": "recurrent",
+            "mamba2_lion": "lion",
+            "mamba2_lion_chunk": "lion_chunk",
+        }[backbone]
+        return Mamba2Encoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            dropout=cfg.dropout,
+            ffn_dim=cfg.ffn_dim,
+            d_state=cfg.mamba2_d_state,
+            d_conv=cfg.mamba_d_conv,
+            headdim=cfg.mamba2_headdim,
+            expand=cfg.mamba_expand,
+            ngroups=cfg.mamba2_ngroups,
+            chunk_size=cfg.mamba2_chunk_size,
+            mode=mode_for_backbone,
+        )
+
     # All RWKV-6 variants (rwkv6, lion, and all mechanism combinations)
     # Determine mode from backbone name or explicit config
     mode_map = {

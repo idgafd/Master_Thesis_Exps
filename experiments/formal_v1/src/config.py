@@ -60,6 +60,11 @@ class ExperimentConfig:
     mamba_d_state: int = 16
     mamba_d_conv: int = 4
     mamba_expand: int = 2
+    # Mamba-2 specific (used by mamba2 backbone family only)
+    mamba2_d_state: int = 64
+    mamba2_headdim: int = 64
+    mamba2_ngroups: int = 1
+    mamba2_chunk_size: int = 64
 
     # ── Training ─────────────────────────────────────────────────────────
     batch_max_seconds: float = 300.0
