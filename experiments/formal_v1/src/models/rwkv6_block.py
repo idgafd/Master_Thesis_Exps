@@ -36,6 +36,9 @@ class RWKV6Block(nn.Module):
         rse_theta_init_scale: float = None,
         rse_theta_clip: float = None,
         rse_theta_lora_dim: int = None,
+        p2rse: bool = False,
+        p2rse_mixer: str = "linear",
+        rse_viscosity: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -74,6 +77,9 @@ class RWKV6Block(nn.Module):
             rse=rse,
             rse_n_scales=rse_n_scales,
             **rse_kwargs,
+            p2rse=p2rse,
+            p2rse_mixer=p2rse_mixer,
+            rse_viscosity=rse_viscosity,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(

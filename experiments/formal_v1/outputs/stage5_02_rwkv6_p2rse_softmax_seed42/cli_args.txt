@@ -1,0 +1,1 @@
+--backbone rwkv6_p2rse_softmax --epochs 30 --seed 42 --output-dir outputs/stage5_02_rwkv6_p2rse_softmax_seed42 --gpu 1

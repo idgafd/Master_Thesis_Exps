@@ -80,6 +80,22 @@ class RWKV6TimeMix(nn.Module):
         # LoRA dim for the θ projection (default 32 matches Stage 3 RSE).
         rse_theta_lora_dim: int = 32,
         rse_n_scales: int = 1,
+        # ── Stage 5 P²-RSE: paired-pole RSE ──────────────────────────────
+        # Two complex poles per block with shared λ, independent θ, and a
+        # data-dependent real mixer β. Phase-complementary init: θ^(2) = -θ^(1).
+        p2rse: bool = False,
+        # Mixer type: "linear" (unconstrained real β — main) or "softmax" (control).
+        p2rse_mixer: str = "linear",
+        # ── Stage 5 Viscosity coupling (Rayleigh dissipation) ────────────
+        # Soft self-regulating phase-coherence bound:
+        #     λ_eff = λ_raw + η_{h,b} · θ²
+        # A single learnable scalar per (head, block) pair, initialized to 0
+        # so the forward pass is bit-identical to the RSE baseline until SGD
+        # drives η away from 0.  Physical motivation: Stokes drag / Rayleigh
+        # dissipation in a damped harmonic oscillator — high-frequency
+        # components decay faster, which is the acoustic prior for formant
+        # bandwidth scaling with centre frequency.
+        rse_viscosity: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -101,12 +117,20 @@ class RWKV6TimeMix(nn.Module):
         self.use_rse = rse
         self.rse_theta_clip = rse_theta_clip
         self.rse_n_scales = rse_n_scales
+        self.use_p2rse = p2rse
+        self.p2rse_mixer = p2rse_mixer
+        self.use_viscosity = rse_viscosity
         self.layer_id = layer_id
 
         if self.use_rse:
             assert head_size % 2 == 0, "RSE requires even head_size (2x2 blocks)"
             assert mode == "recurrent", "RSE currently supports only mode='recurrent'"
             assert rse_n_scales >= 1
+
+        if self.use_p2rse:
+            assert self.use_rse, "P²-RSE requires rse=True"
+            assert rse_n_scales == 1, "P²-RSE incompatible with multi-rate rse_n_scales > 1"
+            assert self.p2rse_mixer in ("linear", "softmax")
 
         hidden_size_att = hidden_size
 
@@ -222,9 +246,8 @@ class RWKV6TimeMix(nn.Module):
             theta_init = torch.empty(n_head, n_blocks, dtype=dtype).uniform_(
                 -rse_theta_init_scale, rse_theta_init_scale
             )
-            self.time_theta = nn.Parameter(
-                theta_init.reshape(1, 1, n_head * n_blocks)
-            )
+            theta_init_reshaped = theta_init.reshape(1, 1, n_head * n_blocks)
+            self.time_theta = nn.Parameter(theta_init_reshaped.clone())
             D_THETA_DIM = rse_theta_lora_dim
             self.time_theta_w1 = nn.Parameter(
                 torch.zeros(hidden_size, D_THETA_DIM, dtype=dtype)
@@ -232,6 +255,37 @@ class RWKV6TimeMix(nn.Module):
             self.time_theta_w2 = nn.Parameter(
                 torch.zeros(D_THETA_DIM, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
             )
+
+            # ── Stage 5 Viscosity coupling ──────────────────────────────
+            # η_{h,b} scalar per head × block, zero-init ⇒ identical to
+            # baseline RSE until SGD grows it.  Added to λ (log-decay) as
+            #     λ_eff = λ_raw + η · θ²
+            # inside _forward_recurrent_rse, before cumulative log-z.
+            if self.use_viscosity:
+                self.viscosity_eta = nn.Parameter(
+                    torch.zeros(n_head, n_blocks, dtype=dtype)
+                )
+
+            # ── Stage 5 P²-RSE: second θ pole (phase-complementary init) ──
+            # Two complex poles per block with SHARED λ and INDEPENDENT θ.
+            # Init: θ^(2)_base = -θ^(1)_base element-wise. LoRA^(2) zero-init,
+            # matching Stage-3 RSE convention for the first pole.
+            # Output fusion is real data-dependent β_m (linear or softmax).
+            if self.use_p2rse:
+                self.time_theta_2 = nn.Parameter(-theta_init_reshaped.clone())
+                self.time_theta_w1_2 = nn.Parameter(
+                    torch.zeros(hidden_size, D_THETA_DIM, dtype=dtype)
+                )
+                self.time_theta_w2_2 = nn.Parameter(
+                    torch.zeros(D_THETA_DIM, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+                )
+                # β mixer: W_β x_t ∈ R^{2H} (2 scalars per head).
+                # Init N(0, 0.01) weights + zero bias ⇒ β_m ≈ 0 at init.
+                # Under softmax this yields β ≈ (½, ½); under linear it yields
+                # near-zero passthrough that grows freely under training.
+                self.beta_mixer = nn.Linear(hidden_size, 2 * n_head, bias=True, dtype=dtype)
+                nn.init.normal_(self.beta_mixer.weight, mean=0.0, std=0.01)
+                nn.init.zeros_(self.beta_mixer.bias)
 
             # ── Multi-Rate RSE: extra scales 1..M-1 with independent (λ, θ) ──
             # Each extra scale gets its own per-block (lambda, theta) LoRA pair.
@@ -322,6 +376,14 @@ class RWKV6TimeMix(nn.Module):
             theta_lora = torch.tanh(xw @ self.time_theta_w1) @ self.time_theta_w2
             theta = self.rse_theta_clip * torch.tanh(self.time_theta + theta_lora)
             theta = theta.to(r.dtype)
+
+            if self.use_p2rse:
+                # Second pole's theta — independent LoRA, same xw / clip.
+                theta_lora_2 = torch.tanh(xw @ self.time_theta_w1_2) @ self.time_theta_w2_2
+                theta_2 = self.rse_theta_clip * torch.tanh(self.time_theta_2 + theta_lora_2)
+                theta_2 = theta_2.to(r.dtype)
+                return r, k, v, g, w, theta, theta_2
+
             return r, k, v, g, w, theta
 
         return r, k, v, g, w
@@ -335,11 +397,15 @@ class RWKV6TimeMix(nn.Module):
         H = self.n_head
         K = self.head_size
 
-        if self.use_rse:
+        if self.use_p2rse:
+            r, k, v, g, w, theta, theta_2 = self._compute_rkv_gw(x)
+        elif self.use_rse:
             r, k, v, g, w, theta = self._compute_rkv_gw(x)
+            theta_2 = None
         else:
             r, k, v, g, w = self._compute_rkv_gw(x)
             theta = None
+            theta_2 = None
 
         # Reshape to (B, H, T, K)
         r_h = r.view(B, T, H, K).transpose(1, 2)
@@ -360,7 +426,15 @@ class RWKV6TimeMix(nn.Module):
 
         # Dispatch to mode-specific attention
         new_state = None
-        if self.use_rse:
+        if self.use_p2rse:
+            # P²-RSE: two complex poles per block, unconstrained real mixer.
+            n_blocks = K // 2
+            theta_h_1 = theta.view(B, T, H, n_blocks).transpose(1, 2)
+            theta_h_2 = theta_2.view(B, T, H, n_blocks).transpose(1, 2)
+            y, new_state = self._forward_recurrent_p2rse(
+                r_h, k_h, v_h, w_h, theta_h_1, theta_h_2, x, state
+            )
+        elif self.use_rse:
             # theta arrives as (B, T, H*Bk); reshape to (B, H, T, Bk)
             n_blocks = K // 2
             theta_h = theta.view(B, T, H, n_blocks).transpose(1, 2)
@@ -506,6 +580,7 @@ class RWKV6TimeMix(nn.Module):
         w: torch.Tensor,      # log-decay (negative), per-channel (K)
         theta: torch.Tensor,  # (B, H, T, Bk) — rotation angle per 2x2 block
         state: Optional[torch.Tensor] = None,
+        apply_bonus: bool = True,   # P²-RSE calls this twice and adds u externally
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Chunked RSE scan via complex-number reformulation.
 
@@ -530,6 +605,15 @@ class RWKV6TimeMix(nn.Module):
         # within-block decay asymmetry for the rotation angle.
         log_decay_block = w.view(B, H, T, Bk, 2).mean(dim=-1).float()  # (B,H,T,Bk)
 
+        # ── Stage 5 viscosity coupling: λ_eff = λ_raw + η_{h,b} · θ² ──
+        # log_decay is -λ (since λ>0 maps to log(decay)<0), so we SUBTRACT
+        # η · θ² from log_decay (equivalent to adding it to λ).  This
+        # implements Rayleigh dissipation: high-frequency rotations decay
+        # faster, self-regulating phase coherence without a hard clip.
+        if self.use_viscosity:
+            theta_sq = theta.float() ** 2                                # (B,H,T,Bk)
+            log_decay_block = log_decay_block - self.viscosity_eta.view(1, H, 1, Bk).float() * theta_sq
+
         # log z = -lambda + i*theta  (lambda = -log_decay > 0 since w is negative)
         log_z = torch.complex(log_decay_block, theta.float())          # (B,H,T,Bk)
 
@@ -547,8 +631,10 @@ class RWKV6TimeMix(nn.Module):
             S0 = state.float().view(B, H, Bk, 2, K)
             c_state = torch.complex(S0[..., 0, :], S0[..., 1, :])      # (B,H,Bk,K)
 
-        # Bonus term `u` (real, per-channel)
-        u_hk = None if self.drop_u else self.time_faaaa.view(1, H, 1, K).float()
+        # Bonus term `u` (real, per-channel).  `apply_bonus=False` forces skip
+        # so P²-RSE can run the scan twice and add `u` exactly once externally.
+        use_bonus_here = apply_bonus and not self.drop_u
+        u_hk = self.time_faaaa.view(1, H, 1, K).float() if use_bonus_here else None
 
         out = torch.zeros(B, H, T, K, dtype=torch.float32, device=device)
 
@@ -566,15 +652,17 @@ class RWKV6TimeMix(nn.Module):
             # Within-chunk attention A[t, s, b] = exp(cumlog[t] - cumlog[s])
             #   for s == t: factor 1 (current-step direct write)
             #   for s <  t: product G_{s+1}..G_t
-            #   for s >  t: zero (above-diagonal positions would have positive
-            #               real-part exponent → inf → inf*0 = NaN; clamp before exp)
+            #   for s >  t: zero (masked via torch.where after exp)
             diff = cumlog.unsqueeze(3) - cumlog.unsqueeze(2)           # (B,H,tc,tc,Bk)
             mask = torch.tril(
                 torch.ones(tc, tc, device=device, dtype=torch.bool)
             ).view(1, 1, tc, tc, 1)
-            # Force real part to a very negative number above diagonal so exp underflows.
-            real_part = diff.real.masked_fill(~mask, -60.0)
-            A = torch.exp(torch.complex(real_part, diff.imag))         # (B,H,tc,tc,Bk)
+            # Stage 5 stability fix: clamp real part for safe exp, then zero
+            # the upper triangle exactly with torch.where (replaces the
+            # previous -60 clamp that leaked e^{-60} ≈ 1e-26 residuals).
+            real_part = diff.real.masked_fill(~mask, -60.0)            # safe for exp
+            A_raw = torch.exp(torch.complex(real_part, diff.imag))     # (B,H,tc,tc,Bk)
+            A = torch.where(mask, A_raw, torch.zeros_like(A_raw))      # exact zero above
 
             # S_intra[t, b, c] = sum_s A[t,s,b] * k_c[s,b] * v[s,c]
             scaled_k = A * k_c_c.unsqueeze(2)                          # (B,H,tc,tc,Bk)
@@ -615,6 +703,75 @@ class RWKV6TimeMix(nn.Module):
         final_view[..., 1, :] = c_state.imag
 
         return out.to(in_dtype), final_state
+
+    def _forward_recurrent_p2rse(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,       # shared log-decay (negative), per-channel (K)
+        theta_1: torch.Tensor, # (B, H, T, Bk) — mode 1 rotation
+        theta_2: torch.Tensor, # (B, H, T, Bk) — mode 2 rotation (init = -theta_1)
+        x_in: torch.Tensor,    # (B, T, D) — original input for β mixer
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Stage-5 P²-RSE: paired-pole state evolution with real β mixer.
+
+        Runs the complex chunked RSE scan twice — once per mode (θ^(1), θ^(2)),
+        shared λ/k/v — and fuses outputs with a data-dependent real mixer.
+        Current-step bonus u is applied once at the end (both internal calls
+        use `apply_bonus=False`).
+
+        Mixer variants (self.p2rse_mixer):
+          "linear"  — β = W_β x ∈ R^{2H}, unconstrained (primary).
+          "softmax" — β = softmax(W_β x), convex (control).
+
+        Phase-complementary init (θ^(2) = -θ^(1)) breaks the mode-exchange
+        saddle at step 0 without expressivity constraints on the learned
+        manifold.  State is (2, B, H, K, K) — two independent complex states.
+        """
+        B, H, T, K = r.shape
+        device = r.device
+
+        if state is None:
+            s1_in, s2_in = None, None
+        else:
+            # Packed as (2, B, H, K, K); split per mode.
+            s1_in = state[0].contiguous()
+            s2_in = state[1].contiguous()
+
+        # ── Two parallel RSE scans — bonus skipped (added once at end) ──
+        y1, s1_out = self._forward_recurrent_rse(
+            r, k, v, w, theta_1, s1_in, apply_bonus=False
+        )
+        y2, s2_out = self._forward_recurrent_rse(
+            r, k, v, w, theta_2, s2_in, apply_bonus=False
+        )
+
+        # ── β mixer ────────────────────────────────────────────────────
+        # (B, T, D) → (B, T, 2H) → (B, H, T, 2)
+        beta_logits = self.beta_mixer(x_in).view(B, T, H, 2).transpose(1, 2)
+        if self.p2rse_mixer == "softmax":
+            beta = F.softmax(beta_logits, dim=-1)
+        else:  # "linear" — unconstrained
+            beta = beta_logits
+        beta = beta.to(r.dtype)
+
+        # β_m shape (B, H, T, 1) → broadcasts over K
+        beta_1 = beta[..., 0:1]
+        beta_2 = beta[..., 1:2]
+        y = beta_1 * y1 + beta_2 * y2                                  # (B, H, T, K)
+
+        # ── Bonus current-step shortcut (applied once, as in single-mode RSE) ──
+        if not self.drop_u:
+            u_hk = self.time_faaaa.view(1, H, 1, K).to(r.dtype)
+            scalar = (r * u_hk * k).sum(dim=-1, keepdim=True)          # (B, H, T, 1)
+            y = y + scalar * v                                         # (B, H, T, K)
+
+        # ── Pack states as (2, B, H, K, K) ──
+        new_state = torch.stack([s1_out, s2_out], dim=0)
+
+        return y, new_state
 
     def _forward_recurrent_rse_multi(
         self,

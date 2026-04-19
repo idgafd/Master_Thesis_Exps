@@ -1,0 +1,1 @@
+--backbone rwkv6_p2rse_strong --epochs 30 --seed 42 --output-dir outputs/stage5_04_rwkv6_p2rse_strong_seed42 --gpu 1

@@ -117,6 +117,15 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Stage 4 (refined) — per-layer depth-graded rotation budget
         "rwkv6_rse_depth": "recurrent",
         "rwkv6_rse_strong": "recurrent",
+        # Stage 5 — Paired-Pole RSE (P²-RSE): 2 complex poles / block, real β mixer
+        "rwkv6_p2rse": "recurrent",            # unconstrained linear β (Exp A)
+        "rwkv6_p2rse_softmax": "recurrent",    # convex softmax β (Exp B, control)
+        # Phase 2 — P²-RSE × Stage-4 budget refinements (orthogonal stacking)
+        "rwkv6_p2rse_strong": "recurrent",     # P²-RSE + uniform large budget (π/2, LoRA 48)
+        "rwkv6_p2rse_depth":  "recurrent",     # P²-RSE + depth-graded budget (π/8 → π/4 → π/2)
+        # Phase 3 — Viscosity coupling (Rayleigh dissipation, soft self-regulating clip)
+        "rwkv6_rse_strong_viscosity": "recurrent",   # Stage-4 strong budget + λ_eff = λ + η·θ²
+        "rwkv6_rse_depth_viscosity":  "recurrent",   # Stage-4 depth-graded budget + viscosity
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -172,7 +181,13 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     drop_u = discretization in ("trap", "trap_var", "ab3") or cfg.discretization_drop_u
 
     # Stage 3: RSE (rotational state evolution) — substring trigger on backbone name.
-    rse = ("rse" in backbone.split("_")) or cfg.rse
+    # P²-RSE also requires rse=True (it sits on top of the single-pole RSE infrastructure).
+    rse = (
+        ("rse" in backbone.split("_"))
+        or ("p2rse" in backbone)
+        or cfg.rse
+        or cfg.p2rse
+    )
     # Multi-Rate RSE: substring "m{N}" in backbone name overrides cfg.rse_n_scales.
     rse_n_scales = cfg.rse_n_scales
     import re
@@ -180,14 +195,36 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     if m_match:
         rse_n_scales = int(m_match.group(1))
 
+    # Stage 5 viscosity coupling: triggered by substring "viscosity" in backbone
+    # or explicit cfg.rse_viscosity.  Orthogonal to p2rse — can be combined.
+    rse_viscosity = ("viscosity" in backbone) or getattr(cfg, "rse_viscosity", False)
+
+    # Stage 5: P²-RSE flags
+    p2rse = ("p2rse" in backbone) or cfg.p2rse
+    if "p2rse_softmax" in backbone:
+        p2rse_mixer = "softmax"
+    elif backbone in ("rwkv6_p2rse_strong", "rwkv6_p2rse_depth"):
+        # Phase-2 variants: use the Phase-1-winning softmax mixer by default.
+        # Linear β under-performed at 0.1250 vs softmax 0.1220; we're stacking
+        # the 2-pole mechanism onto the Stage-4 budget, so we pick the best
+        # mixer rather than re-ablating it.
+        p2rse_mixer = "softmax"
+    elif p2rse:
+        p2rse_mixer = "linear"
+    else:
+        p2rse_mixer = cfg.p2rse_mixer
+
     # Stage 4 — depth-graded rotation budget per layer.
     # Diagnosed in scripts/rse_theta_diagnostic.py: deeper layers learn larger
     # data-dependent rotation contributions; uniform per-layer budget under-
     # serves L4–L5. Override schedule applies only when backbone name asks.
     import math as _math
     rse_per_layer_overrides = None
-    if backbone == "rwkv6_rse_depth":
-        # 6-layer linear gradient L0..L5
+    if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity"):
+        # Depth-graded rotation budget L0..L5.  Shared between single-pole
+        # (Stage-4), paired-pole (Stage-5 Phase-2), and viscosity-coupled
+        # (Stage-5 Phase-3) variants.  The viscosity refinement applies a
+        # soft self-regulating clip on TOP of this schedule.
         rse_per_layer_overrides = [
             {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
             {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
@@ -196,8 +233,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
-    elif backbone == "rwkv6_rse_strong":
+    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity"):
         # Uniform but expanded budget: doubles clip and LoRA dim, keeps init small.
+        # Shared between Stage-4 (rse_strong), Phase-2 (p2rse_strong),
+        # and Phase-3 (rse_strong_viscosity) variants.
         rse_per_layer_overrides = [
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 48}
         ] * cfg.n_layers
@@ -222,4 +261,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         rse=rse,
         rse_n_scales=rse_n_scales,
         rse_per_layer_overrides=rse_per_layer_overrides,
+        p2rse=p2rse,
+        p2rse_mixer=p2rse_mixer,
+        rse_viscosity=rse_viscosity,
     )

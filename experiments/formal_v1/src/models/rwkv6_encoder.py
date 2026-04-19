@@ -35,6 +35,9 @@ class RWKV6Encoder(nn.Module):
         rse: bool = False,
         rse_n_scales: int = 1,
         rse_per_layer_overrides: list = None,
+        p2rse: bool = False,
+        p2rse_mixer: str = "linear",
+        rse_viscosity: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -74,6 +77,9 @@ class RWKV6Encoder(nn.Module):
                     rse_theta_init_scale=per_layer.get("theta_init_scale"),
                     rse_theta_clip=per_layer.get("theta_clip"),
                     rse_theta_lora_dim=per_layer.get("theta_lora_dim"),
+                    p2rse=p2rse,
+                    p2rse_mixer=p2rse_mixer,
+                    rse_viscosity=rse_viscosity,
                     dtype=dtype,
                 )
             )
@@ -83,13 +89,27 @@ class RWKV6Encoder(nn.Module):
         return self.mode == "recurrent"
 
     def init_state(self, batch_size: int, device: torch.device) -> List[torch.Tensor]:
-        """Initialize per-layer WKV states for carry-state inference."""
-        n_head = self.d_model // (self.d_model // len(self.layers[0].att.receptance.weight))
-        # Actually compute from first layer
+        """Initialize per-layer WKV states for carry-state inference.
+
+        Single-pole RSE / vanilla RWKV-6: (B, H, K, K) per layer.
+        Multi-rate RSE (M scales):         (M, B, H, K, K) per layer.
+        Stage-5 P²-RSE (2 poles):          (2, B, H, K, K) per layer.
+        """
         H = self.layers[0].att.n_head
         K = self.layers[0].att.head_size
+        att0 = self.layers[0].att
+        use_p2rse = getattr(att0, "use_p2rse", False)
+        rse_M = getattr(att0, "rse_n_scales", 1)
+
+        if use_p2rse:
+            shape = (2, batch_size, H, K, K)
+        elif rse_M > 1:
+            shape = (rse_M, batch_size, H, K, K)
+        else:
+            shape = (batch_size, H, K, K)
+
         return [
-            torch.zeros(batch_size, H, K, K, dtype=torch.float32, device=device)
+            torch.zeros(*shape, dtype=torch.float32, device=device)
             for _ in range(self.n_layers)
         ]
 

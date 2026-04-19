@@ -56,6 +56,20 @@ class ExperimentConfig:
     # Multi-Rate RSE: M independent (lambda_m, theta_m) scales with
     # query-conditional softmax mixer.  M = 1 reproduces single-scale RSE.
     rse_n_scales: int = 1
+    # ── Stage 5 P²-RSE (Paired-Pole RSE) ─────────────────────────────────
+    # Two complex poles per 2x2 block with shared λ, independent θ, and
+    # data-dependent real mixer (unconstrained or softmax).  Initialization:
+    # θ^(2)_base = -θ^(1)_base (phase-complementary).
+    # Mixer variants:
+    #   "linear" — unconstrained real β ∈ R^2 (main proposal, Exp A)
+    #   "softmax" — convex β (control, Exp B) — tests whether softmax was the
+    #              m2 plateau cause
+    p2rse: bool = False
+    p2rse_mixer: str = "linear"  # "linear" | "softmax"
+    # Stage 5 Phase 3: viscosity coupling (Rayleigh dissipation).
+    # λ_eff = λ_raw + η_{h,b} · θ² inside the RSE complex scan, with
+    # η ∈ R^(H×Bk) initialized to 0 (bit-identical to baseline at init).
+    rse_viscosity: bool = False
     # Mamba-specific
     mamba_d_state: int = 16
     mamba_d_conv: int = 4
