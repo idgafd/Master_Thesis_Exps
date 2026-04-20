@@ -38,6 +38,18 @@ class RWKV6Encoder(nn.Module):
         p2rse: bool = False,
         p2rse_mixer: str = "linear",
         rse_viscosity: bool = False,
+        p2rse_indep_lambda: bool = False,
+        p2rse_indep_kv: bool = False,
+        p2rse_kv_lora_dim: int = 32,
+        use_rmsnorm: bool = False,
+        use_hadamard_n2: bool = False,
+        # When set, the Kronecker n=2 tail activates only on the top
+        # `qtail_top_k` layers (indices [n_layers - qtail_top_k, n_layers)).
+        # Aligned with the depth hierarchy observed in Stage-2 gen2 (α₁ grows
+        # monotonically with depth) and Stage-4 `rse_depth`.
+        use_qtail: bool = False,
+        use_qtail_gamma: bool = False,
+        qtail_top_k: int = 2,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -53,6 +65,9 @@ class RWKV6Encoder(nn.Module):
         self.layers = nn.ModuleList()
         for i in range(n_layers):
             per_layer = (rse_per_layer_overrides or [{}] * n_layers)[i]
+            # Depth gating for the Kronecker n=2 tail: activate only on the
+            # top `qtail_top_k` layers of the stack.
+            qtail_active_here = use_qtail and (i >= n_layers - qtail_top_k)
             self.layers.append(
                 RWKV6Block(
                     hidden_size=d_model,
@@ -80,6 +95,13 @@ class RWKV6Encoder(nn.Module):
                     p2rse=p2rse,
                     p2rse_mixer=p2rse_mixer,
                     rse_viscosity=rse_viscosity,
+                    p2rse_indep_lambda=p2rse_indep_lambda,
+                    p2rse_indep_kv=p2rse_indep_kv,
+                    p2rse_kv_lora_dim=p2rse_kv_lora_dim,
+                    use_rmsnorm=use_rmsnorm,
+                    use_hadamard_n2=use_hadamard_n2,
+                    use_qtail=qtail_active_here,
+                    use_qtail_gamma=use_qtail_gamma and qtail_active_here,
                     dtype=dtype,
                 )
             )

@@ -96,6 +96,51 @@ class RWKV6TimeMix(nn.Module):
         # components decay faster, which is the acoustic prior for formant
         # bandwidth scaling with centre frequency.
         rse_viscosity: bool = False,
+        # ── Stage 5 Phase 2b — Independent-λ P²-RSE ──────────────────────
+        # Relaxes the shared-λ constraint of Phase-1 P²-RSE. Each pole gets
+        # its own decay LoRA (time_decay_*_2) in addition to the already-
+        # independent θ LoRA. See src/models/p2rse_indep_lambda.py and
+        # TODO_FUTURE_IDEAS.md §Stage-5 deferred for rationale.
+        # Requires p2rse=True.  Init: pole-2 base λ = clone of pole-1;
+        # pole-2 LoRA zero → indep-λ path reduces exactly to shared-λ P²-RSE
+        # at t=0 (zero-regression-at-init contract).
+        p2rse_indep_lambda: bool = False,
+        # ── Stage 5 Phase 2b-ext — Independent drive-side (k, v) per pole ─
+        # On top of Phase 2b: pole 2 gets rank-`p2rse_kv_lora_dim` LoRA
+        # deltas on BOTH the key and value projections, so the two poles
+        # can read from different subspaces of the input rather than only
+        # differing in their transition (λ, θ). Motivated by
+        # STAGE5_RESULTS §6.4(2): physical formants read from different
+        # cochlear-spectrum regions, not identical ones.  Requires
+        # p2rse_indep_lambda=True.  Zero-regression-at-init: LoRA down-
+        # projections init zero ⇒ k_2=k, v_2=v until SGD grows them.
+        p2rse_indep_kv: bool = False,
+        p2rse_kv_lora_dim: int = 32,
+        # ── Stage 6 EXPRESSIVENESS paper adaptations ─────────────────────
+        # Per-head RMSNorm replacing GroupNorm on the WKV output — paper's
+        # §4.5 finding that any vector norm approximates the softmax
+        # denominator G_t (L2/RMS/LayerNorm all tied; GroupNorm's cross-
+        # token statistic is an outlier we can remove).
+        use_rmsnorm: bool = False,
+        # Diagonal n=2 Taylor branch: run a parallel WKV scan on (k⊙k, r⊙r)
+        # with decay^2 (i.e. log-decay ×2) and zero bonus. β_hadamard is
+        # learnable per-head, zero-init. This is the Hadamard approximation
+        # of the paper's (k⊗k, r⊗r) Kronecker lift — no cross-channel terms.
+        use_hadamard_n2: bool = False,
+        # Full Kronecker n=2 tail: k⊗k, r⊗r giving K² features per head;
+        # decay w⊕w at pair (i,j) = w_i+w_j (log). β_qtail is zero-init.
+        # Caller should enable this only at select (top) layers for cost.
+        use_qtail: bool = False,
+        # Learnable per-head decay coupling γ on the Kronecker branch.
+        #   w_pair[i,j] = γ_h · (w_i + w_j)
+        # γ=1.0: current qtail (product of per-channel decays — bit-exact).
+        # γ=0.5: geometric mean (Kronecker branch decays as slowly as linear).
+        # γ=0.0: paper's undecayed accumulator (H_t^{(n)} = H_{t-1}^{(n)} + …).
+        # γ>1.0: Kronecker branch decays faster than linear (short-term role).
+        # Paper's Taylor derivation imposes NO decay on order-n state, so γ
+        # is principled: SGD picks where on the spectrum to sit.  Init γ=1.0
+        # ⇒ bit-exact reduction to vanilla qtail at t=0.  Requires use_qtail.
+        use_qtail_gamma: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -120,6 +165,13 @@ class RWKV6TimeMix(nn.Module):
         self.use_p2rse = p2rse
         self.p2rse_mixer = p2rse_mixer
         self.use_viscosity = rse_viscosity
+        self.p2rse_indep_lambda = p2rse_indep_lambda
+        self.p2rse_indep_kv = p2rse_indep_kv
+        self.p2rse_kv_lora_dim = p2rse_kv_lora_dim
+        self.use_rmsnorm = use_rmsnorm
+        self.use_hadamard_n2 = use_hadamard_n2
+        self.use_qtail = use_qtail
+        self.use_qtail_gamma = use_qtail_gamma
         self.layer_id = layer_id
 
         if self.use_rse:
@@ -188,10 +240,29 @@ class RWKV6TimeMix(nn.Module):
         self.value = nn.Linear(hidden_size, hidden_size_att, bias=False, dtype=dtype)
         self.gate = nn.Linear(hidden_size, hidden_size_att, bias=False, dtype=dtype)
         self.output = nn.Linear(hidden_size_att, hidden_size, bias=False, dtype=dtype)
-        self.ln_x = nn.GroupNorm(
-            n_head, hidden_size_att, dtype=dtype,
-            eps=(1e-5) * (self.head_size_divisor ** 2),
-        )
+        # Post-WKV normalization: either the standard RWKV GroupNorm (per-head
+        # group across the hidden-size-att axis, computed over B*T) or a
+        # per-head RMSNorm as recommended by the EXPRESSIVENESS paper §4.5.
+        self._rmsnorm_eps = (1e-5) * (self.head_size_divisor ** 2)
+        if self.use_rmsnorm:
+            # Per-head-per-channel learnable scale; no bias (RMSNorm convention).
+            self.rmsnorm_scale = nn.Parameter(torch.ones(n_head, head_size, dtype=dtype))
+        else:
+            self.ln_x = nn.GroupNorm(
+                n_head, hidden_size_att, dtype=dtype,
+                eps=self._rmsnorm_eps,
+            )
+
+        # ── Paper's n=2 Taylor branches (zero-regression at init) ────────
+        if self.use_hadamard_n2:
+            self.beta_hadamard = nn.Parameter(torch.zeros(n_head, dtype=dtype))
+        if self.use_qtail:
+            self.beta_qtail = nn.Parameter(torch.zeros(n_head, dtype=dtype))
+            # Learnable per-head decay coupling γ on the Kronecker-lifted
+            # pair-decay w_pair[i,j] = γ · (w_i + w_j). Init 1.0 ⇒ bit-exact
+            # reduction to qtail at t=0.  Requires use_qtail.
+            if self.use_qtail_gamma:
+                self.qtail_gamma = nn.Parameter(torch.ones(n_head, dtype=dtype))
 
         # ── Mechanism: ConvShift ─────────────────────────────────────────
         if self.use_conv_shift:
@@ -286,6 +357,45 @@ class RWKV6TimeMix(nn.Module):
                 self.beta_mixer = nn.Linear(hidden_size, 2 * n_head, bias=True, dtype=dtype)
                 nn.init.normal_(self.beta_mixer.weight, mean=0.0, std=0.01)
                 nn.init.zeros_(self.beta_mixer.bias)
+
+                # ── Phase 2b: Independent-λ P²-RSE ──────────────────────
+                # Second pole gets its OWN decay LoRA (base + rank-D_DECAY_DIM
+                # projection).  Init:
+                #   base: clone of self.time_decay → same λ schedule at t=0
+                #   LoRA weights: zero → no contribution at t=0
+                # Zero-regression-at-init: indep-λ path reduces EXACTLY to
+                # shared-λ P²-RSE until SGD moves the new LoRA.  Symmetry is
+                # broken immediately by the phase-complementary θ^(2)
+                # initialisation (above) and by SGD thereafter.
+                if self.p2rse_indep_lambda:
+                    self.time_decay_2 = nn.Parameter(self.time_decay.detach().clone())
+                    self.time_decay_w1_2 = nn.Parameter(
+                        torch.zeros(hidden_size, D_DECAY_DIM, dtype=dtype)
+                    )
+                    self.time_decay_w2_2 = nn.Parameter(
+                        torch.zeros(D_DECAY_DIM, hidden_size_att, dtype=dtype).uniform_(-0.01, 0.01)
+                    )
+
+                # ── Phase 2b-ext: Independent drive-side (k, v) per pole ───
+                # Rank-D_KV LoRA deltas on top of the shared key/value.
+                # down-init 0 ⇒ pole-2 drive == pole-1 drive at t=0.
+                # Stage-3 RSE convention: up matrix uniform(-0.01, 0.01).
+                if self.p2rse_indep_kv:
+                    D_KV = self.p2rse_kv_lora_dim
+                    # key LoRA pair for pole 2 (delta from self.key)
+                    self.key_lora_a_2 = nn.Parameter(
+                        torch.zeros(hidden_size, D_KV, dtype=dtype)
+                    )
+                    self.key_lora_b_2 = nn.Parameter(
+                        torch.zeros(D_KV, hidden_size_att, dtype=dtype).uniform_(-0.01, 0.01)
+                    )
+                    # value LoRA pair for pole 2 (delta from self.value)
+                    self.value_lora_a_2 = nn.Parameter(
+                        torch.zeros(hidden_size, D_KV, dtype=dtype)
+                    )
+                    self.value_lora_b_2 = nn.Parameter(
+                        torch.zeros(D_KV, hidden_size_att, dtype=dtype).uniform_(-0.01, 0.01)
+                    )
 
             # ── Multi-Rate RSE: extra scales 1..M-1 with independent (λ, θ) ──
             # Each extra scale gets its own per-block (lambda, theta) LoRA pair.
@@ -382,6 +492,28 @@ class RWKV6TimeMix(nn.Module):
                 theta_lora_2 = torch.tanh(xw @ self.time_theta_w1_2) @ self.time_theta_w2_2
                 theta_2 = self.rse_theta_clip * torch.tanh(self.time_theta_2 + theta_lora_2)
                 theta_2 = theta_2.to(r.dtype)
+                # ── Phase 2b: Independent-λ — also return second w ──
+                # Mirrors the w computation above, using the pole-2 LoRA.
+                # At init, time_decay_2 is a clone of time_decay and the
+                # LoRA weights are zero ⇒ w_2 == w at t=0 (zero-regression
+                # contract; indep-λ reduces to shared-λ until SGD moves it).
+                if self.p2rse_indep_lambda:
+                    w_2 = self.time_decay_2 + torch.tanh(xw @ self.time_decay_w1_2) @ self.time_decay_w2_2
+                    w_2 = w_2.to(r.dtype)
+
+                    # ── Phase 2b-ext: Independent drive-side (k, v) ────
+                    # Pole-2 key/value = shared + LoRA delta. The LoRA uses
+                    # the same token-shifted input (xk, xv) as the shared
+                    # projection to preserve the Stage-3 token-shift semantics.
+                    # At init, key_lora_a_2 = value_lora_a_2 = 0 ⇒ pole-2
+                    # drive matches shared drive exactly.
+                    if self.p2rse_indep_kv:
+                        k_2 = k + (xk @ self.key_lora_a_2) @ self.key_lora_b_2
+                        v_2 = v + (xv @ self.value_lora_a_2) @ self.value_lora_b_2
+                        k_2 = k_2.to(r.dtype)
+                        v_2 = v_2.to(r.dtype)
+                        return r, k, v, g, w, theta, theta_2, w_2, k_2, v_2
+                    return r, k, v, g, w, theta, theta_2, w_2
                 return r, k, v, g, w, theta, theta_2
 
             return r, k, v, g, w, theta
@@ -398,7 +530,20 @@ class RWKV6TimeMix(nn.Module):
         K = self.head_size
 
         if self.use_p2rse:
-            r, k, v, g, w, theta, theta_2 = self._compute_rkv_gw(x)
+            if self.p2rse_indep_lambda:
+                if self.p2rse_indep_kv:
+                    # Phase 2b-ext — 10-tuple: indep λ + indep drive
+                    (r, k, v, g, w, theta, theta_2, w_2, k_2, v_2) = self._compute_rkv_gw(x)
+                else:
+                    # Phase 2b — 8-tuple: indep λ only
+                    r, k, v, g, w, theta, theta_2, w_2 = self._compute_rkv_gw(x)
+                    k_2 = None
+                    v_2 = None
+            else:
+                r, k, v, g, w, theta, theta_2 = self._compute_rkv_gw(x)
+                w_2 = None
+                k_2 = None
+                v_2 = None
         elif self.use_rse:
             r, k, v, g, w, theta = self._compute_rkv_gw(x)
             theta_2 = None
@@ -431,9 +576,31 @@ class RWKV6TimeMix(nn.Module):
             n_blocks = K // 2
             theta_h_1 = theta.view(B, T, H, n_blocks).transpose(1, 2)
             theta_h_2 = theta_2.view(B, T, H, n_blocks).transpose(1, 2)
-            y, new_state = self._forward_recurrent_p2rse(
-                r_h, k_h, v_h, w_h, theta_h_1, theta_h_2, x, state
-            )
+            if self.p2rse_indep_lambda:
+                # Phase 2b — each pole carries its own log-decay.
+                # Compute pole-2 log-decay tensor the same way the shared
+                # path does for pole 1 (negate exp of raw w_2 LoRA output).
+                w_h_2 = w_2.view(B, T, H, K).transpose(1, 2)
+                w_h_2 = -torch.exp(w_h_2)
+                if self.use_headscale:
+                    w_h_2 = w_h_2 + self.head_decay_bias.to(w_h_2.dtype)
+
+                # Phase 2b-ext: reshape independent pole-2 k/v if present.
+                if k_2 is not None:
+                    k_h_2 = k_2.view(B, T, H, K).transpose(1, 2)
+                    v_h_2 = v_2.view(B, T, H, K).transpose(1, 2)
+                else:
+                    k_h_2 = None
+                    v_h_2 = None
+
+                y, new_state = self._forward_recurrent_p2rse_indeplam(
+                    r_h, k_h, v_h, w_h, w_h_2, theta_h_1, theta_h_2, x, state,
+                    k_h_2=k_h_2, v_h_2=v_h_2,
+                )
+            else:
+                y, new_state = self._forward_recurrent_p2rse(
+                    r_h, k_h, v_h, w_h, theta_h_1, theta_h_2, x, state
+                )
         elif self.use_rse:
             # theta arrives as (B, T, H*Bk); reshape to (B, H, T, Bk)
             n_blocks = K // 2
@@ -457,9 +624,17 @@ class RWKV6TimeMix(nn.Module):
 
         y = y.to(r.dtype)
 
-        # Reshape back and apply GroupNorm + gate + output
-        y = y.transpose(1, 2).reshape(B * T, D)
-        y = self.ln_x(y).view(B, T, D)
+        # Reshape back and apply post-WKV norm (GroupNorm or per-head RMSNorm),
+        # then gate and project.  y is (B, H, T, K) coming from the scan.
+        if self.use_rmsnorm:
+            # per-head L2/RMS norm across the head dim K
+            y_htk = y.transpose(1, 2).contiguous()                     # (B, T, H, K)
+            rms = y_htk.pow(2).mean(dim=-1, keepdim=True).add(self._rmsnorm_eps).rsqrt()
+            y_htk = y_htk * rms * self.rmsnorm_scale.to(y_htk.dtype).view(1, 1, H, K)
+            y = y_htk.reshape(B, T, D)
+        else:
+            y = y.transpose(1, 2).reshape(B * T, D)
+            y = self.ln_x(y).view(B, T, D)
         y = self.output(y * g)
 
         return y, new_state
@@ -531,6 +706,13 @@ class RWKV6TimeMix(nn.Module):
         # ── Stage 2 discretization variants ──────────────────────────────
         if self.discretization == "zoh":
             y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
+
+            # ── Paper's n=2 Taylor branches — additive, β init 0 ─────────
+            # `use_hadamard_n2` and `use_qtail` are mutually exclusive at a
+            # given layer; if both are set somehow, run both independently.
+            if self.use_hadamard_n2 or self.use_qtail:
+                y = y + self._paper_n2_branch(r, k, v, w, B, H, T, K)
+
             return y, wkv_state
 
         if self.discretization == "gen2":
@@ -571,6 +753,73 @@ class RWKV6TimeMix(nn.Module):
             return y, wkv_state
 
         raise ValueError(f"Unknown discretization: {self.discretization}")
+
+    def _paper_n2_branch(
+        self,
+        r: torch.Tensor,   # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,   # log-decay (negative), (B, H, T, K)
+        B: int, H: int, T: int, K: int,
+    ) -> torch.Tensor:
+        """Adds the second-order Taylor term of softmax attention.
+
+        Two variants, controlled by flags set at construction time:
+          use_hadamard_n2: diagonal lift (k⊙k, r⊙r). State dim = K per head,
+                           same shape as the linear branch. Cheap control.
+          use_qtail:       Kronecker lift (k⊗k, r⊗r). State dim = K² per head.
+                           Expensive but implements the paper's Eq. 3/7 exactly.
+
+        Both are gated by a zero-init per-head β so the branch is inert at
+        step 0 (same zero-regression contract as viscosity / P²-RSE).  The
+        scan reuses `_chunked_wkv` with no new kernel. Bonus `u` is set to
+        zero for the n=2 branch since the paper's Taylor derivation has no
+        current-step boost analog for n≥2.
+        """
+        device, in_dtype = r.device, r.dtype
+        y_total = torch.zeros_like(r)
+
+        if self.use_hadamard_n2:
+            # r⊙r, k⊙k — element-wise, diagonal of the full Kronecker lift.
+            # Decay on the n=2 state is the diagonal of w⊗w, i.e. 2·w (log-space).
+            r2 = r * r
+            k2 = k * k
+            w2_log = 2.0 * w
+            u2 = torch.zeros(1, H, 1, K, dtype=in_dtype, device=device)
+            s2_init = torch.zeros(B, H, K, K, dtype=torch.float32, device=device)
+            y2, _ = _chunked_wkv(r2, k2, v, w2_log, u2, s2_init)
+            beta_h = self.beta_hadamard.view(1, H, 1, 1).to(in_dtype)
+            y_total = y_total + beta_h * y2.to(in_dtype)
+
+        if self.use_qtail:
+            # Full Kronecker: r⊗r, k⊗k ∈ R^{K²}. Decay at lifted index
+            # (i,j) = w_i + w_j.  Zero bonus.  State shape: (B, H, K², K).
+            # Memory cost per layer at (B=8,H=4,K=64,T=500,fp32):
+            #   r,k lifted:  8·4·500·4096·4 ≈ 260 MB each
+            #   state:       8·4·4096·64·4  ≈  32 MB
+            # Enabled only at the top 2 of 6 layers for cost containment.
+            K2 = K * K
+            r_out = r.unsqueeze(-1) * r.unsqueeze(-2)                  # (B,H,T,K,K)
+            r_kron = r_out.reshape(B, H, T, K2)
+            k_out = k.unsqueeze(-1) * k.unsqueeze(-2)
+            k_kron = k_out.reshape(B, H, T, K2)
+            # Decay at lifted pair (i,j).  Base: w_i + w_j (product of decays).
+            # If qtail_gamma is active, scale by learnable per-head γ:
+            #   γ=1.0 → product (current qtail baseline)
+            #   γ=0.5 → geometric mean
+            #   γ=0.0 → paper's undecayed accumulator
+            w_pair = w.unsqueeze(-1) + w.unsqueeze(-2)                  # (B,H,T,K,K)
+            if self.use_qtail_gamma:
+                gamma = self.qtail_gamma.view(1, H, 1, 1, 1).to(w_pair.dtype)
+                w_pair = gamma * w_pair
+            w_kron = w_pair.reshape(B, H, T, K2)
+            u_kron = torch.zeros(1, H, 1, K2, dtype=in_dtype, device=device)
+            s_kron_init = torch.zeros(B, H, K2, K, dtype=torch.float32, device=device)
+            y_q, _ = _chunked_wkv(r_kron, k_kron, v, w_kron, u_kron, s_kron_init)
+            beta_q = self.beta_qtail.view(1, H, 1, 1).to(in_dtype)
+            y_total = y_total + beta_q * y_q.to(in_dtype)
+
+        return y_total
 
     def _forward_recurrent_rse(
         self,
@@ -771,6 +1020,66 @@ class RWKV6TimeMix(nn.Module):
         # ── Pack states as (2, B, H, K, K) ──
         new_state = torch.stack([s1_out, s2_out], dim=0)
 
+        return y, new_state
+
+    def _forward_recurrent_p2rse_indeplam(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w_1: torch.Tensor,     # (B, H, T, K)  log-decay for pole 1
+        w_2: torch.Tensor,     # (B, H, T, K)  log-decay for pole 2 (independent)
+        theta_1: torch.Tensor, # (B, H, T, Bk) rotation for pole 1
+        theta_2: torch.Tensor, # (B, H, T, Bk) rotation for pole 2
+        x_in: torch.Tensor,    # (B, T, D)  for β mixer
+        state: Optional[torch.Tensor] = None,
+        k_h_2: Optional[torch.Tensor] = None,  # (B, H, T, K) Phase 2b-ext pole-2 key
+        v_h_2: Optional[torch.Tensor] = None,  # (B, H, T, K) Phase 2b-ext pole-2 value
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Phase 2b — Independent-λ P²-RSE scan.
+
+        Differences from ``_forward_recurrent_p2rse`` (the shared-λ Phase-1
+        variant):
+          * Accepts separate ``w_1`` and ``w_2`` — each pole has its own
+            per-channel log-decay tensor derived from an independent LoRA.
+          * Routes through ``p2rse_indep_lambda_scan`` which uses the
+            real-arithmetic ``rse_viscosity_scan`` kernel for both poles —
+            avoids the complex64 Tensor-Core fallback (~2.5–3× faster).
+          * Viscosity coupling η is shared across both poles, preserving
+            the Phase-3 zero-η-at-init contract.
+
+        Phase 2b-ext: if ``k_h_2`` and ``v_h_2`` are provided, pole 2 uses
+        its own drive-side (k, v) projections (shared + LoRA delta).
+
+        Zero-regression-at-init: at t=0, ``w_2 == w_1`` (pole-2 decay LoRA
+        zero) AND ``k_h_2 == k, v_h_2 == v`` (pole-2 drive LoRA zero), so
+        output matches Phase-1 P²-RSE exactly until SGD moves the LoRAs.
+        """
+        from src.models.p2rse_indep_lambda import p2rse_indep_lambda_scan
+
+        B, H, T, K = r.shape
+
+        # β mixer logits — matches Phase-1 shape and convention
+        beta_logits = self.beta_mixer(x_in).view(B, T, H, 2).transpose(1, 2)
+
+        # Viscosity coupling — shared across poles
+        eta = self.viscosity_eta if self.use_viscosity else None
+
+        # Bonus u — applied once inside the helper (after mixing)
+        u = None if self.drop_u else self.time_faaaa.view(H, K)
+
+        y, new_state = p2rse_indep_lambda_scan(
+            r=r, k=k, v=v,
+            w_1=w_1, w_2=w_2,
+            theta_1=theta_1, theta_2=theta_2,
+            beta_logits=beta_logits,
+            mixer_type=self.p2rse_mixer,
+            eta=eta,
+            u=u,
+            state=state,
+            k_2=k_h_2,
+            v_2=v_h_2,
+        )
         return y, new_state
 
     def _forward_recurrent_rse_multi(

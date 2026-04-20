@@ -126,6 +126,25 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Phase 3 — Viscosity coupling (Rayleigh dissipation, soft self-regulating clip)
         "rwkv6_rse_strong_viscosity": "recurrent",   # Stage-4 strong budget + λ_eff = λ + η·θ²
         "rwkv6_rse_depth_viscosity":  "recurrent",   # Stage-4 depth-graded budget + viscosity
+        # Diagnostic control for Phase 2b: shared-λ P²-RSE + strong + viscosity
+        # (the composition that Phase 2b added indep-λ on top of — never tested
+        # alone before, needed to attribute Phase 2b's regression).
+        "rwkv6_p2rse_strong_viscosity": "recurrent",
+        # Phase 2b — Independent-λ P²-RSE (each pole has its own decay LoRA)
+        "rwkv6_p2rse_indeplam_strong_viscosity": "recurrent",  # indep-λ + strong θ budget + viscosity
+        "rwkv6_p2rse_indeplam_depth_viscosity":  "recurrent",  # indep-λ + depth-graded θ + viscosity
+        # Phase 2b-ext — Independent drive-side (k, v) on top of Phase 2b
+        "rwkv6_p2rse_indeplam_extkv_strong_viscosity": "recurrent",  # + rank-32 k/v LoRA per pole
+        "rwkv6_p2rse_indeplam_extkv_depth_viscosity":  "recurrent",
+        # Stage 6 — EXPRESSIVENESS paper (Mongaras & Larson 2025) adaptations on pure RWKV-6
+        "rwkv6_rmsnorm":     "recurrent",   # GroupNorm → per-head RMSNorm readout (paper §4.5)
+        "rwkv6_hadamard_n2": "recurrent",   # + diagonal n=2 Taylor branch (no cross-channels)
+        "rwkv6_qtail":       "recurrent",   # + Kronecker n=2 tail at top 2 layers (cross-channels)
+        # Stage 6.5 — Refinement of the single Kronecker mechanism.
+        # rwkv6_qtail_gamma: learnable per-head γ decay coupling on the
+        # Kronecker branch (pair-decay = γ·(w_i+w_j)). Paper's Taylor
+        # derivation imposes no decay; γ parameterizes the whole spectrum.
+        "rwkv6_qtail_gamma": "recurrent",
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -199,8 +218,29 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # or explicit cfg.rse_viscosity.  Orthogonal to p2rse — can be combined.
     rse_viscosity = ("viscosity" in backbone) or getattr(cfg, "rse_viscosity", False)
 
+    # Stage 6 — EXPRESSIVENESS paper adaptations.  Name-substring triggers:
+    #   rwkv6_rmsnorm     → GroupNorm → per-head RMSNorm only
+    #   rwkv6_hadamard_n2 → RMSNorm + diagonal (k⊙k, r⊙r) second-order branch
+    #   rwkv6_qtail       → RMSNorm + Kronecker (k⊗k, r⊗r) tail at top 2 layers
+    use_rmsnorm = (
+        "rmsnorm" in backbone
+        or "hadamard_n2" in backbone
+        or "qtail" in backbone
+    )
+    use_hadamard_n2 = "hadamard_n2" in backbone
+    use_qtail = "qtail" in backbone
+    # Stage-6.5 Kronecker refinement: learnable per-head γ decay coupling
+    # triggered by substring "gamma" in a qtail-family backbone name.
+    use_qtail_gamma = use_qtail and "gamma" in backbone
+
     # Stage 5: P²-RSE flags
     p2rse = ("p2rse" in backbone) or cfg.p2rse
+    # Phase 2b: independent-λ paired-pole variant (extra decay LoRA per pole).
+    # Triggered by substring "indeplam" in backbone name. Requires p2rse.
+    p2rse_indep_lambda = "indeplam" in backbone
+    # Phase 2b-ext: independent drive-side (k, v) per pole via rank-32 LoRA delta.
+    # Triggered by substring "extkv" in backbone name. Requires indeplam.
+    p2rse_indep_kv = "extkv" in backbone
     if "p2rse_softmax" in backbone:
         p2rse_mixer = "softmax"
     elif backbone in ("rwkv6_p2rse_strong", "rwkv6_p2rse_depth"):
@@ -208,6 +248,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Linear β under-performed at 0.1250 vs softmax 0.1220; we're stacking
         # the 2-pole mechanism onto the Stage-4 budget, so we pick the best
         # mixer rather than re-ablating it.
+        p2rse_mixer = "softmax"
+    elif p2rse_indep_lambda:
+        # Phase 2b: inherit the Phase-1-winning softmax mixer — this is a
+        # compositional stack, we don't re-ablate the mixer choice.
         p2rse_mixer = "softmax"
     elif p2rse:
         p2rse_mixer = "linear"
@@ -220,7 +264,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # serves L4–L5. Override schedule applies only when backbone name asks.
     import math as _math
     rse_per_layer_overrides = None
-    if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity"):
+    if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity", "rwkv6_p2rse_indeplam_depth_viscosity", "rwkv6_p2rse_indeplam_extkv_depth_viscosity"):
         # Depth-graded rotation budget L0..L5.  Shared between single-pole
         # (Stage-4), paired-pole (Stage-5 Phase-2), and viscosity-coupled
         # (Stage-5 Phase-3) variants.  The viscosity refinement applies a
@@ -233,7 +277,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
-    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity"):
+    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity", "rwkv6_p2rse_strong_viscosity", "rwkv6_p2rse_indeplam_strong_viscosity", "rwkv6_p2rse_indeplam_extkv_strong_viscosity"):
         # Uniform but expanded budget: doubles clip and LoRA dim, keeps init small.
         # Shared between Stage-4 (rse_strong), Phase-2 (p2rse_strong),
         # and Phase-3 (rse_strong_viscosity) variants.
@@ -264,4 +308,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         p2rse=p2rse,
         p2rse_mixer=p2rse_mixer,
         rse_viscosity=rse_viscosity,
+        p2rse_indep_lambda=p2rse_indep_lambda,
+        p2rse_indep_kv=p2rse_indep_kv,
+        use_rmsnorm=use_rmsnorm,
+        use_hadamard_n2=use_hadamard_n2,
+        use_qtail=use_qtail,
+        use_qtail_gamma=use_qtail_gamma,
     )

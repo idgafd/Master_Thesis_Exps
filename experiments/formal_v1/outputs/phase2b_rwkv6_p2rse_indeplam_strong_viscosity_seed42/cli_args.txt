@@ -1,0 +1,1 @@
+--backbone rwkv6_p2rse_indeplam_strong_viscosity --epochs 30 --seed 42 --output-dir outputs/phase2b_rwkv6_p2rse_indeplam_strong_viscosity_seed42 --gpu 1

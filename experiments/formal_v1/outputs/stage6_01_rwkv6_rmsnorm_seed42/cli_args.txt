@@ -1,0 +1,1 @@
+--backbone rwkv6_rmsnorm --epochs 30 --seed 42 --output-dir outputs/stage6_01_rwkv6_rmsnorm_seed42 --gpu 0

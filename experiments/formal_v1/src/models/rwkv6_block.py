@@ -39,6 +39,13 @@ class RWKV6Block(nn.Module):
         p2rse: bool = False,
         p2rse_mixer: str = "linear",
         rse_viscosity: bool = False,
+        p2rse_indep_lambda: bool = False,
+        p2rse_indep_kv: bool = False,
+        p2rse_kv_lora_dim: int = 32,
+        use_rmsnorm: bool = False,
+        use_hadamard_n2: bool = False,
+        use_qtail: bool = False,
+        use_qtail_gamma: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -80,6 +87,13 @@ class RWKV6Block(nn.Module):
             p2rse=p2rse,
             p2rse_mixer=p2rse_mixer,
             rse_viscosity=rse_viscosity,
+            p2rse_indep_lambda=p2rse_indep_lambda,
+            p2rse_indep_kv=p2rse_indep_kv,
+            p2rse_kv_lora_dim=p2rse_kv_lora_dim,
+            use_rmsnorm=use_rmsnorm,
+            use_hadamard_n2=use_hadamard_n2,
+            use_qtail=use_qtail,
+            use_qtail_gamma=use_qtail_gamma,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(
