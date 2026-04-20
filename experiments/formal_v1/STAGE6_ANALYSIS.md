@@ -786,6 +786,28 @@ Code added this round (additive, no existing methods overwritten):
 
 ---
 
-*This document is live. Updates when `qtail_gamma` and `p2rse_sv` finish
-(~10:40 UTC 2026-04-20) will fill the PENDING cells and resolve the §7
-decision branch.*
+## 8. Winning strategies and transferability roadmap
+
+The distilled "what worked, why, and where it transfers" catalog has been
+split into a separate document for direct thesis-defence use:
+
+**See [STAGE6_CONCLUSIONS.md](STAGE6_CONCLUSIONS.md).**
+
+Contents:
+- §2. Clarification: `qtail = Kronecker`; full table of variants tested
+- §3. Winning strategies — ranked catalog (8 items, each with "why it
+  works", transfer targets across Mamba-2 / linear attention /
+  RWKV / Gated DeltaNet / LION, and composition notes)
+- §4-5. Established nulls and regressions (don't retry)
+- §6. Unified stacking plan — `rwkv6_qtail_gamma_dbeta_lowrank_all`
+- §7. Port roadmap — priority-ordered architecture targets with
+  testable cross-architecture prediction for the γ-β co-adaptation
+- §8. The single untested Stage-6 combination worth running next —
+  the unified stack from §6 as one experiment, with decision rule
+  for interpreting its outcome
+
+---
+
+*Stage-6 scope is complete. All numbers final; analysis frozen. The
+next round is the §8 unified-stack validation and the §7 port sequence
+(Mamba-2 first).*
