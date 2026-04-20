@@ -25,6 +25,7 @@ class RWKV6Encoder(nn.Module):
         conv_shift: bool = False,
         headscale: bool = False,
         delta_rule: bool = False,
+        delta_warmstart: bool = False,
         lucid: bool = False,
         lucid_chunk_size: Optional[int] = None,
         lucid_self_reg: bool = False,
@@ -49,6 +50,9 @@ class RWKV6Encoder(nn.Module):
         # monotonically with depth) and Stage-4 `rse_depth`.
         use_qtail: bool = False,
         use_qtail_gamma: bool = False,
+        use_qtail_dbeta: bool = False,
+        use_qtail_lowrank: bool = False,
+        qtail_lr_rank: int = 16,
         qtail_top_k: int = 2,
         dtype: torch.dtype = torch.float32,
     ):
@@ -80,6 +84,7 @@ class RWKV6Encoder(nn.Module):
                     conv_shift=conv_shift,
                     headscale=headscale,
                     delta_rule=delta_rule,
+                    delta_warmstart=delta_warmstart,
                     lucid=lucid,
                     lucid_chunk_size=lucid_chunk_size,
                     lucid_self_reg=lucid_self_reg,
@@ -102,6 +107,9 @@ class RWKV6Encoder(nn.Module):
                     use_hadamard_n2=use_hadamard_n2,
                     use_qtail=qtail_active_here,
                     use_qtail_gamma=use_qtail_gamma and qtail_active_here,
+                    use_qtail_dbeta=use_qtail_dbeta and qtail_active_here,
+                    use_qtail_lowrank=use_qtail_lowrank and qtail_active_here,
+                    qtail_lr_rank=qtail_lr_rank,
                     dtype=dtype,
                 )
             )

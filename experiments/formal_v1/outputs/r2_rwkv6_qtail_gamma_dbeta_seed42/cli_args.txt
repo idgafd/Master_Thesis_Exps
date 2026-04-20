@@ -1,0 +1,1 @@
+--backbone rwkv6_qtail_gamma_dbeta --epochs 30 --seed 42 --output-dir outputs/r2_rwkv6_qtail_gamma_dbeta_seed42 --gpu 0

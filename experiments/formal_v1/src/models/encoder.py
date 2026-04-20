@@ -96,6 +96,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_lucid": "recurrent",
         "rwkv6_lucid_sr": "recurrent",
         "rwkv6_delta": "recurrent",
+        # TODO_DELTA_RULE Tier-1 diagnostic — a0 init -5 so β ≈ 0 at t=0
+        "rwkv6_delta_warmstart": "recurrent",
         "rwkv6_lucid_delta": "recurrent",
         "rwkv6_headscale": "recurrent",
         # Stage 2 discretization variants (causal)
@@ -145,6 +147,21 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Kronecker branch (pair-decay = γ·(w_i+w_j)). Paper's Taylor
         # derivation imposes no decay; γ parameterizes the whole spectrum.
         "rwkv6_qtail_gamma": "recurrent",
+        # R2 — qtail-γ + data-dependent β_{q,t} per token per head.
+        # Makes the Kronecker-branch gating selective (Mamba-2 analog).
+        "rwkv6_qtail_gamma_dbeta": "recurrent",
+        # Low-rank Kronecker — project r,k to K'=16 per head, Kronecker K'²=256.
+        # Eckart-Young truncation test; enables all-layer Kronecker if effect survives.
+        "rwkv6_qtail_lowrank": "recurrent",
+        "rwkv6_qtail_gamma_lowrank": "recurrent",
+        "rwkv6_qtail_gamma_dbeta_lowrank": "recurrent",
+        # All-layer lowrank — Kronecker branch at ALL 6 layers (not just top 2).
+        # Made feasible by the K'=16 memory reduction.  Tests whether the
+        # Kronecker mechanism helps at shallow layers too, or only at the
+        # depth where γ had the strongest specialisation (L5).
+        "rwkv6_qtail_lowrank_all": "recurrent",
+        "rwkv6_qtail_gamma_lowrank_all": "recurrent",
+        "rwkv6_qtail_gamma_dbeta_lowrank_all": "recurrent",
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -170,6 +187,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     conv_shift = "convshift" in backbone or cfg.conv_shift
     headscale = "headscale" in backbone or cfg.headscale
     delta_rule = "delta" in backbone or cfg.delta_rule
+    # TODO_DELTA_RULE H1 — a0 = -5 init. Triggered by "warmstart" substring.
+    delta_warmstart = delta_rule and "warmstart" in backbone
     lucid = "lucid" in backbone or cfg.lucid
     lucid_self_reg = "lucid_sr" in backbone or cfg.lucid_self_reg
     temperature = "temperature" in backbone or cfg.temperature
@@ -232,6 +251,14 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Stage-6.5 Kronecker refinement: learnable per-head γ decay coupling
     # triggered by substring "gamma" in a qtail-family backbone name.
     use_qtail_gamma = use_qtail and "gamma" in backbone
+    # R2 — data-dep β, triggered by substring "dbeta" (requires qtail).
+    use_qtail_dbeta = use_qtail and "dbeta" in backbone
+    # Low-rank Kronecker — triggered by substring "lowrank" (requires qtail).
+    use_qtail_lowrank = use_qtail and "lowrank" in backbone
+    # All-layer qtail — substring "lowrank_all" enables Kronecker at every
+    # layer (not just top-2).  Only applicable for lowrank because full
+    # K²=4096 Kronecker at 6 layers wouldn't fit memory.
+    qtail_all_layers = use_qtail and "lowrank_all" in backbone
 
     # Stage 5: P²-RSE flags
     p2rse = ("p2rse" in backbone) or cfg.p2rse
@@ -295,6 +322,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         conv_shift=conv_shift,
         headscale=headscale,
         delta_rule=delta_rule,
+        delta_warmstart=delta_warmstart,
         lucid=lucid,
         lucid_chunk_size=lucid_chunk_size,
         lucid_self_reg=lucid_self_reg,
@@ -314,4 +342,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         use_hadamard_n2=use_hadamard_n2,
         use_qtail=use_qtail,
         use_qtail_gamma=use_qtail_gamma,
+        use_qtail_dbeta=use_qtail_dbeta,
+        use_qtail_lowrank=use_qtail_lowrank,
+        qtail_top_k=(cfg.n_layers if qtail_all_layers else 2),
     )

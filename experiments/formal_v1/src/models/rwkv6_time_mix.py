@@ -60,6 +60,7 @@ class RWKV6TimeMix(nn.Module):
         conv_shift: bool = False,
         headscale: bool = False,
         delta_rule: bool = False,
+        delta_warmstart: bool = False,  # TODO_DELTA_RULE §5 H1 — init a0 at -5
         lucid: bool = False,
         lucid_chunk_size: Optional[int] = None,
         lucid_self_reg: bool = False,
@@ -141,6 +142,26 @@ class RWKV6TimeMix(nn.Module):
         # is principled: SGD picks where on the spectrum to sit.  Init γ=1.0
         # ⇒ bit-exact reduction to vanilla qtail at t=0.  Requires use_qtail.
         use_qtail_gamma: bool = False,
+        # R2 — Data-dependent β mixer for the Kronecker branch.
+        #   β_{q,t}(x) = β_static + (W_β · x_t)    (per-head, per-token)
+        # W_β is a Linear(hidden_size, n_head) layer with zero-init weight
+        # AND zero-init bias, so at t=0 the data-dependent term is zero and
+        # β_{q,t} = β_static (which is also zero-init per self.beta_qtail).
+        # Gives the Kronecker branch a selective gating mechanism analogous
+        # to Mamba-2's selective scan — β can fire on tokens where cross-
+        # channel features matter (coarticulation boundaries, formant
+        # transitions) and suppress elsewhere.  Requires use_qtail.
+        use_qtail_dbeta: bool = False,
+        # Low-rank Kronecker — project r,k to K' << K per head, then full
+        # Kronecker on K'² features instead of K² = 4096.  Tests whether
+        # qtail's gain survives under Eckart–Young truncation.  If yes,
+        # enables Kronecker at all layers and scale-up to larger models.
+        # qtail_lr_rank: projected per-head dim K'. K'=16 gives K'²=256,
+        # a 16× memory reduction vs full qtail. Decay: per-head mean of w,
+        # doubled for the Kronecker lift (matches the average behaviour of
+        # w_i + w_j averaged across channel pairs).
+        use_qtail_lowrank: bool = False,
+        qtail_lr_rank: int = 16,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -152,6 +173,7 @@ class RWKV6TimeMix(nn.Module):
         self.use_conv_shift = conv_shift
         self.use_headscale = headscale
         self.use_delta_rule = delta_rule
+        self.delta_warmstart = delta_warmstart
         self.use_lucid = lucid
         self.lucid_chunk_size = lucid_chunk_size
         self.use_lucid_self_reg = lucid_self_reg
@@ -172,6 +194,9 @@ class RWKV6TimeMix(nn.Module):
         self.use_hadamard_n2 = use_hadamard_n2
         self.use_qtail = use_qtail
         self.use_qtail_gamma = use_qtail_gamma
+        self.use_qtail_dbeta = use_qtail_dbeta
+        self.use_qtail_lowrank = use_qtail_lowrank
+        self.qtail_lr_rank = qtail_lr_rank
         self.layer_id = layer_id
 
         if self.use_rse:
@@ -263,6 +288,27 @@ class RWKV6TimeMix(nn.Module):
             # reduction to qtail at t=0.  Requires use_qtail.
             if self.use_qtail_gamma:
                 self.qtail_gamma = nn.Parameter(torch.ones(n_head, dtype=dtype))
+            # R2 — Data-dependent β projector: Linear(hidden, n_head).
+            # Zero-init weights AND bias ⇒ data-dep term adds exactly 0 at
+            # t=0.  Combined with static beta_qtail (zero-init), effective
+            # β is 0 at t=0 → bit-exact reduction to baseline (Kronecker
+            # branch gated off). SGD then grows both components.
+            if self.use_qtail_dbeta:
+                self.beta_qtail_proj = nn.Linear(hidden_size, n_head, bias=True, dtype=dtype)
+                nn.init.zeros_(self.beta_qtail_proj.weight)
+                nn.init.zeros_(self.beta_qtail_proj.bias)
+            # Low-rank Kronecker — per-head K → K' projections.
+            # Two separate projections for r and k (may learn different
+            # subspaces useful for the Kronecker interaction vs selfdot).
+            # Default init: Kaiming uniform — the Kronecker branch is
+            # gated by β=0 at init anyway, so projection init doesn't
+            # affect zero-regression.
+            if self.use_qtail_lowrank:
+                r = self.qtail_lr_rank
+                self.qtail_lr_proj_r = nn.Parameter(torch.empty(n_head, head_size, r, dtype=dtype))
+                self.qtail_lr_proj_k = nn.Parameter(torch.empty(n_head, head_size, r, dtype=dtype))
+                nn.init.kaiming_uniform_(self.qtail_lr_proj_r, a=math.sqrt(5))
+                nn.init.kaiming_uniform_(self.qtail_lr_proj_k, a=math.sqrt(5))
 
         # ── Mechanism: ConvShift ─────────────────────────────────────────
         if self.use_conv_shift:
@@ -277,7 +323,11 @@ class RWKV6TimeMix(nn.Module):
         # ── Mechanism: Delta Rule ────────────────────────────────────────
         if self.use_delta_rule:
             from src.models.mechanisms.delta_rule import DeltaRuleParams
-            self.delta_params = DeltaRuleParams(hidden_size, n_head, head_size, dtype=dtype)
+            self.delta_params = DeltaRuleParams(
+                hidden_size, n_head, head_size,
+                warmstart=self.delta_warmstart,
+                dtype=dtype,
+            )
 
         # ── Mechanism: LUCID ─────────────────────────────────────────────
         if self.use_lucid:
@@ -616,7 +666,13 @@ class RWKV6TimeMix(nn.Module):
         elif self.mode == "lion":
             y = self._forward_lion(r_h, k_h, v_h, w_h)
         elif self.mode == "recurrent":
-            y, new_state = self._forward_recurrent(r_h, k_h, v_h, w_h, state)
+            # R2 — precompute data-dep β tensor if the flag is active.
+            # β_proj(x) returns (B, T, H); transpose to (B, H, T) for the
+            # scan's time-major layout.
+            beta_tok = None
+            if self.use_qtail_dbeta:
+                beta_tok = self.beta_qtail_proj(x).transpose(1, 2)  # (B, H, T)
+            y, new_state = self._forward_recurrent(r_h, k_h, v_h, w_h, state, beta_tok=beta_tok)
         elif self.mode == "bidir_serial":
             y = self._forward_bidir_serial(r_h, k_h, v_h, w_h)
         else:
@@ -668,6 +724,7 @@ class RWKV6TimeMix(nn.Module):
         v: torch.Tensor,
         w: torch.Tensor,  # already log-decay (negative)
         state: Optional[torch.Tensor] = None,
+        beta_tok: Optional[torch.Tensor] = None,  # R2: data-dep β_{q,t}, (B, H, T)
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Chunked parallel WKV with carry state (SmerkyG algorithm).
 
@@ -711,7 +768,7 @@ class RWKV6TimeMix(nn.Module):
             # `use_hadamard_n2` and `use_qtail` are mutually exclusive at a
             # given layer; if both are set somehow, run both independently.
             if self.use_hadamard_n2 or self.use_qtail:
-                y = y + self._paper_n2_branch(r, k, v, w, B, H, T, K)
+                y = y + self._paper_n2_branch(r, k, v, w, B, H, T, K, beta_tok=beta_tok)
 
             return y, wkv_state
 
@@ -761,6 +818,7 @@ class RWKV6TimeMix(nn.Module):
         v: torch.Tensor,
         w: torch.Tensor,   # log-decay (negative), (B, H, T, K)
         B: int, H: int, T: int, K: int,
+        beta_tok: Optional[torch.Tensor] = None,  # R2: data-dep β, (B, H, T)
     ) -> torch.Tensor:
         """Adds the second-order Taylor term of softmax attention.
 
@@ -792,31 +850,55 @@ class RWKV6TimeMix(nn.Module):
             y_total = y_total + beta_h * y2.to(in_dtype)
 
         if self.use_qtail:
-            # Full Kronecker: r⊗r, k⊗k ∈ R^{K²}. Decay at lifted index
-            # (i,j) = w_i + w_j.  Zero bonus.  State shape: (B, H, K², K).
-            # Memory cost per layer at (B=8,H=4,K=64,T=500,fp32):
-            #   r,k lifted:  8·4·500·4096·4 ≈ 260 MB each
-            #   state:       8·4·4096·64·4  ≈  32 MB
-            # Enabled only at the top 2 of 6 layers for cost containment.
-            K2 = K * K
-            r_out = r.unsqueeze(-1) * r.unsqueeze(-2)                  # (B,H,T,K,K)
-            r_kron = r_out.reshape(B, H, T, K2)
-            k_out = k.unsqueeze(-1) * k.unsqueeze(-2)
-            k_kron = k_out.reshape(B, H, T, K2)
-            # Decay at lifted pair (i,j).  Base: w_i + w_j (product of decays).
-            # If qtail_gamma is active, scale by learnable per-head γ:
-            #   γ=1.0 → product (current qtail baseline)
-            #   γ=0.5 → geometric mean
-            #   γ=0.0 → paper's undecayed accumulator
-            w_pair = w.unsqueeze(-1) + w.unsqueeze(-2)                  # (B,H,T,K,K)
-            if self.use_qtail_gamma:
-                gamma = self.qtail_gamma.view(1, H, 1, 1, 1).to(w_pair.dtype)
-                w_pair = gamma * w_pair
-            w_kron = w_pair.reshape(B, H, T, K2)
+            # Full Kronecker (default): r⊗r, k⊗k ∈ R^{K²}.
+            # Low-rank variant (use_qtail_lowrank=True): project r, k to
+            # K'=qtail_lr_rank per head first, then full Kronecker on K'².
+            if self.use_qtail_lowrank:
+                Kp = self.qtail_lr_rank
+                K2 = Kp * Kp
+                # Per-head projection: (B,H,T,K) × (H,K,K') → (B,H,T,K')
+                r_lr = torch.einsum('bhtk,hkp->bhtp', r, self.qtail_lr_proj_r)
+                k_lr = torch.einsum('bhtk,hkp->bhtp', k, self.qtail_lr_proj_k)
+                r_kron = (r_lr.unsqueeze(-1) * r_lr.unsqueeze(-2)).reshape(B, H, T, K2)
+                k_kron = (k_lr.unsqueeze(-1) * k_lr.unsqueeze(-2)).reshape(B, H, T, K2)
+                # Decay: scalar per-head (mean of w across channels),
+                # doubled for Kronecker (matches the average of w_i + w_j
+                # across channel pairs). Safe, preserves w ≤ 0 constraint.
+                w_mean = w.mean(dim=-1, keepdim=True)                    # (B,H,T,1)
+                w_pair_effective = (2.0 * w_mean).expand(B, H, T, K2)    # (B,H,T,K²)
+                # γ coupling (if active) scales the decay strength
+                if self.use_qtail_gamma:
+                    gamma = self.qtail_gamma.view(1, H, 1, 1).to(w_pair_effective.dtype)
+                    w_pair_effective = gamma * w_pair_effective
+                w_kron = w_pair_effective
+            else:
+                # Full Kronecker: r⊗r, k⊗k ∈ R^{K²}. Decay at lifted index
+                # (i,j) = w_i + w_j.  Zero bonus.  State shape: (B, H, K², K).
+                # Memory cost per layer at (B=8,H=4,K=64,T=500,fp32):
+                #   r,k lifted:  8·4·500·4096·4 ≈ 260 MB each
+                #   state:       8·4·4096·64·4  ≈  32 MB
+                # Enabled only at the top 2 of 6 layers for cost containment.
+                K2 = K * K
+                r_out = r.unsqueeze(-1) * r.unsqueeze(-2)              # (B,H,T,K,K)
+                r_kron = r_out.reshape(B, H, T, K2)
+                k_out = k.unsqueeze(-1) * k.unsqueeze(-2)
+                k_kron = k_out.reshape(B, H, T, K2)
+                # Decay at lifted pair (i,j).  Base: w_i + w_j (product of decays).
+                # If qtail_gamma is active, scale by learnable per-head γ.
+                w_pair = w.unsqueeze(-1) + w.unsqueeze(-2)              # (B,H,T,K,K)
+                if self.use_qtail_gamma:
+                    gamma = self.qtail_gamma.view(1, H, 1, 1, 1).to(w_pair.dtype)
+                    w_pair = gamma * w_pair
+                w_kron = w_pair.reshape(B, H, T, K2)
             u_kron = torch.zeros(1, H, 1, K2, dtype=in_dtype, device=device)
             s_kron_init = torch.zeros(B, H, K2, K, dtype=torch.float32, device=device)
             y_q, _ = _chunked_wkv(r_kron, k_kron, v, w_kron, u_kron, s_kron_init)
+            # Effective β: static per-head scalar (+ data-dep per-token if R2 active)
+            # R2: beta_tok is (B, H, T); reshape to (B, H, T, 1) for broadcast.
+            # Both components zero-init ⇒ effective β = 0 at t=0 (zero-regression).
             beta_q = self.beta_qtail.view(1, H, 1, 1).to(in_dtype)
+            if self.use_qtail_dbeta and beta_tok is not None:
+                beta_q = beta_q + beta_tok.unsqueeze(-1).to(in_dtype)
             y_total = y_total + beta_q * y_q.to(in_dtype)
 
         return y_total

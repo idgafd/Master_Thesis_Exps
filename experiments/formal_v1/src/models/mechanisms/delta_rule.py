@@ -21,6 +21,7 @@ class DeltaRuleParams(nn.Module):
         n_head: int,
         head_size: int,
         d_lora: int = 64,
+        warmstart: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -32,8 +33,18 @@ class DeltaRuleParams(nn.Module):
         # Erasure strength (iclr in RWKV-7 notation)
         self.k_a = nn.Parameter(torch.ones(1, 1, hidden_size, dtype=dtype))
 
-        # Data-dependent erasure via LoRA
-        self.a0 = nn.Parameter(torch.ones(1, 1, hidden_size, dtype=dtype))
+        # Data-dependent erasure via LoRA.
+        # Default init (a0=1): iclr at t=0 = sigmoid(1)*1*2 ≈ 1.76.  With
+        # β=1.76 the delta branch fires at full strength from step 0,
+        # destroying the randomly-initialised state before useful
+        # associations are written.  This is the failure mode diagnosed
+        # in TODO_DELTA_RULE §5 H1 for prior delta runs.
+        # Warmstart init (a0=-5): iclr ≈ sigmoid(-5)*1*2 ≈ 0.0134 at t=0,
+        # so the delta branch is ~off initially and SGD grows the LoRA
+        # contribution if useful.  Preserves zero-regression-at-init in
+        # spirit (β ε-small) while allowing SGD to activate the mechanism.
+        a0_init = -5.0 if warmstart else 1.0
+        self.a0 = nn.Parameter(torch.full((1, 1, hidden_size), a0_init, dtype=dtype))
         self.a1 = nn.Parameter(torch.zeros(hidden_size, d_lora, dtype=dtype))
         self.a2 = nn.Parameter(
             torch.zeros(d_lora, hidden_size, dtype=dtype).uniform_(-0.01, 0.01)

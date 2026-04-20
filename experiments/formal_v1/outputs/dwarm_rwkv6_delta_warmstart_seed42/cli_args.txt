@@ -1,0 +1,1 @@
+--backbone rwkv6_delta_warmstart --epochs 30 --seed 42 --output-dir outputs/dwarm_rwkv6_delta_warmstart_seed42 --gpu 1
