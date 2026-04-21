@@ -10,6 +10,20 @@ comparison.
   variants across Mamba-2 / RWKV / Linear Attention, LUCID composition, and a
   diagnostic queue for why our prior delta runs underperformed.
 
+**Inspiration papers:**
+| PDF file | HF status | ArXiv |
+|---|---|---|
+| papers/Log_Linear_Attention_2506.04761v3.pdf | hf papers read 2506.04761 | https://arxiv.org/abs/2506.04761 |
+| papers/NaLaFormer_2506.21137v1.pdf | hf papers read 2506.21137 | https://arxiv.org/abs/2506.21137v1 |
+| papers/Expressiveness_2507.23632v1.pdf | hf papers read 2507.23632 | https://arxiv.org/abs/2507.23632 |
+| papers/Avey_2506.11305v2.pdf | hf papers read 2506.11305 | https://arxiv.org/abs/2506.11305 |
+| papers/RWKV_X_2504.21463v2.pdf | hf papers read 2504.21463 | https://arxiv.org/abs/2504.21463 |
+| papers/HSA_2504.16795v2.pdf | hf papers read 2504.16795 | https://arxiv.org/abs/2504.16795 |
+| papers/CRT_2505.00929v1.pdf | no hf | https://arxiv.org/abs/2505.00929 |
+| papers/Non_Attention_2506.01963v1.pdf | hf papers read 2506.01963 | https://arxiv.org/abs/2506.01963 |
+| papers/PoM_2604.06129v1.pdf | no hf | https://arxiv.org/abs/2604.06129 |
+| papers/M_RNN_2603.14360v1.pdf | no hf | https://arxiv.org/abs/2604.06129 |
+
 **Working principle — refinement before composition.**
 
 The Stage-2 → Stage-5 pipeline in this thesis followed a single discipline:
