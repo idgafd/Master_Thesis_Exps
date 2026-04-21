@@ -10,7 +10,7 @@ experiments worth queueing.
 
 **Related docs:**
 - [TODO_FUTURE_IDEAS.md](TODO_FUTURE_IDEAS.md) — broader future-work parking lot
-- [STAGE5_RESULTS.md](STAGE5_RESULTS.md) — Stage 5 pre-registered thresholds apply
+- STAGE5_RESULTS.md — Stage 5 pre-registered thresholds apply
 - [RESULTS.md](RESULTS.md) §Chunked — prior delta runs & numbers
 - `src/models/mechanisms/delta_rule.py` — current implementation
 - `src/models/lion_attention.py` `lion_attention_with_delta` — LION delta kernel

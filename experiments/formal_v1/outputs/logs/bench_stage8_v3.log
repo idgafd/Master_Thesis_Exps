@@ -1,0 +1,16 @@
+Benchmarking on NVIDIA RTX PRO 6000 Blackwell Workstation Edition
+
+[rwkv6] …
+  rwkv6                                                  89.9 ms/iter    1.63 GB peak
+[rwkv6_rse_strong_viscosity] …
+  rwkv6_rse_strong_viscosity                             92.5 ms/iter    7.68 GB peak
+[rwkv6_delta_warmstart_fixed] …
+  rwkv6_delta_warmstart_fixed                           350.5 ms/iter   26.56 GB peak
+[rwkv6_nonnormal_rse_viscosity] …
+  rwkv6_nonnormal_rse_viscosity                         277.0 ms/iter   10.68 GB peak
+
+Speed relative to rwkv6 baseline:
+  rwkv6                                                  89.9 ms    1.00×   1.63 GB
+  rwkv6_rse_strong_viscosity                             92.5 ms    1.03×   7.68 GB
+  rwkv6_delta_warmstart_fixed                           350.5 ms    3.90×  26.56 GB
+  rwkv6_nonnormal_rse_viscosity                         277.0 ms    3.08×  10.68 GB

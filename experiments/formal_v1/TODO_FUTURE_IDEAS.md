@@ -1,4 +1,4 @@
-# TODO — Future Ideas for LION / Linear Attention / Beyond Stage 6
+# TODO — Future Ideas for LION / Linear Attention / Beyond Stage 9
 
 Parking lot for mechanisms from the literature that are **not** on the current
 causal RWKV-6 critical path but would be natural to test when the thesis
@@ -6,6 +6,10 @@ returns to Group B (LION / bidirectional) or to a wider attention-variant
 comparison.
 
 **Sibling docs:**
+- [stages_2_9_summary.md](stages_2_9_summary.md) — chronological summary
+  of Stages 2–9 with per-epoch trajectories, result tables, and links to
+  the individual stage reports. Read it first for the evidence base; the
+  "resolved status" table below is a compressed index into it.
 - [TODO_DELTA_RULE.md](TODO_DELTA_RULE.md) — dedicated catalog for delta-rule
   variants across Mamba-2 / RWKV / Linear Attention, LUCID composition, and a
   diagnostic queue for why our prior delta runs underperformed.
@@ -24,6 +28,170 @@ comparison.
 | papers/PoM_2604.06129v1.pdf | no hf | https://arxiv.org/abs/2604.06129 |
 | papers/M_RNN_2603.14360v1.pdf | no hf | https://arxiv.org/abs/2604.06129 |
 
+---
+
+## Tested hypotheses — resolved status (as of 2026-04-21)
+
+This section compresses the outcomes of Stages 2–9 so the parking lot below
+can be read against what has already been decided. See individual stage
+result files for the evidence, or [stages_2_9_summary.md](stages_2_9_summary.md)
+for the chronological narrative with per-epoch trajectories.
+
+### All-stage CER landscape (causal RWKV-6, seed 42, 30 ep, LibriSpeech clean-100)
+
+| Stage | Backbone | Dev CER | Test CER | Verdict |
+|---|---|---:|---:|---|
+| 2 | `rwkv6` (baseline) | 0.1258 | 0.1263 | reference |
+| 2 | `rwkv6_trap` / `trap_var` / `gen2` | ~0.1261 | ~0.1254 | null — solver ≠ model class |
+| 2 | `rwkv6_ab3` | 0.1299 | 0.1285 | regression |
+| 3 | `rwkv6_rse` | 0.1251 | 0.1238 | small real signal |
+| 3 | `rwkv6_rse_m2` / `m4` (multi-rate) | ~0.1245 | ~0.1240 | PLATEAU — flat multi-rate is not the axis |
+| 4 | `rwkv6_rse_depth` | 0.1207 | 0.1200 | first ceiling break (depth-graded θ budget) |
+| 4 | `rwkv6_rse_strong` | 0.1192 | 0.1188 | uniform strong budget — second ceiling break |
+| 5 | `rwkv6_rse_depth_viscosity` | 0.1198 | 0.1198 | ties depth without viscosity |
+| **5** | **`rwkv6_rse_strong_viscosity`** | **0.1185** | **0.1177** | **BEST. Current anchor.** |
+| 5 Ph1 | `rwkv6_p2rse` / `p2rse_softmax` | 0.1250 / 0.1220 | 0.1241 / 0.1215 | paired-pole doesn't help at small budget |
+| 6 | `rwkv6_p2rse_strong_viscosity` (shared-λ) | 0.1190 | 0.1196 | tied with anchor (stable) |
+| 6 | `rwkv6_p2rse_indeplam_strong_viscosity` (indep-λ) | 0.1394 | 0.1383 | **REGRESSION** — parameterisation / identifiability mismatch |
+| 6 | `rwkv6_rmsnorm` | 0.1264 | 0.1252 | PLATEAU (paper effect scale-dependent) |
+| 6 | `rwkv6_hadamard_n2` | 0.1253 | 0.1251 | PLATEAU (diagonal n=2; suggestive vs qtail, not a perfectly matched control) |
+| 6 | `rwkv6_qtail` (full K², top-2 layers) | 0.1260 | 0.1240 | near-MARGINAL on test |
+| 6 | `rwkv6_qtail_gamma` / `qtail_gamma_dbeta` | 0.1257 / 0.1247 | 0.1249 / 0.1245 | γ + data-dep β engage; single-seed γ-β co-adaptation pattern |
+| 6 | `rwkv6_qtail_lowrank` (top-2, K'=16) | 0.1247 | 0.1242 | matches full K² on CER at 16 % VRAM |
+| 6 | **`rwkv6_qtail_lowrank_all`** (all layers) | **0.1238** | **0.1240** | **best Stage-6 feature-side, MARGINAL** |
+| 6 | `rwkv6_delta_warmstart` (delta on LION path) | 0.1260 | 0.1256 | **later shown to be an implementation artefact** (Stage 8) |
+| 7A | `rwkv6_rse_dphi_viscosity` (data-dep φ readout) | 0.1217 | 0.1207 | AMBIGUOUS — W_φ moved but Im/Re grew, not shrank |
+| 8 T1 | `rwkv6_delta_warmstart_fixed` (recurrent delta, wired) | 0.1258 | 0.1256 | AMBIGUOUS engaged null — g_δ up to 0.65 at L5, β p95 > 1, zero CER gain |
+| 8 T2 | `rwkv6_nonnormal_rse_viscosity` (dense polar) | 0.1202 | 0.1200 | AMBIGUOUS engaged — ρ-LoRA F=18–30, non-normality score 0.04–0.11, CER near-anchor |
+| 9 A | `rwkv6_sparse_nonnormal_rse_viscosity` (learned, **halted ep 15**) | 0.1467 (ep 15) | — | on-track to regression; stopped early |
+| **9 B** | **`rwkv6_sparse_nonnormal_rse_edge_only_viscosity`** | **0.1218** | **0.1216** | **REGRESSION STABILITY** (D8: 11.6 % of L5 G with \|λ\|>0.99) |
+
+### The cross-experiment invariant
+
+Three independent extensions of the RSE-strong-viscosity anchor
+(A1′ readout-gauge, T1 recurrent delta on vanilla, T2 dense polar
+non-normal) all converge to the same signature:
+
+> **Dense per-(token, head, layer) mechanism freedom engages SGD
+> aggressively — mobility is always non-zero, the mechanism's realised
+> action is substantial — but does not translate into CER gain at
+> 7 M / clean-100 / 30-ep.**
+
+| Stage | Mechanism | Engagement | CER vs anchor |
+|---|---|---|---:|
+| 7A | data-dep readout phase φ | \|W_φ\|_F 5.5–6.4; \|φ\| p99 ≈ 2 rad | +0.0028 |
+| 8 T1 | recurrent delta rank-1 erase (on vanilla) | g_δ up to 0.65; β p95 > 1; erase 24 % of \|S\| | 0.0000 (tied vanilla) |
+| 8 T2 | dense polar 2×2 non-normal | ρ-LoRA F 18–30; non-normality 0.04–0.11 | +0.0017 |
+
+The productive structure that would break RSE+viscosity is not reachable
+by adding more per-token freedom on top of it in these three forms.
+Stage 9 is the first experiment that tests *structural* sparsity;
+S9B completed at 0.1218 dev (ambiguous), S9A still running. Whether
+the "dense-vs-structural" axis matters at this scale is the open cell.
+See the matched-epoch trajectories in
+[stages_2_9_summary.md](stages_2_9_summary.md#per-epoch-dev-cer-panel--vanilla-vs-main-winners).
+
+### What this resolves below
+
+- **Phase 2b indep-λ P²-RSE** — FALSIFIED at the strong+viscosity
+  composition (+17 % rel regression). Queue entry below is kept as
+  historical record; do not retry at this scale or composition. The
+  failure mode is a **parameterisation / identifiability mismatch**:
+  adding per-pole λ LoRAs without correspondingly independent viscosity
+  / observation structure creates degrees of freedom the loss cannot
+  disambiguate. Not a simple "too many parameters" story.
+  See `STAGE6_ANALYSIS.md` §3.5 and
+  [stages_2_9_summary.md](stages_2_9_summary.md#stage-6-—-expressiveness-paper-feature-side-adaptations).
+- **Phase 2b-ext indep-(k,v)** — dropped in sympathy with Phase 2b; no
+  evidence base to justify the stack.
+- **Full Kronecker n=2 all-layer** — TESTED as `qtail_lowrank_all` at
+  0.1238 dev (MARGINAL). The low-rank form matches full-rank on CER at
+  16 % VRAM. Pitched as an Eckart–Young story in early writeups;
+  stages_2_9_summary treats this interpretation as *suggestive but not
+  proven* — what we actually tested is low-rank projection of (r, k)
+  *before* the Kronecker lift, with a simpler decay law — so the result
+  is really "a small learned quadratic subspace captures the signal,"
+  not "the K² bilinear form has rank 16."
+- **Diagonal (hadamard_n2) vs full Kronecker (qtail) isolation** —
+  suggestive that cross-channel $k_i k_j$ is the active ingredient,
+  but the two controls are not perfectly matched (hadamard_n2 runs on
+  all 6 layers; qtail originally runs on top 2). Treat "isolated to
+  cross-channel" as the preferred reading, not a proven causal claim.
+- **γ-β co-adaptation** (Stage 6.5 / R2) — single-seed pattern: small-β
+  regime → γ < 1, larger-β regime → γ > 1. Treat as a hypothesis about
+  Kronecker-lift + selective-gating architectures, not a transferable
+  theorem.
+- **qtail × RSE composition** — explicitly ruled out in Stage 7 and 8 for
+  this thesis line: dense freedom stacked on RSE+viscosity does not
+  translate into CER at 7 M / clean-100.
+- **Readout-gauge (A1′ / A2 / 7A-plus)** — FALSIFIED as within-block
+  gauge completion at this scale / composition. The `|Im|/|Re|` at
+  readout is not "discarded signal" but a sum-over-blocks cancellation
+  structure the anchor already exploits as its implicit gauge.
+  Methodological caveat: the pre-training diagnostic was run on
+  `p2rse_strong_viscosity` as a proxy (the anchor checkpoint had not
+  been saved); the post-training true-anchor read via A1′ adjusted the
+  L5 Im/Re figure from 0.70 (proxy) to 0.56 (true anchor), so the
+  *magnitude* of available quadrature was overstated but the
+  *direction* of the mechanism's failure was confirmed.
+- **Recurrent delta-rule (correctly wired)** — engaged-null at this
+  scale. Delta stays in the catalog for architectures where state
+  saturates (T ~ d²), but at our T ≈ 300 < d² = 4096 it is not the
+  lever. Retracts the Stage-6 delta null cited as evidence — that run
+  did not branch on `use_delta_rule` in the recurrent path at its
+  training commit.
+- **Dense non-normal transition (T2)** — engaged-ambiguous-null. The
+  mechanism is real (ρ LoRA F 18–30, non-normality score 0.04–0.11 per
+  layer; higher at L0 and L5) and structured (bimodal per-head spread
+  at L0), but uniform per-token / all-layer deployment does not pay off
+  at 7 M / clean-100 / 30-ep. D8 spectral-radius tail (6 % of L0 and L2
+  tokens with $|\lambda|>0.99$) flags borderline stability — the
+  near-1 tail is worth keeping in mind if anyone revives this line.
+
+### Stage 9 closed (both runs complete / halted — see STAGE9_RESULTS.md)
+
+**S9B** (`rwkv6_sparse_nonnormal_rse_edge_only_viscosity`): dev 0.1218 /
+test 0.1216, trained to 30 ep. Decision-tree leaf: **REGRESSION
+STABILITY** — max spectral radius 1.0002, 11.6 % of L5 G-matrices at
+\|λ\| > 0.99. Hard edge-only structural dispatch (L0+L5 only) pushed the
+spectrum against the Jordan boundary without beating the dense T2.
+
+**S9A** (`rwkv6_sparse_nonnormal_rse_viscosity`): halted at ep 15/30
+(dev 0.1467) after matched-epoch comparison showed it running ~0.006
+worse than p2rse_strong_viscosity and ~0.005 worse than T2 through
+eps 5–15. Partial diagnostic (D10 gates) shows **gates stuck in
+[0.52, 0.71]** across all 24 (ℓ, h) slots — sigmoid parameterisation
+did not induce structural sparsity; SGD used the gate as a uniform
+amplitude knob around 0.6. Also reports 8–12 % of L1, L2, L4 G-matrices
+with \|λ\| > 0.99 — same stability-edge pattern as S9B.
+
+**The Stage-9 result.** Both the learned and hard-structural sparsity
+variants under-performed the anchor, T2 dense, and the
+`p2rse_strong_viscosity` paired-pole control. Matched-epoch 15:
+S9A 0.1467 vs p2rse 0.1410 (+0.0057) vs T2 0.1418 (+0.0049) vs anchor
+0.1441 (+0.0026) vs S9B 0.1427 (+0.0040). The sigmoid gate (no
+push-to-0/1 pressure) plus tightened κ=0.4 (which in combination with
+the g ≈ 0.5 init gave effective κ ≈ 0.2 at early training) produced a
+worse equilibrium than T2's un-gated dense path.
+
+**Combined with A1′ / T1 / T2 / S9 results**, the invariant tightens:
+
+> At 7 M / clean-100 / 30-ep on causal RWKV-6, five independent
+> strict-superset extensions of `rwkv6_rse_strong_viscosity` — A1′
+> readout-gauge, T1 recurrent delta, T2 dense non-normal, S9A
+> gated-sparse all-layer, S9B hard edge-only — all converge to the
+> same signature: mechanism engages (D5 mobility non-zero, D6/D7
+> realised action substantial), CER does not benefit. Paired-pole
+> extension (`p2rse_strong_viscosity`, normal family) ties the anchor
+> within σ. Both non-normal gating forms tested in Stage 9
+> additionally press the transition spectrum against the Jordan
+> boundary without converting that freedom into CER.
+
+Full chronology in [stages_2_9_summary.md](stages_2_9_summary.md).
+Frontier-direction discussion will be written separately.
+
+---
+
 **Working principle — refinement before composition.**
 
 The Stage-2 → Stage-5 pipeline in this thesis followed a single discipline:
@@ -33,18 +201,20 @@ This is how Stage-3 `rse` (0.1251) became Stage-4 `rse_strong` (0.1192) via
 budget refinement, then Stage-5 `rse_strong_viscosity` (0.1185) via clip
 refinement. At each step the math motivation was internal to the mechanism.
 
-When qtail projected ~0.1237 (MARGINAL), the correct next step was **R1
-qtail-γ** (learnable per-head decay coupling on the Kronecker branch —
-principled by the paper's decay-free Taylor derivation), NOT a composition
-like qtail-on-all-layers or qtail-×-RSE. The same principle applies to
-Phase-2b: if it shows MARGINAL, refine the indep-λ parameterization (e.g.,
-γ-coupled λ₂/λ₁) before stacking indep-(k,v) on top.
+**Updated principle after Stage 7–8 (2026-04-21).** The "refine within one
+mechanism" discipline held for the winning line (RSE → RSE-strong →
+RSE-strong-viscosity). But it was also applied to three strict-superset
+extensions of that anchor (A1′ data-dep readout phase; T1 recurrent delta;
+T2 dense polar 2×2 non-normal) — all three produced AMBIGUOUS-ENGAGED
+nulls. The empirical invariant is now explicit (see top-of-file summary):
+*dense per-token mechanism freedom engages SGD but does not translate into
+CER gain at this scale.* Stage 9 is the first experiment probing
+*structural* sparsity as the unlock.
 
-Composition candidates are kept in this file for the **final ablation
-stage** — after each single mechanism has been iterated until it caps out.
-Stacking in the exploratory phase multiplies uncertainty without adding
-clear signal; refinement gives a clean math story and a small-params delta
-with a targeted hypothesis.
+Composition candidates below remain the **final-ablation slot** once
+single-mechanism refinement within each axis has capped out. Read the
+queue against the "resolved status" section above before reviving
+anything; several entries are now closed by direct evidence.
 
 Each entry names the paper, the mechanism, what it would cost to implement in
 this codebase, and the specific experiment it would unlock. Only ideas with a
@@ -131,21 +301,17 @@ semiseparable mask with a hierarchical one.
 
 ## From Stage 5 (deferred internally)
 
-### Phase 2b — independent-λ P²-RSE
-Stage 5 §6.4(1) diagnosed shared-λ as the most likely reason P²-RSE
-under-performed. The clean one-run test is paired poles with **independent**
-decay LoRAs `lambda_lora_1`, `lambda_lora_2` in addition to the already-
-independent θ LoRAs.
-- Stacks on `rwkv6_rse_strong_viscosity` (current causal best, test CER 0.1177).
-- Pre-registered thresholds from STAGE5_PLAN §3 still apply (BREAK 0.1160, MARGINAL 0.1180).
-- Full memo in `memory/project_phase2b.md`.
+### ~~Phase 2b — independent-λ P²-RSE~~ — **FALSIFIED** (2026-04-20)
+Tested as `rwkv6_p2rse_indeplam_strong_viscosity` at Stage-6.  Regressed
+15 σ outside seed noise (dev 0.1394 / test 0.1383). The extra ~200 K
+params in the decay LoRA cannot find a stable configuration against
+shared viscosity coupling within 30 epochs. Do NOT retry in the
+strong+viscosity composition. The historical hypothesis that "shared-λ
+compresses the paired-pole expressivity" was falsified here.
 
-### Phase 2b-ext — independent (k, v) per pole
-If 2b shows a meaningful gain, the next variant relaxes the shared-drive
-constraint — each pole gets its own `key`/`value` linear projections. Costs
-2× on those two projections, but matches the acoustic prior that two
-formants read from different regions of the cochlear spectrum. Stage 5
-§6.4(2).
+### ~~Phase 2b-ext — independent (k, v) per pole~~ — **dropped**
+Conditional on Phase 2b success. 2b failed ⇒ no evidence base to justify
+adding independent drive on top. Not revisiting at this scale.
 
 ---
 
@@ -153,11 +319,14 @@ formants read from different regions of the cochlear spectrum. Stage 5
 
 Link: https://arxiv.org/abs/2507.23632 · local: `papers/ EXPRESSIVENESS_2507.23632v1.pdf`
 
-### Full Kronecker n=2 at all layers (currently running only at top 2)
-If Stage 6 `rwkv6_qtail` (top-2 layers) shows a clear win over `rwkv6_rmsnorm`,
-re-run with the Kronecker branch at all 6 layers. ~1.6× runtime vs qtail but
-tests whether the depth-gated restriction was the bottleneck. Only worth it
-if top-2 qtail delivers a positive signal.
+### ~~Full Kronecker n=2 at all layers~~ — **TESTED as low-rank** (2026-04-20)
+Ran as `rwkv6_qtail_lowrank_all` (all-layer, K'=16 Eckart-Young-optimal
+truncation). Best Stage-6 feature-side result at 0.1238 dev / 0.1240
+test — MARGINAL. Full-rank K² Kronecker was NOT the source of value; a
+small learned quadratic subspace (K'=16) captures the same signal at
+16 % VRAM and 37 % wall-clock. Open question: whether qtail stacks with
+transition-side wins — but the queue priority is LION not causal RWKV
+at this scale.
 
 ### Cross-channel Kronecker on LION mode
 LION already has explicit `r @ k^T` T×T attention, so the Kronecker lift
@@ -348,6 +517,8 @@ step-2.
 
 ## Ideas considered and rejected
 
+### Literature-side (out of thesis scope for this architecture / regime)
+
 - **Avey Ranker / full architecture.** Designed for 64k-token LM
   extrapolation; our ASR sequences are ≤500 frames. Avey also
   underperforms RWKV-7 at matched scale on short-range tasks. The win it
@@ -362,3 +533,66 @@ step-2.
   separate from the RWKV-6 main thesis line; adding a log-linear Mamba-2
   would be a parallel experimental effort, not a direct improvement of
   the existing code. Revisit only if the Mamba-2 track becomes primary.
+
+### Our-codebase-side (empirically closed after Stage 7A / 8 at this scale)
+
+These were live hypotheses at the start of Stage 7. Each has its own
+results + diagnostic writeup. All three reached the same pre-registered
+AMBIGUOUS-ENGAGED leaf: SGD used the parameter, the mechanism's action
+is measurable, CER did not improve.
+
+- **Within-block readout gauge (`rwkv6_rse_dphi_viscosity`, A1′).**
+  STAGE7A_RESULTS.md: W_φ moved substantially but post-rotation
+  \|Im\|/\|Re\| went *up* at every layer (0.27 → 0.43 at L0, 0.56 → 0.93
+  at L5). The "discarded quadrature" diagnosed in STAGE7_DIAGNOSTICS is
+  sum-over-blocks cancellation that the anchor already exploits as its
+  implicit gauge — not lost signal waiting for a phase.
+- **Cross-layer complex residual (7A-plus, spec only).** Motivation was
+  the depth-graded Im/Re growth in the pre-training diagnostic. Once A1′
+  falsified the within-block premise, the same premise across blocks is
+  unsupported. Spec remains in STAGE7A_PLUS_SPEC.md for future scale-up.
+- **Recurrent delta rank-1 erase (`rwkv6_delta_warmstart_fixed`, T1).**
+  STAGE8_RESULTS §6: mechanism NOW properly wired (the Stage-6 delta null
+  was an implementation artefact, retracted). g_δ engaged to 0.65 at L5,
+  β_eff p95 > 1, up to 24 % of state norm erased per token, CER = 0.1258
+  (exact tie with vanilla). Delta is a clean null at T ≪ d² = 4096; would
+  only become productive at scales where state saturation is the binding
+  constraint.
+- **Dense polar 2×2 non-normal RSE (`rwkv6_nonnormal_rse_viscosity`, T2).**
+  STAGE8_RESULTS §3 and
+  [stages_2_9_summary.md — Stage 8](stages_2_9_summary.md#stage-8--transition-geometry-pivot):
+  ρ-LoRA F 18–30 per layer; non-normality score 0.04–0.11 per layer,
+  higher at L0 and L5; bimodal per-head specialisation at L0 (one head
+  |ρ|=0.46, others 0.06–0.14). Mechanism is real and structurally
+  selective. CER = 0.1202 dev / 0.1200 test — AMBIGUOUS band.
+  Spectral radius D8 shows the tail of G matrices is near 1 in ~6 %
+  of tokens at L0 and L2, so the dense deployment operates at
+  borderline stability. Reading: dense per-token enrichment is
+  *engaged* but not *rewarded* when the useful action is concentrated.
+
+### Stage 9 closed — sparse non-normal transition does not break the ceiling at this scale
+
+See STAGE9_RESULTS.md for the full writeup.
+
+- **S9B** `rwkv6_sparse_nonnormal_rse_edge_only_viscosity` — dev 0.1218 /
+  test 0.1216. Decision-tree leaf: **REGRESSION STABILITY**. Hard
+  edge-only dispatch (L0 + L5 non-normal, middle layers plain
+  RSE+viscosity) pushed the spectrum to the Jordan boundary
+  (11.6 % of L5 G-matrices with \|λ\| > 0.99, max 1.0002) without
+  matching the dense-T2 or paired-pole `p2rse_strong_viscosity`
+  baselines. Gates ended at 0.54–0.70 on the two edge layers —
+  soft amplitude scaling, not structural sparsity.
+- **S9A** `rwkv6_sparse_nonnormal_rse_viscosity` — **halted at ep 15**
+  (dev 0.1467) after tracking ~0.006 behind `p2rse_strong_viscosity`
+  and ~0.005 behind T2 through the first half of training. Projected
+  final ~0.1245 (regression band). All 24 gates ended in
+  [0.52, 0.71] — same amplitude-scaling pattern; no
+  push-to-{0, 1} selector emerged.
+- The Stage-9 parameterisation choices that plausibly caused the
+  regression: (a) sigmoid gate has no penalty driving values to 0/1,
+  so it became a damping knob instead of a selector; (b) κ tightened
+  0.6 → 0.4, which combined with the g ≈ 0.5 init yields effective
+  κ ≈ 0.2 at early training; (c) static ψ removes a freedom T2 was
+  using (std ψ ≈ 1.7 rad per layer in T2's D6). These are reading
+  notes, not tested causal claims.
+

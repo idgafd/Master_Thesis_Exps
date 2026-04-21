@@ -162,6 +162,55 @@ class RWKV6TimeMix(nn.Module):
         # w_i + w_j averaged across channel pairs).
         use_qtail_lowrank: bool = False,
         qtail_lr_rank: int = 16,
+        # ── Stage 7A (A1′) — Data-dependent readout phase φ_{t,h,b} ─────
+        # Adds a learnable per-(token, head, block) phase that rotates the
+        # complex readout contraction before .real collapses it:
+        #     y_t = Σ_b Re( exp(-iφ_{t,h,b}) · conj(r_c_{t,h,b}) · c_{t,h,b} )
+        # Implementation: φ(x) = tanh(W_φ · x_in / C) · C with C=π (soft-
+        # clipped full-circle).  W_φ and b_φ are zero-init ⇒ φ=0 at t=0 ⇒
+        # readout is bit-identical to `rwkv6_rse_*_viscosity` anchor at
+        # init.  Motivated by the Stage-7 diagnostic (STAGE7_DIAGNOSTICS.md
+        # §D2): per-block |Im|/|Re| ≈ 1 and global ratio reaches 0.70 at
+        # L5 — static per-head-block phase cannot reshape this, but a
+        # per-token phase can.  Requires rse=True.
+        use_data_dep_readphase: bool = False,
+        # Clip on |φ| via tanh.  π gives full-circle coverage; smaller
+        # values stabilise training but cap the recoverable gauge.
+        readphase_clip: float = math.pi,
+        # ── Stage 8 T2 — non-normal RSE in polar parameterisation ───────
+        # Per-block transition extends from e^{-λ} R(θ) to the 4-DOF form
+        #     G = e^{-λ} · R(ψ)^T diag(e^ρ, e^{-ρ}) R(ψ) · R(θ)
+        # = rotation-decay × anisotropic-symmetric × rotation.
+        # Four parameters per (head, block, token): λ, θ, ρ, ψ.
+        # ρ = 0 ⇒ P = I ⇒ exact RSE reduction.  Requires rse=True.
+        # See STAGE8_PLAN.md §4 for motivation and stability analysis.
+        use_nonnormal_rse: bool = False,
+        # Stability clip: |ρ| ≤ κ · softplus(λ̃_block). κ < 1 keeps ρ
+        # strictly subordinate to damping; conservative vs the exact
+        # envelope ρ² < λ² + θ² which requires stable Jordan-boundary
+        # avoidance at runtime.
+        nonnormal_rho_kappa: float = 0.6,
+        # LoRA rank for the ρ and ψ data-dependent projections.
+        nonnormal_lora_dim: int = 32,
+        # ── Stage 9 — Sparse edge-layer specialist transition ───────────
+        # Adds a per-(layer, head) gate `sparse_nn_gate`, zero-init, which
+        # multiplies the realised ρ and ψ. SGD picks which (ℓ, h) slots
+        # activate the non-normal extension.  At init g=0 ⇒ ρ_eff=ψ_eff=0
+        # ⇒ exact RSE+viscosity reduction.  Requires use_nonnormal_rse=True.
+        # Motivation: STAGE8_RESULTS §3 — T2's D9 showed bimodal per-head
+        # specialisation (L0 head 3 at |ρ|=0.46; other heads ≈ 0.06). The
+        # dense T2 form spread freedom uniformly; Stage 9 makes sparsity
+        # structural via the gate.
+        use_sparse_nonnormal_rse: bool = False,
+        # Hard edge-layer-only variant: freeze gate on middle layers so
+        # only L0 and L_{n-1} can learn to activate.  Option B from
+        # STAGE9_PLAN §2.2.  Default False = Option A (learned sparsity).
+        sparse_nn_edge_only: bool = False,
+        # Stage 9 Fix 3 — drop the token-dependent ψ LoRA, keep only a
+        # static ψ_base per (head, block).  Simplifies identifiability
+        # (ψ becomes a slow-timescale direction, not an extra token-level
+        # freedom); trims front-end compute too.  Requires use_nonnormal_rse.
+        nonnormal_psi_static: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -197,6 +246,13 @@ class RWKV6TimeMix(nn.Module):
         self.use_qtail_dbeta = use_qtail_dbeta
         self.use_qtail_lowrank = use_qtail_lowrank
         self.qtail_lr_rank = qtail_lr_rank
+        self.use_data_dep_readphase = use_data_dep_readphase
+        self.readphase_clip = readphase_clip
+        self.use_nonnormal_rse = use_nonnormal_rse
+        self.nonnormal_rho_kappa = nonnormal_rho_kappa
+        self.use_sparse_nonnormal_rse = use_sparse_nonnormal_rse
+        self.sparse_nn_edge_only = sparse_nn_edge_only
+        self.nonnormal_psi_static = nonnormal_psi_static
         self.layer_id = layer_id
 
         if self.use_rse:
@@ -208,6 +264,18 @@ class RWKV6TimeMix(nn.Module):
             assert self.use_rse, "P²-RSE requires rse=True"
             assert rse_n_scales == 1, "P²-RSE incompatible with multi-rate rse_n_scales > 1"
             assert self.p2rse_mixer in ("linear", "softmax")
+
+        if self.use_data_dep_readphase:
+            assert self.use_rse, "Data-dependent readout phase requires rse=True"
+
+        if self.use_nonnormal_rse:
+            assert self.use_rse, "Non-normal RSE requires rse=True"
+            assert mode == "recurrent", "Non-normal RSE requires mode='recurrent'"
+            assert rse_n_scales == 1, "Non-normal RSE incompatible with multi-rate scales > 1"
+            assert not self.use_p2rse, "Non-normal RSE not composed with P²-RSE (Stage-8 scope)"
+
+        if self.use_sparse_nonnormal_rse:
+            assert self.use_nonnormal_rse, "Sparse nonnormal_rse requires use_nonnormal_rse=True"
 
         hidden_size_att = hidden_size
 
@@ -328,6 +396,16 @@ class RWKV6TimeMix(nn.Module):
                 warmstart=self.delta_warmstart,
                 dtype=dtype,
             )
+            # Stage-8 T1 — recurrent-path hard gate for exact zero-init
+            # contract.  Multiplies the iclr (erasure strength) inside the
+            # sequential recurrent delta scan.  Zero-init ⇒ rank-1 erase
+            # is inactive at step 0 ⇒ output bit-identical to vanilla
+            # RWKV-6 recurrent.  SGD grows per-head `delta_recurrent_gate`
+            # only if the mechanism is productive. This parameter is
+            # unused on the LION path (which uses delta_params alone).
+            self.delta_recurrent_gate = nn.Parameter(
+                torch.zeros(n_head, dtype=dtype)
+            )
 
         # ── Mechanism: LUCID ─────────────────────────────────────────────
         if self.use_lucid:
@@ -386,6 +464,69 @@ class RWKV6TimeMix(nn.Module):
                 self.viscosity_eta = nn.Parameter(
                     torch.zeros(n_head, n_blocks, dtype=dtype)
                 )
+
+            # ── Stage 7A (A1′) — data-dependent readout phase parameters ─
+            # W_φ, b_φ zero-init ⇒ φ(x) ≡ 0 ⇒ rotation matrix is I at t=0.
+            if self.use_data_dep_readphase:
+                self.readphase_proj = nn.Linear(
+                    hidden_size, n_head * n_blocks, bias=True, dtype=dtype
+                )
+                nn.init.zeros_(self.readphase_proj.weight)
+                nn.init.zeros_(self.readphase_proj.bias)
+
+            # ── Stage 8 T2 — non-normal RSE polar-form parameters ──────
+            # ρ: anisotropy magnitude.  ψ: anisotropy axis (direction).
+            #   ρ_base ≡ 0, ρ LoRA weights ≡ 0  ⇒  ρ(x) ≡ 0  ⇒  P = I
+            #   ψ_base ~ U(0, 2π) — arbitrary direction at init because
+            #     ψ has no effect when ρ = 0 (P ≡ I). Re-rolled per SGD
+            #     once ρ > 0 starts to matter.
+            # Stability-related parameters:
+            #   μ: viscosity coupling for ρ², symmetric with η on θ².
+            if self.use_nonnormal_rse:
+                # Base magnitudes — zero-init for exact RSE reduction
+                self.nonnormal_rho_base = nn.Parameter(
+                    torch.zeros(n_head, n_blocks, dtype=dtype)
+                )
+                # Direction base — arbitrary init (irrelevant at ρ = 0)
+                self.nonnormal_psi_base = nn.Parameter(
+                    torch.empty(n_head, n_blocks, dtype=dtype).uniform_(0.0, 2 * math.pi)
+                )
+                # Data-dependent LoRAs (rank nonnormal_lora_dim, zero-init)
+                D_NN = nonnormal_lora_dim
+                self.nonnormal_rho_w1 = nn.Parameter(
+                    torch.zeros(hidden_size, D_NN, dtype=dtype)
+                )
+                self.nonnormal_rho_w2 = nn.Parameter(
+                    torch.zeros(D_NN, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+                )
+                # ψ LoRA is skipped under Stage-9 static-ψ flag: ψ stays
+                # as a per-(head, block) direction parameter, constant
+                # across tokens.  Fewer DOF, cleaner identifiability.
+                if not self.nonnormal_psi_static:
+                    self.nonnormal_psi_w1 = nn.Parameter(
+                        torch.zeros(hidden_size, D_NN, dtype=dtype)
+                    )
+                    self.nonnormal_psi_w2 = nn.Parameter(
+                        torch.zeros(D_NN, n_head * n_blocks, dtype=dtype).uniform_(-0.01, 0.01)
+                    )
+                # Viscosity coupling for ρ² (symmetric with η on θ²)
+                self.nonnormal_mu = nn.Parameter(
+                    torch.zeros(n_head, n_blocks, dtype=dtype)
+                )
+
+                # Stage 9 — per-head sparse gate.
+                # g_h = sigmoid(raw_h) ∈ (0, 1).  Nonnegative, bounded;
+                # avoids the signed-scalar redundancy where the gate and
+                # ρ-sign would both carry the direction of anisotropy.
+                # Applied to ρ only (not ψ): ρ=0 already kills non-normality
+                # via sinh(0)=0 regardless of ψ, so gating ψ is redundant.
+                # Init raw=0 ⇒ g=0.5 (neutral).  Exact regression at init
+                # holds via ρ_raw zero-init (tanh(0)=0 ⇒ ρ_eff=0), NOT via
+                # gate=0 — a cleaner identifiability story.
+                if self.use_sparse_nonnormal_rse:
+                    self.sparse_nn_gate_raw = nn.Parameter(
+                        torch.zeros(n_head, dtype=dtype)
+                    )
 
             # ── Stage 5 P²-RSE: second θ pole (phase-complementary init) ──
             # Two complex poles per block with SHARED λ and INDEPENDENT θ.
@@ -537,6 +678,29 @@ class RWKV6TimeMix(nn.Module):
             theta = self.rse_theta_clip * torch.tanh(self.time_theta + theta_lora)
             theta = theta.to(r.dtype)
 
+            # Stage 8 T2 — non-normal RSE ρ, ψ data-dependent projections.
+            # Computed from the SAME xw stream as θ (one token-shift pass for
+            # all LoRAs).  Returned as raw tensors (B, T, H*Bk); the stability
+            # clip (κ · softplus(λ̃)) and reshape to (B, H, T, Bk) are applied
+            # in forward() where n_blocks is available.
+            if self.use_nonnormal_rse:
+                rho_lora = torch.tanh(xw @ self.nonnormal_rho_w1) @ self.nonnormal_rho_w2
+                rho_raw = self.nonnormal_rho_base.view(1, 1, -1) + rho_lora       # (B, T, H*Bk)
+
+                # Stage 9 Fix 3 — static ψ option: emit ψ_base broadcast
+                # across (B, T) instead of computing a token-dependent LoRA.
+                if self.nonnormal_psi_static:
+                    psi_raw = self.nonnormal_psi_base.view(1, 1, -1).expand(
+                        xw.shape[0], xw.shape[1], -1
+                    )
+                else:
+                    psi_lora = torch.tanh(xw @ self.nonnormal_psi_w1) @ self.nonnormal_psi_w2
+                    psi_raw = self.nonnormal_psi_base.view(1, 1, -1) + psi_lora  # (B, T, H*Bk)
+
+                rho_raw = rho_raw.to(r.dtype)
+                psi_raw = psi_raw.to(r.dtype)
+                return r, k, v, g, w, theta, rho_raw, psi_raw
+
             if self.use_p2rse:
                 # Second pole's theta — independent LoRA, same xw / clip.
                 theta_lora_2 = torch.tanh(xw @ self.time_theta_w1_2) @ self.time_theta_w2_2
@@ -595,12 +759,19 @@ class RWKV6TimeMix(nn.Module):
                 k_2 = None
                 v_2 = None
         elif self.use_rse:
-            r, k, v, g, w, theta = self._compute_rkv_gw(x)
+            if self.use_nonnormal_rse:
+                r, k, v, g, w, theta, rho_raw, psi_raw = self._compute_rkv_gw(x)
+            else:
+                r, k, v, g, w, theta = self._compute_rkv_gw(x)
+                rho_raw = None
+                psi_raw = None
             theta_2 = None
         else:
             r, k, v, g, w = self._compute_rkv_gw(x)
             theta = None
             theta_2 = None
+            rho_raw = None
+            psi_raw = None
 
         # Reshape to (B, H, T, K)
         r_h = r.view(B, T, H, K).transpose(1, 2)
@@ -655,9 +826,73 @@ class RWKV6TimeMix(nn.Module):
             # theta arrives as (B, T, H*Bk); reshape to (B, H, T, Bk)
             n_blocks = K // 2
             theta_h = theta.view(B, T, H, n_blocks).transpose(1, 2)
-            if self.rse_n_scales == 1:
+            # Stage 7A (A1′) — data-dependent readout phase tensor.
+            # φ = clip · tanh(W_φ x + b_φ / clip).  Zero-init W_φ, b_φ ⇒ φ≡0.
+            phi_h = None
+            if self.use_data_dep_readphase:
+                phi_raw = self.readphase_proj(x)                 # (B, T, H*Bk)
+                phi = self.readphase_clip * torch.tanh(
+                    phi_raw / self.readphase_clip
+                )
+                phi_h = phi.view(B, T, H, n_blocks).transpose(1, 2)  # (B,H,T,Bk)
+
+            if self.use_nonnormal_rse:
+                # Stage 8 T2 — ρ and ψ come from _compute_rkv_gw (one xw pass
+                # shared with θ and w LoRAs).  Apply stability clip and reshape.
+                # Stability clip: |ρ| ≤ κ · softplus(λ̃_block).  λ̃ is the raw
+                # (pre-exp) decay averaged over the channel pair per block.
+                lam_raw_block = w.view(B, T, H, n_blocks, 2).mean(dim=-1).float()  # (B,T,H,Bk)
+                lam_soft = F.softplus(lam_raw_block)
+                rho_bthb = rho_raw.view(B, T, H, n_blocks).float()
+                rho_h_pre = (self.nonnormal_rho_kappa * lam_soft * torch.tanh(rho_bthb))
+                psi_bthb = psi_raw.view(B, T, H, n_blocks).float()
+
+                # Stage 9 — per-head sparse gate on ρ amplitude only.
+                # g_{ℓ,h} = sigmoid(raw) ∈ (0, 1).  Applied to ρ only; ψ
+                # un-gated because non-normality already vanishes when
+                # ρ=0.  Zero-regression at init holds via ρ_raw LoRA
+                # zero-init (tanh(ρ_raw)=0 ⇒ ρ_eff=0).
+                if self.use_sparse_nonnormal_rse:
+                    gate = torch.sigmoid(
+                        self.sparse_nn_gate_raw
+                    ).view(1, 1, H, 1).float()                              # (1,1,H,1)
+                    rho_h_pre = rho_h_pre * gate
+
+                rho_h = rho_h_pre.permute(0, 2, 1, 3).contiguous()     # (B, H, T, Bk)
+                psi_h = psi_bthb.permute(0, 2, 1, 3).contiguous()      # (B, H, T, Bk)
+
+                # Extend viscosity: λ_eff = λ + η θ² + μ ρ².  η already
+                # absorbed inside _forward_recurrent_rse; for the non-normal
+                # scan we apply μ·ρ² directly here by modifying w_h.
+                if self.use_viscosity:
+                    # Also apply the η·θ² coupling for consistency with the
+                    # RSE anchor (it's added inside _forward_recurrent_rse).
+                    # For nonnormal scan we fold both into w_h before the scan.
+                    theta_sq = theta_h.float() ** 2                         # (B,H,T,Bk)
+                    eta_bk = self.viscosity_eta.view(1, H, 1, n_blocks).float()
+                    mu_bk = self.nonnormal_mu.view(1, H, 1, n_blocks).float()
+                    visc_contrib_block = (
+                        eta_bk * theta_sq + mu_bk * rho_h.float() ** 2
+                    )                                                       # (B,H,T,Bk)
+                    # Distribute block-level contribution back onto channel pairs
+                    # (both channels in a block get the same viscosity add).
+                    visc_contrib_chan = visc_contrib_block.unsqueeze(-1).expand(
+                        -1, -1, -1, -1, 2
+                    ).reshape(B, H, T, K)
+                    w_h_eff = w_h.float() - visc_contrib_chan               # λ_eff = λ + visc in log-space
+                    w_h_eff = w_h_eff.to(w_h.dtype)
+                else:
+                    w_h_eff = w_h
+
+                # Bonus u (reuse the existing time_faaaa convention)
+                u_bonus = self.time_faaaa.view(1, H, 1, K).to(r_h.dtype)
+                y, new_state = _recurrent_nonnormal_rse_scan(
+                    r_h, k_h, v_h, w_h_eff, theta_h, rho_h, psi_h, u_bonus,
+                    state=state, apply_bonus=not self.drop_u,
+                )
+            elif self.rse_n_scales == 1:
                 y, new_state = self._forward_recurrent_rse(
-                    r_h, k_h, v_h, w_h, theta_h, state
+                    r_h, k_h, v_h, w_h, theta_h, state, phi=phi_h
                 )
             else:
                 y, new_state = self._forward_recurrent_rse_multi(
@@ -762,6 +997,19 @@ class RWKV6TimeMix(nn.Module):
 
         # ── Stage 2 discretization variants ──────────────────────────────
         if self.discretization == "zoh":
+            # ── Stage 8 T1 — recurrent delta rank-1 erase ────────────────
+            # Gated by use_delta_rule (set via backbone-name substring) and
+            # mutually exclusive with LUCID / LUCID-self-reg / n=2 Taylor
+            # branches (mixing these would confound attribution).
+            if self.use_delta_rule:
+                kk, iclr = self.delta_params.compute_kk_iclr(
+                    k, k.shape[0], k.shape[2], self.n_head, self.head_size
+                )
+                y, wkv_state = _recurrent_delta_scan(
+                    r, k, v, w, u, kk, iclr, self.delta_recurrent_gate, wkv_state
+                )
+                return y, wkv_state
+
             y, wkv_state = _chunked_wkv(r, k, v, w, u, wkv_state)
 
             # ── Paper's n=2 Taylor branches — additive, β init 0 ─────────
@@ -912,6 +1160,7 @@ class RWKV6TimeMix(nn.Module):
         theta: torch.Tensor,  # (B, H, T, Bk) — rotation angle per 2x2 block
         state: Optional[torch.Tensor] = None,
         apply_bonus: bool = True,   # P²-RSE calls this twice and adds u externally
+        phi: Optional[torch.Tensor] = None,  # Stage-7A A1′: readout phase (B,H,T,Bk)
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Chunked RSE scan via complex-number reformulation.
 
@@ -1008,9 +1257,21 @@ class RWKV6TimeMix(nn.Module):
 
             S_total = prior_contrib + S_intra                          # (B,H,tc,Bk,K)
 
-            # Readout: y[t,c] = Re( sum_b conj(r_c[t,b]) * S_total[t,b,c] )
+            # Readout: y[t,c] = Re( sum_b exp(-iφ_{t,b}) · conj(r_c[t,b]) · S_total[t,b,c] )
+            # Stage 7A (A1′): learnable per-(token, head, block) phase φ
+            # rotates the readout to recover quadrature content that is
+            # otherwise discarded by `.real`.  φ=None reproduces the anchor.
+            if phi is not None:
+                phi_c = phi[:, :, cur:cur + tc]                        # (B,H,tc,Bk)
+                # exp(-iφ), as complex tensor
+                rot = torch.polar(
+                    torch.ones_like(phi_c.float()), -phi_c.float()
+                )                                                      # (B,H,tc,Bk) complex64
+                r_contract = r_c_c.conj() * rot                        # (B,H,tc,Bk)
+            else:
+                r_contract = r_c_c.conj()
             y_chunk = torch.einsum(
-                'bhtk,bhtkc->bhtc', r_c_c.conj(), S_total
+                'bhtk,bhtkc->bhtc', r_contract, S_total
             ).real                                                     # (B,H,tc,K)
 
             # Bonus current-step shortcut (real)
@@ -1314,6 +1575,349 @@ def _apply_lucid_recurrent(
         v_out[:, :, start:end, :] = torch.linalg.solve(P, v_c.float()).to(v.dtype)
 
     return v_out
+
+
+def _recurrent_nonnormal_rse_scan(
+    r: torch.Tensor,       # (B, H, T, K)
+    k: torch.Tensor,
+    v: torch.Tensor,
+    w: torch.Tensor,       # log-decay (negative), (B, H, T, K)
+    theta: torch.Tensor,   # (B, H, T, Bk) rotation angle per 2x2 block
+    rho: torch.Tensor,     # (B, H, T, Bk) anisotropy magnitude per block
+    psi: torch.Tensor,     # (B, H, T, Bk) anisotropy axis per block
+    u: torch.Tensor,       # (1, H, 1, K) bonus per-channel (real)
+    state: Optional[torch.Tensor] = None,
+    apply_bonus: bool = True,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Stage-8 T2 — Sequential scan for non-normal polar-RSE transition.
+
+    Per-block 2×2 transition (polar form):
+        G_{t,b} = e^{-λ} · R(ψ)^T · diag(e^ρ, e^{-ρ}) · R(ψ) · R(θ)
+                = e^{-λ} · P(ρ, ψ) · R(θ)
+    where P(ρ, ψ) is symmetric positive-definite with eigenvalues e^{±ρ}
+    along rotated axes. ρ = 0 ⇒ P = I ⇒ G = e^{-λ} R(θ) = exact RSE.
+
+    State convention (per block): (2, K_v) — each block carries a
+    2-vector × K_v matrix.  Update:
+        S_{t,b} = G_{t,b} · S_{t-1,b} + k_{t,b} v_t^T
+    where k_{t,b} = (k_{t, 2b}, k_{t, 2b+1}) is the 2-vector slice of
+    the key at block b, and v_t is shared across blocks.
+
+    Readout (per token):
+        y_t[:,c] = Σ_b r_{t,b}^T · S_{t,b, :, c]
+    where r_{t,b} = (r_{t, 2b}, r_{t, 2b+1}).
+
+    Bonus (current-step real shortcut, preserving existing convention):
+        y_t[:,c] += (r_t ⊙ u)^T k_t · v_t[c]
+    This is the same scalar bonus as _chunked_wkv, kept identical.
+
+    Sequential within the full sequence (Option A in STAGE8_PLAN §4.5):
+    each step is O(1) GPU work; T sequential steps total.
+    Zero-regression contract: ρ ≡ 0 ⇒ P = I ⇒ G = e^{-λ} R(θ) = exact RSE,
+    and the state evolves identically to the RSE scan (modulo FP order).
+    """
+    B, H, T, K = r.shape
+    Bk = K // 2
+    device = r.device
+    dtype = r.dtype
+
+    # Per-block log-decay (average of channel pairs) — identical to
+    # _forward_recurrent_rse convention.
+    log_decay_block = w.view(B, H, T, Bk, 2).float().mean(dim=-1)       # (B, H, T, Bk)
+
+    # Analytic per-block 2x2 transition (no matrix_exp).
+    # P entries (symmetric 2x2):
+    #   P00 = cosh(ρ) + sinh(ρ) cos(2ψ)
+    #   P01 = P10 = sinh(ρ) sin(2ψ)
+    #   P11 = cosh(ρ) - sinh(ρ) cos(2ψ)
+    # G = exp(-λ) · P · R(θ)
+    #   R(θ) = [[cos(θ), -sin(θ)], [sin(θ), cos(θ)]]
+    cos_t = torch.cos(theta.float())                                    # (B, H, T, Bk)
+    sin_t = torch.sin(theta.float())
+    cosh_r = torch.cosh(rho.float())
+    sinh_r = torch.sinh(rho.float())
+    cos_2p = torch.cos(2.0 * psi.float())
+    sin_2p = torch.sin(2.0 * psi.float())
+
+    P00 = cosh_r + sinh_r * cos_2p
+    P01 = sinh_r * sin_2p        # = P10
+    P11 = cosh_r - sinh_r * cos_2p
+
+    # G = exp(-λ) · [P · R(θ)]
+    #   [P · R(θ)]_{00} = P00 cos - P01 sin ⟵ actually need (P·R)_ij
+    # Let's do it row-by-row. P · R(θ):
+    #   row 0:  [P00 cos + P01 sin,  -P00 sin + P01 cos]
+    #   row 1:  [P01 cos + P11 sin,  -P01 sin + P11 cos]
+    decay = torch.exp(log_decay_block)                                  # (B, H, T, Bk)
+    G00 = decay * (P00 * cos_t + P01 * sin_t)
+    G01 = decay * (-P00 * sin_t + P01 * cos_t)
+    G10 = decay * (P01 * cos_t + P11 * sin_t)
+    G11 = decay * (-P01 * sin_t + P11 * cos_t)
+
+    # ── Chunked affine associative scan (Stage-8 optimization) ──────
+    # The pair (G, U) with U_t = k_t v_t^T composes associatively:
+    #   (G_b, U_b) ⊗ (G_a, U_a) = (G_b G_a, G_b U_a + U_b)
+    # So the within-chunk prefix is computable via Hillis–Steele doubling
+    # in O(log T_c) parallel passes.  Inter-chunk we carry the chunk-end
+    # state sequentially.  This recovers the cumlog-style parallelism of
+    # the current RSE scan, extended to the non-commutative 2×2 case.
+
+    chunk_size = 64
+
+    # Cast inputs once
+    k_f = k.float()
+    r_f = r.float()
+    v_f = v.float()
+    r_2 = r_f.view(B, H, T, Bk, 2)                                      # (B,H,T,Bk,2)
+
+    # Stack G into (B, H, T, Bk, 2, 2) then permute block dim in
+    G_stack = torch.stack([
+        torch.stack([G00, G01], dim=-1),
+        torch.stack([G10, G11], dim=-1),
+    ], dim=-2)                                                           # (B,H,T,Bk,2,2)
+    # Rearrange to (B, H, Bk, T, 2, 2) so the T-axis is adjacent to matrix dims
+    G_full = G_stack.permute(0, 1, 3, 2, 4, 5).contiguous()
+
+    # Build U_t = k_{t,b} v_t^T per block: shape (B, H, Bk, T, 2, K)
+    k_2 = k_f.view(B, H, T, Bk, 2)                                       # (B,H,T,Bk,2)
+    # (B,H,T,Bk,2) × (B,H,T,1,1,K) → (B,H,T,Bk,2,K), then permute block in
+    U_full = (k_2.unsqueeze(-1) * v_f.view(B, H, T, 1, 1, K))            # (B,H,T,Bk,2,K)
+    U_full = U_full.permute(0, 1, 3, 2, 4, 5).contiguous()               # (B,H,Bk,T,2,K)
+
+    # Bonus precomputation (matches the sequential reference exactly)
+    use_bonus_here = apply_bonus and (u is not None)
+    if use_bonus_here:
+        u_k = u.float().view(1, H, 1, K).expand(B, H, T, K)
+        bonus_scalar_all = (r_f * u_k * k_f).sum(dim=-1)                 # (B,H,T)
+
+    # Carry state — packed (B, H, Bk, 2, K).
+    if state is None:
+        S_carry = torch.zeros(B, H, Bk, 2, K, device=device, dtype=torch.float32)
+    else:
+        S_carry = state.float().view(B, H, Bk, 2, K)
+
+    out_chunks: List[torch.Tensor] = []
+    cur = 0
+    while cur < T:
+        tc = min(chunk_size, T - cur)
+        G_c = G_full[:, :, :, cur:cur + tc].contiguous()                 # (B,H,Bk,tc,2,2)
+        U_c = U_full[:, :, :, cur:cur + tc].contiguous()                 # (B,H,Bk,tc,2,K)
+
+        # Prefix scan:  G_p[t] = G_c[t] ⊗ G_c[t-1] ⊗ … ⊗ G_c[0]
+        #               U_p[t] = Σ_s (G_c[t]…G_c[s+1]) U_c[s]
+        G_p, U_p = _affine_prefix_scan(G_c, U_c)
+
+        # State inside chunk:  S_t = G_p[t] · S_carry + U_p[t]
+        # G_p:(B,H,Bk,tc,2,2) × S_carry:(B,H,Bk,2,K) → (B,H,Bk,tc,2,K)
+        GS = torch.einsum('bhptij,bhpjk->bhptik', G_p, S_carry)
+        S_chunk = GS + U_p                                               # (B,H,Bk,tc,2,K)
+
+        # Readout per token: y[t,c] = Σ_b (r_b[0] S[b,0,c] + r_b[1] S[b,1,c])
+        # Rearrange to (B, H, tc, Bk, 2, K) for the readout contraction
+        S_btc = S_chunk.permute(0, 1, 3, 2, 4, 5).contiguous()           # (B,H,tc,Bk,2,K)
+        r_c = r_2[:, :, cur:cur + tc]                                    # (B,H,tc,Bk,2)
+        y_chunk = (r_c.unsqueeze(-1) * S_btc).sum(dim=(3, 4))            # (B,H,tc,K)
+
+        if use_bonus_here:
+            v_c = v_f[:, :, cur:cur + tc]
+            y_chunk = y_chunk + bonus_scalar_all[:, :, cur:cur + tc].unsqueeze(-1) * v_c
+
+        out_chunks.append(y_chunk)
+
+        # Inter-chunk carry: final state is at the last position in the chunk
+        S_carry = S_btc[:, :, -1]                                        # (B,H,Bk,2,K)
+
+        cur += tc
+
+    out = torch.cat(out_chunks, dim=2)                                   # (B,H,T,K)
+
+    # Pack final state back to (B, H, K, K) real — match RSE convention
+    final_state = torch.zeros(B, H, K, K, device=device, dtype=torch.float32)
+    final_view = final_state.view(B, H, Bk, 2, K)
+    final_view[..., 0, :] = S_carry[..., 0, :]
+    final_view[..., 1, :] = S_carry[..., 1, :]
+
+    return out.to(dtype), final_state
+
+
+def _affine_prefix_scan(
+    G: torch.Tensor,   # (B, H, Bk, T_c, 2, 2)
+    U: torch.Tensor,   # (B, H, Bk, T_c, 2, K)
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Hillis–Steele parallel prefix scan over affine pairs (G, U) with
+    composition  (G_b, U_b) ⊗ (G_a, U_a) = (G_b G_a, G_b U_a + U_b).
+
+    Returns (G_prefix, U_prefix) of the same shapes, where
+        G_prefix[t] = G[t] ⊗ G[t-1] ⊗ … ⊗ G[0]
+        U_prefix[t] = U[t] + G[t] U[t-1] + G[t] G[t-1] U[t-2] + …
+
+    Uses ⌈log₂ T_c⌉ doubling passes; each pass is a batched einsum + where.
+    For T_c=64: 6 passes.  Exact (not truncated) — associativity of the
+    affine composition makes this equivalent to the sequential recurrence.
+    """
+    T_c = G.shape[3]
+    t_idx = torch.arange(T_c, device=G.device)
+
+    d = 1
+    while d < T_c:
+        # Shift G and U by d steps along the time axis.
+        # Positions [0, d) receive zero; position t receives value at t-d.
+        # F.pad with (…, d, 0) pads the T-dim (third-from-last for G, same
+        # for U) at the FRONT with d entries of zero.
+        G_shift = F.pad(G[:, :, :, : T_c - d], (0, 0, 0, 0, d, 0))
+        U_shift = F.pad(U[:, :, :, : T_c - d], (0, 0, 0, 0, d, 0))
+
+        # Combine: at position t, if t ≥ d we have a "previous" value.
+        #   G_new[t] = G[t] · G_shift[t]      (= G[t] · G[t-d])
+        #   U_new[t] = G[t] · U_shift[t] + U[t]  (= G[t] · U[t-d] + U[t])
+        G_cand = torch.einsum('bhptij,bhptjk->bhptik', G, G_shift)
+        U_cand = torch.einsum('bhptij,bhptjk->bhptik', G, U_shift) + U
+
+        # For t < d, keep original (G_shift / U_shift were zero, so G_cand
+        # would be zero not G[t]; must mask back).
+        mask = (t_idx >= d).view(1, 1, 1, T_c, 1, 1)
+        G = torch.where(mask, G_cand, G)
+        U = torch.where(mask, U_cand, U)
+
+        d *= 2
+
+    return G, U
+
+
+def _recurrent_delta_scan(
+    r: torch.Tensor,      # (B, H, T, K)
+    k: torch.Tensor,
+    v: torch.Tensor,
+    w: torch.Tensor,      # log-decay (negative), (B, H, T, K)
+    u: torch.Tensor,      # (1, H, 1, K) bonus term
+    kk: torch.Tensor,     # normalized key for erase direction, (B, H, T, K)
+    iclr: torch.Tensor,   # per-channel erasure strength, (B, H, T, K)
+    gate: torch.Tensor,   # per-head hard gate, shape (H,), zero-init
+    wkv_state: torch.Tensor,  # (B, H, K, K)
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Sequential RWKV-6 WKV scan with rank-1 delta erase — Stage-8 T1.
+
+    Per-step update (state convention: S (K, V), rows=key, cols=value):
+        kv_t    = k_t v_t^T                                        # (K, V)
+        y_t     = r_t^T (S_{t-1} + u ⊙ kv_t)                        # readout + bonus
+        S_dec   = diag(exp(w_t)) · S_{t-1}                         # per-row decay
+        β_t     = gate_h · iclr_t  ∈ [0, 2·gate]                   # effective erase
+        S_erase = S_dec - β_t (kk_t · kk_t^T) · S_dec              # rank-1 erase
+                = S_dec - (β_t ⊙ kk_t) (kk_t^T · S_dec)
+        S_t     = S_erase + kv_t                                   # write
+
+    Zero-regression contract: when `gate ≡ 0`, β_t ≡ 0 ⇒ S_erase = S_dec,
+    and the update reduces bit-exactly to vanilla RWKV-6 recurrent WKV.
+    """
+    B, H, T, K = r.shape
+    V = v.size(-1)
+    device = r.device
+    dtype = r.dtype
+
+    if wkv_state is None:
+        S_carry = torch.zeros(B, H, K, V, device=device, dtype=torch.float32)
+    else:
+        S_carry = wkv_state.float()
+
+    # ── Chunked affine associative scan (Stage-8 delta optimization) ──
+    # The pair (A_t, U_t) with
+    #   A_t = (I - (β_t ⊙ kk_t) kk_t^T) · diag(w_t)
+    #   U_t = k_t v_t^T
+    # composes associatively: (A_b, U_b) ⊗ (A_a, U_a) = (A_b A_a, A_b U_a + U_b).
+    # Hillis–Steele prefix scan within chunks, serial state carry across.
+
+    chunk_size = 64
+
+    r_f = r.float()
+    k_f = k.float()
+    v_f = v.float()
+    w_decay = torch.exp(w.float())                           # (B, H, T, K)
+    kk_f = kk.float()
+    gate_hk = gate.view(1, H, 1, 1).float()
+    beta_eff = gate_hk * iclr.float()                        # (B, H, T, K)
+
+    # Precompute per-token A_t as K×K.  We have
+    #   A_t[i, j] = δ_{ij} · w_t[j] − (β_t[i]·kk_t[i]) · (kk_t[j]·w_t[j])
+    # Memory: (B, H, T, K, K).
+    # NOTE: we build A implicitly without storing a K×K diagonal, by
+    # A_t_diag_part = diag_embed(w_t), rank-1 = (β⊙kk)_i · (kk⊙w)_j.
+    # Allowed: K = 64, so K×K per token = 4096 floats. Tc=64 chunk ⇒
+    # ~40 MB per layer — fine.
+    diag_w = torch.diag_embed(w_decay)                       # (B, H, T, K, K)
+    rank1_left = (beta_eff * kk_f).unsqueeze(-1)             # (B, H, T, K, 1)
+    rank1_right = (kk_f * w_decay).unsqueeze(-2)             # (B, H, T, 1, K)
+    A_full = diag_w - rank1_left * rank1_right               # (B, H, T, K, K)
+
+    # U_t = k_t v_t^T
+    U_full = k_f.unsqueeze(-1) * v_f.unsqueeze(-2)           # (B, H, T, K, V)
+
+    # Bonus precomputation (preserved current-step shortcut)
+    u_bcast = u.float().view(1, H, 1, K).expand(B, H, T, K)
+    bonus_scalar_all = (r_f * u_bcast * k_f).sum(dim=-1)     # (B, H, T)
+
+    out_chunks: List[torch.Tensor] = []
+    cur = 0
+    while cur < T:
+        tc = min(chunk_size, T - cur)
+        A_c = A_full[:, :, cur:cur + tc].contiguous()        # (B, H, tc, K, K)
+        U_c = U_full[:, :, cur:cur + tc].contiguous()        # (B, H, tc, K, V)
+
+        # Prefix scan
+        A_p, U_p = _delta_affine_prefix_scan(A_c, U_c)
+
+        # State inside chunk: S_t = A_p[t] · S_carry + U_p[t]
+        AS = torch.einsum('bhtij,bhjv->bhtiv', A_p, S_carry)  # (B, H, tc, K, V)
+        S_chunk = AS + U_p                                    # (B, H, tc, K, V)
+
+        # Readout (includes bonus): y_t = r_t · (S_{t-1} + u ⊙ kv_t)
+        # Note: the sequential reference reads r_t @ S_{t-1} PLUS bonus.
+        # Since S_chunk[t] already includes A_p[t]·S_carry + U_p[t], and
+        # S_{t-1} for a delta sequential is "S AFTER t-1 update but BEFORE
+        # t decay-erase-write" — same as S_chunk[t-1] for t≥1, or S_carry
+        # for t=0.  We therefore build a shifted S:
+        #   S_prev[t] = S_chunk[t-1] for t≥1 ; S_prev[0] = S_carry
+        S_prev = torch.cat([
+            S_carry.unsqueeze(2),                            # (B, H, 1, K, V)
+            S_chunk[:, :, :-1],                              # (B, H, tc-1, K, V)
+        ], dim=2)                                            # (B, H, tc, K, V)
+        r_c = r_f[:, :, cur:cur + tc]                        # (B, H, tc, K)
+        y_state = torch.einsum('bhtk,bhtkv->bhtv', r_c, S_prev)
+        v_c = v_f[:, :, cur:cur + tc]
+        y_bonus = bonus_scalar_all[:, :, cur:cur + tc].unsqueeze(-1) * v_c
+        y_chunk = y_state + y_bonus                          # (B, H, tc, V)
+
+        out_chunks.append(y_chunk)
+
+        # Carry: final state after this chunk
+        S_carry = S_chunk[:, :, -1]                          # (B, H, K, V)
+
+        cur += tc
+
+    out = torch.cat(out_chunks, dim=2)                       # (B, H, T, V)
+    return out.to(dtype), S_carry
+
+
+def _delta_affine_prefix_scan(
+    A: torch.Tensor,   # (B, H, T_c, K, K)
+    U: torch.Tensor,   # (B, H, T_c, K, V)
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Hillis–Steele parallel prefix scan over delta affine pairs.
+    Same recurrence as the non-normal-RSE variant but with K×K A matrices.
+    """
+    T_c = A.shape[2]
+    t_idx = torch.arange(T_c, device=A.device)
+
+    d = 1
+    while d < T_c:
+        A_shift = F.pad(A[:, :, : T_c - d], (0, 0, 0, 0, d, 0))
+        U_shift = F.pad(U[:, :, : T_c - d], (0, 0, 0, 0, d, 0))
+        A_cand = torch.einsum('bhtij,bhtjk->bhtik', A, A_shift)
+        U_cand = torch.einsum('bhtij,bhtjk->bhtik', A, U_shift) + U
+        mask = (t_idx >= d).view(1, 1, T_c, 1, 1)
+        A = torch.where(mask, A_cand, A)
+        U = torch.where(mask, U_cand, U)
+        d *= 2
+    return A, U
 
 
 def _chunked_wkv(

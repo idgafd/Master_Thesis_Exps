@@ -1,0 +1,1 @@
+--backbone rwkv6_sparse_nonnormal_rse_edge_only_viscosity --epochs 30 --seed 42 --output-dir outputs/s9b_rwkv6_sparse_nonnormal_rse_edge_only_viscosity_seed42 --gpu 1

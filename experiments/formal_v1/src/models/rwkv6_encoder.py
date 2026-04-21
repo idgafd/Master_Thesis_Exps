@@ -54,6 +54,21 @@ class RWKV6Encoder(nn.Module):
         use_qtail_lowrank: bool = False,
         qtail_lr_rank: int = 16,
         qtail_top_k: int = 2,
+        # Stage 7A (A1′) — data-dependent readout phase
+        use_data_dep_readphase: bool = False,
+        # Soft clip on |φ| via tanh. None → TimeMix default (π).
+        # Exposed so a regression-band single-seed result can be
+        # retried once at a smaller clip (per STAGE7_DIAGNOSTICS
+        # decision rule), without touching time-mix defaults.
+        readphase_clip: Optional[float] = None,
+        # Stage 8 T2 — non-normal RSE in polar parameterisation
+        use_nonnormal_rse: bool = False,
+        # κ in |ρ| ≤ κ · softplus(λ̃).  None → TimeMix default 0.6.
+        nonnormal_rho_kappa: Optional[float] = None,
+        # Stage 9 — sparse edge-layer specialist transition
+        use_sparse_nonnormal_rse: bool = False,
+        sparse_nn_edge_only: bool = False,
+        nonnormal_psi_static: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -72,6 +87,16 @@ class RWKV6Encoder(nn.Module):
             # Depth gating for the Kronecker n=2 tail: activate only on the
             # top `qtail_top_k` layers of the stack.
             qtail_active_here = use_qtail and (i >= n_layers - qtail_top_k)
+            # Stage 9 Fix 2 — structural edge_only dispatch.  When sparse
+            # edge_only is active, middle layers run plain RSE + viscosity
+            # (no non-normal scan, no gate).  Only L0 and L_{n-1} carry the
+            # non-normal extension.  Saves ~4/6 of the heavy 2×2 scan cost.
+            is_edge = (i == 0) or (i == n_layers - 1)
+            nonnormal_here = use_nonnormal_rse
+            sparse_here = use_sparse_nonnormal_rse
+            if sparse_nn_edge_only and use_sparse_nonnormal_rse and not is_edge:
+                nonnormal_here = False
+                sparse_here = False
             self.layers.append(
                 RWKV6Block(
                     hidden_size=d_model,
@@ -110,6 +135,13 @@ class RWKV6Encoder(nn.Module):
                     use_qtail_dbeta=use_qtail_dbeta and qtail_active_here,
                     use_qtail_lowrank=use_qtail_lowrank and qtail_active_here,
                     qtail_lr_rank=qtail_lr_rank,
+                    use_data_dep_readphase=use_data_dep_readphase,
+                    readphase_clip=readphase_clip,
+                    use_nonnormal_rse=nonnormal_here,
+                    nonnormal_rho_kappa=nonnormal_rho_kappa,
+                    use_sparse_nonnormal_rse=sparse_here,
+                    sparse_nn_edge_only=sparse_nn_edge_only,
+                    nonnormal_psi_static=nonnormal_psi_static,
                     dtype=dtype,
                 )
             )

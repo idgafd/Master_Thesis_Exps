@@ -98,6 +98,12 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_delta": "recurrent",
         # TODO_DELTA_RULE Tier-1 diagnostic — a0 init -5 so β ≈ 0 at t=0
         "rwkv6_delta_warmstart": "recurrent",
+        # Stage 8 T1 — recurrent delta rank-1 erase, ACTUALLY WIRED on the
+        # recurrent path (the historical rwkv6_delta_warmstart run at
+        # commit 3aebd56 did not branch on use_delta_rule in recurrent;
+        # the 0.1260 plateau is an implementation artifact, not evidence).
+        # Re-run with the fixed wiring, hard-gated for exact zero-init.
+        "rwkv6_delta_warmstart_fixed": "recurrent",
         "rwkv6_lucid_delta": "recurrent",
         "rwkv6_headscale": "recurrent",
         # Stage 2 discretization variants (causal)
@@ -132,6 +138,28 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # (the composition that Phase 2b added indep-λ on top of — never tested
         # alone before, needed to attribute Phase 2b's regression).
         "rwkv6_p2rse_strong_viscosity": "recurrent",
+        # Stage 7A (A1′) — data-dependent readout phase on the RSE anchor.
+        # Adds a zero-init Linear producing φ_{t,h,b}; the complex readout
+        # contracts exp(-iφ)·conj(r_c) with S_total before .real, recovering
+        # quadrature content identified by STAGE7_DIAGNOSTICS §D2.
+        "rwkv6_rse_dphi_viscosity": "recurrent",
+        # Stage 7A (A1′-no-viscosity control) for isolating φ alone
+        # without the viscosity composition (optional, not main).
+        "rwkv6_rse_dphi": "recurrent",
+        # Stage 8 T2 — non-normal RSE in polar parameterisation.
+        # G = e^{-λ} R(ψ)^T diag(e^ρ, e^{-ρ}) R(ψ) R(θ) per block, with ρ
+        # zero-init (exact RSE reduction).  Viscosity variant is primary;
+        # no-viscosity control is optional for isolation.
+        "rwkv6_nonnormal_rse_viscosity": "recurrent",
+        "rwkv6_nonnormal_rse": "recurrent",
+        # Stage 9 — sparse edge-layer specialist transition.
+        # Adds per-(layer, head) gate g_{ℓ,h} zero-init multiplying ρ and ψ.
+        # At init g=0 ⇒ exact RSE+viscosity reduction per (ℓ, h).
+        # κ tightened to 0.4 for safer spectral envelope.
+        # Option A (learned sparsity): "rwkv6_sparse_nonnormal_rse_viscosity"
+        # Option B (hard edge-only):   "rwkv6_sparse_nonnormal_rse_edge_only_viscosity"
+        "rwkv6_sparse_nonnormal_rse_viscosity": "recurrent",
+        "rwkv6_sparse_nonnormal_rse_edge_only_viscosity": "recurrent",
         # Phase 2b — Independent-λ P²-RSE (each pole has its own decay LoRA)
         "rwkv6_p2rse_indeplam_strong_viscosity": "recurrent",  # indep-λ + strong θ budget + viscosity
         "rwkv6_p2rse_indeplam_depth_viscosity":  "recurrent",  # indep-λ + depth-graded θ + viscosity
@@ -194,6 +222,9 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     temperature = "temperature" in backbone or cfg.temperature
     lucid_chunk_size = 64 if "chunked" in backbone else cfg.lucid_chunk_size
 
+    import re
+    import math as _math
+
     # Stage 2 discretization — derive from backbone name (substring match).
     # Order matters: gen2 wins over trap (so "gen2_trap_init" stays gen2).
     if "ab3" in backbone:
@@ -228,7 +259,6 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     )
     # Multi-Rate RSE: substring "m{N}" in backbone name overrides cfg.rse_n_scales.
     rse_n_scales = cfg.rse_n_scales
-    import re
     m_match = re.search(r"_m(\d+)(?:_|$)", backbone)
     if m_match:
         rse_n_scales = int(m_match.group(1))
@@ -236,6 +266,33 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Stage 5 viscosity coupling: triggered by substring "viscosity" in backbone
     # or explicit cfg.rse_viscosity.  Orthogonal to p2rse — can be combined.
     rse_viscosity = ("viscosity" in backbone) or getattr(cfg, "rse_viscosity", False)
+
+    # Stage 7A (A1′) — data-dependent readout phase, triggered by "dphi"
+    # substring.  Requires rse=True (enforced in RWKV6TimeMix __init__).
+    use_data_dep_readphase = "dphi" in backbone
+
+    # Stage 8 T2 — non-normal RSE, triggered by "nonnormal_rse" substring.
+    # Requires rse=True (enforced in RWKV6TimeMix __init__).
+    use_nonnormal_rse = "nonnormal_rse" in backbone
+
+    # Stage 9 — sparse edge-layer specialist transition.
+    # Triggered by "sparse_nonnormal_rse" substring. Requires use_nonnormal_rse.
+    # Option B via "edge_only" substring; otherwise learned sparsity (Option A).
+    use_sparse_nonnormal_rse = "sparse_nonnormal_rse" in backbone
+    sparse_nn_edge_only = use_sparse_nonnormal_rse and "edge_only" in backbone
+    # Stage-9 variants tighten κ from 0.6 → 0.4 per STAGE9_PLAN §2.3.
+    nonnormal_rho_kappa_override = 0.4 if use_sparse_nonnormal_rse else None
+    # Stage-9 Fix 3 — static ψ (no token-dependent ψ LoRA) for cleaner
+    # identifiability.  Does not apply to dense T2 backbone.
+    nonnormal_psi_static = use_sparse_nonnormal_rse
+
+    # Optional clip override, triggered by substring "phiclip{N}" meaning
+    # the clip is π/N.  Example: `rwkv6_rse_dphi_phiclip2_viscosity` → π/2.
+    # Absent ⇒ None ⇒ time-mix default (π, full circle).
+    readphase_clip = None
+    phiclip_match = re.search(r"phiclip(\d+)", backbone)
+    if phiclip_match:
+        readphase_clip = _math.pi / int(phiclip_match.group(1))
 
     # Stage 6 — EXPRESSIVENESS paper adaptations.  Name-substring triggers:
     #   rwkv6_rmsnorm     → GroupNorm → per-head RMSNorm only
@@ -289,7 +346,6 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Diagnosed in scripts/rse_theta_diagnostic.py: deeper layers learn larger
     # data-dependent rotation contributions; uniform per-layer budget under-
     # serves L4–L5. Override schedule applies only when backbone name asks.
-    import math as _math
     rse_per_layer_overrides = None
     if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity", "rwkv6_p2rse_indeplam_depth_viscosity", "rwkv6_p2rse_indeplam_extkv_depth_viscosity"):
         # Depth-graded rotation budget L0..L5.  Shared between single-pole
@@ -304,10 +360,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
-    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity", "rwkv6_p2rse_strong_viscosity", "rwkv6_p2rse_indeplam_strong_viscosity", "rwkv6_p2rse_indeplam_extkv_strong_viscosity"):
+    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity", "rwkv6_p2rse_strong_viscosity", "rwkv6_p2rse_indeplam_strong_viscosity", "rwkv6_p2rse_indeplam_extkv_strong_viscosity", "rwkv6_rse_dphi_viscosity", "rwkv6_rse_dphi", "rwkv6_nonnormal_rse_viscosity", "rwkv6_nonnormal_rse", "rwkv6_sparse_nonnormal_rse_viscosity", "rwkv6_sparse_nonnormal_rse_edge_only_viscosity"):
         # Uniform but expanded budget: doubles clip and LoRA dim, keeps init small.
         # Shared between Stage-4 (rse_strong), Phase-2 (p2rse_strong),
-        # and Phase-3 (rse_strong_viscosity) variants.
+        # Phase-3 (rse_strong_viscosity), and Stage-7A (rse_dphi_viscosity).
         rse_per_layer_overrides = [
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 48}
         ] * cfg.n_layers
@@ -345,4 +401,11 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         use_qtail_dbeta=use_qtail_dbeta,
         use_qtail_lowrank=use_qtail_lowrank,
         qtail_top_k=(cfg.n_layers if qtail_all_layers else 2),
+        use_data_dep_readphase=use_data_dep_readphase,
+        readphase_clip=readphase_clip,
+        use_nonnormal_rse=use_nonnormal_rse,
+        nonnormal_rho_kappa=nonnormal_rho_kappa_override,
+        use_sparse_nonnormal_rse=use_sparse_nonnormal_rse,
+        sparse_nn_edge_only=sparse_nn_edge_only,
+        nonnormal_psi_static=nonnormal_psi_static,
     )

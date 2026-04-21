@@ -1,466 +1,72 @@
 # Formal v1 — Results
 
-## Dataset
-- **Train:** LibriSpeech train-clean-100 (100h, ~28,539 utterances)
-- **Dev:** LibriSpeech dev-clean
-- **Test:** LibriSpeech test-clean
+Causal RWKV-6 experiment chain on LibriSpeech train-clean-100. Seed 42,
+30 epochs, RTX PRO 6000. Seed noise σ ≈ 0.0014. Full chronology,
+per-epoch trajectories, mechanism-level diagnostics and implementation
+links are in [stages_2_9_summary.md](stages_2_9_summary.md).
 
-## Training Configuration
+## Training config (shared spine)
+
 | Parameter | Value |
-|-----------|-------|
+|---|---|
 | d_model | 256 |
 | n_layers | 6 |
 | n_heads / head_size | 4 / 64 |
 | FFN dim | 896 |
 | Dropout | 0.1 |
 | Optimizer | AdamW (lr=3e-4, wd=0.01) |
-| Scheduler | Cosine + 1000-step warmup |
-| Epochs | 80 (patience=15) |
-| SpecAugment | LD policy (freq=27, time=100) |
-| Batch | max 300s total duration |
+| Scheduler | cosine + 1000-step warmup |
+| Epochs | 30 (patience=15) |
+| SpecAugment | LD policy (freq=27, time=100, 2+2 masks) |
+| Batch | max 300 s total duration |
 | Grad clip | 5.0 |
 
----
-
-## Model Parameter Counts
-
-| Backbone | Total Params | Frontend | Encoder | CTC Head | vs LION |
-|----------|-------------|----------|---------|----------|---------|
-| transformer | — | — | — | — | — |
-| rwkv6 | — | — | — | — | — |
-| mamba | — | — | — | — | — |
-| lion | — | — | — | — | ref |
-| lion_convshift | — | — | — | — | — |
-| lion_lucid | — | — | — | — | — |
-| lion_delta | — | — | — | — | — |
-| lion_headscale | — | — | — | — | — |
-| rwkv6_lucid | — | — | — | — | — |
-| rwkv6_delta | — | — | — | — | — |
-| mamba_bidir | — | — | — | — | — |
-
----
-
-## Group A — Causal / Streaming-capable (full-utterance)
-
-Populated automatically from `outputs/_index.csv` by
-`python -m src.reporting.tables`. Edit the surrounding narrative freely;
-the table between the AUTOGEN markers is overwritten on each reporting
-pass.
-
-<!-- AUTOGEN:TABLE name=group_a -->
-
-| Run                             | Backbone           |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
-|---------------------------------|--------------------|-----------|-----------|------------|------------|--------------|
-| exp01_transformer_causal_seed42 | transformer_causal | 6,256,669 |     0.131 |     0.1292 |        0.4 |           75 |
-
-<!-- /AUTOGEN:TABLE -->
-
-## Group B — Bidirectional / Offline (full-utterance)
-
-<!-- AUTOGEN:TABLE name=group_b -->
-
-| Run                      | Backbone    |    Params |   Dev CER |   Test CER |   Test WER |   Best epoch |
-|--------------------------|-------------|-----------|-----------|------------|------------|--------------|
-| exp09_lion_seed42        | lion        | 7,736,605 |    0.0711 |     0.0708 |     0.2109 |           78 |
-| exp08_transformer_seed42 | transformer | 6,256,669 |    0.1112 |     0.1115 |     0.3455 |           80 |
-
-<!-- /AUTOGEN:TABLE -->
-
-## Chunked Reset-Mode Evaluation
-
-Split each utterance into fixed-length chunks, run each chunk independently,
-concatenate the outputs. Bidirectional models lose long-range context here;
-causal models lose long-range past.
-
-<!-- AUTOGEN:TABLE name=chunked -->
-
-| Run                                | Backbone             |   Full Test CER |   2 s reset |   5 s reset |   10 s reset |
-|------------------------------------|----------------------|-----------------|-------------|-------------|--------------|
-| exp01_transformer_causal_seed42    | transformer_causal   |          0.1292 |      0.27   |      0.1781 |       0.1534 |
-| exp09_lion_seed42                  | lion                 |          0.0708 |      0.1418 |      0.0962 |       0.0855 |
-| exp08_transformer_seed42           | transformer          |          0.1115 |      0.1794 |      0.1413 |       0.1281 |
-| lucid_exp05_lion_convshift_seed42  | lion_convshift       |          0.1044 |      0.1801 |      0.1294 |       0.1188 |
-| lucid_exp02_lion_seed42            | lion                 |          0.1073 |      0.1819 |      0.1342 |       0.1237 |
-| lucid_exp04_lion_lucid_seed42      | lion_lucid           |          0.1074 |      0.1824 |      0.1343 |       0.1236 |
-| disc06_rwkv6_convshift_trap_seed42 | rwkv6_convshift_trap |          0.115  |      0.2262 |      0.1552 |       0.1355 |
-| lucid_exp03_rwkv6_lucid_seed42     | rwkv6_lucid          |          0.1216 |      0.2584 |      0.1669 |       0.1411 |
-| lucid_exp01_rwkv6_seed42           | rwkv6                |          0.1263 |      0.2641 |      0.1716 |       0.1468 |
-| disc03_rwkv6_trap_var_seed42       | rwkv6_trap_var       |          0.1259 |      0.2654 |      0.1719 |       0.1467 |
-| disc02_rwkv6_trap_seed42           | rwkv6_trap           |          0.1254 |      0.2659 |      0.1717 |       0.1474 |
-| disc04_rwkv6_gen2_seed42           | rwkv6_gen2           |          0.1254 |      0.2654 |      0.1704 |       0.146  |
-| disc05_rwkv6_ab3_seed42            | rwkv6_ab3            |          0.1285 |      0.2665 |      0.1757 |       0.1519 |
-| lion_delta_seed42                  | lion_delta           |          0.1373 |      0.2403 |      0.1729 |       0.1562 |
-| lucid_exp06_rwkv6_lucid_sr_seed42  | rwkv6_lucid_sr       |          0.1483 |      0.2646 |      0.2012 |       0.1677 |
-| mamba_cuda_ep10_seed42             | mamba_cuda           |          0.1799 |      0.2603 |      0.2059 |       0.1894 |
-| mamba_cuda_ep10_seed42             | mamba_cuda           |          0.1808 |      0.2614 |      0.2064 |       0.1894 |
-| mamba_pytorch_ep10_seed42          | mamba                |          0.1857 |      0.2669 |      0.2119 |       0.1945 |
-| d0_rwkv6_ep10_seed42               | rwkv6                |          0.2017 |      0.3263 |      0.2436 |       0.2222 |
-| d0_rwkv6_benchmark_seed42          | rwkv6                |          0.3922 |      0.4794 |      0.4306 |       0.4168 |
-
-<!-- /AUTOGEN:TABLE -->
-
-## Carry-State Evaluation (Group A only)
-
-Streaming evaluation with per-utterance state carried across chunk
-boundaries. Only meaningful for causal recurrent encoders (RWKV-6, Mamba)
-and causal Transformer with KV cache. Bidirectional models are not listed.
-
-<!-- AUTOGEN:TABLE name=carry_state -->
-
-| Run                             | Backbone           |   2 s carry |   5 s carry |   10 s carry |
-|---------------------------------|--------------------|-------------|-------------|--------------|
-| exp01_transformer_causal_seed42 | transformer_causal |      0.1491 |      0.1483 |       0.1479 |
-
-<!-- /AUTOGEN:TABLE -->
-
-## Parameter Count Parity
-
-All backbones target ~7 M params for a fair comparison.
-
-<!-- AUTOGEN:TABLE name=param_counts -->
-
-| Backbone             |   Params total |   Encoder | vs LION %   |
-|----------------------|----------------|-----------|-------------|
-| lion                 |      7,736,605 | 5,825,024 | +0.0%       |
-| lion_convshift       |      7,741,213 | 5,829,632 | +0.1%       |
-| lion_delta           |      7,937,821 | 6,026,240 | +2.6%       |
-| lion_lucid           |      7,736,629 | 5,825,048 | +0.0%       |
-| mamba                |      7,304,221 | 5,392,640 | -5.6%       |
-| mamba_cuda           |      7,304,221 | 5,392,640 | -5.6%       |
-| rwkv6                |      7,736,605 | 5,825,024 | +0.0%       |
-| rwkv6_ab3            |      7,736,605 | 5,825,024 | +0.0%       |
-| rwkv6_convshift_trap |      7,741,213 | 5,829,632 | +0.1%       |
-| rwkv6_gen2           |      7,736,653 | 5,825,072 | +0.0%       |
-| rwkv6_lucid          |      7,736,629 | 5,825,048 | +0.0%       |
-| rwkv6_lucid_sr       |      7,736,629 | 5,825,048 | +0.0%       |
-| rwkv6_trap           |      7,736,605 | 5,825,024 | +0.0%       |
-| rwkv6_trap_var       |      7,736,605 | 5,825,024 | +0.0%       |
-| transformer          |      6,256,669 | 4,345,088 | -19.1%      |
-| transformer_causal   |      6,256,669 | 4,345,088 | -19.1%      |
-
-<!-- /AUTOGEN:TABLE -->
-
-## Training Time
-
-Average epoch time and peak VRAM per run. Compile-enabled Mamba skipped
-on 32 GB hardware — see INFRASTRUCTURE_PLAN.md §2.1.
-
-<!-- AUTOGEN:TABLE name=timing -->
-
-| Run                                | Backbone             |   Epochs | Avg epoch   | Total train   | Peak VRAM   |
-|------------------------------------|----------------------|----------|-------------|---------------|-------------|
-| exp01_transformer_causal_seed42    | transformer_causal   |       80 | 51 s        | 4055 s        | 2.7 GB      |
-| mamba_cuda_ep10_seed42             | mamba_cuda           |       10 | 60 s        | 602 s         | 0.0 GB      |
-| mamba_cuda_ep10_seed42             | mamba_cuda           |       10 | 60 s        | 605 s         | 0.0 GB      |
-| exp08_transformer_seed42           | transformer          |       80 | 61 s        | 4870 s        | 2.5 GB      |
-| lion_delta_seed42                  | lion_delta           |       30 | 69 s        | 2065 s        | 4.5 GB      |
-| exp09_lion_seed42                  | lion                 |       82 | 73 s        | 6003 s        | 3.6 GB      |
-| lucid_exp05_lion_convshift_seed42  | lion_convshift       |       30 | 79 s        | 2373 s        | 3.6 GB      |
-| lucid_exp02_lion_seed42            | lion                 |       30 | 79 s        | 2383 s        | 3.6 GB      |
-| d0_rwkv6_ep10_seed42               | rwkv6                |       10 | 82 s        | 817 s         | 4.6 GB      |
-| d0_rwkv6_benchmark_seed42          | rwkv6                |        2 | 83 s        | 166 s         | 4.6 GB      |
-| lucid_exp01_rwkv6_seed42           | rwkv6                |       30 | 110 s       | 3306 s        | 4.6 GB      |
-| disc02_rwkv6_trap_seed42           | rwkv6_trap           |       30 | 112 s       | 3346 s        | 6.5 GB      |
-| disc06_rwkv6_convshift_trap_seed42 | rwkv6_convshift_trap |       30 | 117 s       | 3517 s        | 6.5 GB      |
-| disc03_rwkv6_trap_var_seed42       | rwkv6_trap_var       |       30 | 117 s       | 3524 s        | 6.5 GB      |
-| disc04_rwkv6_gen2_seed42           | rwkv6_gen2           |       30 | 119 s       | 3584 s        | 6.5 GB      |
-| lucid_exp04_lion_lucid_seed42      | lion_lucid           |       30 | 135 s       | 4060 s        | 5.3 GB      |
-| lucid_exp06_rwkv6_lucid_sr_seed42  | rwkv6_lucid_sr       |       30 | 149 s       | 4456 s        | 4.7 GB      |
-| disc05_rwkv6_ab3_seed42            | rwkv6_ab3            |       30 | 151 s       | 4541 s        | 8.4 GB      |
-| lucid_exp03_rwkv6_lucid_seed42     | rwkv6_lucid          |       30 | 175 s       | 5254 s        | 5.0 GB      |
-| mamba_pytorch_ep10_seed42          | mamba                |       10 | 427 s       | 4267 s        | 0.0 GB      |
-
-<!-- /AUTOGEN:TABLE -->
-
----
-
-## Early Baseline Results (10 epochs, seed=42)
-
-Quick 10-epoch runs to verify all backbones train correctly before full 80-epoch experiments.
-
-| Backbone | Params | Dev CER | Dev WER | ~Epoch Time |
-|----------|--------|---------|---------|-------------|
-| Transformer | 6.26M | 0.3522 | 0.8781 | 46s |
-| Linear Attention | 6.26M | 0.4206 | 0.9668 | 50s |
-| RWKV-6 | 7.74M | 0.1995 | 0.5518 | 83s |
-| Mamba | 7.30M | — | — | very slow |
-
-RWKV-6 is the clear winner at 10 epochs. Transformer and Linear Attention are still converging.
-
-### Mamba training speed issue — RESOLVED
-
-The original Mamba implementation used a pure-PyTorch selective scan with a sequential Python
-loop over every time step. This was replaced with a **parallel associative scan**
-(Hillis-Steele, chunked with chunk_size=64). Additionally, `torch.compile(encoder)` support
-was added which achieves parity with the CUDA mamba-ssm kernels (see comparison below).
-
-### RWKV-6 sanity check: Common Voice Ukrainian
-
-To confirm that the CER difference between LibriSpeech and the old Common Voice experiments
-is the dataset (not a code change), we ran the new blocks.py RWKV-6 on Common Voice Ukrainian
-with the exact same config as the old run-020 experiment (which used `rwkv-block` library).
-
-| Epoch | New blocks.py (CV 25.0) | Old rwkv-block (CV 24.0, run-020) |
-|-------|-------------------------|-------------------------------------|
-| 1 | 0.9453 | 0.8754 |
-| 5 | 0.3611 | 0.3845 |
-| 10 | 0.3079 | 0.3199 |
-
-CER dynamics match closely. The ~1% gap is expected from dataset version differences (CV 25.0 vs 24.0).
-The old run-020 reached 0.2296 at epoch 60 — our reimplementation would likely land in the same range.
-
-Conclusion: the fast convergence on LibriSpeech (0.20 CER at epoch 10) is because LibriSpeech clean
-is much easier than Common Voice (read speech, studio quality, consistent speakers vs noisy crowdsourced).
-The RWKV-6 implementation is correct.
-
----
-
-## Mamba Comparison: PyTorch Reimplementation vs CUDA mamba-ssm
-
-**Goal:** Verify that our pure-PyTorch Mamba reimplementation produces the same
-accuracy as the official CUDA `mamba-ssm` package, and characterize the speed gap.
-
-### Why eager mode for this comparison
-
-Both experiments below ran in **eager mode** (no `torch.compile`). This is the
-fairest comparison because:
-
-1. **Accuracy validation** — eager mode executes the exact operations we wrote,
-   with no compiler-introduced numerical differences.
-2. **Reproducibility** — `torch.compile` is sensitive to PyTorch version and GPU
-   architecture; eager results are portable.
-3. **The speed gap is a known, measured quantity** — see the benchmark section
-   below for compiled numbers.
-
-For subsequent full 80-epoch training runs, we will use `torch.compile(encoder)`
-via the `--compile` flag, which brings PyTorch Mamba to CUDA-level speed.
-
-### Accuracy comparison (10 epochs, seed=42, LibriSpeech clean-100)
-
-| Epoch | PyTorch Dev CER | CUDA Dev CER | Delta |
-|-------|----------------:|-------------:|------:|
-| 1     | 0.4735          | 0.4473       | +0.026 |
-| 2     | 0.3312          | 0.3185       | +0.013 |
-| 3     | 0.2810          | 0.2667       | +0.014 |
-| 4     | 0.2467          | 0.2373       | +0.009 |
-| 5     | 0.2272          | 0.2160       | +0.011 |
-| 6     | 0.2104          | 0.2067       | +0.004 |
-| 7     | 0.2025          | 0.1940       | +0.009 |
-| 8     | 0.1936          | 0.1880       | +0.006 |
-| 9     | 0.1898          | 0.1843       | +0.006 |
-| 10    | 0.1892          | 0.1852       | +0.004 |
-
-| Metric | PyTorch | CUDA |
-|--------|--------:|-----:|
-| **Best Dev CER** | 0.1892 | 0.1843 |
-| **Test CER** | 0.1857 | 0.1808 |
-| **Test WER** | 0.5308 | 0.5183 |
-| Params | 7,304,221 | 7,304,221 |
-
-**Chunked evaluation (Dev, reset mode):**
-
-| Chunk | PyTorch | CUDA |
-|-------|--------:|-----:|
-| 2s  | 0.2669 | 0.2614 |
-| 5s  | 0.2119 | 0.2064 |
-| 10s | 0.1945 | 0.1894 |
-
-**Carry-state evaluation (PyTorch only — CUDA wrapper doesn't expose carry-state):**
-
-| Chunk | Carry CER |
-|-------|----------:|
-| 2s  | 0.2709 |
-| 5s  | 0.2267 |
-| 10s | 0.2132 |
-
-**Summary:**
-- Both converge along nearly identical trajectories (delta narrows from 0.026 to 0.004)
-- The ~0.005 CER gap at convergence is within noise — likely from different
-  numerical paths in the two SSM kernels (discretization order, float accumulation)
-- Chunked eval shows the same ~0.005 consistent gap
-- **Conclusion: the PyTorch reimplementation is accuracy-equivalent to CUDA mamba-ssm**
-
-### Speed comparison
-
-| Metric | PyTorch (eager) | CUDA mamba-ssm |
-|--------|----------------:|---------------:|
-| Avg epoch time | **427s** | **60s** |
-| Speed ratio | 7.1× slower | 1× |
-| Peak VRAM | ~25 GB | ~8 GB |
-
-The PyTorch version uses gradient checkpointing (recomputes activations in backward)
-to fit in 32 GB. The CUDA version's fused kernels are inherently more memory-efficient.
-
-### torch.compile — faster than CUDA mamba-ssm, but blocked by VRAM
-
-Micro-benchmarks with fixed tensors (B=8, T=500) showed `torch.compile(encoder)`
-achieving **26ms fwd+bwd vs CUDA's 35ms** — the compiled PyTorch scan is actually
-faster than the CUDA kernels. The problem is purely memory, not compute:
-
-1. **Gradient checkpointing saves ~10GB** by recomputing activations during backward
-   instead of storing them. This is what makes eager mode fit in 32GB (~25GB used).
-2. **`torch.compile` is incompatible with gradient checkpointing** — they cannot be
-   used together.
-3. **Without checkpointing**, the full activation graph for 6 Mamba layers with real
-   training batches (duration-based, up to 300s total) needs **>32GB** — so it OOMs
-   on the RTX 5090.
-
-So the bottleneck is the 32GB VRAM limit, not `torch.compile` itself. On a GPU with
-~48GB+ (e.g., A100 40GB/80GB, H100), `torch.compile` would work and give near-CUDA
-or better speed without needing the `mamba-ssm` CUDA kernels at all.
-
-**Possible workarounds (for later):**
-
-1. **Reduce `batch_max_seconds`** from 300 to ~150–200 — smaller batches would fit
-   without checkpointing, making `torch.compile` viable. Tradeoff: more optimizer
-   steps per epoch, potentially different convergence dynamics.
-2. **Compile individual layers** instead of the whole encoder — this might be
-   compatible with gradient checkpointing wrapping the compiled layers.
-3. **Mixed precision (bf16)** — could cut activation memory enough to skip
-   checkpointing entirely.
-
-The `--compile` flag remains in the codebase for future use with any of the above.
-
-### Key changes made
-
-1. **Parallel associative scan** (Hillis-Steele) replaced the sequential loop
-2. **Chunked scan** (chunk_size=64) bounds memory to O(B×C×D×N) per chunk
-3. **Gradient checkpointing** in eager mode (skipped under torch.compile)
-4. **Carry-state support** via `init_state()` and dict-based state passing
-5. **`--compile` and `--gpu` flags** added to `run_experiment.py`
-
----
-
-## Mamba-2 rewrite + LION bidirectionalisation
-
-The Mamba-1 PyTorch path above was accurate but (a) slow in eager, (b) monolithic:
-bidirectionality was done by duplicating encoder layers (`BidirMambaEncoder`,
-2× params), and there was no hook for mechanism experiments (LUCID / Delta /
-Headscale) without rewriting the scan. We rebuilt the block around the **LION
-full-attention form** the same way `lion_attention.py` supports RWKV-6.
-
-### Why Mamba-2 (not Mamba-1)
-
-LION's full-attention T×T mask is per-"head of decay". Mamba-1's per-(d_inner, d_state)
-`A` would require a (B, d_inner, d_state, T, T) tensor — ~260 GB at B=8, T=1000.
-Mamba-2's *scalar-λ per head* makes the mask (B, n_heads, T, T) — ~260 MB at the
-same shape, i.e. the same complexity class as LION-RWKV. So Mamba-2 is the form
-that maps cleanly into the LION kernel we already own.
-
-### Layering — mirrors `lion_attention.py` / `rwkv6_time_mix.py`
-
-| File | Role |
-|---|---|
-| `src/models/mamba2_kernels.py` | Pure-function kernels: `ssd_scan_causal`, `ssd_scan_lion`, `ssd_scan_lion_chunk`. No nn.Module, no parameters. |
-| `src/models/mamba2_block.py`   | `Mamba2Block(nn.Module)` — Mamba-2 projections; dispatches on `mode`. `forward()` + `step()` (carry-state for `recurrent`). |
-| `src/models/mamba2_encoder.py` | Encoder stack; single `mode` flag selects causal vs bidirectional. No separate `BidirMamba2Encoder`. |
-
-Modes:
-- `mode="recurrent"`  — SSD causal scan (Dao & Gu 2024, Listing 1). Carry-state capable.
-- `mode="lion"`       — LION full bidirectional attention (Afzal et al. 2025, Theorem 3.1, "Mamba-2" row). No carry-state.
-- `mode="lion_chunk"` — LION chunkwise bidir (paper §3.3), for long sequences.
-
-Bidirectional encoder has **the same parameter count** as causal (7.27M = 7.27M) —
-opposite of the old `BidirMambaEncoder` which doubled params.
-
-### Correctness
-
-`tests/test_mamba2_kernels.py` + `tests/test_mamba2_block.py`, 12/12 pass on RTX PRO 6000:
-- kernels vs a hand-coded sequential recurrence: max rel Δ ~ 1e-6 (float32 noise)
-- `lion` vs `lion_chunk`: max rel Δ ~ 2.5e-7
-- `step()` vs `forward()`: max rel Δ ~ 5.7e-7
-- split-chunk carry-state consistent with single-shot forward: max rel Δ ~ 7.7e-7
-- `torch.compile` parity (causal + lion): max rel Δ ~ 4.3e-7
-
-### Speed (6-layer encoder, d_model=256, eager, RTX PRO 6000 / 97 GB)
-
-| Shape | Mamba-1 (HS scan) | Mamba-2 causal | **Mamba-2 lion (bidir)** |
-|---|---|---|---|
-| B=8, T=500   | 140.7 ms, 2.7 GB | 36.1 ms, 0.4 GB | 27.2 ms, 0.4 GB |
-| B=8, T=1000  | 275.8 ms, 5.4 GB | 36.0 ms, 0.7 GB | 53.0 ms, 1.1 GB |
-| B=16, T=500  | 308.8 ms, 5.4 GB | 36.5 ms, 0.7 GB | 36.4 ms, 0.7 GB |
-
-Mamba-2 *eager* already matches or beats the old compiled Mamba-1 path. Bidir
-costs the same as causal at these shapes. Memory is ~5–40× lower, so the old
-`torch.compile × gradient_checkpointing` conflict is gone.
-
-### Accuracy — 10-epoch LibriSpeech clean-100 (seed 42)
-
-| Backbone | Params | Dev CER | Test CER | Test WER | sec/epoch |
-|---|---:|---:|---:|---:|---:|
-| (baseline) PyTorch Mamba-1 | 7.30M | 0.1892 | 0.1857 | 0.5308 | 427 |
-| (baseline) CUDA `mamba-ssm` | 7.30M | 0.1843 | 0.1808 | 0.5183 |  60 |
-| `mamba2` (causal, our rewrite)   | 7.27M | **0.1782** | **0.1763** | 0.5058 |  98 |
-| `mamba2_lion` (bidir, our LION)  | 7.27M | **0.1640** | **0.1592** | 0.4643 | 101 |
-
-Per-epoch Dev CER trajectory (LION leads causal by 0.011–0.017 at **every** epoch):
-
-| ep | `mamba2` causal | `mamba2_lion` bidir | Δ |
-|---:|---:|---:|---:|
-|  1 | 0.4345 | 0.4185 | −0.0160 |
-|  2 | 0.3121 | 0.2951 | −0.0170 |
-|  3 | 0.2625 | 0.2499 | −0.0127 |
-|  4 | 0.2308 | 0.2197 | −0.0112 |
-|  5 | 0.2103 | 0.1968 | −0.0135 |
-|  6 | 0.1993 | 0.1839 | −0.0154 |
-|  7 | 0.1890 | 0.1726 | −0.0164 |
-|  8 | 0.1821 | 0.1685 | −0.0136 |
-|  9 | 0.1784 | 0.1642 | −0.0141 |
-| 10 | 0.1782 | 0.1640 | −0.0142 |
-
-**Headline:**
-- `mamba2` causal beats the CUDA `mamba-ssm` baseline at every epoch despite
-  being pure PyTorch.
-- `mamba2_lion` beats CUDA `mamba-ssm` by 0.022 absolute test CER (12%
-  relative) with **identical parameter count** to causal mamba2 — bidirectional
-  context for free.
-- Artifacts: `outputs/mamba2_ep10_seed42/`, `outputs/mamba2_lion_ep10_seed42/`.
-
-### Accuracy — 30-epoch runs (matching baseline training budget)
-
-Extended to 30 epochs (cosine + warmup fully decayed) for a fair comparison
-against the 80-epoch thesis baselines.
-
-| Backbone | Params | Dev CER | Test CER | Test WER | sec/epoch |
-|---|---:|---:|---:|---:|---:|
-| `mamba2` (causal)       | 7.27M | 0.1198 | 0.1192 | 0.3615 |  98 |
-| `mamba2_lion` (bidir)   | 7.27M | **0.1031** | **0.1018** | **0.3125** | 101 |
-
-At 30 epochs, `mamba2_lion` reaches 0.1018 test CER — **a 44% relative drop
-from the 10-epoch CUDA baseline (0.1808) with the same 7.27M parameter count
-and pure-PyTorch modifiable kernels**. Key observations:
-
-- **Every epoch, `mamba2_lion` leads `mamba2` causal by 0.011–0.017 Dev CER.**
-  The LION bidirectional form exploits the full sequence from epoch 1, not
-  just at convergence.
-- `mamba2_lion` at epoch 16 (0.1193 Dev) already matches `mamba2` causal's
-  30-epoch final (0.1198). Bidirectional context is worth ~14 extra epochs.
-- `mamba2` causal at 30 epochs (0.1192 test) already beats the 80-epoch
-  `transformer_causal` baseline (0.1292) recorded earlier in this document.
-
-### Chunked evaluation (streaming robustness)
-
-Split each dev utterance into fixed-length chunks; reset mode re-initialises
-the SSM state at chunk boundaries, carry mode propagates it.
-
-| Backbone | full utt | 2s reset | 5s reset | 10s reset | 2s carry | 5s carry | 10s carry |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| `mamba2` (causal)     | 0.1192 | 0.2315 | 0.1620 | 0.1432 | **0.1408** | **0.1394** | **0.1384** |
-| `mamba2_lion` (bidir) | 0.1018 | 0.1927 | 0.1382 | 0.1250 | — | — | — |
-
-`mamba2` carry-state closes the gap vs full-utterance almost entirely
-(0.1384 carry-10s vs 0.1192 full), confirming that the `step()` / SSM state
-plumbing in `Mamba2Block` is streaming-ready. `mamba2_lion` does not support
-carry-state (bidirectional attention sees the whole sequence at once), so
-only reset-mode is reported.
-
-Artifacts: `outputs/mamba2_seed42/`, `outputs/mamba2_lion_seed42/`.
-
----
+## Dataset
+
+LibriSpeech clean via HuggingFace: `train.100` (~28 539 utterances),
+`validation`, `test`. English characters, CTC blank index 0.
+
+## Main final results (dev / test CER, seed 42, 30 ep)
+
+| Stage | Backbone | Dev | Test |
+|---|---|---:|---:|
+| 2 | `rwkv6` (vanilla baseline) | 0.1258 | 0.1263 |
+| 2 | `rwkv6_trap` / `trap_var` / `gen2` | ~0.1261 | ~0.1254 |
+| 2 | `rwkv6_ab3` | 0.1299 | 0.1285 |
+| 2 | `rwkv6_convshift_trap` (cross-axis) | 0.1150 | 0.1150 |
+| 3 | `rwkv6_rse` | 0.1251 | 0.1238 |
+| 3 | `rwkv6_rse_convshift` (cross-axis) | 0.1145 | 0.1126 |
+| 4 | `rwkv6_rse_depth` | 0.1207 | 0.1200 |
+| 4 | `rwkv6_rse_strong` | 0.1192 | 0.1188 |
+| 5 | `rwkv6_rse_depth_viscosity` | 0.1198 | 0.1198 |
+| **5** | **`rwkv6_rse_strong_viscosity` — anchor** | **0.1185** | **0.1177** |
+| 5 Ph1 | `rwkv6_p2rse` / `p2rse_softmax` | 0.1250 / 0.1220 | 0.1241 / 0.1215 |
+| 6 | `rwkv6_p2rse_strong_viscosity` (shared-λ) | 0.1190 | 0.1196 |
+| 6 | `rwkv6_p2rse_indeplam_strong_viscosity` (indep-λ) | 0.1394 | 0.1383 |
+| 6 | `rwkv6_rmsnorm` / `hadamard_n2` | 0.1264 / 0.1253 | 0.1252 / 0.1251 |
+| 6 | `rwkv6_qtail` (K², top-2) | 0.1260 | 0.1240 |
+| 6 | `rwkv6_qtail_gamma` / `qtail_gamma_dbeta` | 0.1257 / 0.1247 | 0.1249 / 0.1245 |
+| 6 | `rwkv6_qtail_lowrank` / `qtail_lowrank_all` | 0.1247 / 0.1238 | 0.1242 / 0.1240 |
+| 7A | `rwkv6_rse_dphi_viscosity` (data-dep readout φ) | 0.1217 | 0.1207 |
+| 8 T1 | `rwkv6_delta_warmstart_fixed` (recurrent delta, wired) | 0.1258 | 0.1256 |
+| 8 T2 | `rwkv6_nonnormal_rse_viscosity` (dense polar non-normal) | 0.1202 | 0.1200 |
+| 9 A | `rwkv6_sparse_nonnormal_rse_viscosity` (halted ep 15) | 0.1467 (ep 15) | — |
+| 9 B | `rwkv6_sparse_nonnormal_rse_edge_only_viscosity` | 0.1218 | 0.1216 |
+
+**Best causal result:** `rwkv6_rse_strong_viscosity` at dev **0.1185** /
+test **0.1177**. See [stages_2_9_summary.md](stages_2_9_summary.md) for
+per-epoch trajectories, hypothesis logic, diagnostic probes, and the
+invariant across Stage 7A / 8 / 9 dense-vs-sparse variants.
+
+## Sibling docs
+
+- [stages_2_9_summary.md](stages_2_9_summary.md) — sequential narrative
+  + per-epoch tables + implementation links.
+- [TODO_FUTURE_IDEAS.md](TODO_FUTURE_IDEAS.md) — resolved-status index
+  and parking lot for literature mechanisms not yet tested.
+- [TODO_DELTA_RULE.md](TODO_DELTA_RULE.md) — dedicated delta-rule catalog.
 
 ## Notes
 
-- All parameter counts should be within 5% of LION (reference).
 - CER computed character-by-character. WER computed word-by-word.
-- "Delta vs X" = relative change: `(new - base) / base * 100%`
-- Tables will be populated as experiments complete.
+- "Δ vs X" in other docs = relative change `(new − base) / base · 100 %`.

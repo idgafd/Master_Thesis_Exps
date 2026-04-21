@@ -1,0 +1,1 @@
+--backbone rwkv6_delta_warmstart_fixed --epochs 30 --seed 42 --output-dir outputs/s8_t1a_rwkv6_delta_warmstart_fixed_seed42 --gpu 0

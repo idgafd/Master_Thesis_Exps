@@ -1,0 +1,1 @@
+--backbone rwkv6_sparse_nonnormal_rse_viscosity --epochs 30 --seed 42 --output-dir outputs/s9a_rwkv6_sparse_nonnormal_rse_viscosity_seed42 --gpu 0

@@ -1,0 +1,12 @@
+Bench on NVIDIA RTX PRO 6000 Blackwell Workstation Edition
+
+=== Delta scan ===
+  eager:            275.8 ms
+  torch.jit.script:   246.4 ms   1.12×
+
+=== Non-normal RSE scan ===
+  eager:            304.4 ms
+  torch.jit.script: FAILED — RuntimeError: 
+
+bonus_scalar_all is not defined in the false branch:
+  File "/home/researcher/Master_Thesis_Exps/experiments/formal_v1

@@ -50,6 +50,13 @@ class RWKV6Block(nn.Module):
         use_qtail_dbeta: bool = False,
         use_qtail_lowrank: bool = False,
         qtail_lr_rank: int = 16,
+        use_data_dep_readphase: bool = False,
+        readphase_clip: float = None,
+        use_nonnormal_rse: bool = False,
+        nonnormal_rho_kappa: float = None,
+        use_sparse_nonnormal_rse: bool = False,
+        sparse_nn_edge_only: bool = False,
+        nonnormal_psi_static: bool = False,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -68,6 +75,10 @@ class RWKV6Block(nn.Module):
             rse_kwargs["rse_theta_clip"] = rse_theta_clip
         if rse_theta_lora_dim is not None:
             rse_kwargs["rse_theta_lora_dim"] = rse_theta_lora_dim
+        if readphase_clip is not None:
+            rse_kwargs["readphase_clip"] = readphase_clip
+        if nonnormal_rho_kappa is not None:
+            rse_kwargs["nonnormal_rho_kappa"] = nonnormal_rho_kappa
         self.att = RWKV6TimeMix(
             hidden_size=hidden_size,
             n_head=n_head,
@@ -102,6 +113,11 @@ class RWKV6Block(nn.Module):
             use_qtail_dbeta=use_qtail_dbeta,
             use_qtail_lowrank=use_qtail_lowrank,
             qtail_lr_rank=qtail_lr_rank,
+            use_data_dep_readphase=use_data_dep_readphase,
+            use_nonnormal_rse=use_nonnormal_rse,
+            use_sparse_nonnormal_rse=use_sparse_nonnormal_rse,
+            sparse_nn_edge_only=sparse_nn_edge_only,
+            nonnormal_psi_static=nonnormal_psi_static,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(
