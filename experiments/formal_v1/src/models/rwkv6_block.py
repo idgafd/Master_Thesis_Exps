@@ -57,6 +57,19 @@ class RWKV6Block(nn.Module):
         use_sparse_nonnormal_rse: bool = False,
         sparse_nn_edge_only: bool = False,
         nonnormal_psi_static: bool = False,
+        use_loglinear: bool = False,
+        loglinear_levels: int = 10,
+        use_m2rnn: bool = False,
+        m2rnn_layer: int = 5,
+        use_conv_shift_multidilation: bool = False,
+        conv_shift_multidil_padding_mode: str = "auto",
+        conv_shift_multidil_content_conditional: bool = False,
+        use_chanmix_bypass: bool = False,
+        use_cayley_orthogonal: bool = False,
+        cayley_rank: int = 1,
+        use_pom_vlift: bool = False,
+        pom_order: int = 2,
+        pom_expansion: int = 64,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -118,6 +131,18 @@ class RWKV6Block(nn.Module):
             use_sparse_nonnormal_rse=use_sparse_nonnormal_rse,
             sparse_nn_edge_only=sparse_nn_edge_only,
             nonnormal_psi_static=nonnormal_psi_static,
+            use_loglinear=use_loglinear,
+            loglinear_levels=loglinear_levels,
+            use_m2rnn=use_m2rnn,
+            m2rnn_layer=m2rnn_layer,
+            use_conv_shift_multidilation=use_conv_shift_multidilation,
+            conv_shift_multidil_padding_mode=conv_shift_multidil_padding_mode,
+            conv_shift_multidil_content_conditional=conv_shift_multidil_content_conditional,
+            use_cayley_orthogonal=use_cayley_orthogonal,
+            cayley_rank=cayley_rank,
+            use_pom_vlift=use_pom_vlift,
+            pom_order=pom_order,
+            pom_expansion=pom_expansion,
             dtype=dtype,
         )
         self.ffn = RWKV6ChannelMix(
@@ -125,6 +150,7 @@ class RWKV6Block(nn.Module):
             num_hidden_layers=num_hidden_layers,
             layer_id=layer_id,
             mode=mode,
+            use_chanmix_bypass=use_chanmix_bypass,
             dtype=dtype,
         )
 

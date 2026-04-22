@@ -69,6 +69,19 @@ class RWKV6Encoder(nn.Module):
         use_sparse_nonnormal_rse: bool = False,
         sparse_nn_edge_only: bool = False,
         nonnormal_psi_static: bool = False,
+        use_loglinear: bool = False,
+        loglinear_levels: int = 10,
+        use_m2rnn: bool = False,
+        m2rnn_layer: int = 5,
+        use_conv_shift_multidilation: bool = False,
+        conv_shift_multidil_padding_mode: str = "auto",
+        conv_shift_multidil_content_conditional: bool = False,
+        use_chanmix_bypass: bool = False,
+        use_cayley_orthogonal: bool = False,
+        cayley_rank: int = 1,
+        use_pom_vlift: bool = False,
+        pom_order: int = 2,
+        pom_expansion: int = 64,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -78,6 +91,13 @@ class RWKV6Encoder(nn.Module):
         self.d_model = d_model
         self.n_layers = n_layers
         self.mode = mode
+        # Stage 10.1 / 10.2 — the new recurrent branches do not yet carry
+        # per-bucket (loglinear) or per-layer-5 (M²RNN) state across chunks.
+        # Disable carry-state advertising so evaluate.py skips *_carry metrics
+        # rather than producing silently-wrong numbers.
+        # Stage 10.5 Cayley and 10.6 PoM reuse the vanilla (B,H,K,K) carry
+        # so they do support carry-state.
+        self._supports_carry_state_override = not (use_loglinear or use_m2rnn)
         n_head = d_model // head_size
 
         self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
@@ -142,13 +162,27 @@ class RWKV6Encoder(nn.Module):
                     use_sparse_nonnormal_rse=sparse_here,
                     sparse_nn_edge_only=sparse_nn_edge_only,
                     nonnormal_psi_static=nonnormal_psi_static,
+                    use_loglinear=use_loglinear,
+                    loglinear_levels=loglinear_levels,
+                    use_m2rnn=use_m2rnn,
+                    m2rnn_layer=m2rnn_layer,
+                    use_conv_shift_multidilation=use_conv_shift_multidilation,
+                    conv_shift_multidil_padding_mode=conv_shift_multidil_padding_mode,
+                    conv_shift_multidil_content_conditional=conv_shift_multidil_content_conditional,
+                    use_chanmix_bypass=use_chanmix_bypass,
+                    use_cayley_orthogonal=use_cayley_orthogonal,
+                    cayley_rank=cayley_rank,
+                    use_pom_vlift=use_pom_vlift,
+                    pom_order=pom_order,
+                    pom_expansion=pom_expansion,
                     dtype=dtype,
                 )
             )
 
     @property
     def supports_carry_state(self) -> bool:
-        return self.mode == "recurrent"
+        # Recurrent mode + no unsupported new-mechanism carry-state gap.
+        return self.mode == "recurrent" and self._supports_carry_state_override
 
     def init_state(self, batch_size: int, device: torch.device) -> List[torch.Tensor]:
         """Initialize per-layer WKV states for carry-state inference.

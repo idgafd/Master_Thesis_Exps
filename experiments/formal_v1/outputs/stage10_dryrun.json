@@ -1,0 +1,64 @@
+{
+  "profile_shape": {
+    "B": 10,
+    "T_mel": 1200
+  },
+  "steps_per_epoch": 1236,
+  "n_epochs_planned": 30,
+  "torch_version": "2.7.1+cu128",
+  "cuda_version": "12.8",
+  "results": [
+    {
+      "backbone": "rwkv6",
+      "params": {
+        "total": 7736605,
+        "trainable": 7736605,
+        "frontend": 1903616,
+        "encoder": 5825024,
+        "ctc_head": 7965
+      },
+      "per_gpu": [
+        {
+          "gpu": 0,
+          "mean_ms": 87.24284172058105,
+          "stdev_ms": 16.79203744549568,
+          "peak_mem_gb": 1.561353216,
+          "n_iters": 10
+        },
+        {
+          "gpu": 1,
+          "mean_ms": 94.95210647583008,
+          "stdev_ms": 13.880078690581142,
+          "peak_mem_gb": 1.56292608,
+          "n_iters": 10
+        }
+      ]
+    },
+    {
+      "backbone": "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric",
+      "params": {
+        "total": 7802701,
+        "trainable": 7802701,
+        "frontend": 1903616,
+        "encoder": 5891120,
+        "ctc_head": 7965
+      },
+      "per_gpu": [
+        {
+          "gpu": 0,
+          "mean_ms": 124.38485622406006,
+          "stdev_ms": 12.643445045670784,
+          "peak_mem_gb": 3.43654912,
+          "n_iters": 10
+        },
+        {
+          "gpu": 1,
+          "mean_ms": 122.72601127624512,
+          "stdev_ms": 17.184693836849718,
+          "peak_mem_gb": 3.439842304,
+          "n_iters": 10
+        }
+      ]
+    }
+  ]
+}

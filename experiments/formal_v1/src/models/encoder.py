@@ -190,6 +190,44 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_qtail_lowrank_all": "recurrent",
         "rwkv6_qtail_gamma_lowrank_all": "recurrent",
         "rwkv6_qtail_gamma_dbeta_lowrank_all": "recurrent",
+        # Stage 10.1 — Log-Linear RWKV-6 (Family A, structural multi-scale)
+        "rwkv6_loglinear": "recurrent",
+        # Stage 10.2 — M²RNN sparing-use (Family C, non-linear state at L5)
+        "rwkv6_m2rnn_sparse": "recurrent",
+        # Stage 10.3 — Multi-dilation ConvShift (Family A input-side)
+        "rwkv6_convshift_multidil": "recurrent",
+        # Stage 10.3-sym — Symmetric-padding multi-dilation control, resolves
+        # the causality-vs-dilation confound against `rwkv6_convshift_trap`.
+        "rwkv6_convshift_multidil_symmetric": "recurrent",
+        # CB-1 — Composition of RSE (Stage 3 transition-side) × multidil_sym
+        # (Stage 10.3-sym input-side). Tests whether input-side RF expansion
+        # and transition-side rotation are orthogonal gains over `convshift_trap`.
+        "rwkv6_rse_convshift_multidil_symmetric": "recurrent",
+        # CB-5a — frontend_v2 lean (~413K frontend params, -1.5M vs v1).
+        # Tests structural change at reduced capacity.
+        "rwkv6_frontend_v2": "recurrent",
+        # CB-5b — frontend_v2 matched (~1.94M, param-neutral vs v1).
+        # Isolates structural change from parameter-count effect.
+        "rwkv6_frontend_v2_matched": "recurrent",
+        # CB-7 — Cross-channel × temporal composition (post-CB-1 pivot).
+        # qtail_lowrank_all (channel-side Kronecker) × multidil_sym (input-side
+        # temporal). The cheapest genuinely-orthogonal composition with
+        # existing infrastructure; tests whether temporal and channel-side
+        # gains compose additively after CB-1 falsified temporal × temporal.
+        "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric": "recurrent",
+        # CB-3 — Content-conditional α_d on multi-dilation ConvShift.
+        # Each frame selects its own dilation mix via softmax(W_α x + b_d).
+        # Genuinely new expressivity axis vs the per-layer scalar α_d.
+        "rwkv6_convshift_multidil_symmetric_gated": "recurrent",
+        "rwkv6_convshift_multidil_gated": "recurrent",
+        # Stage 10.4 — Avey partial-embedding ChannelMix bypass (Family D)
+        "rwkv6_chanmix_bypass": "recurrent",
+        # Stage 10.5 — Cayley-orthogonal (NCGRU-style, rank-1)
+        "rwkv6_orthogonal": "recurrent",
+        # Stage 10.6 — PoM polynomial value-lift (thin)
+        "rwkv6_pom_vlift": "recurrent",
+        # Stage 10.7 — Log-Linear × RSE composition (conditional on 10.1 ≥ MARGINAL)
+        "rwkv6_loglinear_rse_strong_viscosity": "recurrent",
         # Existing LION variants
         "lion": "lion",
         "lion_convshift": "lion",
@@ -317,6 +355,47 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # K²=4096 Kronecker at 6 layers wouldn't fit memory.
     qtail_all_layers = use_qtail and "lowrank_all" in backbone
 
+    # ── Stage 10 — new mechanism families ────────────────────────────────
+    # 10.1 Log-Linear RWKV-6 (Fenwick bucket readout).
+    use_loglinear = "loglinear" in backbone or getattr(cfg, "use_loglinear", False)
+    loglinear_levels = getattr(cfg, "loglinear_levels", 10)
+    # 10.2 M²RNN sparing-use (non-linear state at a single layer).
+    use_m2rnn = "m2rnn" in backbone or getattr(cfg, "use_m2rnn", False)
+    m2rnn_layer = getattr(cfg, "m2rnn_layer", 5)
+    # 10.3 Multi-dilation ConvShift — substring "multidil" on top of ConvShift.
+    # Also force conv_shift=True so the token-shift path uses the learned conv.
+    use_conv_shift_multidilation = (
+        "multidil" in backbone or getattr(cfg, "use_conv_shift_multidilation", False)
+    )
+    if use_conv_shift_multidilation:
+        conv_shift = True
+    # 10.3-sym: symmetric-padding multidilation variant, for the
+    # causality-vs-dilation apples-to-apples control against `_convshift_trap`.
+    # "auto" = mode-based default (causal for recurrent, symmetric for lion).
+    if use_conv_shift_multidilation and "multidil_symmetric" in backbone:
+        conv_shift_multidil_padding_mode = "symmetric"
+    else:
+        conv_shift_multidil_padding_mode = "auto"
+    # CB-3: content-conditional α_d — substring "gated" on top of multidil.
+    conv_shift_multidil_content_conditional = (
+        use_conv_shift_multidilation and "gated" in backbone
+    ) or getattr(cfg, "conv_shift_multidil_content_conditional", False)
+    # 10.4 ChannelMix bypass (Avey partial-embedding).
+    use_chanmix_bypass = (
+        "chanmix_bypass" in backbone or getattr(cfg, "use_chanmix_bypass", False)
+    )
+    # 10.5 Cayley-orthogonal transition (rank-1 by default).
+    use_cayley_orthogonal = (
+        "orthogonal" in backbone or getattr(cfg, "use_cayley_orthogonal", False)
+    )
+    cayley_rank = getattr(cfg, "cayley_rank", 1)
+    # 10.6 PoM polynomial value-lift (thin).
+    use_pom_vlift = (
+        "pom_vlift" in backbone or getattr(cfg, "use_pom_vlift", False)
+    )
+    pom_order = getattr(cfg, "pom_order", 2)
+    pom_expansion = getattr(cfg, "pom_expansion", 64)
+
     # Stage 5: P²-RSE flags
     p2rse = ("p2rse" in backbone) or cfg.p2rse
     # Phase 2b: independent-λ paired-pole variant (extra decay LoRA per pole).
@@ -360,7 +439,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
-    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity", "rwkv6_p2rse_strong_viscosity", "rwkv6_p2rse_indeplam_strong_viscosity", "rwkv6_p2rse_indeplam_extkv_strong_viscosity", "rwkv6_rse_dphi_viscosity", "rwkv6_rse_dphi", "rwkv6_nonnormal_rse_viscosity", "rwkv6_nonnormal_rse", "rwkv6_sparse_nonnormal_rse_viscosity", "rwkv6_sparse_nonnormal_rse_edge_only_viscosity"):
+    elif backbone in ("rwkv6_rse_strong", "rwkv6_p2rse_strong", "rwkv6_rse_strong_viscosity", "rwkv6_p2rse_strong_viscosity", "rwkv6_p2rse_indeplam_strong_viscosity", "rwkv6_p2rse_indeplam_extkv_strong_viscosity", "rwkv6_rse_dphi_viscosity", "rwkv6_rse_dphi", "rwkv6_nonnormal_rse_viscosity", "rwkv6_nonnormal_rse", "rwkv6_sparse_nonnormal_rse_viscosity", "rwkv6_sparse_nonnormal_rse_edge_only_viscosity", "rwkv6_loglinear_rse_strong_viscosity"):
         # Uniform but expanded budget: doubles clip and LoRA dim, keeps init small.
         # Shared between Stage-4 (rse_strong), Phase-2 (p2rse_strong),
         # Phase-3 (rse_strong_viscosity), and Stage-7A (rse_dphi_viscosity).
@@ -408,4 +487,17 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         use_sparse_nonnormal_rse=use_sparse_nonnormal_rse,
         sparse_nn_edge_only=sparse_nn_edge_only,
         nonnormal_psi_static=nonnormal_psi_static,
+        use_loglinear=use_loglinear,
+        loglinear_levels=loglinear_levels,
+        use_m2rnn=use_m2rnn,
+        m2rnn_layer=m2rnn_layer,
+        use_conv_shift_multidilation=use_conv_shift_multidilation,
+        conv_shift_multidil_padding_mode=conv_shift_multidil_padding_mode,
+        conv_shift_multidil_content_conditional=conv_shift_multidil_content_conditional,
+        use_chanmix_bypass=use_chanmix_bypass,
+        use_cayley_orthogonal=use_cayley_orthogonal,
+        cayley_rank=cayley_rank,
+        use_pom_vlift=use_pom_vlift,
+        pom_order=pom_order,
+        pom_expansion=pom_expansion,
     )

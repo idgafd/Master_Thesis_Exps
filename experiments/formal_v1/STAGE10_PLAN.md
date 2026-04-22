@@ -760,13 +760,14 @@ $B = 10, T = 1200$ mels on RTX PRO 6000.
 
 | Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | ms/iter | Time/ep | Epochs | Verdict |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| `rwkv6_loglinear` | A (log-scale transition mask) | 10.1 | — | — | — | ≈ 7 M + 57 K | TBD (~2-3× anchor) | — | 30 | TBD |
-| `rwkv6_m2rnn_sparse` | **C (sole member)** | 10.2 | — | — | — | ≈ 7 M + 17 K | TBD (~3-8× anchor) | — | 30 | TBD |
-| `rwkv6_convshift_multidil` | A (input-side) | 10.3 | — | — | — | ≈ 7 M + 18 K | TBD (<5 % over) | — | 30 | TBD |
-| `rwkv6_chanmix_bypass` | D (channel-mix) | 10.4 | — | — | — | ≈ 7 M + 6 | TBD (~0 over) | — | 30 | TBD |
+| `rwkv6_loglinear` | A (log-scale readout) | 10.1 | **0.1240** | **0.1226** | 0.3647 | ≈ 7 M + 57 K | 172 (chunked) | 361 | 30 | **PLATEAU** — log-linear axis closed on causal RWKV-6 (see STAGE10_ANALYSIS.md §10.1) |
+| `rwkv6_m2rnn_sparse` | **C (sole member)** | 10.2 | **0.1276** | **0.1264** | 0.3768 | ≈ 7 M + 17 K | 310 | 511 | 30 | **REGRESSION** (tied vanilla within 1.3σ) — non-linearity axis closed at this scale |
+| `rwkv6_convshift_multidil` (causal) | A (input-side) | 10.3 | **0.1229** | **0.1224** | 0.3671 | ≈ 7 M + 18 K | 86 | 173 | 30 | **REGRESSION** vs `convshift_trap` primary — causality penalty +0.0076, not mechanism failure |
+| `rwkv6_convshift_multidil_symmetric` | A (input-side, control) | 10.3-sym | **0.1153** | **0.1145** | **0.3439** | ≈ 7 M + 18 K | 102 | 177 | 30 | **MARGINAL** — ties `rwkv6_rse_convshift` abs-best without RSE; 10.3b composition gate open |
+| `rwkv6_chanmix_bypass` | D (channel-mix) | 10.4 | **0.1251** | **0.1248** | 0.3701 | ≈ 7 M + 6 | 100 | 174 | 30 | **PLATEAU** (tied vanilla 0.5σ) — over-smoothing not the binding failure mode |
 | `rwkv6_orthogonal` (rank-1) | B (Cayley-orthogonal) | 10.5 | — | — | — | ≈ 7 M + 3 K | TBD (~3-5× anchor) | — | 30 | TBD — diagnostic vs T2 |
 | `rwkv6_pom_vlift` (thin) | D (polynomial) | 10.6 | — | — | — | ≈ 7 M + 96 K | TBD (~0 over) | — | 30 | TBD — diagnostic vs qtail |
-| `rwkv6_loglinear_rse_strong_viscosity` | A × B (composition) | 10.7 | — | — | — | ≈ 7 M + 57 K | TBD | — | 30 | CONDITIONAL on 10.1 ≥ MARGINAL |
+| `rwkv6_loglinear_rse_strong_viscosity` | A × B (composition) | 10.7 | — | — | — | ≈ 7 M + 57 K | TBD | — | 30 | **CLOSED** — conditional on 10.1 ≥ MARGINAL, 10.1 landed PLATEAU |
 
 ### 9.3 Stage 11 — planned (Mamba-2, Linear Attention transfer)
 

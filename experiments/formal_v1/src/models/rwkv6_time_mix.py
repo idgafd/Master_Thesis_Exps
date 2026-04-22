@@ -21,6 +21,56 @@ from src.models.lion_attention import (
 )
 
 
+# ── Stage 10.1 — Static precompute for chunked log-linear scan ──────────
+# Per-chunk-size local-level masks.  `mask[chunk_len][ell, tau, sigma] = 1`
+# iff source position sigma belongs to local bucket level ell at the time
+# target position tau reads inside the chunk (tau, sigma ∈ [0, C)).
+#
+# Relies on two facts:
+#   1. Chunk length C = 2^J and chunk starts at multiples of C ⇒
+#      levels 0..J-1 are empty on entry (prior cascade at position `start`
+#      fires up to level ≥ J).
+#   2. Intra-chunk cascade events stay below level J (the chunk-end
+#      collapse at position `start + C` is handled separately, propagating
+#      local levels 0..J-1 into global level J or higher).
+_LOGLINEAR_LEVEL_MASKS: dict = {}
+
+
+def _build_local_level_masks(C: int, L_max: int) -> torch.Tensor:
+    """(J, C, C) bool tensor; J = min(log2(C), L_max). Empty if J = 0."""
+    import math as _math
+    assert C >= 1 and (C & (C - 1)) == 0, f"chunk_len must be power of 2: {C}"
+    J = int(_math.log2(C))
+    J = min(J, L_max)
+    if J == 0:
+        return torch.zeros(0, C, C, dtype=torch.bool)
+    mask = torch.zeros(J, C, C, dtype=torch.bool)
+    buckets_py: list[list[int]] = [[] for _ in range(J)]
+    for tau in range(C):
+        # Readout at tau sees σ ∈ buckets[0..J-1].
+        for ell in range(J):
+            if buckets_py[ell]:
+                for sigma in buckets_py[ell]:
+                    mask[ell, tau, sigma] = True
+        # Push tau into bucket 0 (post-readout).
+        buckets_py[0].append(tau)
+        # Intra-chunk cascade: cap at ell < J (chunk-end cascade is separate).
+        ell = 1
+        while ell < J and ((tau + 1) % (1 << ell)) == 0:
+            buckets_py[ell].extend(buckets_py[ell - 1])
+            buckets_py[ell - 1] = []
+            ell += 1
+    return mask
+
+
+def _get_level_masks(chunk_len: int, L_max: int, device: torch.device) -> torch.Tensor:
+    """Cached, device-specific level masks."""
+    key = (chunk_len, L_max, str(device))
+    if key not in _LOGLINEAR_LEVEL_MASKS:
+        _LOGLINEAR_LEVEL_MASKS[key] = _build_local_level_masks(chunk_len, L_max).to(device)
+    return _LOGLINEAR_LEVEL_MASKS[key]
+
+
 def _bidirectional_token_shift(x: torch.Tensor) -> torch.Tensor:
     """Bidirectional shift: (x[t-1] + x[t+1]) / 2, zero-padded."""
     left = F.pad(x[:, :-1, :], (0, 0, 1, 0))
@@ -211,6 +261,46 @@ class RWKV6TimeMix(nn.Module):
         # (ψ becomes a slow-timescale direction, not an extra token-level
         # freedom); trims front-end compute too.  Requires use_nonnormal_rse.
         nonnormal_psi_static: bool = False,
+        # ── Stage 10.1 — Log-Linear RWKV-6 (Fenwick bucket readout) ──────
+        # L bucket states partition the WKV prefix at log-scale.  Per-token
+        # per-scale mixer λ_t^(ℓ) = 1 + W_λ^(2) tanh(W_λ^(1) · x_shifted);
+        # W_λ^(1) zero-init ⇒ λ ≡ 1 ⇒ Σ_ℓ λ · r^T · S^(ℓ) = r^T · S = vanilla
+        # RWKV-6 readout bit-exact at t=0.  Requires mode='recurrent' and not
+        # composed with RSE/P²-RSE/non-normal paths (kept orthogonal for
+        # Stage 10.1 attribution; Stage 10.7 composition is a separate run).
+        use_loglinear: bool = False,
+        loglinear_levels: int = 10,
+        # ── Stage 10.2 — M²RNN sparing-use (single-layer non-linear state) ─
+        # Parallel branch Z=tanh(S·W + kv^T), gated forget-update, added to
+        # the RWKV readout with scalar λ_h (zero-init ⇒ bit-exact).  Active
+        # at one layer only (default: the top layer of a 6-layer stack).
+        use_m2rnn: bool = False,
+        m2rnn_layer: int = 5,
+        # ── Stage 10.3 — Multi-dilation ConvShift ───────────────────────
+        # Replaces the single-dilation DWConvShift with parallel dilated
+        # branches (1, 2, 4, 8) and learnable per-layer α_d. Requires
+        # conv_shift=True.
+        use_conv_shift_multidilation: bool = False,
+        # Padding mode for the multi-dilation ConvShift: "auto" chooses
+        # causal in mode=recurrent, symmetric otherwise. "symmetric" forces
+        # symmetric even in recurrent (10.3-sym apples-to-apples control).
+        conv_shift_multidil_padding_mode: str = "auto",
+        # CB-3 — content-conditional α_d on multi-dilation ConvShift.
+        conv_shift_multidil_content_conditional: bool = False,
+        # ── Stage 10.5 — Cayley-orthogonal transition ────────────────────
+        # G_t = exp(-λ_t) · O_t where O_t = (I - A_t)(I + A_t)^{-1} and
+        # A_t = U_t V_t^T - V_t U_t^T (rank-2·cayley_rank skew). At
+        # U=V=0 init, A=0 ⇒ O=I ⇒ scan reduces to vanilla RWKV-6 bit-exact.
+        # cayley_rank=1 keeps param parity; higher ranks break parity.
+        use_cayley_orthogonal: bool = False,
+        cayley_rank: int = 1,
+        cayley_lora_dim: int = 32,
+        # ── Stage 10.6 — PoM polynomial value-lift ──────────────────────
+        # v̂_t = v_t + Σ_{p=2..k} γ_p ⊙ (W_h x_t)^⊙p; γ=0 at init ⇒ v̂=v.
+        # The WKV state update is unchanged; only v is lifted.
+        use_pom_vlift: bool = False,
+        pom_order: int = 2,
+        pom_expansion: int = 64,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -253,6 +343,18 @@ class RWKV6TimeMix(nn.Module):
         self.use_sparse_nonnormal_rse = use_sparse_nonnormal_rse
         self.sparse_nn_edge_only = sparse_nn_edge_only
         self.nonnormal_psi_static = nonnormal_psi_static
+        self.use_loglinear = use_loglinear
+        self.loglinear_levels = loglinear_levels
+        self.use_m2rnn = use_m2rnn
+        self.m2rnn_layer = m2rnn_layer
+        self.m2rnn_active = use_m2rnn and (layer_id == m2rnn_layer)
+        self.use_conv_shift_multidilation = use_conv_shift_multidilation
+        self.use_cayley_orthogonal = use_cayley_orthogonal
+        self.cayley_rank = cayley_rank
+        self.cayley_lora_dim = cayley_lora_dim
+        self.use_pom_vlift = use_pom_vlift
+        self.pom_order = pom_order
+        self.pom_expansion = pom_expansion
         self.layer_id = layer_id
 
         if self.use_rse:
@@ -276,6 +378,47 @@ class RWKV6TimeMix(nn.Module):
 
         if self.use_sparse_nonnormal_rse:
             assert self.use_nonnormal_rse, "Sparse nonnormal_rse requires use_nonnormal_rse=True"
+
+        if self.use_loglinear:
+            assert mode == "recurrent", "Log-Linear RWKV-6 requires mode='recurrent'"
+            # Stage 10.1 is orthogonal to RSE / P²-RSE / non-normal paths;
+            # Stage 10.7 composition re-enables the RSE×Log-Linear combo with
+            # its own complex-bucket reformulation (not this code path).
+            assert not self.use_rse, (
+                "use_loglinear=True is not composed with RSE in Stage 10.1 "
+                "(use the Stage 10.7 `rwkv6_loglinear_rse_strong_viscosity` path)"
+            )
+            assert self.loglinear_levels >= 1
+
+        if self.use_m2rnn:
+            assert mode == "recurrent", "M²RNN sparing-use requires mode='recurrent'"
+            assert not self.use_rse, (
+                "Stage 10.2 M²RNN is orthogonal to RSE (Family C vs Family B) "
+                "per STAGE10_PLAN §6; keep attribution clean."
+            )
+            assert 0 <= m2rnn_layer < num_hidden_layers, (
+                f"m2rnn_layer={m2rnn_layer} out of range for {num_hidden_layers} layers"
+            )
+
+        if self.use_conv_shift_multidilation:
+            assert self.use_conv_shift, (
+                "use_conv_shift_multidilation requires conv_shift=True"
+            )
+
+        if self.use_cayley_orthogonal:
+            assert mode == "recurrent", "Cayley-orthogonal requires mode='recurrent'"
+            assert not self.use_rse, (
+                "Stage 10.5 Cayley is a separate Family-B branch; "
+                "keep orthogonal to RSE for attribution."
+            )
+            assert not self.use_loglinear and not self.use_m2rnn, (
+                "Cayley-orthogonal is orthogonal to 10.1/10.2 for clean attribution."
+            )
+            assert cayley_rank >= 1
+
+        if self.use_pom_vlift:
+            assert pom_order >= 2, "pom_order < 2 is a no-op"
+            assert pom_expansion >= 1
 
         hidden_size_att = hidden_size
 
@@ -380,8 +523,27 @@ class RWKV6TimeMix(nn.Module):
 
         # ── Mechanism: ConvShift ─────────────────────────────────────────
         if self.use_conv_shift:
-            from src.models.mechanisms.conv_shift import DWConvShift
-            self.conv_shift_module = DWConvShift(hidden_size)
+            if self.use_conv_shift_multidilation:
+                from src.models.mechanisms.conv_shift import MultiDilationDWConvShift
+                # Padding selection: "auto" = causal-in-recurrent (plan default),
+                # "symmetric" / "causal" override for controls.
+                if conv_shift_multidil_padding_mode == "auto":
+                    pad_mode = "causal" if mode == "recurrent" else "symmetric"
+                else:
+                    assert conv_shift_multidil_padding_mode in ("causal", "symmetric"), (
+                        f"bad conv_shift_multidil_padding_mode: {conv_shift_multidil_padding_mode}"
+                    )
+                    pad_mode = conv_shift_multidil_padding_mode
+                self.conv_shift_module = MultiDilationDWConvShift(
+                    hidden_size,
+                    kernel_size=3,
+                    dilations=(1, 2, 4, 8),
+                    padding_mode=pad_mode,
+                    content_conditional=conv_shift_multidil_content_conditional,
+                )
+            else:
+                from src.models.mechanisms.conv_shift import DWConvShift
+                self.conv_shift_module = DWConvShift(hidden_size)
 
         # ── Mechanism: Headscale ─────────────────────────────────────────
         if self.use_headscale:
@@ -418,6 +580,91 @@ class RWKV6TimeMix(nn.Module):
         # ── Mechanism: Temperature ───────────────────────────────────────
         if self.use_temperature:
             self.attention_temperature = nn.Parameter(torch.ones(1, n_head, 1, 1))
+
+        # ── Stage 10.1 Log-Linear — λ-mixer LoRA (zero-init W1, small W2) ──
+        # λ_t^(ℓ) = 1 + (W_λ^(2) · tanh(W_λ^(1) x_shift))_{ℓ}  per head.
+        # At init W_λ^(1) = 0 ⇒ λ ≡ 1 ⇒ Σ_ℓ λ^(ℓ) · r^T S^(ℓ) = r^T S.
+        if self.use_loglinear:
+            L = self.loglinear_levels
+            D_LOGLIN_DIM = 32
+            self.loglinear_lam_w1 = nn.Parameter(
+                torch.zeros(hidden_size, D_LOGLIN_DIM, dtype=dtype)
+            )
+            self.loglinear_lam_w2 = nn.Parameter(
+                torch.zeros(D_LOGLIN_DIM, n_head * L, dtype=dtype).uniform_(-0.01, 0.01)
+            )
+
+        # ── Stage 10.2 M²RNN — single-layer parallel non-linear branch ─────
+        # Active at layer `m2rnn_layer` only.  At init:
+        #   W_h = I_K per head (cosmetic; irrelevant while λ=0 gates the branch off)
+        #   λ_h = 0  ⇒  bit-exact vanilla RWKV-6 readout
+        #   W_f = 0  ⇒  f_t = sigmoid(0) = 0.5 (forget-update at midpoint)
+        if self.m2rnn_active:
+            K = head_size
+            # (H, K, K): start each head at I_K
+            eye = torch.eye(K, dtype=dtype).unsqueeze(0).expand(n_head, K, K).clone()
+            self.m2rnn_W = nn.Parameter(eye)
+            # λ_h: (H,)
+            self.m2rnn_lambda = nn.Parameter(torch.zeros(n_head, dtype=dtype))
+            # Paper-faithful forget gate (Mishra et al., arXiv:2603.14360):
+            #     z_{t,h} = W_f x_t + β_h        (pre-activation)
+            #     f_{t,h} = 1 / (1 + exp(z))^{α_h}        with α_h > 0
+            # α_h must be positive for f ∈ (0, 1]; we keep it positive by
+            # reparameterising α = softplus(α_raw) + ε.  At init α_raw = ln(e-1)
+            # so softplus(α_raw) = 1.0, matching the paper's default α_h = 1
+            # (which reduces f to sigmoid(-z)).
+            self.m2rnn_forget_proj = nn.Linear(hidden_size, n_head, bias=False, dtype=dtype)
+            nn.init.zeros_(self.m2rnn_forget_proj.weight)
+            self.m2rnn_forget_alpha_raw = nn.Parameter(
+                torch.full((n_head,), math.log(math.e - 1.0), dtype=dtype)
+            )
+            self.m2rnn_forget_beta = nn.Parameter(torch.zeros(n_head, dtype=dtype))
+
+        # ── Stage 10.5 Cayley-orthogonal — rank-`cayley_rank` U, V LoRAs ──
+        # Static base U, V ∈ (H, K) per rank index; zero-init.
+        # Data-dependent LoRA with zero-init down-projection so U=V=0 at init
+        # regardless of the xw stream content.  Matches T2's deployment shape
+        # (dense per-token) for apples-to-apples diagnostic comparison.
+        if self.use_cayley_orthogonal:
+            R = self.cayley_rank
+            K = head_size
+            D_CAY = self.cayley_lora_dim
+            # Base per-head rotation axes (static, zero-init)
+            self.cayley_U_base = nn.Parameter(
+                torch.zeros(R, n_head, K, dtype=dtype)
+            )
+            self.cayley_V_base = nn.Parameter(
+                torch.zeros(R, n_head, K, dtype=dtype)
+            )
+            # LoRA pairs (data-dependent, zero-init down-projection)
+            self.cayley_U_w1 = nn.Parameter(
+                torch.zeros(hidden_size, D_CAY, dtype=dtype)
+            )
+            self.cayley_U_w2 = nn.Parameter(
+                torch.zeros(D_CAY, R * n_head * K, dtype=dtype).uniform_(-0.01, 0.01)
+            )
+            self.cayley_V_w1 = nn.Parameter(
+                torch.zeros(hidden_size, D_CAY, dtype=dtype)
+            )
+            self.cayley_V_w2 = nn.Parameter(
+                torch.zeros(D_CAY, R * n_head * K, dtype=dtype).uniform_(-0.01, 0.01)
+            )
+
+        # ── Stage 10.6 PoM polynomial value-lift — thin config ────────────
+        # v̂_t = v_t + γ_2 ⊙ (W_h x_t)^⊙2  (k=2 thin variant)
+        # W_h expands input to pom_expansion dims; then element-wise square;
+        # γ_2 ∈ R^{hidden_size_att} is zero-init so v̂=v at t=0.
+        # Up-projection back to hidden_size_att via a second linear.
+        if self.use_pom_vlift:
+            D_POM = self.pom_expansion
+            self.pom_W_h = nn.Linear(hidden_size, D_POM, bias=False, dtype=dtype)
+            # Up-projection from D_POM back to hidden_size_att for element-wise
+            # gamma-weighted addition to v.
+            self.pom_W_up = nn.Linear(D_POM, hidden_size_att, bias=False, dtype=dtype)
+            # γ per order (for k=2 we have γ_2 only); zero-init for bit-exact v.
+            self.pom_gamma = nn.Parameter(
+                torch.zeros(self.pom_order - 1, hidden_size_att, dtype=dtype)
+            )
 
         # ── Stage 2: Discretization scheme ───────────────────────────────
         # `gen2` adds learnable α₀, α₁ per head. Initialized from `discretization_init`:
@@ -668,6 +915,20 @@ class RWKV6TimeMix(nn.Module):
         v = self.value(xv)
         g = F.silu(self.gate(xg))
 
+        # Stage 10.6 PoM value-lift: v̂ = v + Σ_p γ_p ⊙ W_up(h(W_h x)^⊙p).
+        # γ=0 at init ⇒ v̂ = v bit-exact.  Applied before the WKV scan so
+        # every existing scan path (vanilla, RSE, p2rse, …) consumes the
+        # lifted value without further changes.
+        if self.use_pom_vlift:
+            z = self.pom_W_h(x)                                              # (B, T, D_pom)
+            acc = torch.zeros_like(v)
+            for p_idx in range(self.pom_order - 1):
+                p = p_idx + 2  # p = 2, 3, ...
+                z_p = z ** p                                                 # (B, T, D_pom)
+                up = self.pom_W_up(z_p)                                      # (B, T, hidden_size_att)
+                acc = acc + self.pom_gamma[p_idx].view(1, 1, -1) * up
+            v = v + acc.to(v.dtype)
+
         w = self.time_decay + torch.tanh(xw @ self.time_decay_w1) @ self.time_decay_w2
         w = w.to(r.dtype)
 
@@ -732,7 +993,10 @@ class RWKV6TimeMix(nn.Module):
 
             return r, k, v, g, w, theta
 
-        return r, k, v, g, w
+        # Non-RSE path also returns xw — consumed by Stage 10.1 loglinear
+        # λ-mixer (paper-spec decay-side stream).  RSE variants don't need
+        # it separately because their LoRAs already run off xw internally.
+        return r, k, v, g, w, xw
 
     def forward(
         self,
@@ -767,7 +1031,7 @@ class RWKV6TimeMix(nn.Module):
                 psi_raw = None
             theta_2 = None
         else:
-            r, k, v, g, w = self._compute_rkv_gw(x)
+            r, k, v, g, w, xw = self._compute_rkv_gw(x)
             theta = None
             theta_2 = None
             rho_raw = None
@@ -907,7 +1171,32 @@ class RWKV6TimeMix(nn.Module):
             beta_tok = None
             if self.use_qtail_dbeta:
                 beta_tok = self.beta_qtail_proj(x).transpose(1, 2)  # (B, H, T)
-            y, new_state = self._forward_recurrent(r_h, k_h, v_h, w_h, state, beta_tok=beta_tok)
+            if self.use_loglinear:
+                # Stage 10.1 — Log-Linear Fenwick bucket readout.
+                # λ-mixer reads the decay-side stream x^(w) per Paper-1 spec,
+                # plumbed explicitly from _compute_rkv_gw's non-RSE return.
+                y, new_state = self._forward_recurrent_loglinear(
+                    r_h, k_h, v_h, w_h, xw, state
+                )
+            elif self.use_cayley_orthogonal:
+                # Stage 10.5 — Cayley-orthogonal transition (rank-`cayley_rank`).
+                # U, V come from zero-init-LoRA on the xw stream, so at t=0
+                # the scan is bit-exact vanilla RWKV-6 (A=0 ⇒ O=I).
+                # rank-1 uses the chunked affine-scan fast path; higher ranks
+                # fall back to the generic sequential Woodbury path.
+                if self.cayley_rank == 1:
+                    y, new_state = self._forward_recurrent_cayley_rank1_chunked(
+                        r_h, k_h, v_h, w_h, xw, state
+                    )
+                else:
+                    y, new_state = self._forward_recurrent_cayley(
+                        r_h, k_h, v_h, w_h, xw, state
+                    )
+            else:
+                y, new_state = self._forward_recurrent(r_h, k_h, v_h, w_h, state, beta_tok=beta_tok)
+            # Stage 10.2 — M²RNN parallel branch at the configured layer only.
+            if self.m2rnn_active:
+                y = y + self._m2rnn_branch(r_h, k_h, v_h, x)
         elif self.mode == "bidir_serial":
             y = self._forward_bidir_serial(r_h, k_h, v_h, w_h)
         else:
@@ -1058,6 +1347,657 @@ class RWKV6TimeMix(nn.Module):
             return y, wkv_state
 
         raise ValueError(f"Unknown discretization: {self.discretization}")
+
+    def _forward_recurrent_loglinear(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,       # log-decay (negative); actual per-step decay = exp(w)
+        x_in: torch.Tensor,    # (B, T, D) — feeds the λ-LoRA
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Stage 10.1 — Chunked Fenwick bucket scan.
+
+        Exact decomposition (not an approximation) based on Fenwick-alignment
+        of the cascade: on entry to a chunk of length C = 2^J starting at a
+        multiple of C, levels 0..J-1 are provably empty (the prior cascade
+        fired up to level ≥ J). Inside the chunk, local kv contributions
+        only populate levels 0..J-1, while the carry in levels ≥ J only
+        decays. At chunk end, all local levels collapse into level
+        J + v₂(chunk_index).
+
+        Schedule mirrors `_chunked_wkv`: [128, 16, 2, 1]. Each chunk_len is
+        a power of 2; consecutive chunk sizes are divisors of their
+        predecessors, so Fenwick alignment is preserved as we descend the
+        schedule.
+
+        Matches `_forward_recurrent_loglinear_seq` within fp32 numerical
+        precision. State input is ignored (carry-state disabled for
+        loglinear via encoder.supports_carry_state).
+        """
+        import math as _math
+
+        B, H, T, K = r.shape
+        L = self.loglinear_levels
+        device, in_dtype = r.device, r.dtype
+
+        # λ (B, H, T, L) from decay-side xw stream.
+        lam_lora = torch.tanh(x_in @ self.loglinear_lam_w1) @ self.loglinear_lam_w2
+        lam = 1.0 + lam_lora.view(B, T, H, L).permute(0, 2, 1, 3).float()   # (B, H, T, L)
+
+        # Buckets: (L, B, H, K, K).  Zero-init (state ignored).
+        buckets = torch.zeros(L, B, H, K, K, dtype=torch.float32, device=device)
+
+        # Keep (1, H, 1, K) shape so it broadcasts over both batch and time axes
+        # when multiplied with rc / kc of shape (B, H, C, K).
+        u_bhTK = self.time_faaaa.view(1, H, 1, K).float() if not self.drop_u else None
+
+        out_parts = []
+        processed = 0
+        remaining = T
+
+        # Cast working tensors to fp32 once (w is already fp on -exp(...))
+        r_f = r.float()
+        k_f = k.float()
+        v_f = v.float()
+        w_f = w.float()
+
+        for chunk_len in [128, 16, 2, 1]:
+            # Assert chunk_len is a power of 2.
+            assert chunk_len & (chunk_len - 1) == 0
+            num_chunks = remaining // chunk_len
+            if num_chunks == 0:
+                continue
+            J = int(_math.log2(chunk_len))  # number of local levels
+
+            # Precomputed level masks (cached per chunk_len + device).
+            if J > 0:
+                J_eff = min(J, L)
+                level_masks = _get_level_masks(chunk_len, L_max=J_eff, device=device)  # (J_eff, C, C) bool
+                # Pre-build tril mask for σ < τ (strict).
+                tril_mask = torch.tril(
+                    torch.ones(chunk_len, chunk_len, device=device, dtype=torch.bool),
+                    diagonal=-1,
+                )  # (C, C)
+
+            for _ in range(num_chunks):
+                start = processed
+                end = processed + chunk_len
+                k_chunk_idx = end // chunk_len   # 1-based
+
+                # Per-chunk slices (fp32)
+                rc = r_f[:, :, start:end]                                  # (B, H, C, K)
+                kc = k_f[:, :, start:end]
+                vc = v_f[:, :, start:end]
+                wc = w_f[:, :, start:end]
+                lamc = lam[:, :, start:end]                                # (B, H, C, L)
+
+                # Prefix decays (per-channel).
+                wc_cum = wc.cumsum(dim=2)                                  # (B, H, C, K) inclusive
+                wc_prev = F.pad(wc_cum[:, :, :-1], (0, 0, 1, 0))           # (B, H, C, K) exclusive
+
+                # ── 1. Carry contribution: levels ≥ J ──
+                # r_carry[τ] = r[τ] ⊙ exp(wc_prev[τ]) — decay-adjusted r
+                r_carry = rc * wc_prev.exp()                               # (B, H, C, K)
+                # per_level_carry[ell][τ, v] = r_carry[τ] · buckets[ell][:, v]
+                # shape: (L-J, B, H, C, K)
+                if J < L:
+                    buckets_carry = buckets[J:]                             # (L-J, B, H, K, K)
+                    # One einsum for all carry levels.
+                    per_level_carry = torch.einsum(
+                        'bhtk,lbhkv->lbhtv', r_carry, buckets_carry
+                    )                                                      # (L-J, B, H, C, K)
+                    lam_carry = lamc[:, :, :, J:L]                         # (B, H, C, L-J)
+                    # Weighted sum over carry levels.
+                    y_carry = torch.einsum(
+                        'bhtl,lbhtv->bhtv', lam_carry, per_level_carry
+                    )                                                      # (B, H, C, K)
+                else:
+                    y_carry = torch.zeros(B, H, chunk_len, K, dtype=torch.float32, device=device)
+
+                # ── 2. Local contribution: levels 0..J-1 ──
+                # Intra-chunk attention A[τ, σ, i] = exp(wc_prev[τ, i] - wc_cum[σ, i])
+                # for σ < τ (strict lower triangular), else 0.
+                if J > 0:
+                    # Stability: the upper triangle (σ ≥ τ) has +positive diffs
+                    # that can overflow exp() for long chunks, producing
+                    # inf × 0 = NaN after masking. Clamp to -60 BEFORE exp,
+                    # then torch.where to zero exactly (mirrors the fix in
+                    # _forward_recurrent_rse line 1337).
+                    diff = wc_prev.unsqueeze(3) - wc_cum.unsqueeze(2)       # (B, H, C, C, K)
+                    mask4d = tril_mask.view(1, 1, chunk_len, chunk_len, 1)
+                    safe_diff = diff.masked_fill(~mask4d, -60.0)
+                    A = torch.exp(safe_diff)
+                    A = torch.where(mask4d, A, torch.zeros_like(A))
+
+                    # Combined level-weighted mask: λ̃[τ, σ] = Σ_ℓ λ^(ℓ)[τ] · level_masks[ℓ, τ, σ]
+                    # shape (B, H, C, C).  Exploits the fact that level_masks
+                    # are a partition of {σ < τ}, so this collapses the
+                    # per-level loop into one einsum.
+                    lam_local = lamc[:, :, :, :J_eff]                      # (B, H, C, J_eff)
+                    lam_weighted_mask = torch.einsum(
+                        'bhtl,lts->bhts', lam_local, level_masks.to(A.dtype)
+                    )                                                      # (B, H, C, C)
+
+                    # β[τ, σ] = Σ_i r[τ, i] · A[τ, σ, i] · k[σ, i]  — per-channel contraction.
+                    # Then y_local[τ, v] = Σ_σ λ̃[τ, σ] · β[τ, σ] · v[σ, v].
+                    # Fuse into one einsum:
+                    #   y_local[τ, v] = Σ_σ λ̃[τ, σ] · Σ_i r[τ, i]·A[τ, σ, i]·k[σ, i] · v[σ, v]
+                    #                = Σ_σ Σ_i λ̃[τ, σ] · r[τ, i]·A[τ, σ, i]·k[σ, i] · v[σ, v]
+                    # Intermediate β_scaled = λ̃ ⊙ β.
+                    beta = torch.einsum(
+                        'bhti,bhsi,bhtsi->bhts', rc, kc, A
+                    )                                                      # (B, H, C, C)
+                    beta_scaled = beta * lam_weighted_mask
+                    y_local = torch.einsum(
+                        'bhts,bhsv->bhtv', beta_scaled, vc
+                    )                                                      # (B, H, C, K)
+                else:
+                    y_local = torch.zeros_like(y_carry)
+
+                # ── 3. Bonus (current-step shortcut) ──
+                if u_bhTK is not None:
+                    bonus = (rc * u_bhTK * kc).sum(-1, keepdim=True) * vc
+                else:
+                    bonus = 0.0
+
+                out_parts.append(y_carry + y_local + bonus)
+
+                # ── 4. Chunk-end update + collapse ──
+                # Decay all buckets by total_log = wc_cum[:, :, -1] (per-channel).
+                total_log = wc_cum[:, :, -1]                               # (B, H, K)
+                buckets = buckets * total_log.exp().unsqueeze(0).unsqueeze(-1)   # (L, B, H, K, K)
+
+                # Local J-collapse: contributions of local σ at chunk end.
+                # kv[σ] at chunk end has been decayed by exp(Σ_{u=σ+1..C-1} wc[u])
+                # = exp(total_log - wc_cum[σ]).
+                decay_to_end = (total_log.unsqueeze(2) - wc_cum).exp()     # (B, H, C, K)
+                kc_scaled = kc * decay_to_end                              # (B, H, C, K)
+                local_J = torch.einsum('bhck,bhcv->bhkv', kc_scaled, vc)   # (B, H, K, K)
+
+                # Target level: ℓ_max = min(L-1, J + v₂(k_chunk_idx)).
+                v2 = 0
+                kk = k_chunk_idx
+                while (kk & 1) == 0 and kk > 0:
+                    v2 += 1
+                    kk >>= 1
+                ell_max = min(L - 1, J + v2)
+
+                # Merge: levels 0..ell_max collapse into ell_max.
+                # Levels 0..J-1 were empty on entry; after decay they're still
+                # empty (zero times anything = zero).  So only J..ell_max carry
+                # non-zero content that participates.
+                if ell_max >= J:
+                    merged = local_J
+                    if ell_max >= J:
+                        merged = merged + buckets[J:ell_max + 1].sum(dim=0)
+                    # Assemble new buckets tensor.
+                    new_buckets = torch.zeros_like(buckets)
+                    new_buckets[ell_max] = merged
+                    if ell_max + 1 < L:
+                        new_buckets[ell_max + 1:] = buckets[ell_max + 1:]
+                    buckets = new_buckets
+                else:
+                    # ell_max < J: shouldn't happen because ell_max ≥ J always.
+                    raise RuntimeError(f"unexpected cascade: ell_max={ell_max}, J={J}")
+
+                processed += chunk_len
+                remaining -= chunk_len
+
+        out = torch.cat(out_parts, dim=2)                                  # (B, H, T, K)
+        final_state = buckets.sum(dim=0).contiguous()
+        return out.to(in_dtype), final_state
+
+    def _forward_recurrent_loglinear_seq(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,       # log-decay (negative); actual per-step decay = exp(w)
+        x_in: torch.Tensor,    # (B, T, D) — feeds the λ-LoRA
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Stage 10.1 — Log-Linear RWKV-6 Fenwick bucket scan (SEQUENTIAL REFERENCE).
+
+        Maintains L bucket states {S^(ℓ)} that partition the WKV prefix at
+        log-scale. At step t:
+          1. All buckets decay by the per-channel factor exp(w_t).
+          2. Contribution k_t ⊗ v_t enters bucket 0.
+          3. Fenwick cascade: for ℓ = 1..L-1, if (t+1) is a multiple of 2^ℓ,
+             bucket[ℓ] ← bucket[ℓ] + bucket[ℓ-1]; bucket[ℓ-1] ← 0.
+        The partition identity Σ_ℓ S^(ℓ)_t = S_t (vanilla WKV state) holds at
+        every t. Readout:
+            y_t = Σ_ℓ λ_t^(ℓ) · r_t^T · S^(ℓ)_t  +  bonus
+        with λ_t^(ℓ) = 1 + (W_λ^(2) · tanh(W_λ^(1) · x_t))_{h, ℓ}, W_λ^(1)=0
+        at init ⇒ λ ≡ 1 ⇒ Σ_ℓ λ · r^T · S^(ℓ) = r^T · S = vanilla RWKV-6
+        readout bit-exact at t=0.
+
+        Implementation note: sequential Python loop over T; adequate for dry-run
+        profiling. A chunked / Triton port is the first Reviewer target.
+        """
+        B, H, T, K = r.shape
+        L = self.loglinear_levels
+        device, in_dtype = r.device, r.dtype
+
+        # λ tensor (B, H, T, L), 1.0 + zero-init LoRA at t=0.
+        lam_lora = torch.tanh(x_in @ self.loglinear_lam_w1) @ self.loglinear_lam_w2
+        lam = 1.0 + lam_lora.view(B, T, H, L).permute(0, 2, 1, 3)        # (B, H, T, L)
+        lam = lam.float()
+
+        # Per-step real decay factor (actual, in (0, 1)).
+        decay_step = torch.exp(w.float())                                  # (B, H, T, K)
+
+        # Buckets packed as (L, B, H, K, K). A per-bucket indicator mask lets
+        # us push kv_t into bucket 0 via broadcast-add (1 kernel) rather than
+        # torch.cat. Cascade events are rare enough per step that we branch.
+        buckets = torch.zeros(L, B, H, K, K, dtype=torch.float32, device=device)
+        bucket0_mask = torch.zeros(L, 1, 1, 1, 1, dtype=torch.float32, device=device)
+        bucket0_mask[0] = 1.0  # constant indicator: "add to bucket 0 only"
+
+        u = self.time_faaaa.view(1, H, 1, K).float() if not self.drop_u else None
+        u_bh = u[:, :, 0] if u is not None else None                       # (1, H, K)
+
+        out = torch.zeros(B, H, T, K, dtype=torch.float32, device=device)
+
+        for t in range(T):
+            k_t = k[:, :, t].float()                                        # (B, H, K)
+            v_t = v[:, :, t].float()
+            r_t = r[:, :, t].float()
+            d_t = decay_step[:, :, t]                                       # (B, H, K)
+            kv_t = k_t.unsqueeze(-1) * v_t.unsqueeze(-2)                    # (B, H, K, K)
+
+            # 1. Readout FIRST (from S_prev), single einsum over L buckets.
+            per_ell = torch.einsum('bhi,lbhij->lbhj', r_t, buckets)         # (L, B, H, K)
+            lam_t = lam[:, :, t]                                            # (B, H, L)
+            # Weighted sum over ℓ: y_t_j = Σ_ℓ λ^(ℓ) · per_ell[ℓ]_j
+            y_t = (lam_t.permute(2, 0, 1).unsqueeze(-1) * per_ell).sum(dim=0)  # (B, H, K)
+
+            if u_bh is not None:
+                bonus = (r_t * u_bh * k_t).sum(-1, keepdim=True) * v_t
+                y_t = y_t + bonus
+
+            out[:, :, t] = y_t
+
+            # 2. Update: decay (1 broadcast multiply) + push kv into bucket 0
+            #    (1 broadcast add via indicator mask — no torch.cat).
+            buckets = buckets * d_t.unsqueeze(0).unsqueeze(-1)              # (L,B,H,K,K)
+            buckets = buckets + bucket0_mask * kv_t.unsqueeze(0)
+
+            # 3. Fenwick cascade at (t+1) boundaries. The highest ℓ firing at
+            #    step (t+1) absorbs buckets 0..ℓ-1; those lower slots reset.
+            #    Rare event (≤ 1 per step); we build the new buckets tensor
+            #    only when it fires, using torch.cat only in that path.
+            t_plus_1 = t + 1
+            ell_max = 0
+            for ell in range(1, L):
+                period = 1 << ell
+                if t_plus_1 < period:
+                    break
+                if t_plus_1 % period == 0:
+                    ell_max = ell
+            if ell_max > 0:
+                absorb = buckets[:ell_max].sum(dim=0)                       # (B, H, K, K)
+                new_top = buckets[ell_max] + absorb                         # receiving slot
+                zeros_below = torch.zeros(
+                    ell_max, B, H, K, K, dtype=torch.float32, device=device
+                )
+                rest = buckets[ell_max + 1:]
+                buckets = torch.cat(
+                    [zeros_below, new_top.unsqueeze(0), rest], dim=0
+                )
+
+        # Aggregate S = Σ_ℓ S^(ℓ) as the carry-state so the interface matches
+        # vanilla _forward_recurrent. Kept for shape-compat only — the encoder
+        # advertises supports_carry_state=False for loglinear, so this value
+        # is not consumed by the chunked-eval harness.
+        final_state = buckets.sum(dim=0).contiguous()
+        return out.to(in_dtype), final_state
+
+    def _m2rnn_branch(
+        self,
+        r: torch.Tensor,   # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        x_in: torch.Tensor,  # (B, T, D) — feeds the forget-gate projection
+    ) -> torch.Tensor:
+        """Stage 10.2 — M²RNN parallel branch readout increment.
+
+        Runs only when self.m2rnn_active is True (layer_id == m2rnn_layer).
+
+        Paper-faithful recurrence (Mishra et al. arXiv:2603.14360):
+            Z_t   = tanh(S_{t-1} · W + k_t ⊗ v_t)
+            z     = W_f · x_t + β_h                        # (B, T, H)
+            f_t   = (1 + exp(z))^{-α_h}                    # (B, T, H) ∈ (0,1]
+            S_t   = f_t · S_{t-1} + (1 - f_t) · Z_t
+            y_add = λ_h · r_t^T · S_t                      # (B, H, T, K)
+
+        At init: λ_h = 0 ⇒ y_add ≡ 0 regardless of S, hence no effect on
+        the host layer's output. W = I per head (irrelevant while λ=0).
+        α_h = 1, β_h = 0, W_f = 0 ⇒ f_t = 0.5 everywhere at init (neutral
+        forget). Exact zero-regression contract holds via λ_h = 0.
+        """
+        B, H, T, K = r.shape
+        device = r.device
+
+        # State per (B, H): matrix in R^{K×K}. fp32 for stability.
+        S = torch.zeros(B, H, K, K, dtype=torch.float32, device=device)
+
+        # Paper gate: f_t = (1 + exp(z))^{-α}, z = W_f x + β, with α > 0.
+        # α = softplus(α_raw) + ε keeps α strictly positive so f ∈ (0, 1];
+        # without this constraint SGD could drive α < 0 and push f above 1,
+        # breaking the forget-gate semantics.
+        z_pre = self.m2rnn_forget_proj(x_in) + self.m2rnn_forget_beta.view(1, 1, -1)  # (B, T, H)
+        alpha_pos = F.softplus(self.m2rnn_forget_alpha_raw).view(1, 1, -1) + 1e-4
+        # Stable compute: log f = -α · softplus(z), f = exp(log f) ∈ (0, 1].
+        log_f = -alpha_pos * F.softplus(z_pre)
+        f_probs = torch.exp(log_f).float()                                  # (B, T, H) ∈ (0, 1]
+
+        # W per head: (H, K, K). Broadcast over batch in einsum.
+        W_h = self.m2rnn_W.float()                                         # (H, K, K)
+
+        out = torch.zeros(B, H, T, K, dtype=torch.float32, device=device)
+        lam_h = self.m2rnn_lambda.view(1, H, 1).float()                    # (1, H, 1)
+
+        for t in range(T):
+            k_t = k[:, :, t].float()                                       # (B, H, K)
+            v_t = v[:, :, t].float()
+            kv_t = k_t.unsqueeze(-1) * v_t.unsqueeze(-2)                   # (B, H, K, K)
+            # SW: (B, H, K, K) = einsum over col axis (j): SW_{b,h,i,k} = Σ_j S_{b,h,i,j} W_{h,j,k}
+            SW = torch.einsum('bhij,hjk->bhik', S, W_h)
+            Z = torch.tanh(SW + kv_t)
+            f_t = f_probs[:, t].unsqueeze(-1).unsqueeze(-1)                # (B, H, 1, 1)
+            S = f_t * S + (1.0 - f_t) * Z
+
+            r_t = r[:, :, t].float()
+            y_t = torch.einsum('bhi,bhij->bhj', r_t, S)                    # (B, H, K)
+            out[:, :, t] = lam_h * y_t
+
+        return out.to(r.dtype)
+
+    def _forward_recurrent_cayley_rank1_chunked(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,       # log-decay (negative); actual per-step decay = exp(w)
+        x_in: torch.Tensor,    # (B, T, D) — drives the U/V LoRAs
+        state: Optional[torch.Tensor] = None,
+        *,
+        chunk_size: int = 32,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Stage 10.5 (rank-1 fast path) — chunked affine scan.
+
+        The Cayley recurrence
+            S_t = D_t O_t S_{t-1} + k_t v_t^T
+                = A_t S_{t-1} + U_t        where   A_t = D_t O_t,  U_t = k_t v_t^T
+        is an affine scan associative under
+            (A_b, U_b) ∘ (A_a, U_a) = (A_b A_a, A_b U_a + U_b).
+        We reuse the existing ``_delta_affine_prefix_scan`` Hillis–Steele
+        primitive to batch the within-chunk scan; chunks are processed
+        sequentially with a carry state.  Build A_t directly from the
+        rank-1 closed form (avoids materialising O_t):
+
+            a = u·u, b = u·v, c = v·v,   Δ = 1 − b² + a·c
+            O  = I − (2c/Δ) uu^T − (2(1−b)/Δ) uv^T + (2(1+b)/Δ) vu^T − (2a/Δ) vv^T
+            A_t = D_t − (2c/Δ)(D_t u)u^T − (2(1−b)/Δ)(D_t u)v^T
+                       + (2(1+b)/Δ)(D_t v)u^T − (2a/Δ)(D_t v)v^T
+
+        Zero-regression at init (U=V=0 ⇒ A=0 ⇒ O=I) ⇒ A_t = D_t ⇒ vanilla
+        RWKV-6 bit-exact.  Exact — not an approximation — modulo fp32
+        accumulation noise from the prefix scan's different operation order.
+        """
+        B, H, T, K = r.shape
+        device, in_dtype = r.device, r.dtype
+
+        # ── Build U, V per step (rank-1 only here) ──
+        U_flat = torch.tanh(x_in @ self.cayley_U_w1) @ self.cayley_U_w2     # (B, T, H·K)
+        V_flat = torch.tanh(x_in @ self.cayley_V_w1) @ self.cayley_V_w2
+        u_all = U_flat.view(B, T, H, K).permute(0, 2, 1, 3).contiguous().float()  # (B, H, T, K)
+        v_all = V_flat.view(B, T, H, K).permute(0, 2, 1, 3).contiguous().float()
+        u_all = u_all + self.cayley_U_base.view(1, H, 1, K).float()
+        v_all = v_all + self.cayley_V_base.view(1, H, 1, K).float()
+
+        r_f = r.float()
+        k_f = k.float()
+        v_f = v.float()
+        w_f = w.float()
+        decay_full = torch.exp(w_f)                                         # (B, H, T, K)
+
+        # State init
+        if state is None:
+            S_carry = torch.zeros(B, H, K, K, dtype=torch.float32, device=device)
+        else:
+            S_carry = state.float()
+
+        # Bonus scalar precomputed once for the full sequence: (B, H, T).
+        # bonus_t = (r_t ⊙ u_faaaa ⊙ k_t).sum_channels
+        if not self.drop_u:
+            u_bonus = self.time_faaaa.view(1, H, 1, K).float()
+            bonus_all = (r_f * u_bonus * k_f).sum(dim=-1)                   # (B, H, T)
+        else:
+            bonus_all = None
+
+        out_parts = []
+        cur = 0
+
+        while cur < T:
+            tc = min(chunk_size, T - cur)
+
+            # Slice chunk-local tensors.
+            rc = r_f[:, :, cur:cur + tc]                                    # (B, H, tc, K)
+            kc = k_f[:, :, cur:cur + tc]
+            vc = v_f[:, :, cur:cur + tc]
+            dc = decay_full[:, :, cur:cur + tc]                             # (B, H, tc, K)
+            uc = u_all[:, :, cur:cur + tc]                                  # (B, H, tc, K)
+            vcc = v_all[:, :, cur:cur + tc]                                 # cayley "v" (NOT RWKV v)
+
+            # Rank-1 invariants per step: (B, H, tc, 1).
+            a = (uc  * uc ).sum(dim=-1, keepdim=True)
+            b = (uc  * vcc).sum(dim=-1, keepdim=True)
+            c = (vcc * vcc).sum(dim=-1, keepdim=True)
+            delta = 1.0 - b * b + a * c
+
+            coef_uu = -2.0 * c / delta                                      # (B, H, tc, 1)
+            coef_uv = -2.0 * (1.0 - b) / delta
+            coef_vu =  2.0 * (1.0 + b) / delta
+            coef_vv = -2.0 * a / delta
+
+            du = dc * uc                                                    # D_t ⊙ u  (B, H, tc, K)
+            dv = dc * vcc                                                   # D_t ⊙ v
+
+            # Build A_c = D_t O_t per step, shape (B, H, tc, K, K).
+            # Chunk-local only — never materialise full-sequence A.
+            A_c = torch.diag_embed(dc)                                      # (B, H, tc, K, K)
+            A_c = A_c + coef_uu.unsqueeze(-1) * (du.unsqueeze(-1)  * uc.unsqueeze(-2))
+            A_c = A_c + coef_uv.unsqueeze(-1) * (du.unsqueeze(-1)  * vcc.unsqueeze(-2))
+            A_c = A_c + coef_vu.unsqueeze(-1) * (dv.unsqueeze(-1)  * uc.unsqueeze(-2))
+            A_c = A_c + coef_vv.unsqueeze(-1) * (dv.unsqueeze(-1)  * vcc.unsqueeze(-2))
+
+            # U_c = k_t v_t^T per step, shape (B, H, tc, K, K).
+            U_c = kc.unsqueeze(-1) * vc.unsqueeze(-2)
+
+            # Existing exact affine prefix helper — operates on (A, U) pairs.
+            A_p, U_p = _delta_affine_prefix_scan(A_c, U_c)                  # (B, H, tc, K, K)
+
+            # Recover in-chunk states: S[t] = A_p[t] · S_carry + U_p[t].
+            AS = torch.einsum('bhtij,bhjv->bhtiv', A_p, S_carry)
+            S_chunk = AS + U_p                                              # (B, H, tc, K, K)
+
+            # Readout uses S_prev (shifted): first entry from carry, rest from S_chunk.
+            S_prev = torch.cat(
+                [S_carry.unsqueeze(2), S_chunk[:, :, :-1]], dim=2
+            )                                                               # (B, H, tc, K, K)
+            y_state = torch.einsum('bhtk,bhtkv->bhtv', rc, S_prev)          # (B, H, tc, K)
+
+            if bonus_all is not None:
+                bonus = bonus_all[:, :, cur:cur + tc].unsqueeze(-1) * vc     # (B, H, tc, K)
+                y_chunk = y_state + bonus
+            else:
+                y_chunk = y_state
+
+            out_parts.append(y_chunk)
+            S_carry = S_chunk[:, :, -1]
+            cur += tc
+
+        out = torch.cat(out_parts, dim=2)                                   # (B, H, T, K)
+        return out.to(in_dtype), S_carry.contiguous()
+
+    def _forward_recurrent_cayley(
+        self,
+        r: torch.Tensor,       # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,       # log-decay (negative); actual per-step decay = exp(w)
+        x_in: torch.Tensor,    # (B, T, D) — drives the U/V LoRAs
+        state: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Stage 10.5 — Cayley-orthogonal transition.
+
+        G_t = exp(-λ_t) · O_t where
+            O_t = (I - A_t)(I + A_t)^{-1},
+            A_t = Σ_r (U_t^(r) V_t^(r)^T − V_t^(r) U_t^(r)^T)  (skew, rank ≤ 2·cayley_rank).
+        State update:
+            S_t = diag(exp(w_t)) · O_t · S_{t-1} + k_t v_t^T.
+
+        Readout uses S_prev (vanilla convention):
+            y_t = r_t^T S_{t-1} + bonus_t.
+
+        U=V=0 at init (zero-init LoRA down-projection + zero-init base) ⇒ A=0
+        ⇒ O=I ⇒ scan reduces to vanilla RWKV-6 bit-exact.
+
+        Implementation strategy:
+
+        Generic rank-R uses the **Woodbury identity** with direct closed-form
+        ``O = I − 2 M₁ (I + M₂ᵀ M₁)⁻¹ M₂ᵀ`` (saves one A-pass vs the naive
+        ``(I − A)(I + A)⁻¹ S`` evaluation). Inner 2R×2R solve is the only
+        non-batched matrix op per step.
+
+        **Rank-1 fast path** (`cayley_rank == 1`) specialises further with
+        scalar invariants ``a = u·u, b = u·v, c = v·v`` and rank-1 outer
+        corrections:
+            p = uᵀ S,   q = vᵀ S
+            Δ = 1 − b² + a·c
+            α = ((1 − b) q + c p) / Δ
+            β = (−a q + (1 + b) p) / Δ
+            O·S = S − 2 u⊗α + 2 v⊗β
+        Drops kernel count from ~15 to ~8 per step and avoids any inner
+        solve; activations saved per step are pure K-vectors, not K×K.
+
+        Sequential Python loop over T (same structure as 10.1 sequential).
+        A Triton fused-scan port is the next optimisation lever if the
+        rank-1 path is still too slow after `torch.compile`.
+        """
+        B, H, T, K = r.shape
+        R = self.cayley_rank
+        device, in_dtype = r.device, r.dtype
+
+        # Compute U, V tensors of shape (R, B, H, T, K) from the xw stream.
+        U_flat = torch.tanh(x_in @ self.cayley_U_w1) @ self.cayley_U_w2     # (B, T, R·H·K)
+        V_flat = torch.tanh(x_in @ self.cayley_V_w1) @ self.cayley_V_w2
+        U = U_flat.view(B, T, R, H, K).permute(2, 0, 3, 1, 4).contiguous()  # (R, B, H, T, K)
+        V = V_flat.view(B, T, R, H, K).permute(2, 0, 3, 1, 4).contiguous()
+        U = U + self.cayley_U_base.view(R, 1, H, 1, K)
+        V = V + self.cayley_V_base.view(R, 1, H, 1, K)
+
+        # State init
+        if state is None:
+            S = torch.zeros(B, H, K, K, dtype=torch.float32, device=device)
+        else:
+            S = state.float()
+
+        u_bhTK = self.time_faaaa.view(1, H, 1, K).float() if not self.drop_u else None
+        decay_step = torch.exp(w.float())                                   # (B, H, T, K)
+
+        # Pre-cast & permute time-major for efficient per-step slicing.
+        r_f = r.float()
+        k_f = k.float()
+        v_f = v.float()
+
+        out = torch.zeros(B, H, T, K, dtype=torch.float32, device=device)
+
+        # ── Rank-1 fast path ───────────────────────────────────────────
+        if R == 1:
+            U1 = U[0]                                                       # (B, H, T, K)
+            V1 = V[0]
+
+            for t in range(T):
+                # Readout from S_prev (vanilla convention) + bonus.
+                r_t = r_f[:, :, t]                                          # (B, H, K)
+                k_t = k_f[:, :, t]
+                v_t = v_f[:, :, t]
+                y_t = torch.einsum('bhi,bhij->bhj', r_t, S)
+                if u_bhTK is not None:
+                    bonus = (r_t * u_bhTK[:, :, 0] * k_t).sum(-1, keepdim=True) * v_t
+                    y_t = y_t + bonus
+                out[:, :, t] = y_t
+
+                # Rank-1 Cayley vectors for this step.
+                u_t  = U1[:, :, t]                                          # (B, H, K)
+                vc_t = V1[:, :, t]                                          # (B, H, K)  (Cayley "v"; NOT the RWKV v)
+
+                # Scalar invariants (B, H, 1).
+                a = (u_t  * u_t ).sum(-1, keepdim=True)
+                b = (u_t  * vc_t).sum(-1, keepdim=True)
+                c = (vc_t * vc_t).sum(-1, keepdim=True)
+                delta = 1.0 - b * b + a * c                                 # (B, H, 1)
+
+                # Row projections (B, H, K): p = uᵀ S,  q = vᵀ S.
+                p = torch.einsum('bhi,bhij->bhj', u_t,  S)
+                q = torch.einsum('bhi,bhij->bhj', vc_t, S)
+
+                # Correction factors (B, H, K).
+                alpha = ((1.0 - b) * q + c * p) / delta
+                beta  = (-a * q + (1.0 + b) * p) / delta
+
+                # O·S = S − 2 u⊗α + 2 v⊗β (both rank-1 outer products).
+                OS = (
+                    S
+                    - 2.0 * u_t.unsqueeze(-1)  * alpha.unsqueeze(-2)
+                    + 2.0 * vc_t.unsqueeze(-1) * beta.unsqueeze(-2)
+                )
+
+                # State update: S_t = diag(exp(w_t)) · OS + k_t v_t^T.
+                d_t  = decay_step[:, :, t]                                  # (B, H, K)
+                kv_t = k_t.unsqueeze(-1) * v_t.unsqueeze(-2)                # (B, H, K, K)
+                S = d_t.unsqueeze(-1) * OS + kv_t
+
+            return out.to(in_dtype), S.contiguous()
+
+        # ── Generic rank-R Woodbury path (cayley_rank > 1) ─────────────
+        two_R = 2 * R
+        I_inner = torch.eye(two_R, dtype=torch.float32, device=device).view(1, 1, two_R, two_R)
+
+        for t in range(T):
+            # Readout from S_prev (vanilla convention) + bonus.
+            r_t = r_f[:, :, t]                                              # (B, H, K)
+            k_t = k_f[:, :, t]
+            v_t = v_f[:, :, t]
+            y_t = torch.einsum('bhi,bhij->bhj', r_t, S)
+            if u_bhTK is not None:
+                bonus = (r_t * u_bhTK[:, :, 0] * k_t).sum(-1, keepdim=True) * v_t
+                y_t = y_t + bonus
+            out[:, :, t] = y_t
+
+            U_t = U[:, :, :, t]                                             # (R, B, H, K)
+            V_t = V[:, :, :, t]
+            M1 = torch.stack([U_t, -V_t], dim=-1).permute(1, 2, 3, 0, 4).reshape(B, H, K, two_R)
+            M2 = torch.stack([V_t,  U_t], dim=-1).permute(1, 2, 3, 0, 4).reshape(B, H, K, two_R)
+
+            T_inner = torch.einsum('bhki,bhkj->bhij', M2, M1)
+            IpT_inv = torch.linalg.inv(I_inner + T_inner)
+
+            # Direct O·S = S − 2 M1 (I + M2ᵀ M1)⁻¹ M2ᵀ S  (saves one A-pass).
+            M2T_S = torch.einsum('bhki,bhkj->bhij', M2, S)                  # (B, H, 2R, K)
+            inner = torch.einsum('bhij,bhjk->bhik', IpT_inv, M2T_S)         # (B, H, 2R, K)
+            corr  = torch.einsum('bhki,bhij->bhkj', M1, inner)              # (B, H, K, K)
+            OS = S - 2.0 * corr
+
+            d_t  = decay_step[:, :, t]
+            kv_t = k_t.unsqueeze(-1) * v_t.unsqueeze(-2)
+            S = d_t.unsqueeze(-1) * OS + kv_t
+
+        return out.to(in_dtype), S.contiguous()
 
     def _paper_n2_branch(
         self,

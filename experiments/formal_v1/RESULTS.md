@@ -52,11 +52,29 @@ LibriSpeech clean via HuggingFace: `train.100` (~28 539 utterances),
 | 8 T2 | `rwkv6_nonnormal_rse_viscosity` (dense polar non-normal) | 0.1202 | 0.1200 |
 | 9 A | `rwkv6_sparse_nonnormal_rse_viscosity` (halted ep 15) | 0.1467 (ep 15) | — |
 | 9 B | `rwkv6_sparse_nonnormal_rse_edge_only_viscosity` | 0.1218 | 0.1216 |
+| 10.1 | `rwkv6_loglinear` | 0.1240 | 0.1226 |
+| 10.2 | `rwkv6_m2rnn_sparse` | 0.1276 | 0.1264 |
+| 10.3 causal | `rwkv6_convshift_multidil` | 0.1229 | 0.1224 |
+| **10.3-sym** | **`rwkv6_convshift_multidil_symmetric`** | **0.1153** | **0.1145** |
+| 10.4 | `rwkv6_chanmix_bypass` | 0.1251 | 0.1248 |
+| 10.5 | `rwkv6_orthogonal` (still training, ep 15) | 0.1518 (ep 15) | — |
+| 10.6 | `rwkv6_pom_vlift` | 0.1254 | 0.1253 |
+| CB-1 | `rwkv6_rse_convshift_multidil_symmetric` | 0.1169 | 0.1156 |
+| CB-3 | `rwkv6_convshift_multidil_symmetric_gated` | 0.1167 | 0.1157 |
+| CB-5 | `rwkv6_frontend_v2` (lean + matched) | did not converge | — |
+| CB-7 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | 0.1159 | 0.1150 |
 
-**Best causal result:** `rwkv6_rse_strong_viscosity` at dev **0.1185** /
-test **0.1177**. See [stages_2_9_summary.md](stages_2_9_summary.md) for
-per-epoch trajectories, hypothesis logic, diagnostic probes, and the
-invariant across Stage 7A / 8 / 9 dense-vs-sparse variants.
+**Best causal result:** `rwkv6_rse_convshift` at dev **0.1145** /
+test **0.1126** (Stage 3); matched at test-CER by
+`rwkv6_convshift_multidil_symmetric` (10.3-sym) at **0.1153** /
+**0.1145** without the transition-side rotation.
+
+**Best pure-transition result:** `rwkv6_rse_strong_viscosity` at dev
+**0.1185** / test **0.1177**.
+
+See [stages_2_9_summary.md](stages_2_9_summary.md) for Stages 2–9
+per-epoch trajectories, and [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md)
+for the Stage-10 honest summary.
 
 ## Sibling docs
 

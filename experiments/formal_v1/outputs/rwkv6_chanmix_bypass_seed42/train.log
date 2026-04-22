@@ -1,0 +1,843 @@
+2026-04-22 04:45:33,959 INFO Loading LibriSpeech split=train.100 from HuggingFace...
+2026-04-22 04:45:34,123 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-22 04:45:34,135 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-22 04:45:34,271 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:45:34,638 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:45:34,781 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/revision/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 "HTTP/1.1 200 OK"
+2026-04-22 04:45:34,982 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-22 04:45:34,983 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-22 04:45:35,200 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-22 04:45:35,342 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftest?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-22 04:45:35,472 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-04-22 04:45:35,610 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.100?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-22 04:45:35,745 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.360?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-22 04:45:35,896 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Fvalidation?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-22 04:45:36,025 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-22 04:46:53,980 INFO Loaded 28538 utterances from train.100 (skipped 1 outside [0.5s, 20.0s])
+2026-04-22 04:46:54,053 INFO Loading LibriSpeech split=validation from HuggingFace...
+2026-04-22 04:46:54,210 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-22 04:46:54,222 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-22 04:46:54,344 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:46:54,733 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:46:54,872 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-22 04:46:55,075 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-22 04:46:55,239 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-22 04:46:59,565 INFO Loaded 2642 utterances from validation (skipped 61 outside [0.5s, 20.0s])
+2026-04-22 04:46:59,569 INFO Loading LibriSpeech split=test from HuggingFace...
+2026-04-22 04:46:59,698 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-22 04:46:59,710 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-22 04:46:59,832 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:47:00,203 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-22 04:47:00,347 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-22 04:47:00,505 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-22 04:47:00,651 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-22 04:47:04,906 INFO Loaded 2528 utterances from test (skipped 92 outside [0.5s, 20.0s])
+2026-04-22 04:47:05,180 INFO Backbone: rwkv6_chanmix_bypass | Params: 7.74M
+2026-04-22 04:47:05,180 INFO   Frontend: 1.90M | Encoder: 5.83M | Head: 8.0K
+2026-04-22 04:47:08,728 INFO Epoch 1 | Batch 0 | Loss: 4.1267 | LR: 3.00e-07
+2026-04-22 04:47:15,457 INFO Epoch 1 | Batch 50 | Loss: 2.9446 | LR: 1.53e-05
+2026-04-22 04:47:22,062 INFO Epoch 1 | Batch 100 | Loss: 2.9254 | LR: 3.03e-05
+2026-04-22 04:47:28,607 INFO Epoch 1 | Batch 150 | Loss: 2.8760 | LR: 4.53e-05
+2026-04-22 04:47:34,958 INFO Epoch 1 | Batch 200 | Loss: 2.8413 | LR: 6.03e-05
+2026-04-22 04:47:41,445 INFO Epoch 1 | Batch 250 | Loss: 2.8534 | LR: 7.53e-05
+2026-04-22 04:47:47,869 INFO Epoch 1 | Batch 300 | Loss: 2.8473 | LR: 9.03e-05
+2026-04-22 04:47:54,262 INFO Epoch 1 | Batch 350 | Loss: 2.8523 | LR: 1.05e-04
+2026-04-22 04:48:00,717 INFO Epoch 1 | Batch 400 | Loss: 2.8646 | LR: 1.20e-04
+2026-04-22 04:48:07,112 INFO Epoch 1 | Batch 450 | Loss: 2.7030 | LR: 1.35e-04
+2026-04-22 04:48:13,521 INFO Epoch 1 | Batch 500 | Loss: 2.6597 | LR: 1.50e-04
+2026-04-22 04:48:19,734 INFO Epoch 1 | Batch 550 | Loss: 2.6310 | LR: 1.65e-04
+2026-04-22 04:48:25,965 INFO Epoch 1 | Batch 600 | Loss: 2.6430 | LR: 1.80e-04
+2026-04-22 04:48:32,328 INFO Epoch 1 | Batch 650 | Loss: 2.4587 | LR: 1.95e-04
+2026-04-22 04:48:38,592 INFO Epoch 1 | Batch 700 | Loss: 2.4656 | LR: 2.10e-04
+2026-04-22 04:48:44,960 INFO Epoch 1 | Batch 750 | Loss: 2.4045 | LR: 2.25e-04
+2026-04-22 04:48:51,299 INFO Epoch 1 | Batch 800 | Loss: 2.5694 | LR: 2.40e-04
+2026-04-22 04:48:57,715 INFO Epoch 1 | Batch 850 | Loss: 2.2655 | LR: 2.55e-04
+2026-04-22 04:49:04,265 INFO Epoch 1 | Batch 900 | Loss: 2.3614 | LR: 2.70e-04
+2026-04-22 04:49:10,879 INFO Epoch 1 | Batch 950 | Loss: 2.2200 | LR: 2.85e-04
+2026-04-22 04:49:17,230 INFO Epoch 1 | Batch 1000 | Loss: 2.0497 | LR: 3.00e-04
+2026-04-22 04:49:23,548 INFO Epoch 1 | Batch 1050 | Loss: 2.1424 | LR: 3.00e-04
+2026-04-22 04:49:29,736 INFO Epoch 1 | Batch 1100 | Loss: 2.1757 | LR: 3.00e-04
+2026-04-22 04:49:36,074 INFO Epoch 1 | Batch 1150 | Loss: 2.2928 | LR: 3.00e-04
+2026-04-22 04:49:42,449 INFO Epoch 1 | Batch 1200 | Loss: 2.1667 | LR: 3.00e-04
+2026-04-22 04:50:00,242 INFO Epoch 1 | Train: 2.5570 | Dev CER: 0.5081 | Dev WER: 0.9775 | Time: 174s | Peak: 5.0 GB
+2026-04-22 04:50:00,242 INFO   New best CER: 0.5081
+2026-04-22 04:50:03,722 INFO Epoch 2 | Batch 0 | Loss: 1.9883 | LR: 3.00e-04
+2026-04-22 04:50:10,251 INFO Epoch 2 | Batch 50 | Loss: 2.2307 | LR: 3.00e-04
+2026-04-22 04:50:16,942 INFO Epoch 2 | Batch 100 | Loss: 2.1734 | LR: 3.00e-04
+2026-04-22 04:50:23,204 INFO Epoch 2 | Batch 150 | Loss: 2.0755 | LR: 3.00e-04
+2026-04-22 04:50:29,680 INFO Epoch 2 | Batch 200 | Loss: 1.9627 | LR: 3.00e-04
+2026-04-22 04:50:36,255 INFO Epoch 2 | Batch 250 | Loss: 1.6842 | LR: 3.00e-04
+2026-04-22 04:50:42,782 INFO Epoch 2 | Batch 300 | Loss: 1.8821 | LR: 3.00e-04
+2026-04-22 04:50:49,222 INFO Epoch 2 | Batch 350 | Loss: 1.8764 | LR: 3.00e-04
+2026-04-22 04:50:55,693 INFO Epoch 2 | Batch 400 | Loss: 1.6834 | LR: 3.00e-04
+2026-04-22 04:51:02,074 INFO Epoch 2 | Batch 450 | Loss: 1.7575 | LR: 3.00e-04
+2026-04-22 04:51:08,352 INFO Epoch 2 | Batch 500 | Loss: 1.7390 | LR: 3.00e-04
+2026-04-22 04:51:14,701 INFO Epoch 2 | Batch 550 | Loss: 1.9711 | LR: 3.00e-04
+2026-04-22 04:51:21,211 INFO Epoch 2 | Batch 600 | Loss: 1.7891 | LR: 3.00e-04
+2026-04-22 04:51:27,645 INFO Epoch 2 | Batch 650 | Loss: 1.9370 | LR: 3.00e-04
+2026-04-22 04:51:34,040 INFO Epoch 2 | Batch 700 | Loss: 2.2378 | LR: 3.00e-04
+2026-04-22 04:51:40,370 INFO Epoch 2 | Batch 750 | Loss: 1.7766 | LR: 2.99e-04
+2026-04-22 04:51:46,527 INFO Epoch 2 | Batch 800 | Loss: 1.5188 | LR: 2.99e-04
+2026-04-22 04:51:53,041 INFO Epoch 2 | Batch 850 | Loss: 1.8770 | LR: 2.99e-04
+2026-04-22 04:51:59,253 INFO Epoch 2 | Batch 900 | Loss: 1.6968 | LR: 2.99e-04
+2026-04-22 04:52:05,627 INFO Epoch 2 | Batch 950 | Loss: 1.5704 | LR: 2.99e-04
+2026-04-22 04:52:11,905 INFO Epoch 2 | Batch 1000 | Loss: 2.2959 | LR: 2.99e-04
+2026-04-22 04:52:18,247 INFO Epoch 2 | Batch 1050 | Loss: 1.7519 | LR: 2.99e-04
+2026-04-22 04:52:24,755 INFO Epoch 2 | Batch 1100 | Loss: 1.6337 | LR: 2.99e-04
+2026-04-22 04:52:31,053 INFO Epoch 2 | Batch 1150 | Loss: 1.4693 | LR: 2.99e-04
+2026-04-22 04:52:37,349 INFO Epoch 2 | Batch 1200 | Loss: 1.5738 | LR: 2.99e-04
+2026-04-22 04:52:52,015 INFO Epoch 2 | Train: 1.8013 | Dev CER: 0.3623 | Dev WER: 0.8094 | Time: 171s | Peak: 5.0 GB
+2026-04-22 04:52:52,015 INFO   New best CER: 0.3623
+2026-04-22 04:52:55,735 INFO Epoch 3 | Batch 0 | Loss: 1.5123 | LR: 2.99e-04
+2026-04-22 04:53:02,259 INFO Epoch 3 | Batch 50 | Loss: 1.5638 | LR: 2.99e-04
+2026-04-22 04:53:08,685 INFO Epoch 3 | Batch 100 | Loss: 1.5317 | LR: 2.99e-04
+2026-04-22 04:53:15,117 INFO Epoch 3 | Batch 150 | Loss: 1.5035 | LR: 2.99e-04
+2026-04-22 04:53:21,510 INFO Epoch 3 | Batch 200 | Loss: 1.6079 | LR: 2.98e-04
+2026-04-22 04:53:27,947 INFO Epoch 3 | Batch 250 | Loss: 1.2275 | LR: 2.98e-04
+2026-04-22 04:53:34,332 INFO Epoch 3 | Batch 300 | Loss: 1.6578 | LR: 2.98e-04
+2026-04-22 04:53:40,950 INFO Epoch 3 | Batch 350 | Loss: 1.2754 | LR: 2.98e-04
+2026-04-22 04:53:47,268 INFO Epoch 3 | Batch 400 | Loss: 1.3745 | LR: 2.98e-04
+2026-04-22 04:53:53,695 INFO Epoch 3 | Batch 450 | Loss: 1.9743 | LR: 2.98e-04
+2026-04-22 04:54:00,194 INFO Epoch 3 | Batch 500 | Loss: 1.4681 | LR: 2.98e-04
+2026-04-22 04:54:06,600 INFO Epoch 3 | Batch 550 | Loss: 1.4017 | LR: 2.98e-04
+2026-04-22 04:54:13,021 INFO Epoch 3 | Batch 600 | Loss: 1.6808 | LR: 2.98e-04
+2026-04-22 04:54:19,351 INFO Epoch 3 | Batch 650 | Loss: 1.5013 | LR: 2.97e-04
+2026-04-22 04:54:25,716 INFO Epoch 3 | Batch 700 | Loss: 1.6339 | LR: 2.97e-04
+2026-04-22 04:54:32,073 INFO Epoch 3 | Batch 750 | Loss: 1.8920 | LR: 2.97e-04
+2026-04-22 04:54:38,349 INFO Epoch 3 | Batch 800 | Loss: 1.5805 | LR: 2.97e-04
+2026-04-22 04:54:44,699 INFO Epoch 3 | Batch 850 | Loss: 1.5751 | LR: 2.97e-04
+2026-04-22 04:54:51,144 INFO Epoch 3 | Batch 900 | Loss: 1.7060 | LR: 2.97e-04
+2026-04-22 04:54:57,656 INFO Epoch 3 | Batch 950 | Loss: 1.7530 | LR: 2.97e-04
+2026-04-22 04:55:03,914 INFO Epoch 3 | Batch 1000 | Loss: 1.3464 | LR: 2.97e-04
+2026-04-22 04:55:10,429 INFO Epoch 3 | Batch 1050 | Loss: 1.4419 | LR: 2.96e-04
+2026-04-22 04:55:16,763 INFO Epoch 3 | Batch 1100 | Loss: 1.3011 | LR: 2.96e-04
+2026-04-22 04:55:23,094 INFO Epoch 3 | Batch 1150 | Loss: 1.8241 | LR: 2.96e-04
+2026-04-22 04:55:29,418 INFO Epoch 3 | Batch 1200 | Loss: 1.6840 | LR: 2.96e-04
+2026-04-22 04:55:46,008 INFO Epoch 3 | Train: 1.5058 | Dev CER: 0.2994 | Dev WER: 0.7258 | Time: 173s | Peak: 5.0 GB
+2026-04-22 04:55:46,008 INFO   New best CER: 0.2994
+2026-04-22 04:55:49,297 INFO Epoch 4 | Batch 0 | Loss: 1.2706 | LR: 2.96e-04
+2026-04-22 04:55:55,648 INFO Epoch 4 | Batch 50 | Loss: 1.6002 | LR: 2.96e-04
+2026-04-22 04:56:01,975 INFO Epoch 4 | Batch 100 | Loss: 1.2580 | LR: 2.96e-04
+2026-04-22 04:56:08,448 INFO Epoch 4 | Batch 150 | Loss: 1.8414 | LR: 2.95e-04
+2026-04-22 04:56:14,847 INFO Epoch 4 | Batch 200 | Loss: 1.5195 | LR: 2.95e-04
+2026-04-22 04:56:21,170 INFO Epoch 4 | Batch 250 | Loss: 1.4109 | LR: 2.95e-04
+2026-04-22 04:56:27,510 INFO Epoch 4 | Batch 300 | Loss: 1.3480 | LR: 2.95e-04
+2026-04-22 04:56:33,857 INFO Epoch 4 | Batch 350 | Loss: 1.8222 | LR: 2.95e-04
+2026-04-22 04:56:40,089 INFO Epoch 4 | Batch 400 | Loss: 1.4755 | LR: 2.95e-04
+2026-04-22 04:56:46,840 INFO Epoch 4 | Batch 450 | Loss: 1.3896 | LR: 2.94e-04
+2026-04-22 04:56:53,327 INFO Epoch 4 | Batch 500 | Loss: 1.5592 | LR: 2.94e-04
+2026-04-22 04:56:59,747 INFO Epoch 4 | Batch 550 | Loss: 1.2037 | LR: 2.94e-04
+2026-04-22 04:57:06,264 INFO Epoch 4 | Batch 600 | Loss: 1.4806 | LR: 2.94e-04
+2026-04-22 04:57:12,675 INFO Epoch 4 | Batch 650 | Loss: 1.3597 | LR: 2.94e-04
+2026-04-22 04:57:19,081 INFO Epoch 4 | Batch 700 | Loss: 1.1772 | LR: 2.93e-04
+2026-04-22 04:57:25,395 INFO Epoch 4 | Batch 750 | Loss: 1.3758 | LR: 2.93e-04
+2026-04-22 04:57:31,697 INFO Epoch 4 | Batch 800 | Loss: 1.2157 | LR: 2.93e-04
+2026-04-22 04:57:37,960 INFO Epoch 4 | Batch 850 | Loss: 1.6892 | LR: 2.93e-04
+2026-04-22 04:57:44,226 INFO Epoch 4 | Batch 900 | Loss: 1.4066 | LR: 2.93e-04
+2026-04-22 04:57:50,497 INFO Epoch 4 | Batch 950 | Loss: 1.3489 | LR: 2.92e-04
+2026-04-22 04:57:57,009 INFO Epoch 4 | Batch 1000 | Loss: 1.2023 | LR: 2.92e-04
+2026-04-22 04:58:03,359 INFO Epoch 4 | Batch 1050 | Loss: 1.4005 | LR: 2.92e-04
+2026-04-22 04:58:09,571 INFO Epoch 4 | Batch 1100 | Loss: 1.2468 | LR: 2.92e-04
+2026-04-22 04:58:15,996 INFO Epoch 4 | Batch 1150 | Loss: 1.5046 | LR: 2.92e-04
+2026-04-22 04:58:22,421 INFO Epoch 4 | Batch 1200 | Loss: 1.6596 | LR: 2.91e-04
+2026-04-22 04:58:39,940 INFO Epoch 4 | Train: 1.3612 | Dev CER: 0.2638 | Dev WER: 0.6685 | Time: 173s | Peak: 5.0 GB
+2026-04-22 04:58:39,940 INFO   New best CER: 0.2638
+2026-04-22 04:58:43,175 INFO Epoch 5 | Batch 0 | Loss: 1.0488 | LR: 2.91e-04
+2026-04-22 04:58:49,559 INFO Epoch 5 | Batch 50 | Loss: 1.2531 | LR: 2.91e-04
+2026-04-22 04:58:56,049 INFO Epoch 5 | Batch 100 | Loss: 1.3250 | LR: 2.91e-04
+2026-04-22 04:59:02,530 INFO Epoch 5 | Batch 150 | Loss: 1.2621 | LR: 2.91e-04
+2026-04-22 04:59:08,749 INFO Epoch 5 | Batch 200 | Loss: 1.1315 | LR: 2.90e-04
+2026-04-22 04:59:15,175 INFO Epoch 5 | Batch 250 | Loss: 1.8710 | LR: 2.90e-04
+2026-04-22 04:59:20,468 INFO Epoch 5 | Batch 300 | Loss: 1.0344 | LR: 2.90e-04
+2026-04-22 04:59:26,063 INFO Epoch 5 | Batch 350 | Loss: 1.0746 | LR: 2.90e-04
+2026-04-22 04:59:31,184 INFO Epoch 5 | Batch 400 | Loss: 0.9773 | LR: 2.89e-04
+2026-04-22 04:59:36,515 INFO Epoch 5 | Batch 450 | Loss: 1.3231 | LR: 2.89e-04
+2026-04-22 04:59:41,818 INFO Epoch 5 | Batch 500 | Loss: 1.2004 | LR: 2.89e-04
+2026-04-22 04:59:47,599 INFO Epoch 5 | Batch 550 | Loss: 1.2864 | LR: 2.89e-04
+2026-04-22 04:59:53,259 INFO Epoch 5 | Batch 600 | Loss: 1.3998 | LR: 2.88e-04
+2026-04-22 04:59:58,671 INFO Epoch 5 | Batch 650 | Loss: 1.5234 | LR: 2.88e-04
+2026-04-22 05:00:04,477 INFO Epoch 5 | Batch 700 | Loss: 1.2048 | LR: 2.88e-04
+2026-04-22 05:00:10,695 INFO Epoch 5 | Batch 750 | Loss: 1.1075 | LR: 2.88e-04
+2026-04-22 05:00:17,017 INFO Epoch 5 | Batch 800 | Loss: 1.1318 | LR: 2.87e-04
+2026-04-22 05:00:23,372 INFO Epoch 5 | Batch 850 | Loss: 1.2277 | LR: 2.87e-04
+2026-04-22 05:00:29,769 INFO Epoch 5 | Batch 900 | Loss: 1.3246 | LR: 2.87e-04
+2026-04-22 05:00:36,109 INFO Epoch 5 | Batch 950 | Loss: 1.6501 | LR: 2.87e-04
+2026-04-22 05:00:42,381 INFO Epoch 5 | Batch 1000 | Loss: 1.4320 | LR: 2.86e-04
+2026-04-22 05:00:48,755 INFO Epoch 5 | Batch 1050 | Loss: 1.1604 | LR: 2.86e-04
+2026-04-22 05:00:55,063 INFO Epoch 5 | Batch 1100 | Loss: 1.2966 | LR: 2.86e-04
+2026-04-22 05:01:01,451 INFO Epoch 5 | Batch 1150 | Loss: 1.5495 | LR: 2.86e-04
+2026-04-22 05:01:07,436 INFO Epoch 5 | Batch 1200 | Loss: 1.2514 | LR: 2.85e-04
+2026-04-22 05:01:23,739 INFO Epoch 5 | Train: 1.2483 | Dev CER: 0.2330 | Dev WER: 0.6169 | Time: 163s | Peak: 5.0 GB
+2026-04-22 05:01:23,739 INFO   New best CER: 0.2330
+2026-04-22 05:01:27,105 INFO Epoch 6 | Batch 0 | Loss: 1.2136 | LR: 2.85e-04
+2026-04-22 05:01:33,643 INFO Epoch 6 | Batch 50 | Loss: 1.7192 | LR: 2.85e-04
+2026-04-22 05:01:40,506 INFO Epoch 6 | Batch 100 | Loss: 1.3585 | LR: 2.84e-04
+2026-04-22 05:01:47,211 INFO Epoch 6 | Batch 150 | Loss: 1.2705 | LR: 2.84e-04
+2026-04-22 05:01:53,717 INFO Epoch 6 | Batch 200 | Loss: 1.3037 | LR: 2.84e-04
+2026-04-22 05:02:00,001 INFO Epoch 6 | Batch 250 | Loss: 0.9721 | LR: 2.84e-04
+2026-04-22 05:02:06,278 INFO Epoch 6 | Batch 300 | Loss: 0.9566 | LR: 2.83e-04
+2026-04-22 05:02:12,817 INFO Epoch 6 | Batch 350 | Loss: 1.1224 | LR: 2.83e-04
+2026-04-22 05:02:19,519 INFO Epoch 6 | Batch 400 | Loss: 1.0059 | LR: 2.83e-04
+2026-04-22 05:02:25,988 INFO Epoch 6 | Batch 450 | Loss: 1.8944 | LR: 2.82e-04
+2026-04-22 05:02:32,294 INFO Epoch 6 | Batch 500 | Loss: 1.0238 | LR: 2.82e-04
+2026-04-22 05:02:38,722 INFO Epoch 6 | Batch 550 | Loss: 1.0753 | LR: 2.82e-04
+2026-04-22 05:02:44,997 INFO Epoch 6 | Batch 600 | Loss: 1.1416 | LR: 2.81e-04
+2026-04-22 05:02:51,581 INFO Epoch 6 | Batch 650 | Loss: 1.3410 | LR: 2.81e-04
+2026-04-22 05:02:57,958 INFO Epoch 6 | Batch 700 | Loss: 1.3959 | LR: 2.81e-04
+2026-04-22 05:03:04,182 INFO Epoch 6 | Batch 750 | Loss: 1.2270 | LR: 2.81e-04
+2026-04-22 05:03:10,608 INFO Epoch 6 | Batch 800 | Loss: 1.1142 | LR: 2.80e-04
+2026-04-22 05:03:16,973 INFO Epoch 6 | Batch 850 | Loss: 1.2470 | LR: 2.80e-04
+2026-04-22 05:03:23,444 INFO Epoch 6 | Batch 900 | Loss: 0.9487 | LR: 2.80e-04
+2026-04-22 05:03:29,833 INFO Epoch 6 | Batch 950 | Loss: 1.5640 | LR: 2.79e-04
+2026-04-22 05:03:36,173 INFO Epoch 6 | Batch 1000 | Loss: 1.1293 | LR: 2.79e-04
+2026-04-22 05:03:42,634 INFO Epoch 6 | Batch 1050 | Loss: 1.3397 | LR: 2.79e-04
+2026-04-22 05:03:48,983 INFO Epoch 6 | Batch 1100 | Loss: 1.3333 | LR: 2.78e-04
+2026-04-22 05:03:55,241 INFO Epoch 6 | Batch 1150 | Loss: 1.1030 | LR: 2.78e-04
+2026-04-22 05:04:01,576 INFO Epoch 6 | Batch 1200 | Loss: 1.0627 | LR: 2.78e-04
+2026-04-22 05:04:18,058 INFO Epoch 6 | Train: 1.1696 | Dev CER: 0.2258 | Dev WER: 0.5969 | Time: 174s | Peak: 5.0 GB
+2026-04-22 05:04:18,058 INFO   New best CER: 0.2258
+2026-04-22 05:04:21,697 INFO Epoch 7 | Batch 0 | Loss: 1.2669 | LR: 2.77e-04
+2026-04-22 05:04:28,260 INFO Epoch 7 | Batch 50 | Loss: 1.3597 | LR: 2.77e-04
+2026-04-22 05:04:34,062 INFO Epoch 7 | Batch 100 | Loss: 1.0550 | LR: 2.77e-04
+2026-04-22 05:04:39,609 INFO Epoch 7 | Batch 150 | Loss: 1.2299 | LR: 2.76e-04
+2026-04-22 05:04:45,385 INFO Epoch 7 | Batch 200 | Loss: 1.0016 | LR: 2.76e-04
+2026-04-22 05:04:51,159 INFO Epoch 7 | Batch 250 | Loss: 1.2025 | LR: 2.76e-04
+2026-04-22 05:04:57,329 INFO Epoch 7 | Batch 300 | Loss: 1.0317 | LR: 2.75e-04
+2026-04-22 05:05:03,759 INFO Epoch 7 | Batch 350 | Loss: 1.3574 | LR: 2.75e-04
+2026-04-22 05:05:10,008 INFO Epoch 7 | Batch 400 | Loss: 0.9807 | LR: 2.74e-04
+2026-04-22 05:05:16,301 INFO Epoch 7 | Batch 450 | Loss: 1.2614 | LR: 2.74e-04
+2026-04-22 05:05:22,584 INFO Epoch 7 | Batch 500 | Loss: 1.2697 | LR: 2.74e-04
+2026-04-22 05:05:29,022 INFO Epoch 7 | Batch 550 | Loss: 0.9558 | LR: 2.73e-04
+2026-04-22 05:05:35,398 INFO Epoch 7 | Batch 600 | Loss: 1.1430 | LR: 2.73e-04
+2026-04-22 05:05:41,707 INFO Epoch 7 | Batch 650 | Loss: 1.2939 | LR: 2.73e-04
+2026-04-22 05:05:48,005 INFO Epoch 7 | Batch 700 | Loss: 1.2012 | LR: 2.72e-04
+2026-04-22 05:05:54,574 INFO Epoch 7 | Batch 750 | Loss: 1.3499 | LR: 2.72e-04
+2026-04-22 05:06:00,941 INFO Epoch 7 | Batch 800 | Loss: 1.5307 | LR: 2.71e-04
+2026-04-22 05:06:07,264 INFO Epoch 7 | Batch 850 | Loss: 1.2960 | LR: 2.71e-04
+2026-04-22 05:06:13,569 INFO Epoch 7 | Batch 900 | Loss: 1.0452 | LR: 2.71e-04
+2026-04-22 05:06:19,935 INFO Epoch 7 | Batch 950 | Loss: 0.9594 | LR: 2.70e-04
+2026-04-22 05:06:26,224 INFO Epoch 7 | Batch 1000 | Loss: 0.9479 | LR: 2.70e-04
+2026-04-22 05:06:32,537 INFO Epoch 7 | Batch 1050 | Loss: 1.3031 | LR: 2.69e-04
+2026-04-22 05:06:38,879 INFO Epoch 7 | Batch 1100 | Loss: 1.5480 | LR: 2.69e-04
+2026-04-22 05:06:45,104 INFO Epoch 7 | Batch 1150 | Loss: 0.9986 | LR: 2.69e-04
+2026-04-22 05:06:51,554 INFO Epoch 7 | Batch 1200 | Loss: 0.7687 | LR: 2.68e-04
+2026-04-22 05:07:08,742 INFO Epoch 7 | Train: 1.1203 | Dev CER: 0.2091 | Dev WER: 0.5630 | Time: 170s | Peak: 5.0 GB
+2026-04-22 05:07:08,742 INFO   New best CER: 0.2091
+2026-04-22 05:07:12,078 INFO Epoch 8 | Batch 0 | Loss: 1.0257 | LR: 2.68e-04
+2026-04-22 05:07:18,402 INFO Epoch 8 | Batch 50 | Loss: 1.1665 | LR: 2.68e-04
+2026-04-22 05:07:24,795 INFO Epoch 8 | Batch 100 | Loss: 1.1134 | LR: 2.67e-04
+2026-04-22 05:07:30,927 INFO Epoch 8 | Batch 150 | Loss: 1.3085 | LR: 2.67e-04
+2026-04-22 05:07:37,236 INFO Epoch 8 | Batch 200 | Loss: 1.0192 | LR: 2.66e-04
+2026-04-22 05:07:43,462 INFO Epoch 8 | Batch 250 | Loss: 1.2777 | LR: 2.66e-04
+2026-04-22 05:07:49,805 INFO Epoch 8 | Batch 300 | Loss: 0.9706 | LR: 2.66e-04
+2026-04-22 05:07:56,068 INFO Epoch 8 | Batch 350 | Loss: 1.3204 | LR: 2.65e-04
+2026-04-22 05:08:02,439 INFO Epoch 8 | Batch 400 | Loss: 0.9147 | LR: 2.65e-04
+2026-04-22 05:08:08,668 INFO Epoch 8 | Batch 450 | Loss: 1.2340 | LR: 2.64e-04
+2026-04-22 05:08:14,996 INFO Epoch 8 | Batch 500 | Loss: 1.0154 | LR: 2.64e-04
+2026-04-22 05:08:21,334 INFO Epoch 8 | Batch 550 | Loss: 1.0720 | LR: 2.63e-04
+2026-04-22 05:08:27,695 INFO Epoch 8 | Batch 600 | Loss: 0.8969 | LR: 2.63e-04
+2026-04-22 05:08:33,891 INFO Epoch 8 | Batch 650 | Loss: 1.0147 | LR: 2.63e-04
+2026-04-22 05:08:40,025 INFO Epoch 8 | Batch 700 | Loss: 0.9019 | LR: 2.62e-04
+2026-04-22 05:08:46,444 INFO Epoch 8 | Batch 750 | Loss: 0.8534 | LR: 2.62e-04
+2026-04-22 05:08:53,177 INFO Epoch 8 | Batch 800 | Loss: 1.0539 | LR: 2.61e-04
+2026-04-22 05:08:59,521 INFO Epoch 8 | Batch 850 | Loss: 0.8053 | LR: 2.61e-04
+2026-04-22 05:09:05,881 INFO Epoch 8 | Batch 900 | Loss: 1.1970 | LR: 2.60e-04
+2026-04-22 05:09:12,191 INFO Epoch 8 | Batch 950 | Loss: 1.1607 | LR: 2.60e-04
+2026-04-22 05:09:18,458 INFO Epoch 8 | Batch 1000 | Loss: 0.8785 | LR: 2.60e-04
+2026-04-22 05:09:24,728 INFO Epoch 8 | Batch 1050 | Loss: 0.9934 | LR: 2.59e-04
+2026-04-22 05:09:31,193 INFO Epoch 8 | Batch 1100 | Loss: 0.9236 | LR: 2.59e-04
+2026-04-22 05:09:37,472 INFO Epoch 8 | Batch 1150 | Loss: 0.8670 | LR: 2.58e-04
+2026-04-22 05:09:43,766 INFO Epoch 8 | Batch 1200 | Loss: 0.9037 | LR: 2.58e-04
+2026-04-22 05:10:00,605 INFO Epoch 8 | Train: 1.0668 | Dev CER: 0.1965 | Dev WER: 0.5388 | Time: 171s | Peak: 5.0 GB
+2026-04-22 05:10:00,605 INFO   New best CER: 0.1965
+2026-04-22 05:10:03,878 INFO Epoch 9 | Batch 0 | Loss: 1.0338 | LR: 2.57e-04
+2026-04-22 05:10:10,236 INFO Epoch 9 | Batch 50 | Loss: 1.1114 | LR: 2.57e-04
+2026-04-22 05:10:16,554 INFO Epoch 9 | Batch 100 | Loss: 0.9641 | LR: 2.56e-04
+2026-04-22 05:10:22,876 INFO Epoch 9 | Batch 150 | Loss: 1.1026 | LR: 2.56e-04
+2026-04-22 05:10:29,205 INFO Epoch 9 | Batch 200 | Loss: 1.0082 | LR: 2.56e-04
+2026-04-22 05:10:35,605 INFO Epoch 9 | Batch 250 | Loss: 1.0962 | LR: 2.55e-04
+2026-04-22 05:10:41,868 INFO Epoch 9 | Batch 300 | Loss: 0.9463 | LR: 2.55e-04
+2026-04-22 05:10:48,182 INFO Epoch 9 | Batch 350 | Loss: 1.2384 | LR: 2.54e-04
+2026-04-22 05:10:54,471 INFO Epoch 9 | Batch 400 | Loss: 0.8825 | LR: 2.54e-04
+2026-04-22 05:11:00,853 INFO Epoch 9 | Batch 450 | Loss: 0.8050 | LR: 2.53e-04
+2026-04-22 05:11:07,353 INFO Epoch 9 | Batch 500 | Loss: 0.8387 | LR: 2.53e-04
+2026-04-22 05:11:13,710 INFO Epoch 9 | Batch 550 | Loss: 0.8329 | LR: 2.52e-04
+2026-04-22 05:11:20,094 INFO Epoch 9 | Batch 600 | Loss: 0.9000 | LR: 2.52e-04
+2026-04-22 05:11:26,498 INFO Epoch 9 | Batch 650 | Loss: 1.1443 | LR: 2.51e-04
+2026-04-22 05:11:32,928 INFO Epoch 9 | Batch 700 | Loss: 0.8027 | LR: 2.51e-04
+2026-04-22 05:11:39,312 INFO Epoch 9 | Batch 750 | Loss: 0.9720 | LR: 2.50e-04
+2026-04-22 05:11:45,697 INFO Epoch 9 | Batch 800 | Loss: 1.0006 | LR: 2.50e-04
+2026-04-22 05:11:52,298 INFO Epoch 9 | Batch 850 | Loss: 1.1991 | LR: 2.49e-04
+2026-04-22 05:11:58,674 INFO Epoch 9 | Batch 900 | Loss: 1.1908 | LR: 2.49e-04
+2026-04-22 05:12:05,033 INFO Epoch 9 | Batch 950 | Loss: 1.0570 | LR: 2.48e-04
+2026-04-22 05:12:11,434 INFO Epoch 9 | Batch 1000 | Loss: 0.9444 | LR: 2.48e-04
+2026-04-22 05:12:17,853 INFO Epoch 9 | Batch 1050 | Loss: 1.1923 | LR: 2.47e-04
+2026-04-22 05:12:24,277 INFO Epoch 9 | Batch 1100 | Loss: 0.8814 | LR: 2.47e-04
+2026-04-22 05:12:30,618 INFO Epoch 9 | Batch 1150 | Loss: 0.8112 | LR: 2.46e-04
+2026-04-22 05:12:36,900 INFO Epoch 9 | Batch 1200 | Loss: 0.9997 | LR: 2.46e-04
+2026-04-22 05:12:54,182 INFO Epoch 9 | Train: 1.0319 | Dev CER: 0.1864 | Dev WER: 0.5211 | Time: 173s | Peak: 5.0 GB
+2026-04-22 05:12:54,182 INFO   New best CER: 0.1864
+2026-04-22 05:12:57,559 INFO Epoch 10 | Batch 0 | Loss: 1.0150 | LR: 2.46e-04
+2026-04-22 05:13:03,827 INFO Epoch 10 | Batch 50 | Loss: 1.0502 | LR: 2.45e-04
+2026-04-22 05:13:10,161 INFO Epoch 10 | Batch 100 | Loss: 0.8696 | LR: 2.45e-04
+2026-04-22 05:13:16,597 INFO Epoch 10 | Batch 150 | Loss: 0.9759 | LR: 2.44e-04
+2026-04-22 05:13:22,988 INFO Epoch 10 | Batch 200 | Loss: 0.9772 | LR: 2.44e-04
+2026-04-22 05:13:29,287 INFO Epoch 10 | Batch 250 | Loss: 0.8557 | LR: 2.43e-04
+2026-04-22 05:13:35,577 INFO Epoch 10 | Batch 300 | Loss: 0.8514 | LR: 2.43e-04
+2026-04-22 05:13:41,933 INFO Epoch 10 | Batch 350 | Loss: 0.8304 | LR: 2.42e-04
+2026-04-22 05:13:48,205 INFO Epoch 10 | Batch 400 | Loss: 0.6814 | LR: 2.41e-04
+2026-04-22 05:13:54,498 INFO Epoch 10 | Batch 450 | Loss: 1.0812 | LR: 2.41e-04
+2026-04-22 05:14:00,763 INFO Epoch 10 | Batch 500 | Loss: 0.8136 | LR: 2.40e-04
+2026-04-22 05:14:07,098 INFO Epoch 10 | Batch 550 | Loss: 0.9679 | LR: 2.40e-04
+2026-04-22 05:14:13,478 INFO Epoch 10 | Batch 600 | Loss: 1.0912 | LR: 2.39e-04
+2026-04-22 05:14:19,811 INFO Epoch 10 | Batch 650 | Loss: 1.0061 | LR: 2.39e-04
+2026-04-22 05:14:26,284 INFO Epoch 10 | Batch 700 | Loss: 1.4499 | LR: 2.38e-04
+2026-04-22 05:14:32,616 INFO Epoch 10 | Batch 750 | Loss: 0.6709 | LR: 2.38e-04
+2026-04-22 05:14:38,956 INFO Epoch 10 | Batch 800 | Loss: 1.5863 | LR: 2.37e-04
+2026-04-22 05:14:45,300 INFO Epoch 10 | Batch 850 | Loss: 0.8195 | LR: 2.37e-04
+2026-04-22 05:14:51,635 INFO Epoch 10 | Batch 900 | Loss: 0.8075 | LR: 2.36e-04
+2026-04-22 05:14:58,220 INFO Epoch 10 | Batch 950 | Loss: 0.8860 | LR: 2.36e-04
+2026-04-22 05:15:04,550 INFO Epoch 10 | Batch 1000 | Loss: 0.8448 | LR: 2.35e-04
+2026-04-22 05:15:11,075 INFO Epoch 10 | Batch 1050 | Loss: 0.8409 | LR: 2.35e-04
+2026-04-22 05:15:17,240 INFO Epoch 10 | Batch 1100 | Loss: 0.7868 | LR: 2.34e-04
+2026-04-22 05:15:23,609 INFO Epoch 10 | Batch 1150 | Loss: 0.8500 | LR: 2.34e-04
+2026-04-22 05:15:29,892 INFO Epoch 10 | Batch 1200 | Loss: 0.9155 | LR: 2.33e-04
+2026-04-22 05:15:50,060 INFO Epoch 10 | Train: 0.9892 | Dev CER: 0.1741 | Dev WER: 0.4945 | Time: 175s | Peak: 5.0 GB
+2026-04-22 05:15:50,060 INFO   New best CER: 0.1741
+2026-04-22 05:15:53,696 INFO Epoch 11 | Batch 0 | Loss: 0.9680 | LR: 2.33e-04
+2026-04-22 05:15:59,978 INFO Epoch 11 | Batch 50 | Loss: 0.9105 | LR: 2.32e-04
+2026-04-22 05:16:06,217 INFO Epoch 11 | Batch 100 | Loss: 0.6843 | LR: 2.32e-04
+2026-04-22 05:16:12,389 INFO Epoch 11 | Batch 150 | Loss: 0.7003 | LR: 2.31e-04
+2026-04-22 05:16:18,695 INFO Epoch 11 | Batch 200 | Loss: 1.2236 | LR: 2.30e-04
+2026-04-22 05:16:25,015 INFO Epoch 11 | Batch 250 | Loss: 1.0458 | LR: 2.30e-04
+2026-04-22 05:16:31,254 INFO Epoch 11 | Batch 300 | Loss: 1.1169 | LR: 2.29e-04
+2026-04-22 05:16:37,651 INFO Epoch 11 | Batch 350 | Loss: 1.1279 | LR: 2.29e-04
+2026-04-22 05:16:43,933 INFO Epoch 11 | Batch 400 | Loss: 0.6458 | LR: 2.28e-04
+2026-04-22 05:16:50,327 INFO Epoch 11 | Batch 450 | Loss: 0.6688 | LR: 2.28e-04
+2026-04-22 05:16:56,633 INFO Epoch 11 | Batch 500 | Loss: 0.9475 | LR: 2.27e-04
+2026-04-22 05:17:03,006 INFO Epoch 11 | Batch 550 | Loss: 0.9837 | LR: 2.27e-04
+2026-04-22 05:17:09,293 INFO Epoch 11 | Batch 600 | Loss: 0.9440 | LR: 2.26e-04
+2026-04-22 05:17:15,551 INFO Epoch 11 | Batch 650 | Loss: 1.3380 | LR: 2.25e-04
+2026-04-22 05:17:21,752 INFO Epoch 11 | Batch 700 | Loss: 0.9150 | LR: 2.25e-04
+2026-04-22 05:17:28,093 INFO Epoch 11 | Batch 750 | Loss: 0.9294 | LR: 2.24e-04
+2026-04-22 05:17:34,368 INFO Epoch 11 | Batch 800 | Loss: 1.0868 | LR: 2.24e-04
+2026-04-22 05:17:40,641 INFO Epoch 11 | Batch 850 | Loss: 0.9084 | LR: 2.23e-04
+2026-04-22 05:17:47,015 INFO Epoch 11 | Batch 900 | Loss: 0.8245 | LR: 2.23e-04
+2026-04-22 05:17:53,386 INFO Epoch 11 | Batch 950 | Loss: 0.6642 | LR: 2.22e-04
+2026-04-22 05:17:59,879 INFO Epoch 11 | Batch 1000 | Loss: 0.8201 | LR: 2.21e-04
+2026-04-22 05:18:06,195 INFO Epoch 11 | Batch 1050 | Loss: 1.0348 | LR: 2.21e-04
+2026-04-22 05:18:12,528 INFO Epoch 11 | Batch 1100 | Loss: 0.9066 | LR: 2.20e-04
+2026-04-22 05:18:19,069 INFO Epoch 11 | Batch 1150 | Loss: 0.9995 | LR: 2.20e-04
+2026-04-22 05:18:25,630 INFO Epoch 11 | Batch 1200 | Loss: 0.7500 | LR: 2.19e-04
+2026-04-22 05:18:43,472 INFO Epoch 11 | Train: 0.9590 | Dev CER: 0.1693 | Dev WER: 0.4828 | Time: 173s | Peak: 5.0 GB
+2026-04-22 05:18:43,472 INFO   New best CER: 0.1693
+2026-04-22 05:18:46,881 INFO Epoch 12 | Batch 0 | Loss: 0.8745 | LR: 2.19e-04
+2026-04-22 05:18:53,093 INFO Epoch 12 | Batch 50 | Loss: 1.8595 | LR: 2.18e-04
+2026-04-22 05:18:59,288 INFO Epoch 12 | Batch 100 | Loss: 1.5376 | LR: 2.18e-04
+2026-04-22 05:19:05,573 INFO Epoch 12 | Batch 150 | Loss: 0.8987 | LR: 2.17e-04
+2026-04-22 05:19:11,876 INFO Epoch 12 | Batch 200 | Loss: 0.7129 | LR: 2.16e-04
+2026-04-22 05:19:18,068 INFO Epoch 12 | Batch 250 | Loss: 0.8653 | LR: 2.16e-04
+2026-04-22 05:19:24,444 INFO Epoch 12 | Batch 300 | Loss: 0.6714 | LR: 2.15e-04
+2026-04-22 05:19:30,752 INFO Epoch 12 | Batch 350 | Loss: 1.0430 | LR: 2.15e-04
+2026-04-22 05:19:36,951 INFO Epoch 12 | Batch 400 | Loss: 0.9161 | LR: 2.14e-04
+2026-04-22 05:19:43,332 INFO Epoch 12 | Batch 450 | Loss: 0.8552 | LR: 2.13e-04
+2026-04-22 05:19:49,577 INFO Epoch 12 | Batch 500 | Loss: 0.7795 | LR: 2.13e-04
+2026-04-22 05:19:55,757 INFO Epoch 12 | Batch 550 | Loss: 1.1496 | LR: 2.12e-04
+2026-04-22 05:20:02,165 INFO Epoch 12 | Batch 600 | Loss: 0.8573 | LR: 2.12e-04
+2026-04-22 05:20:08,474 INFO Epoch 12 | Batch 650 | Loss: 1.0492 | LR: 2.11e-04
+2026-04-22 05:20:14,685 INFO Epoch 12 | Batch 700 | Loss: 0.9508 | LR: 2.11e-04
+2026-04-22 05:20:20,965 INFO Epoch 12 | Batch 750 | Loss: 0.6039 | LR: 2.10e-04
+2026-04-22 05:20:27,267 INFO Epoch 12 | Batch 800 | Loss: 0.7929 | LR: 2.09e-04
+2026-04-22 05:20:33,694 INFO Epoch 12 | Batch 850 | Loss: 0.8676 | LR: 2.09e-04
+2026-04-22 05:20:39,829 INFO Epoch 12 | Batch 900 | Loss: 0.9969 | LR: 2.08e-04
+2026-04-22 05:20:45,963 INFO Epoch 12 | Batch 950 | Loss: 1.1398 | LR: 2.08e-04
+2026-04-22 05:20:52,150 INFO Epoch 12 | Batch 1000 | Loss: 1.0518 | LR: 2.07e-04
+2026-04-22 05:20:58,397 INFO Epoch 12 | Batch 1050 | Loss: 0.9429 | LR: 2.06e-04
+2026-04-22 05:21:04,637 INFO Epoch 12 | Batch 1100 | Loss: 0.8851 | LR: 2.06e-04
+2026-04-22 05:21:10,766 INFO Epoch 12 | Batch 1150 | Loss: 0.8719 | LR: 2.05e-04
+2026-04-22 05:21:16,035 INFO Epoch 12 | Batch 1200 | Loss: 1.1065 | LR: 2.04e-04
+2026-04-22 05:21:33,837 INFO Epoch 12 | Train: 0.9395 | Dev CER: 0.1619 | Dev WER: 0.4653 | Time: 170s | Peak: 5.0 GB
+2026-04-22 05:21:33,837 INFO   New best CER: 0.1619
+2026-04-22 05:21:37,494 INFO Epoch 13 | Batch 0 | Loss: 0.9540 | LR: 2.04e-04
+2026-04-22 05:21:43,860 INFO Epoch 13 | Batch 50 | Loss: 0.7203 | LR: 2.03e-04
+2026-04-22 05:21:50,299 INFO Epoch 13 | Batch 100 | Loss: 0.7549 | LR: 2.03e-04
+2026-04-22 05:21:56,552 INFO Epoch 13 | Batch 150 | Loss: 0.7405 | LR: 2.02e-04
+2026-04-22 05:22:02,708 INFO Epoch 13 | Batch 200 | Loss: 0.7943 | LR: 2.02e-04
+2026-04-22 05:22:08,878 INFO Epoch 13 | Batch 250 | Loss: 0.9712 | LR: 2.01e-04
+2026-04-22 05:22:14,975 INFO Epoch 13 | Batch 300 | Loss: 0.7797 | LR: 2.00e-04
+2026-04-22 05:22:21,290 INFO Epoch 13 | Batch 350 | Loss: 1.0136 | LR: 2.00e-04
+2026-04-22 05:22:27,500 INFO Epoch 13 | Batch 400 | Loss: 0.8665 | LR: 1.99e-04
+2026-04-22 05:22:33,586 INFO Epoch 13 | Batch 450 | Loss: 0.8278 | LR: 1.99e-04
+2026-04-22 05:22:39,651 INFO Epoch 13 | Batch 500 | Loss: 0.7185 | LR: 1.98e-04
+2026-04-22 05:22:46,030 INFO Epoch 13 | Batch 550 | Loss: 0.7460 | LR: 1.97e-04
+2026-04-22 05:22:52,351 INFO Epoch 13 | Batch 600 | Loss: 0.7983 | LR: 1.97e-04
+2026-04-22 05:22:58,661 INFO Epoch 13 | Batch 650 | Loss: 0.9560 | LR: 1.96e-04
+2026-04-22 05:23:04,847 INFO Epoch 13 | Batch 700 | Loss: 0.9330 | LR: 1.95e-04
+2026-04-22 05:23:11,168 INFO Epoch 13 | Batch 750 | Loss: 0.9224 | LR: 1.95e-04
+2026-04-22 05:23:17,496 INFO Epoch 13 | Batch 800 | Loss: 0.7769 | LR: 1.94e-04
+2026-04-22 05:23:23,933 INFO Epoch 13 | Batch 850 | Loss: 1.3054 | LR: 1.94e-04
+2026-04-22 05:23:30,275 INFO Epoch 13 | Batch 900 | Loss: 1.0133 | LR: 1.93e-04
+2026-04-22 05:23:36,685 INFO Epoch 13 | Batch 950 | Loss: 0.8908 | LR: 1.92e-04
+2026-04-22 05:23:43,144 INFO Epoch 13 | Batch 1000 | Loss: 0.8333 | LR: 1.92e-04
+2026-04-22 05:23:49,443 INFO Epoch 13 | Batch 1050 | Loss: 0.7074 | LR: 1.91e-04
+2026-04-22 05:23:55,878 INFO Epoch 13 | Batch 1100 | Loss: 1.4772 | LR: 1.90e-04
+2026-04-22 05:24:02,563 INFO Epoch 13 | Batch 1150 | Loss: 1.0335 | LR: 1.90e-04
+2026-04-22 05:24:08,869 INFO Epoch 13 | Batch 1200 | Loss: 1.2570 | LR: 1.89e-04
+2026-04-22 05:24:30,031 INFO Epoch 13 | Train: 0.9065 | Dev CER: 0.1592 | Dev WER: 0.4590 | Time: 176s | Peak: 5.0 GB
+2026-04-22 05:24:30,031 INFO   New best CER: 0.1592
+2026-04-22 05:24:33,770 INFO Epoch 14 | Batch 0 | Loss: 0.9124 | LR: 1.89e-04
+2026-04-22 05:24:40,181 INFO Epoch 14 | Batch 50 | Loss: 1.2126 | LR: 1.88e-04
+2026-04-22 05:24:46,471 INFO Epoch 14 | Batch 100 | Loss: 0.7987 | LR: 1.87e-04
+2026-04-22 05:24:52,724 INFO Epoch 14 | Batch 150 | Loss: 0.8073 | LR: 1.87e-04
+2026-04-22 05:24:59,064 INFO Epoch 14 | Batch 200 | Loss: 0.8765 | LR: 1.86e-04
+2026-04-22 05:25:05,230 INFO Epoch 14 | Batch 250 | Loss: 1.0124 | LR: 1.86e-04
+2026-04-22 05:25:11,652 INFO Epoch 14 | Batch 300 | Loss: 0.7406 | LR: 1.85e-04
+2026-04-22 05:25:18,006 INFO Epoch 14 | Batch 350 | Loss: 0.9501 | LR: 1.84e-04
+2026-04-22 05:25:24,260 INFO Epoch 14 | Batch 400 | Loss: 0.8678 | LR: 1.84e-04
+2026-04-22 05:25:30,717 INFO Epoch 14 | Batch 450 | Loss: 0.9580 | LR: 1.83e-04
+2026-04-22 05:25:36,897 INFO Epoch 14 | Batch 500 | Loss: 0.9063 | LR: 1.82e-04
+2026-04-22 05:25:43,236 INFO Epoch 14 | Batch 550 | Loss: 0.8884 | LR: 1.82e-04
+2026-04-22 05:25:49,458 INFO Epoch 14 | Batch 600 | Loss: 1.0682 | LR: 1.81e-04
+2026-04-22 05:25:55,803 INFO Epoch 14 | Batch 650 | Loss: 0.7983 | LR: 1.81e-04
+2026-04-22 05:26:02,207 INFO Epoch 14 | Batch 700 | Loss: 0.8861 | LR: 1.80e-04
+2026-04-22 05:26:08,527 INFO Epoch 14 | Batch 750 | Loss: 0.7581 | LR: 1.79e-04
+2026-04-22 05:26:14,859 INFO Epoch 14 | Batch 800 | Loss: 0.8450 | LR: 1.79e-04
+2026-04-22 05:26:21,212 INFO Epoch 14 | Batch 850 | Loss: 0.7554 | LR: 1.78e-04
+2026-04-22 05:26:27,601 INFO Epoch 14 | Batch 900 | Loss: 0.8592 | LR: 1.77e-04
+2026-04-22 05:26:33,963 INFO Epoch 14 | Batch 950 | Loss: 0.9395 | LR: 1.77e-04
+2026-04-22 05:26:40,401 INFO Epoch 14 | Batch 1000 | Loss: 0.7407 | LR: 1.76e-04
+2026-04-22 05:26:46,682 INFO Epoch 14 | Batch 1050 | Loss: 0.9721 | LR: 1.75e-04
+2026-04-22 05:26:53,077 INFO Epoch 14 | Batch 1100 | Loss: 0.7976 | LR: 1.75e-04
+2026-04-22 05:26:59,316 INFO Epoch 14 | Batch 1150 | Loss: 0.8909 | LR: 1.74e-04
+2026-04-22 05:27:05,715 INFO Epoch 14 | Batch 1200 | Loss: 0.9108 | LR: 1.73e-04
+2026-04-22 05:27:23,362 INFO Epoch 14 | Train: 0.8951 | Dev CER: 0.1545 | Dev WER: 0.4429 | Time: 173s | Peak: 5.0 GB
+2026-04-22 05:27:23,362 INFO   New best CER: 0.1545
+2026-04-22 05:27:27,059 INFO Epoch 15 | Batch 0 | Loss: 0.7756 | LR: 1.73e-04
+2026-04-22 05:27:33,427 INFO Epoch 15 | Batch 50 | Loss: 0.8736 | LR: 1.72e-04
+2026-04-22 05:27:39,671 INFO Epoch 15 | Batch 100 | Loss: 0.6926 | LR: 1.72e-04
+2026-04-22 05:27:45,845 INFO Epoch 15 | Batch 150 | Loss: 0.7001 | LR: 1.71e-04
+2026-04-22 05:27:51,897 INFO Epoch 15 | Batch 200 | Loss: 1.0118 | LR: 1.70e-04
+2026-04-22 05:27:57,891 INFO Epoch 15 | Batch 250 | Loss: 0.7319 | LR: 1.70e-04
+2026-04-22 05:28:03,978 INFO Epoch 15 | Batch 300 | Loss: 0.9132 | LR: 1.69e-04
+2026-04-22 05:28:10,156 INFO Epoch 15 | Batch 350 | Loss: 0.7442 | LR: 1.68e-04
+2026-04-22 05:28:16,302 INFO Epoch 15 | Batch 400 | Loss: 0.7249 | LR: 1.68e-04
+2026-04-22 05:28:22,788 INFO Epoch 15 | Batch 450 | Loss: 0.6457 | LR: 1.67e-04
+2026-04-22 05:28:29,101 INFO Epoch 15 | Batch 500 | Loss: 0.9894 | LR: 1.67e-04
+2026-04-22 05:28:35,511 INFO Epoch 15 | Batch 550 | Loss: 0.6982 | LR: 1.66e-04
+2026-04-22 05:28:41,679 INFO Epoch 15 | Batch 600 | Loss: 0.6499 | LR: 1.65e-04
+2026-04-22 05:28:47,753 INFO Epoch 15 | Batch 650 | Loss: 0.6484 | LR: 1.65e-04
+2026-04-22 05:28:53,686 INFO Epoch 15 | Batch 700 | Loss: 0.8203 | LR: 1.64e-04
+2026-04-22 05:29:00,052 INFO Epoch 15 | Batch 750 | Loss: 0.8565 | LR: 1.63e-04
+2026-04-22 05:29:06,304 INFO Epoch 15 | Batch 800 | Loss: 0.8567 | LR: 1.63e-04
+2026-04-22 05:29:12,605 INFO Epoch 15 | Batch 850 | Loss: 0.6942 | LR: 1.62e-04
+2026-04-22 05:29:18,843 INFO Epoch 15 | Batch 900 | Loss: 0.9903 | LR: 1.61e-04
+2026-04-22 05:29:25,216 INFO Epoch 15 | Batch 950 | Loss: 0.9085 | LR: 1.61e-04
+2026-04-22 05:29:31,572 INFO Epoch 15 | Batch 1000 | Loss: 0.7527 | LR: 1.60e-04
+2026-04-22 05:29:37,795 INFO Epoch 15 | Batch 1050 | Loss: 0.7250 | LR: 1.59e-04
+2026-04-22 05:29:44,024 INFO Epoch 15 | Batch 1100 | Loss: 0.8706 | LR: 1.59e-04
+2026-04-22 05:29:50,482 INFO Epoch 15 | Batch 1150 | Loss: 0.9087 | LR: 1.58e-04
+2026-04-22 05:29:56,729 INFO Epoch 15 | Batch 1200 | Loss: 0.9921 | LR: 1.57e-04
+2026-04-22 05:30:13,347 INFO Epoch 15 | Train: 0.8718 | Dev CER: 0.1486 | Dev WER: 0.4299 | Time: 169s | Peak: 5.0 GB
+2026-04-22 05:30:13,347 INFO   New best CER: 0.1486
+2026-04-22 05:30:17,544 INFO Epoch 16 | Batch 0 | Loss: 0.7969 | LR: 1.57e-04
+2026-04-22 05:30:23,900 INFO Epoch 16 | Batch 50 | Loss: 0.7690 | LR: 1.56e-04
+2026-04-22 05:30:30,255 INFO Epoch 16 | Batch 100 | Loss: 1.0822 | LR: 1.56e-04
+2026-04-22 05:30:36,724 INFO Epoch 16 | Batch 150 | Loss: 0.7092 | LR: 1.55e-04
+2026-04-22 05:30:42,889 INFO Epoch 16 | Batch 200 | Loss: 0.6236 | LR: 1.54e-04
+2026-04-22 05:30:49,001 INFO Epoch 16 | Batch 250 | Loss: 0.9273 | LR: 1.54e-04
+2026-04-22 05:30:55,504 INFO Epoch 16 | Batch 300 | Loss: 0.9220 | LR: 1.53e-04
+2026-04-22 05:31:01,954 INFO Epoch 16 | Batch 350 | Loss: 0.7710 | LR: 1.52e-04
+2026-04-22 05:31:08,370 INFO Epoch 16 | Batch 400 | Loss: 0.6951 | LR: 1.52e-04
+2026-04-22 05:31:14,787 INFO Epoch 16 | Batch 450 | Loss: 0.8055 | LR: 1.51e-04
+2026-04-22 05:31:21,200 INFO Epoch 16 | Batch 500 | Loss: 0.8373 | LR: 1.50e-04
+2026-04-22 05:31:27,650 INFO Epoch 16 | Batch 550 | Loss: 0.7708 | LR: 1.50e-04
+2026-04-22 05:31:34,018 INFO Epoch 16 | Batch 600 | Loss: 0.9829 | LR: 1.49e-04
+2026-04-22 05:31:40,355 INFO Epoch 16 | Batch 650 | Loss: 0.8176 | LR: 1.49e-04
+2026-04-22 05:31:46,717 INFO Epoch 16 | Batch 700 | Loss: 1.0597 | LR: 1.48e-04
+2026-04-22 05:31:53,183 INFO Epoch 16 | Batch 750 | Loss: 0.9093 | LR: 1.47e-04
+2026-04-22 05:31:59,579 INFO Epoch 16 | Batch 800 | Loss: 0.7498 | LR: 1.47e-04
+2026-04-22 05:32:05,893 INFO Epoch 16 | Batch 850 | Loss: 0.6522 | LR: 1.46e-04
+2026-04-22 05:32:12,141 INFO Epoch 16 | Batch 900 | Loss: 1.1686 | LR: 1.45e-04
+2026-04-22 05:32:18,566 INFO Epoch 16 | Batch 950 | Loss: 0.7273 | LR: 1.45e-04
+2026-04-22 05:32:25,017 INFO Epoch 16 | Batch 1000 | Loss: 0.7668 | LR: 1.44e-04
+2026-04-22 05:32:31,355 INFO Epoch 16 | Batch 1050 | Loss: 0.7638 | LR: 1.43e-04
+2026-04-22 05:32:37,653 INFO Epoch 16 | Batch 1100 | Loss: 0.7664 | LR: 1.43e-04
+2026-04-22 05:32:43,937 INFO Epoch 16 | Batch 1150 | Loss: 0.7862 | LR: 1.42e-04
+2026-04-22 05:32:50,302 INFO Epoch 16 | Batch 1200 | Loss: 0.6985 | LR: 1.41e-04
+2026-04-22 05:33:08,943 INFO Epoch 16 | Train: 0.8549 | Dev CER: 0.1471 | Dev WER: 0.4255 | Time: 175s | Peak: 5.0 GB
+2026-04-22 05:33:08,943 INFO   New best CER: 0.1471
+2026-04-22 05:33:12,495 INFO Epoch 17 | Batch 0 | Loss: 0.6334 | LR: 1.41e-04
+2026-04-22 05:33:19,088 INFO Epoch 17 | Batch 50 | Loss: 0.9938 | LR: 1.40e-04
+2026-04-22 05:33:25,428 INFO Epoch 17 | Batch 100 | Loss: 0.8097 | LR: 1.40e-04
+2026-04-22 05:33:31,737 INFO Epoch 17 | Batch 150 | Loss: 0.8388 | LR: 1.39e-04
+2026-04-22 05:33:38,099 INFO Epoch 17 | Batch 200 | Loss: 0.8558 | LR: 1.38e-04
+2026-04-22 05:33:44,390 INFO Epoch 17 | Batch 250 | Loss: 0.6736 | LR: 1.38e-04
+2026-04-22 05:33:50,622 INFO Epoch 17 | Batch 300 | Loss: 0.8244 | LR: 1.37e-04
+2026-04-22 05:33:57,032 INFO Epoch 17 | Batch 350 | Loss: 0.6703 | LR: 1.36e-04
+2026-04-22 05:34:03,394 INFO Epoch 17 | Batch 400 | Loss: 0.7891 | LR: 1.36e-04
+2026-04-22 05:34:09,665 INFO Epoch 17 | Batch 450 | Loss: 0.9703 | LR: 1.35e-04
+2026-04-22 05:34:16,046 INFO Epoch 17 | Batch 500 | Loss: 0.8613 | LR: 1.34e-04
+2026-04-22 05:34:22,364 INFO Epoch 17 | Batch 550 | Loss: 0.7953 | LR: 1.34e-04
+2026-04-22 05:34:28,722 INFO Epoch 17 | Batch 600 | Loss: 0.7164 | LR: 1.33e-04
+2026-04-22 05:34:35,056 INFO Epoch 17 | Batch 650 | Loss: 0.8652 | LR: 1.32e-04
+2026-04-22 05:34:41,411 INFO Epoch 17 | Batch 700 | Loss: 0.6708 | LR: 1.32e-04
+2026-04-22 05:34:47,773 INFO Epoch 17 | Batch 750 | Loss: 0.8083 | LR: 1.31e-04
+2026-04-22 05:34:54,134 INFO Epoch 17 | Batch 800 | Loss: 0.6924 | LR: 1.31e-04
+2026-04-22 05:35:00,436 INFO Epoch 17 | Batch 850 | Loss: 0.9217 | LR: 1.30e-04
+2026-04-22 05:35:06,674 INFO Epoch 17 | Batch 900 | Loss: 0.6175 | LR: 1.29e-04
+2026-04-22 05:35:12,852 INFO Epoch 17 | Batch 950 | Loss: 0.8279 | LR: 1.29e-04
+2026-04-22 05:35:19,197 INFO Epoch 17 | Batch 1000 | Loss: 0.8243 | LR: 1.28e-04
+2026-04-22 05:35:25,585 INFO Epoch 17 | Batch 1050 | Loss: 0.6789 | LR: 1.27e-04
+2026-04-22 05:35:32,028 INFO Epoch 17 | Batch 1100 | Loss: 0.7089 | LR: 1.27e-04
+2026-04-22 05:35:38,378 INFO Epoch 17 | Batch 1150 | Loss: 0.9661 | LR: 1.26e-04
+2026-04-22 05:35:44,782 INFO Epoch 17 | Batch 1200 | Loss: 0.8649 | LR: 1.25e-04
+2026-04-22 05:36:02,657 INFO Epoch 17 | Train: 0.8371 | Dev CER: 0.1418 | Dev WER: 0.4149 | Time: 173s | Peak: 5.0 GB
+2026-04-22 05:36:02,657 INFO   New best CER: 0.1418
+2026-04-22 05:36:05,914 INFO Epoch 18 | Batch 0 | Loss: 1.1067 | LR: 1.25e-04
+2026-04-22 05:36:12,328 INFO Epoch 18 | Batch 50 | Loss: 0.7033 | LR: 1.24e-04
+2026-04-22 05:36:18,666 INFO Epoch 18 | Batch 100 | Loss: 0.7560 | LR: 1.24e-04
+2026-04-22 05:36:24,958 INFO Epoch 18 | Batch 150 | Loss: 0.9789 | LR: 1.23e-04
+2026-04-22 05:36:31,423 INFO Epoch 18 | Batch 200 | Loss: 1.0216 | LR: 1.22e-04
+2026-04-22 05:36:37,950 INFO Epoch 18 | Batch 250 | Loss: 0.6456 | LR: 1.22e-04
+2026-04-22 05:36:44,332 INFO Epoch 18 | Batch 300 | Loss: 0.7048 | LR: 1.21e-04
+2026-04-22 05:36:50,631 INFO Epoch 18 | Batch 350 | Loss: 0.6067 | LR: 1.20e-04
+2026-04-22 05:36:56,962 INFO Epoch 18 | Batch 400 | Loss: 0.8068 | LR: 1.20e-04
+2026-04-22 05:37:03,238 INFO Epoch 18 | Batch 450 | Loss: 0.7164 | LR: 1.19e-04
+2026-04-22 05:37:09,478 INFO Epoch 18 | Batch 500 | Loss: 0.6824 | LR: 1.19e-04
+2026-04-22 05:37:15,719 INFO Epoch 18 | Batch 550 | Loss: 0.6139 | LR: 1.18e-04
+2026-04-22 05:37:22,055 INFO Epoch 18 | Batch 600 | Loss: 0.5346 | LR: 1.17e-04
+2026-04-22 05:37:28,278 INFO Epoch 18 | Batch 650 | Loss: 1.1608 | LR: 1.17e-04
+2026-04-22 05:37:34,565 INFO Epoch 18 | Batch 700 | Loss: 0.6663 | LR: 1.16e-04
+2026-04-22 05:37:40,773 INFO Epoch 18 | Batch 750 | Loss: 0.8258 | LR: 1.15e-04
+2026-04-22 05:37:47,010 INFO Epoch 18 | Batch 800 | Loss: 1.0362 | LR: 1.15e-04
+2026-04-22 05:37:53,369 INFO Epoch 18 | Batch 850 | Loss: 0.9456 | LR: 1.14e-04
+2026-04-22 05:37:59,750 INFO Epoch 18 | Batch 900 | Loss: 0.7095 | LR: 1.13e-04
+2026-04-22 05:38:06,034 INFO Epoch 18 | Batch 950 | Loss: 0.8563 | LR: 1.13e-04
+2026-04-22 05:38:12,350 INFO Epoch 18 | Batch 1000 | Loss: 0.8527 | LR: 1.12e-04
+2026-04-22 05:38:18,488 INFO Epoch 18 | Batch 1050 | Loss: 0.8392 | LR: 1.12e-04
+2026-04-22 05:38:24,774 INFO Epoch 18 | Batch 1100 | Loss: 0.9421 | LR: 1.11e-04
+2026-04-22 05:38:31,087 INFO Epoch 18 | Batch 1150 | Loss: 1.2817 | LR: 1.10e-04
+2026-04-22 05:38:37,456 INFO Epoch 18 | Batch 1200 | Loss: 0.7248 | LR: 1.10e-04
+2026-04-22 05:38:52,497 INFO Epoch 18 | Train: 0.8172 | Dev CER: 0.1386 | Dev WER: 0.4072 | Time: 169s | Peak: 5.0 GB
+2026-04-22 05:38:52,497 INFO   New best CER: 0.1386
+2026-04-22 05:38:55,851 INFO Epoch 19 | Batch 0 | Loss: 1.0853 | LR: 1.09e-04
+2026-04-22 05:39:02,066 INFO Epoch 19 | Batch 50 | Loss: 0.5716 | LR: 1.09e-04
+2026-04-22 05:39:08,346 INFO Epoch 19 | Batch 100 | Loss: 0.8001 | LR: 1.08e-04
+2026-04-22 05:39:14,669 INFO Epoch 19 | Batch 150 | Loss: 0.4663 | LR: 1.07e-04
+2026-04-22 05:39:20,953 INFO Epoch 19 | Batch 200 | Loss: 0.6849 | LR: 1.07e-04
+2026-04-22 05:39:27,240 INFO Epoch 19 | Batch 250 | Loss: 0.7926 | LR: 1.06e-04
+2026-04-22 05:39:33,565 INFO Epoch 19 | Batch 300 | Loss: 0.8321 | LR: 1.06e-04
+2026-04-22 05:39:39,897 INFO Epoch 19 | Batch 350 | Loss: 1.0671 | LR: 1.05e-04
+2026-04-22 05:39:46,048 INFO Epoch 19 | Batch 400 | Loss: 0.8290 | LR: 1.04e-04
+2026-04-22 05:39:52,365 INFO Epoch 19 | Batch 450 | Loss: 0.9354 | LR: 1.04e-04
+2026-04-22 05:39:58,813 INFO Epoch 19 | Batch 500 | Loss: 1.1413 | LR: 1.03e-04
+2026-04-22 05:40:05,011 INFO Epoch 19 | Batch 550 | Loss: 0.7669 | LR: 1.02e-04
+2026-04-22 05:40:11,303 INFO Epoch 19 | Batch 600 | Loss: 0.7387 | LR: 1.02e-04
+2026-04-22 05:40:17,594 INFO Epoch 19 | Batch 650 | Loss: 1.0883 | LR: 1.01e-04
+2026-04-22 05:40:24,008 INFO Epoch 19 | Batch 700 | Loss: 0.7000 | LR: 1.01e-04
+2026-04-22 05:40:30,277 INFO Epoch 19 | Batch 750 | Loss: 1.0046 | LR: 1.00e-04
+2026-04-22 05:40:36,446 INFO Epoch 19 | Batch 800 | Loss: 0.6578 | LR: 9.94e-05
+2026-04-22 05:40:42,795 INFO Epoch 19 | Batch 850 | Loss: 0.8581 | LR: 9.88e-05
+2026-04-22 05:40:49,112 INFO Epoch 19 | Batch 900 | Loss: 0.8044 | LR: 9.81e-05
+2026-04-22 05:40:55,461 INFO Epoch 19 | Batch 950 | Loss: 0.7561 | LR: 9.75e-05
+2026-04-22 05:41:01,841 INFO Epoch 19 | Batch 1000 | Loss: 0.7091 | LR: 9.69e-05
+2026-04-22 05:41:08,299 INFO Epoch 19 | Batch 1050 | Loss: 0.7076 | LR: 9.63e-05
+2026-04-22 05:41:14,606 INFO Epoch 19 | Batch 1100 | Loss: 0.7155 | LR: 9.57e-05
+2026-04-22 05:41:20,825 INFO Epoch 19 | Batch 1150 | Loss: 1.0402 | LR: 9.51e-05
+2026-04-22 05:41:27,154 INFO Epoch 19 | Batch 1200 | Loss: 0.6171 | LR: 9.45e-05
+2026-04-22 05:41:45,135 INFO Epoch 19 | Train: 0.8073 | Dev CER: 0.1370 | Dev WER: 0.4011 | Time: 172s | Peak: 5.0 GB
+2026-04-22 05:41:45,135 INFO   New best CER: 0.1370
+2026-04-22 05:41:48,550 INFO Epoch 20 | Batch 0 | Loss: 0.5899 | LR: 9.41e-05
+2026-04-22 05:41:55,022 INFO Epoch 20 | Batch 50 | Loss: 0.7362 | LR: 9.35e-05
+2026-04-22 05:42:01,489 INFO Epoch 20 | Batch 100 | Loss: 0.4775 | LR: 9.29e-05
+2026-04-22 05:42:07,798 INFO Epoch 20 | Batch 150 | Loss: 0.8869 | LR: 9.23e-05
+2026-04-22 05:42:14,232 INFO Epoch 20 | Batch 200 | Loss: 0.7436 | LR: 9.17e-05
+2026-04-22 05:42:20,464 INFO Epoch 20 | Batch 250 | Loss: 0.8594 | LR: 9.11e-05
+2026-04-22 05:42:26,941 INFO Epoch 20 | Batch 300 | Loss: 0.5856 | LR: 9.05e-05
+2026-04-22 05:42:33,403 INFO Epoch 20 | Batch 350 | Loss: 0.9243 | LR: 8.99e-05
+2026-04-22 05:42:39,833 INFO Epoch 20 | Batch 400 | Loss: 0.7882 | LR: 8.93e-05
+2026-04-22 05:42:46,146 INFO Epoch 20 | Batch 450 | Loss: 0.7919 | LR: 8.87e-05
+2026-04-22 05:42:52,370 INFO Epoch 20 | Batch 500 | Loss: 0.7100 | LR: 8.81e-05
+2026-04-22 05:42:58,698 INFO Epoch 20 | Batch 550 | Loss: 0.6483 | LR: 8.75e-05
+2026-04-22 05:43:05,076 INFO Epoch 20 | Batch 600 | Loss: 1.2476 | LR: 8.69e-05
+2026-04-22 05:43:11,706 INFO Epoch 20 | Batch 650 | Loss: 0.6685 | LR: 8.63e-05
+2026-04-22 05:43:17,996 INFO Epoch 20 | Batch 700 | Loss: 1.1379 | LR: 8.57e-05
+2026-04-22 05:43:24,350 INFO Epoch 20 | Batch 750 | Loss: 0.6741 | LR: 8.52e-05
+2026-04-22 05:43:30,698 INFO Epoch 20 | Batch 800 | Loss: 1.0030 | LR: 8.46e-05
+2026-04-22 05:43:37,109 INFO Epoch 20 | Batch 850 | Loss: 0.7442 | LR: 8.40e-05
+2026-04-22 05:43:43,492 INFO Epoch 20 | Batch 900 | Loss: 0.6214 | LR: 8.34e-05
+2026-04-22 05:43:49,699 INFO Epoch 20 | Batch 950 | Loss: 0.7124 | LR: 8.28e-05
+2026-04-22 05:43:56,052 INFO Epoch 20 | Batch 1000 | Loss: 0.9775 | LR: 8.22e-05
+2026-04-22 05:44:02,521 INFO Epoch 20 | Batch 1050 | Loss: 0.7613 | LR: 8.17e-05
+2026-04-22 05:44:08,814 INFO Epoch 20 | Batch 1100 | Loss: 1.0784 | LR: 8.11e-05
+2026-04-22 05:44:15,199 INFO Epoch 20 | Batch 1150 | Loss: 1.0483 | LR: 8.05e-05
+2026-04-22 05:44:21,529 INFO Epoch 20 | Batch 1200 | Loss: 0.5164 | LR: 7.99e-05
+2026-04-22 05:44:37,954 INFO Epoch 20 | Train: 0.7998 | Dev CER: 0.1327 | Dev WER: 0.3920 | Time: 172s | Peak: 5.0 GB
+2026-04-22 05:44:37,954 INFO   New best CER: 0.1327
+2026-04-22 05:44:41,885 INFO Epoch 21 | Batch 0 | Loss: 0.8189 | LR: 7.95e-05
+2026-04-22 05:44:48,324 INFO Epoch 21 | Batch 50 | Loss: 0.9006 | LR: 7.90e-05
+2026-04-22 05:44:54,634 INFO Epoch 21 | Batch 100 | Loss: 0.8385 | LR: 7.84e-05
+2026-04-22 05:45:01,079 INFO Epoch 21 | Batch 150 | Loss: 0.6625 | LR: 7.78e-05
+2026-04-22 05:45:07,496 INFO Epoch 21 | Batch 200 | Loss: 0.5914 | LR: 7.72e-05
+2026-04-22 05:45:13,734 INFO Epoch 21 | Batch 250 | Loss: 0.7415 | LR: 7.67e-05
+2026-04-22 05:45:19,997 INFO Epoch 21 | Batch 300 | Loss: 0.6805 | LR: 7.61e-05
+2026-04-22 05:45:26,317 INFO Epoch 21 | Batch 350 | Loss: 0.6193 | LR: 7.56e-05
+2026-04-22 05:45:32,675 INFO Epoch 21 | Batch 400 | Loss: 0.7181 | LR: 7.50e-05
+2026-04-22 05:45:38,904 INFO Epoch 21 | Batch 450 | Loss: 0.6227 | LR: 7.44e-05
+2026-04-22 05:45:45,192 INFO Epoch 21 | Batch 500 | Loss: 0.9059 | LR: 7.39e-05
+2026-04-22 05:45:51,507 INFO Epoch 21 | Batch 550 | Loss: 0.6977 | LR: 7.33e-05
+2026-04-22 05:45:57,795 INFO Epoch 21 | Batch 600 | Loss: 0.6463 | LR: 7.28e-05
+2026-04-22 05:46:04,106 INFO Epoch 21 | Batch 650 | Loss: 0.8939 | LR: 7.22e-05
+2026-04-22 05:46:10,379 INFO Epoch 21 | Batch 700 | Loss: 1.0614 | LR: 7.16e-05
+2026-04-22 05:46:16,646 INFO Epoch 21 | Batch 750 | Loss: 0.6821 | LR: 7.11e-05
+2026-04-22 05:46:23,029 INFO Epoch 21 | Batch 800 | Loss: 1.0574 | LR: 7.05e-05
+2026-04-22 05:46:29,564 INFO Epoch 21 | Batch 850 | Loss: 0.5935 | LR: 7.00e-05
+2026-04-22 05:46:35,873 INFO Epoch 21 | Batch 900 | Loss: 1.1126 | LR: 6.94e-05
+2026-04-22 05:46:42,096 INFO Epoch 21 | Batch 950 | Loss: 0.6408 | LR: 6.89e-05
+2026-04-22 05:46:48,503 INFO Epoch 21 | Batch 1000 | Loss: 0.5319 | LR: 6.84e-05
+2026-04-22 05:46:54,756 INFO Epoch 21 | Batch 1050 | Loss: 0.7030 | LR: 6.78e-05
+2026-04-22 05:47:01,078 INFO Epoch 21 | Batch 1100 | Loss: 0.7944 | LR: 6.73e-05
+2026-04-22 05:47:07,451 INFO Epoch 21 | Batch 1150 | Loss: 0.7412 | LR: 6.67e-05
+2026-04-22 05:47:13,762 INFO Epoch 21 | Batch 1200 | Loss: 1.1598 | LR: 6.62e-05
+2026-04-22 05:47:30,093 INFO Epoch 21 | Train: 0.7811 | Dev CER: 0.1323 | Dev WER: 0.3903 | Time: 172s | Peak: 5.0 GB
+2026-04-22 05:47:30,093 INFO   New best CER: 0.1323
+2026-04-22 05:47:33,626 INFO Epoch 22 | Batch 0 | Loss: 1.0507 | LR: 6.58e-05
+2026-04-22 05:47:38,559 INFO Epoch 22 | Batch 50 | Loss: 0.5560 | LR: 6.53e-05
+2026-04-22 05:47:44,834 INFO Epoch 22 | Batch 100 | Loss: 0.5885 | LR: 6.47e-05
+2026-04-22 05:47:51,149 INFO Epoch 22 | Batch 150 | Loss: 1.0939 | LR: 6.42e-05
+2026-04-22 05:47:57,454 INFO Epoch 22 | Batch 200 | Loss: 0.8791 | LR: 6.37e-05
+2026-04-22 05:48:03,867 INFO Epoch 22 | Batch 250 | Loss: 0.6397 | LR: 6.31e-05
+2026-04-22 05:48:09,562 INFO Epoch 22 | Batch 300 | Loss: 0.8093 | LR: 6.26e-05
+2026-04-22 05:48:15,264 INFO Epoch 22 | Batch 350 | Loss: 0.9116 | LR: 6.21e-05
+2026-04-22 05:48:21,659 INFO Epoch 22 | Batch 400 | Loss: 0.6866 | LR: 6.16e-05
+2026-04-22 05:48:28,143 INFO Epoch 22 | Batch 450 | Loss: 0.5844 | LR: 6.10e-05
+2026-04-22 05:48:34,576 INFO Epoch 22 | Batch 500 | Loss: 0.5248 | LR: 6.05e-05
+2026-04-22 05:48:41,001 INFO Epoch 22 | Batch 550 | Loss: 0.7296 | LR: 6.00e-05
+2026-04-22 05:48:47,443 INFO Epoch 22 | Batch 600 | Loss: 0.8211 | LR: 5.95e-05
+2026-04-22 05:48:53,850 INFO Epoch 22 | Batch 650 | Loss: 0.8542 | LR: 5.90e-05
+2026-04-22 05:49:00,334 INFO Epoch 22 | Batch 700 | Loss: 0.5575 | LR: 5.85e-05
+2026-04-22 05:49:06,601 INFO Epoch 22 | Batch 750 | Loss: 0.8030 | LR: 5.79e-05
+2026-04-22 05:49:12,970 INFO Epoch 22 | Batch 800 | Loss: 0.7675 | LR: 5.74e-05
+2026-04-22 05:49:19,377 INFO Epoch 22 | Batch 850 | Loss: 0.7879 | LR: 5.69e-05
+2026-04-22 05:49:25,791 INFO Epoch 22 | Batch 900 | Loss: 0.8806 | LR: 5.64e-05
+2026-04-22 05:49:32,177 INFO Epoch 22 | Batch 950 | Loss: 0.9124 | LR: 5.59e-05
+2026-04-22 05:49:38,636 INFO Epoch 22 | Batch 1000 | Loss: 0.6107 | LR: 5.54e-05
+2026-04-22 05:49:45,009 INFO Epoch 22 | Batch 1050 | Loss: 0.6981 | LR: 5.49e-05
+2026-04-22 05:49:51,460 INFO Epoch 22 | Batch 1100 | Loss: 0.8232 | LR: 5.44e-05
+2026-04-22 05:49:57,670 INFO Epoch 22 | Batch 1150 | Loss: 0.7787 | LR: 5.39e-05
+2026-04-22 05:50:04,397 INFO Epoch 22 | Batch 1200 | Loss: 0.9649 | LR: 5.34e-05
+2026-04-22 05:50:20,575 INFO Epoch 22 | Train: 0.7752 | Dev CER: 0.1305 | Dev WER: 0.3897 | Time: 170s | Peak: 5.0 GB
+2026-04-22 05:50:20,575 INFO   New best CER: 0.1305
+2026-04-22 05:50:24,286 INFO Epoch 23 | Batch 0 | Loss: 0.8300 | LR: 5.31e-05
+2026-04-22 05:50:30,805 INFO Epoch 23 | Batch 50 | Loss: 0.8189 | LR: 5.26e-05
+2026-04-22 05:50:37,335 INFO Epoch 23 | Batch 100 | Loss: 0.6164 | LR: 5.21e-05
+2026-04-22 05:50:43,741 INFO Epoch 23 | Batch 150 | Loss: 0.8418 | LR: 5.16e-05
+2026-04-22 05:50:50,132 INFO Epoch 23 | Batch 200 | Loss: 0.5682 | LR: 5.11e-05
+2026-04-22 05:50:56,667 INFO Epoch 23 | Batch 250 | Loss: 0.9163 | LR: 5.06e-05
+2026-04-22 05:51:02,975 INFO Epoch 23 | Batch 300 | Loss: 0.6513 | LR: 5.01e-05
+2026-04-22 05:51:09,406 INFO Epoch 23 | Batch 350 | Loss: 0.8074 | LR: 4.97e-05
+2026-04-22 05:51:15,847 INFO Epoch 23 | Batch 400 | Loss: 0.9574 | LR: 4.92e-05
+2026-04-22 05:51:22,079 INFO Epoch 23 | Batch 450 | Loss: 0.5687 | LR: 4.87e-05
+2026-04-22 05:51:28,480 INFO Epoch 23 | Batch 500 | Loss: 0.8646 | LR: 4.82e-05
+2026-04-22 05:51:34,730 INFO Epoch 23 | Batch 550 | Loss: 0.7978 | LR: 4.77e-05
+2026-04-22 05:51:41,160 INFO Epoch 23 | Batch 600 | Loss: 0.6942 | LR: 4.73e-05
+2026-04-22 05:51:47,555 INFO Epoch 23 | Batch 650 | Loss: 1.1326 | LR: 4.68e-05
+2026-04-22 05:51:53,897 INFO Epoch 23 | Batch 700 | Loss: 0.9849 | LR: 4.63e-05
+2026-04-22 05:52:00,185 INFO Epoch 23 | Batch 750 | Loss: 1.0860 | LR: 4.59e-05
+2026-04-22 05:52:06,488 INFO Epoch 23 | Batch 800 | Loss: 0.5871 | LR: 4.54e-05
+2026-04-22 05:52:12,774 INFO Epoch 23 | Batch 850 | Loss: 0.7500 | LR: 4.49e-05
+2026-04-22 05:52:18,904 INFO Epoch 23 | Batch 900 | Loss: 0.5666 | LR: 4.45e-05
+2026-04-22 05:52:25,031 INFO Epoch 23 | Batch 950 | Loss: 0.8606 | LR: 4.40e-05
+2026-04-22 05:52:31,179 INFO Epoch 23 | Batch 1000 | Loss: 0.8440 | LR: 4.36e-05
+2026-04-22 05:52:37,401 INFO Epoch 23 | Batch 1050 | Loss: 0.6423 | LR: 4.31e-05
+2026-04-22 05:52:43,650 INFO Epoch 23 | Batch 1100 | Loss: 0.6871 | LR: 4.27e-05
+2026-04-22 05:52:49,902 INFO Epoch 23 | Batch 1150 | Loss: 0.6425 | LR: 4.22e-05
+2026-04-22 05:52:56,318 INFO Epoch 23 | Batch 1200 | Loss: 0.7202 | LR: 4.18e-05
+2026-04-22 05:53:11,585 INFO Epoch 23 | Train: 0.7572 | Dev CER: 0.1306 | Dev WER: 0.3849 | Time: 170s | Peak: 5.0 GB
+2026-04-22 05:53:15,202 INFO Epoch 24 | Batch 0 | Loss: 0.6081 | LR: 4.14e-05
+2026-04-22 05:53:21,787 INFO Epoch 24 | Batch 50 | Loss: 0.7051 | LR: 4.10e-05
+2026-04-22 05:53:28,109 INFO Epoch 24 | Batch 100 | Loss: 0.7266 | LR: 4.06e-05
+2026-04-22 05:53:34,442 INFO Epoch 24 | Batch 150 | Loss: 0.7516 | LR: 4.01e-05
+2026-04-22 05:53:40,938 INFO Epoch 24 | Batch 200 | Loss: 0.6316 | LR: 3.97e-05
+2026-04-22 05:53:47,199 INFO Epoch 24 | Batch 250 | Loss: 0.5931 | LR: 3.92e-05
+2026-04-22 05:53:53,459 INFO Epoch 24 | Batch 300 | Loss: 0.6059 | LR: 3.88e-05
+2026-04-22 05:53:59,691 INFO Epoch 24 | Batch 350 | Loss: 0.6305 | LR: 3.84e-05
+2026-04-22 05:54:06,050 INFO Epoch 24 | Batch 400 | Loss: 0.5505 | LR: 3.80e-05
+2026-04-22 05:54:12,234 INFO Epoch 24 | Batch 450 | Loss: 0.7202 | LR: 3.75e-05
+2026-04-22 05:54:18,649 INFO Epoch 24 | Batch 500 | Loss: 0.8266 | LR: 3.71e-05
+2026-04-22 05:54:25,072 INFO Epoch 24 | Batch 550 | Loss: 0.6267 | LR: 3.67e-05
+2026-04-22 05:54:31,482 INFO Epoch 24 | Batch 600 | Loss: 0.9317 | LR: 3.63e-05
+2026-04-22 05:54:37,818 INFO Epoch 24 | Batch 650 | Loss: 0.7699 | LR: 3.58e-05
+2026-04-22 05:54:44,160 INFO Epoch 24 | Batch 700 | Loss: 0.8386 | LR: 3.54e-05
+2026-04-22 05:54:50,573 INFO Epoch 24 | Batch 750 | Loss: 1.0265 | LR: 3.50e-05
+2026-04-22 05:54:56,915 INFO Epoch 24 | Batch 800 | Loss: 0.8325 | LR: 3.46e-05
+2026-04-22 05:55:03,075 INFO Epoch 24 | Batch 850 | Loss: 0.7171 | LR: 3.42e-05
+2026-04-22 05:55:09,377 INFO Epoch 24 | Batch 900 | Loss: 0.7734 | LR: 3.38e-05
+2026-04-22 05:55:15,573 INFO Epoch 24 | Batch 950 | Loss: 1.2171 | LR: 3.34e-05
+2026-04-22 05:55:21,941 INFO Epoch 24 | Batch 1000 | Loss: 0.9706 | LR: 3.30e-05
+2026-04-22 05:55:28,253 INFO Epoch 24 | Batch 1050 | Loss: 0.5590 | LR: 3.26e-05
+2026-04-22 05:55:34,493 INFO Epoch 24 | Batch 1100 | Loss: 0.5044 | LR: 3.22e-05
+2026-04-22 05:55:40,732 INFO Epoch 24 | Batch 1150 | Loss: 0.8144 | LR: 3.18e-05
+2026-04-22 05:55:46,963 INFO Epoch 24 | Batch 1200 | Loss: 0.7962 | LR: 3.14e-05
+2026-04-22 05:56:03,670 INFO Epoch 24 | Train: 0.7488 | Dev CER: 0.1282 | Dev WER: 0.3783 | Time: 172s | Peak: 5.0 GB
+2026-04-22 05:56:03,670 INFO   New best CER: 0.1282
+2026-04-22 05:56:07,365 INFO Epoch 25 | Batch 0 | Loss: 0.5303 | LR: 3.11e-05
+2026-04-22 05:56:13,701 INFO Epoch 25 | Batch 50 | Loss: 0.9654 | LR: 3.07e-05
+2026-04-22 05:56:20,105 INFO Epoch 25 | Batch 100 | Loss: 0.6359 | LR: 3.03e-05
+2026-04-22 05:56:26,394 INFO Epoch 25 | Batch 150 | Loss: 0.7298 | LR: 2.99e-05
+2026-04-22 05:56:32,782 INFO Epoch 25 | Batch 200 | Loss: 0.7383 | LR: 2.95e-05
+2026-04-22 05:56:39,146 INFO Epoch 25 | Batch 250 | Loss: 1.1571 | LR: 2.92e-05
+2026-04-22 05:56:45,466 INFO Epoch 25 | Batch 300 | Loss: 0.6460 | LR: 2.88e-05
+2026-04-22 05:56:51,826 INFO Epoch 25 | Batch 350 | Loss: 0.7512 | LR: 2.84e-05
+2026-04-22 05:56:58,095 INFO Epoch 25 | Batch 400 | Loss: 0.6211 | LR: 2.80e-05
+2026-04-22 05:57:04,302 INFO Epoch 25 | Batch 450 | Loss: 0.7205 | LR: 2.77e-05
+2026-04-22 05:57:10,488 INFO Epoch 25 | Batch 500 | Loss: 0.8421 | LR: 2.73e-05
+2026-04-22 05:57:16,742 INFO Epoch 25 | Batch 550 | Loss: 0.8569 | LR: 2.69e-05
+2026-04-22 05:57:22,810 INFO Epoch 25 | Batch 600 | Loss: 0.8507 | LR: 2.66e-05
+2026-04-22 05:57:28,767 INFO Epoch 25 | Batch 650 | Loss: 0.6694 | LR: 2.62e-05
+2026-04-22 05:57:34,998 INFO Epoch 25 | Batch 700 | Loss: 0.7393 | LR: 2.58e-05
+2026-04-22 05:57:40,992 INFO Epoch 25 | Batch 750 | Loss: 0.6760 | LR: 2.55e-05
+2026-04-22 05:57:47,197 INFO Epoch 25 | Batch 800 | Loss: 0.7173 | LR: 2.51e-05
+2026-04-22 05:57:53,441 INFO Epoch 25 | Batch 850 | Loss: 0.7176 | LR: 2.48e-05
+2026-04-22 05:57:59,433 INFO Epoch 25 | Batch 900 | Loss: 0.9186 | LR: 2.44e-05
+2026-04-22 05:58:05,508 INFO Epoch 25 | Batch 950 | Loss: 0.9868 | LR: 2.41e-05
+2026-04-22 05:58:11,595 INFO Epoch 25 | Batch 1000 | Loss: 0.6442 | LR: 2.37e-05
+2026-04-22 05:58:17,778 INFO Epoch 25 | Batch 1050 | Loss: 0.6340 | LR: 2.34e-05
+2026-04-22 05:58:24,040 INFO Epoch 25 | Batch 1100 | Loss: 0.9371 | LR: 2.30e-05
+2026-04-22 05:58:30,325 INFO Epoch 25 | Batch 1150 | Loss: 0.4234 | LR: 2.27e-05
+2026-04-22 05:58:36,586 INFO Epoch 25 | Batch 1200 | Loss: 0.7756 | LR: 2.24e-05
+2026-04-22 05:58:55,323 INFO Epoch 25 | Train: 0.7426 | Dev CER: 0.1284 | Dev WER: 0.3791 | Time: 171s | Peak: 5.0 GB
+2026-04-22 05:58:59,437 INFO Epoch 26 | Batch 0 | Loss: 0.5852 | LR: 2.21e-05
+2026-04-22 05:59:06,197 INFO Epoch 26 | Batch 50 | Loss: 0.8859 | LR: 2.18e-05
+2026-04-22 05:59:12,781 INFO Epoch 26 | Batch 100 | Loss: 0.6436 | LR: 2.15e-05
+2026-04-22 05:59:19,194 INFO Epoch 26 | Batch 150 | Loss: 0.6432 | LR: 2.11e-05
+2026-04-22 05:59:25,709 INFO Epoch 26 | Batch 200 | Loss: 0.5580 | LR: 2.08e-05
+2026-04-22 05:59:32,274 INFO Epoch 26 | Batch 250 | Loss: 0.7261 | LR: 2.05e-05
+2026-04-22 05:59:38,813 INFO Epoch 26 | Batch 300 | Loss: 0.6685 | LR: 2.02e-05
+2026-04-22 05:59:45,010 INFO Epoch 26 | Batch 350 | Loss: 0.8299 | LR: 1.98e-05
+2026-04-22 05:59:51,449 INFO Epoch 26 | Batch 400 | Loss: 0.7965 | LR: 1.95e-05
+2026-04-22 05:59:57,822 INFO Epoch 26 | Batch 450 | Loss: 0.9835 | LR: 1.92e-05
+2026-04-22 06:00:04,159 INFO Epoch 26 | Batch 500 | Loss: 0.4526 | LR: 1.89e-05
+2026-04-22 06:00:10,464 INFO Epoch 26 | Batch 550 | Loss: 0.7534 | LR: 1.86e-05
+2026-04-22 06:00:16,679 INFO Epoch 26 | Batch 600 | Loss: 0.6100 | LR: 1.83e-05
+2026-04-22 06:00:22,980 INFO Epoch 26 | Batch 650 | Loss: 0.7961 | LR: 1.80e-05
+2026-04-22 06:00:29,236 INFO Epoch 26 | Batch 700 | Loss: 0.7938 | LR: 1.77e-05
+2026-04-22 06:00:35,658 INFO Epoch 26 | Batch 750 | Loss: 0.8201 | LR: 1.74e-05
+2026-04-22 06:00:41,958 INFO Epoch 26 | Batch 800 | Loss: 0.6765 | LR: 1.71e-05
+2026-04-22 06:00:48,325 INFO Epoch 26 | Batch 850 | Loss: 0.6683 | LR: 1.68e-05
+2026-04-22 06:00:54,679 INFO Epoch 26 | Batch 900 | Loss: 0.5192 | LR: 1.65e-05
+2026-04-22 06:01:00,967 INFO Epoch 26 | Batch 950 | Loss: 0.7665 | LR: 1.62e-05
+2026-04-22 06:01:07,331 INFO Epoch 26 | Batch 1000 | Loss: 0.4815 | LR: 1.59e-05
+2026-04-22 06:01:13,775 INFO Epoch 26 | Batch 1050 | Loss: 0.5621 | LR: 1.57e-05
+2026-04-22 06:01:19,970 INFO Epoch 26 | Batch 1100 | Loss: 0.7614 | LR: 1.54e-05
+2026-04-22 06:01:26,294 INFO Epoch 26 | Batch 1150 | Loss: 0.6199 | LR: 1.51e-05
+2026-04-22 06:01:32,683 INFO Epoch 26 | Batch 1200 | Loss: 0.5288 | LR: 1.48e-05
+2026-04-22 06:01:50,473 INFO Epoch 26 | Train: 0.7426 | Dev CER: 0.1267 | Dev WER: 0.3752 | Time: 175s | Peak: 5.0 GB
+2026-04-22 06:01:50,473 INFO   New best CER: 0.1267
+2026-04-22 06:01:54,524 INFO Epoch 27 | Batch 0 | Loss: 0.6155 | LR: 1.46e-05
+2026-04-22 06:02:00,897 INFO Epoch 27 | Batch 50 | Loss: 0.7446 | LR: 1.44e-05
+2026-04-22 06:02:07,201 INFO Epoch 27 | Batch 100 | Loss: 0.5160 | LR: 1.41e-05
+2026-04-22 06:02:13,256 INFO Epoch 27 | Batch 150 | Loss: 0.9713 | LR: 1.38e-05
+2026-04-22 06:02:19,530 INFO Epoch 27 | Batch 200 | Loss: 0.7128 | LR: 1.36e-05
+2026-04-22 06:02:26,132 INFO Epoch 27 | Batch 250 | Loss: 0.6667 | LR: 1.33e-05
+2026-04-22 06:02:32,333 INFO Epoch 27 | Batch 300 | Loss: 0.6412 | LR: 1.31e-05
+2026-04-22 06:02:38,721 INFO Epoch 27 | Batch 350 | Loss: 0.9621 | LR: 1.28e-05
+2026-04-22 06:02:45,056 INFO Epoch 27 | Batch 400 | Loss: 0.6509 | LR: 1.25e-05
+2026-04-22 06:02:51,356 INFO Epoch 27 | Batch 450 | Loss: 0.8763 | LR: 1.23e-05
+2026-04-22 06:02:57,571 INFO Epoch 27 | Batch 500 | Loss: 0.5891 | LR: 1.20e-05
+2026-04-22 06:03:03,898 INFO Epoch 27 | Batch 550 | Loss: 0.8924 | LR: 1.18e-05
+2026-04-22 06:03:10,276 INFO Epoch 27 | Batch 600 | Loss: 0.7589 | LR: 1.16e-05
+2026-04-22 06:03:16,705 INFO Epoch 27 | Batch 650 | Loss: 0.6528 | LR: 1.13e-05
+2026-04-22 06:03:23,077 INFO Epoch 27 | Batch 700 | Loss: 0.7896 | LR: 1.11e-05
+2026-04-22 06:03:29,271 INFO Epoch 27 | Batch 750 | Loss: 0.7615 | LR: 1.09e-05
+2026-04-22 06:03:35,560 INFO Epoch 27 | Batch 800 | Loss: 0.6539 | LR: 1.06e-05
+2026-04-22 06:03:41,879 INFO Epoch 27 | Batch 850 | Loss: 0.7970 | LR: 1.04e-05
+2026-04-22 06:03:48,257 INFO Epoch 27 | Batch 900 | Loss: 0.7238 | LR: 1.02e-05
+2026-04-22 06:03:54,714 INFO Epoch 27 | Batch 950 | Loss: 0.9636 | LR: 9.95e-06
+2026-04-22 06:04:00,985 INFO Epoch 27 | Batch 1000 | Loss: 0.6173 | LR: 9.72e-06
+2026-04-22 06:04:07,264 INFO Epoch 27 | Batch 1050 | Loss: 0.5460 | LR: 9.51e-06
+2026-04-22 06:04:13,493 INFO Epoch 27 | Batch 1100 | Loss: 0.4251 | LR: 9.29e-06
+2026-04-22 06:04:20,027 INFO Epoch 27 | Batch 1150 | Loss: 0.5983 | LR: 9.08e-06
+2026-04-22 06:04:26,383 INFO Epoch 27 | Batch 1200 | Loss: 0.7176 | LR: 8.87e-06
+2026-04-22 06:04:43,311 INFO Epoch 27 | Train: 0.7374 | Dev CER: 0.1253 | Dev WER: 0.3716 | Time: 172s | Peak: 5.0 GB
+2026-04-22 06:04:43,311 INFO   New best CER: 0.1253
+2026-04-22 06:04:47,116 INFO Epoch 28 | Batch 0 | Loss: 0.6539 | LR: 8.72e-06
+2026-04-22 06:04:53,397 INFO Epoch 28 | Batch 50 | Loss: 0.6118 | LR: 8.52e-06
+2026-04-22 06:04:59,716 INFO Epoch 28 | Batch 100 | Loss: 0.7612 | LR: 8.31e-06
+2026-04-22 06:05:06,166 INFO Epoch 28 | Batch 150 | Loss: 0.6022 | LR: 8.11e-06
+2026-04-22 06:05:12,441 INFO Epoch 28 | Batch 200 | Loss: 0.6530 | LR: 7.92e-06
+2026-04-22 06:05:18,703 INFO Epoch 28 | Batch 250 | Loss: 0.7849 | LR: 7.72e-06
+2026-04-22 06:05:25,034 INFO Epoch 28 | Batch 300 | Loss: 0.7758 | LR: 7.53e-06
+2026-04-22 06:05:31,307 INFO Epoch 28 | Batch 350 | Loss: 0.6495 | LR: 7.34e-06
+2026-04-22 06:05:37,982 INFO Epoch 28 | Batch 400 | Loss: 0.5835 | LR: 7.16e-06
+2026-04-22 06:05:44,328 INFO Epoch 28 | Batch 450 | Loss: 0.9444 | LR: 6.97e-06
+2026-04-22 06:05:50,675 INFO Epoch 28 | Batch 500 | Loss: 0.6859 | LR: 6.79e-06
+2026-04-22 06:05:57,149 INFO Epoch 28 | Batch 550 | Loss: 0.7553 | LR: 6.61e-06
+2026-04-22 06:06:03,622 INFO Epoch 28 | Batch 600 | Loss: 0.9041 | LR: 6.44e-06
+2026-04-22 06:06:10,050 INFO Epoch 28 | Batch 650 | Loss: 0.7589 | LR: 6.27e-06
+2026-04-22 06:06:16,355 INFO Epoch 28 | Batch 700 | Loss: 0.7409 | LR: 6.10e-06
+2026-04-22 06:06:22,669 INFO Epoch 28 | Batch 750 | Loss: 0.6972 | LR: 5.93e-06
+2026-04-22 06:06:29,028 INFO Epoch 28 | Batch 800 | Loss: 0.8285 | LR: 5.76e-06
+2026-04-22 06:06:35,243 INFO Epoch 28 | Batch 850 | Loss: 0.7329 | LR: 5.60e-06
+2026-04-22 06:06:41,593 INFO Epoch 28 | Batch 900 | Loss: 0.6136 | LR: 5.44e-06
+2026-04-22 06:06:47,949 INFO Epoch 28 | Batch 950 | Loss: 0.8546 | LR: 5.29e-06
+2026-04-22 06:06:54,167 INFO Epoch 28 | Batch 1000 | Loss: 0.5588 | LR: 5.13e-06
+2026-04-22 06:07:00,582 INFO Epoch 28 | Batch 1050 | Loss: 0.8170 | LR: 4.98e-06
+2026-04-22 06:07:06,888 INFO Epoch 28 | Batch 1100 | Loss: 0.6931 | LR: 4.84e-06
+2026-04-22 06:07:13,025 INFO Epoch 28 | Batch 1150 | Loss: 0.5264 | LR: 4.69e-06
+2026-04-22 06:07:19,292 INFO Epoch 28 | Batch 1200 | Loss: 0.6690 | LR: 4.55e-06
+2026-04-22 06:07:37,804 INFO Epoch 28 | Train: 0.7355 | Dev CER: 0.1257 | Dev WER: 0.3737 | Time: 174s | Peak: 5.0 GB
+2026-04-22 06:07:41,362 INFO Epoch 29 | Batch 0 | Loss: 0.6850 | LR: 4.45e-06
+2026-04-22 06:07:47,684 INFO Epoch 29 | Batch 50 | Loss: 0.9086 | LR: 4.31e-06
+2026-04-22 06:07:53,992 INFO Epoch 29 | Batch 100 | Loss: 0.8407 | LR: 4.17e-06
+2026-04-22 06:07:59,909 INFO Epoch 29 | Batch 150 | Loss: 0.6096 | LR: 4.04e-06
+2026-04-22 06:08:04,961 INFO Epoch 29 | Batch 200 | Loss: 0.6345 | LR: 3.91e-06
+2026-04-22 06:08:10,658 INFO Epoch 29 | Batch 250 | Loss: 0.7112 | LR: 3.79e-06
+2026-04-22 06:08:16,868 INFO Epoch 29 | Batch 300 | Loss: 0.6669 | LR: 3.66e-06
+2026-04-22 06:08:23,236 INFO Epoch 29 | Batch 350 | Loss: 0.7316 | LR: 3.54e-06
+2026-04-22 06:08:29,542 INFO Epoch 29 | Batch 400 | Loss: 0.6135 | LR: 3.42e-06
+2026-04-22 06:08:35,643 INFO Epoch 29 | Batch 450 | Loss: 0.6902 | LR: 3.31e-06
+2026-04-22 06:08:41,264 INFO Epoch 29 | Batch 500 | Loss: 1.0069 | LR: 3.20e-06
+2026-04-22 06:08:47,621 INFO Epoch 29 | Batch 550 | Loss: 0.5425 | LR: 3.09e-06
+2026-04-22 06:08:53,904 INFO Epoch 29 | Batch 600 | Loss: 0.9101 | LR: 2.98e-06
+2026-04-22 06:09:00,175 INFO Epoch 29 | Batch 650 | Loss: 0.8203 | LR: 2.88e-06
+2026-04-22 06:09:06,470 INFO Epoch 29 | Batch 700 | Loss: 0.7207 | LR: 2.77e-06
+2026-04-22 06:09:13,007 INFO Epoch 29 | Batch 750 | Loss: 0.4428 | LR: 2.68e-06
+2026-04-22 06:09:19,288 INFO Epoch 29 | Batch 800 | Loss: 0.6870 | LR: 2.58e-06
+2026-04-22 06:09:25,643 INFO Epoch 29 | Batch 850 | Loss: 0.5601 | LR: 2.49e-06
+2026-04-22 06:09:31,970 INFO Epoch 29 | Batch 900 | Loss: 0.7139 | LR: 2.40e-06
+2026-04-22 06:09:38,233 INFO Epoch 29 | Batch 950 | Loss: 0.6872 | LR: 2.31e-06
+2026-04-22 06:09:44,535 INFO Epoch 29 | Batch 1000 | Loss: 0.7713 | LR: 2.22e-06
+2026-04-22 06:09:50,842 INFO Epoch 29 | Batch 1050 | Loss: 0.6916 | LR: 2.14e-06
+2026-04-22 06:09:56,934 INFO Epoch 29 | Batch 1100 | Loss: 0.6928 | LR: 2.06e-06
+2026-04-22 06:10:03,197 INFO Epoch 29 | Batch 1150 | Loss: 0.7212 | LR: 1.99e-06
+2026-04-22 06:10:09,467 INFO Epoch 29 | Batch 1200 | Loss: 0.5531 | LR: 1.91e-06
+2026-04-22 06:10:26,403 INFO Epoch 29 | Train: 0.7304 | Dev CER: 0.1251 | Dev WER: 0.3721 | Time: 168s | Peak: 5.0 GB
+2026-04-22 06:10:26,403 INFO   New best CER: 0.1251
+2026-04-22 06:10:30,035 INFO Epoch 30 | Batch 0 | Loss: 0.8247 | LR: 1.86e-06
+2026-04-22 06:10:36,453 INFO Epoch 30 | Batch 50 | Loss: 0.7220 | LR: 1.80e-06
+2026-04-22 06:10:42,813 INFO Epoch 30 | Batch 100 | Loss: 0.5814 | LR: 1.73e-06
+2026-04-22 06:10:49,174 INFO Epoch 30 | Batch 150 | Loss: 0.7238 | LR: 1.67e-06
+2026-04-22 06:10:55,508 INFO Epoch 30 | Batch 200 | Loss: 0.5346 | LR: 1.61e-06
+2026-04-22 06:11:01,742 INFO Epoch 30 | Batch 250 | Loss: 0.6874 | LR: 1.55e-06
+2026-04-22 06:11:07,978 INFO Epoch 30 | Batch 300 | Loss: 0.4973 | LR: 1.50e-06
+2026-04-22 06:11:14,115 INFO Epoch 30 | Batch 350 | Loss: 0.6993 | LR: 1.44e-06
+2026-04-22 06:11:20,314 INFO Epoch 30 | Batch 400 | Loss: 0.6570 | LR: 1.39e-06
+2026-04-22 06:11:26,491 INFO Epoch 30 | Batch 450 | Loss: 0.8884 | LR: 1.35e-06
+2026-04-22 06:11:32,583 INFO Epoch 30 | Batch 500 | Loss: 0.5736 | LR: 1.31e-06
+2026-04-22 06:11:38,944 INFO Epoch 30 | Batch 550 | Loss: 0.8421 | LR: 1.27e-06
+2026-04-22 06:11:45,320 INFO Epoch 30 | Batch 600 | Loss: 0.7260 | LR: 1.23e-06
+2026-04-22 06:11:51,773 INFO Epoch 30 | Batch 650 | Loss: 0.8347 | LR: 1.19e-06
+2026-04-22 06:11:58,251 INFO Epoch 30 | Batch 700 | Loss: 0.7765 | LR: 1.16e-06
+2026-04-22 06:12:04,539 INFO Epoch 30 | Batch 750 | Loss: 0.5036 | LR: 1.13e-06
+2026-04-22 06:12:10,987 INFO Epoch 30 | Batch 800 | Loss: 0.5771 | LR: 1.11e-06
+2026-04-22 06:12:17,518 INFO Epoch 30 | Batch 850 | Loss: 0.6418 | LR: 1.08e-06
+2026-04-22 06:12:24,090 INFO Epoch 30 | Batch 900 | Loss: 0.6353 | LR: 1.06e-06
+2026-04-22 06:12:30,655 INFO Epoch 30 | Batch 950 | Loss: 0.7084 | LR: 1.05e-06
+2026-04-22 06:12:37,156 INFO Epoch 30 | Batch 1000 | Loss: 0.7451 | LR: 1.03e-06
+2026-04-22 06:12:43,739 INFO Epoch 30 | Batch 1050 | Loss: 0.5238 | LR: 1.02e-06
+2026-04-22 06:12:49,982 INFO Epoch 30 | Batch 1100 | Loss: 0.7569 | LR: 1.01e-06
+2026-04-22 06:12:56,162 INFO Epoch 30 | Batch 1150 | Loss: 0.6433 | LR: 1.00e-06
+2026-04-22 06:13:02,494 INFO Epoch 30 | Batch 1200 | Loss: 0.6607 | LR: 1.00e-06
+2026-04-22 06:13:21,073 INFO Epoch 30 | Train: 0.7318 | Dev CER: 0.1252 | Dev WER: 0.3719 | Time: 174s | Peak: 5.0 GB
+2026-04-22 06:14:22,150 INFO Done. Best dev CER: 0.1251 | Test CER: 0.1248

@@ -1,0 +1,1 @@
+--backbone rwkv6_loglinear --gpu 1 --epochs 30 --seed 42

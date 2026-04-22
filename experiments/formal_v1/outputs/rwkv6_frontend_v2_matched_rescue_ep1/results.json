@@ -1,0 +1,155 @@
+{
+  "backbone": "rwkv6_frontend_v2_matched",
+  "params": {
+    "total": 7774493,
+    "trainable": 7774493,
+    "frontend": 1941504,
+    "encoder": 5825024,
+    "ctc_head": 7965
+  },
+  "best_dev_cer": 0.8403473623721837,
+  "test": {
+    "loss": 2.6546311297659146,
+    "cer": 0.8407470676752635,
+    "wer": 1.1849634912548819
+  },
+  "chunked": {
+    "2.0s_reset": {
+      "cer": 0.8439177686829384,
+      "wer": 1.0463448571122766,
+      "n_evaluated": 500
+    },
+    "2.0s_carry": {
+      "cer": 0.8410666656855502,
+      "wer": 1.0787755538906132,
+      "n_evaluated": 500
+    },
+    "5.0s_reset": {
+      "cer": 0.841047773096588,
+      "wer": 1.0827357379856577,
+      "n_evaluated": 500
+    },
+    "5.0s_carry": {
+      "cer": 0.8405034786398514,
+      "wer": 1.0939740982553783,
+      "n_evaluated": 500
+    },
+    "10.0s_reset": {
+      "cer": 0.8400788001158288,
+      "wer": 1.0997538263940918,
+      "n_evaluated": 500
+    },
+    "10.0s_carry": {
+      "cer": 0.8400325644450216,
+      "wer": 1.1018944664454673,
+      "n_evaluated": 500
+    }
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.7524023401312845,
+      "train_loss_std": 0.1645854939522661,
+      "dev_loss": 2.654925021968904,
+      "dev_cer": 0.8403473623721837,
+      "dev_wer": 1.1489488298294328,
+      "epoch_time_sec": 157.91364336013794,
+      "learning_rate_end": 1e-06,
+      "grad_norm_mean": 0.9491787515339536,
+      "tokens_per_sec": 267620.80747129105,
+      "peak_mem_gb": 3.818149376,
+      "last_step": 1236
+    }
+  ],
+  "git_sha": "5314534d464996acbb05c8b06e6a4b0a694449d6",
+  "torch_version": "2.7.1+cu128",
+  "cuda_version": "12.8",
+  "gpu_name": "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+  "config_snapshot": {
+    "dataset": "librispeech_clean",
+    "max_audio_sec": 20.0,
+    "min_audio_sec": 0.5,
+    "sample_rate": 16000,
+    "n_mels": 80,
+    "win_length_ms": 25,
+    "hop_length_ms": 10,
+    "d_model": 256,
+    "n_layers": 6,
+    "n_heads": 4,
+    "head_size": 64,
+    "dropout": 0.1,
+    "conv_channels": 256,
+    "backbone": "rwkv6_frontend_v2_matched",
+    "rwkv_mode": "lion",
+    "conv_shift": false,
+    "headscale": false,
+    "delta_rule": false,
+    "lucid": false,
+    "lucid_chunk_size": null,
+    "lucid_self_reg": false,
+    "temperature": false,
+    "discretization": "zoh",
+    "discretization_init": "zoh",
+    "discretization_drop_u": false,
+    "rse": false,
+    "rse_n_scales": 1,
+    "p2rse": false,
+    "p2rse_mixer": "linear",
+    "rse_viscosity": false,
+    "use_loglinear": false,
+    "loglinear_levels": 10,
+    "use_m2rnn": false,
+    "m2rnn_layer": 5,
+    "use_conv_shift_multidilation": false,
+    "use_chanmix_bypass": false,
+    "use_cayley_orthogonal": false,
+    "cayley_rank": 1,
+    "use_pom_vlift": false,
+    "pom_order": 2,
+    "pom_expansion": 64,
+    "use_frontend_v2": false,
+    "mamba_d_state": 16,
+    "mamba_d_conv": 4,
+    "mamba_expand": 2,
+    "mamba2_d_state": 64,
+    "mamba2_headdim": 64,
+    "mamba2_ngroups": 1,
+    "mamba2_chunk_size": 64,
+    "batch_max_seconds": 300,
+    "num_epochs": 1,
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "warmup_steps": 1000,
+    "grad_clip": 5.0,
+    "early_stopping_patience": 15,
+    "seed": 42,
+    "spec_augment": true,
+    "freq_mask_param": 27,
+    "time_mask_param": 100,
+    "num_freq_masks": 2,
+    "num_time_masks": 2,
+    "chunk_sizes_sec": [
+      2.0,
+      5.0,
+      10.0
+    ],
+    "max_carry_eval_utterances": 500,
+    "max_reset_eval_utterances": 500,
+    "chunked_eval_batch_size": 16,
+    "compile_encoder": false,
+    "output_dir": "outputs/rwkv6_frontend_v2_matched_rescue_ep1",
+    "data_cache_dir": "./data/librispeech"
+  },
+  "cli_args": [
+    "--backbone",
+    "rwkv6_frontend_v2_matched",
+    "--gpu",
+    "1",
+    "--epochs",
+    "1",
+    "--seed",
+    "42",
+    "--output-dir",
+    "outputs/rwkv6_frontend_v2_matched_rescue_ep1"
+  ]
+}

@@ -1,0 +1,1 @@
+--backbone rwkv6_orthogonal --gpu 0 --epochs 30 --seed 42

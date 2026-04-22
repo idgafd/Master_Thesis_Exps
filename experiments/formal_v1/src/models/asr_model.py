@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.config import ExperimentConfig
-from src.models.components import ConvSubsampling, CTCHead
+from src.models.components import ConvSubsampling, ConvSubsamplingV2, CTCHead
 from src.models.encoder import build_encoder
 
 
@@ -17,7 +17,31 @@ class ASRModel(nn.Module):
     def __init__(self, vocab_size: int, cfg: ExperimentConfig):
         super().__init__()
         self.cfg = cfg
-        self.frontend = ConvSubsampling(cfg.n_mels, cfg.d_model, cfg.conv_channels)
+        # Frontend selection: explicit cfg flag OR "frontend_v2" in backbone name.
+        # Variant: "_matched" suffix → param-neutral control (CB-5b),
+        # otherwise lean (CB-5a).
+        use_v2 = (
+            getattr(cfg, "use_frontend_v2", False)
+            or "frontend_v2" in cfg.backbone
+        )
+        if use_v2:
+            # Abort sentinel: touch this file to fail-fast on frontend_v2
+            # runs (e.g. while the design is being iterated).  The first
+            # CB-5 attempt non-converged at CER ~0.86; halting further runs
+            # until the design is re-validated.
+            import os
+            _abort_sentinel = os.path.expanduser(
+                "~/Master_Thesis_Exps/experiments/formal_v1/outputs/.abort_frontend_v2"
+            )
+            if os.path.exists(_abort_sentinel):
+                raise RuntimeError(
+                    f"frontend_v2 aborted via sentinel file {_abort_sentinel}. "
+                    "Remove the sentinel to re-enable."
+                )
+            variant = "matched" if "matched" in cfg.backbone else "lean"
+            self.frontend = ConvSubsamplingV2(cfg.n_mels, cfg.d_model, variant=variant)
+        else:
+            self.frontend = ConvSubsampling(cfg.n_mels, cfg.d_model, cfg.conv_channels)
         self.encoder = build_encoder(cfg)
         self.ctc_head = CTCHead(cfg.d_model, vocab_size)
 

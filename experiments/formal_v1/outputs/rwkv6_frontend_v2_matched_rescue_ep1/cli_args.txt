@@ -1,0 +1,1 @@
+--backbone rwkv6_frontend_v2_matched --gpu 1 --epochs 1 --seed 42 --output-dir outputs/rwkv6_frontend_v2_matched_rescue_ep1

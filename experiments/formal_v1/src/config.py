@@ -70,6 +70,48 @@ class ExperimentConfig:
     # λ_eff = λ_raw + η_{h,b} · θ² inside the RSE complex scan, with
     # η ∈ R^(H×Bk) initialized to 0 (bit-identical to baseline at init).
     rse_viscosity: bool = False
+    # ── Stage 10.1 — Log-Linear RWKV-6 (Fenwick bucket readout) ──────────
+    # L ≈ ceil(log2 T) + 1 Fenwick bucket states partition the prefix at
+    # log-scale; per-token per-scale mixer λ_t^(ℓ) = 1 + LoRA(x) (zero-init LoRA)
+    # ⇒ at step 0, Σ_ℓ S^(ℓ) = S and Σ_ℓ λ·S^(ℓ) = S ≡ vanilla RWKV-6 readout.
+    use_loglinear: bool = False
+    loglinear_levels: int = 10
+    # ── Stage 10.2 — M²RNN sparing-use (non-linear state, sole Family-C) ─
+    # Parallel non-linear branch Z=tanh(SW+kv^T), gated forget-update, added
+    # to the RWKV readout with scalar λ_h (zero-init). Active at one layer only.
+    use_m2rnn: bool = False
+    m2rnn_layer: int = 5  # top layer of a 6-layer stack (0-indexed)
+    # ── Stage 10.3 — Multi-dilation ConvShift (Family A input-side) ──────
+    # Parallel DWConv1d branches with dilations {1, 2, 4, 8}, learnable
+    # per-layer α_d (α_1=1, α_{2,4,8}=0 at init). Causal padding in
+    # mode=recurrent; symmetric in mode=lion/bidir_serial.
+    use_conv_shift_multidilation: bool = False
+    # CB-3: content-conditional α_d via softmax(W_α · x_t + b_d). Each
+    # token selects its own dilation mix. b_d init = large log-one-hot
+    # on d=1 → reduces to single-dilation at init.
+    conv_shift_multidil_content_conditional: bool = False
+    # ── Stage 10.4 — Avey partial-embedding ChannelMix bypass (Family D) ─
+    # Split W_k output in half along FFN dim → [z_h, z_t]; tail gets ReLU²,
+    # head passes linearly; α-gated bypass, α=0 at init ⇒ vanilla ChannelMix.
+    use_chanmix_bypass: bool = False
+    # ── Stage 10.5 — Cayley-orthogonal transition (Family B, NCGRU-style) ─
+    # Full SO(K) transition via G_t = exp(-λ_t) · O_t where
+    # O_t = (I - A_t)(I + A_t)^{-1} and A_t = U_t V_t^T - V_t U_t^T is a
+    # rank-2·cayley_rank skew matrix. U=V=0 at init ⇒ A=0 ⇒ O=I ⇒ vanilla.
+    use_cayley_orthogonal: bool = False
+    cayley_rank: int = 1  # rank-1 keeps param parity; higher rank breaks parity.
+    # ── Stage 10.6 — PoM polynomial value-lift (Family D) ────────────────
+    # v̂_t = v_t + Σ_{p=2..k} γ_p ⊙ (W_h x_t)^⊙p; γ=0 at init ⇒ v̂=v.
+    # Thin config: D_pom = 64, k = 2.
+    use_pom_vlift: bool = False
+    pom_order: int = 2
+    pom_expansion: int = 64
+    # ── CB-5 — Frontend v2 (3-stage Conv1d + pre-LN + SiLU) ──────────────
+    # Replaces ConvSubsampling with ConvSubsamplingV2.  Tests whether the
+    # acoustic feature extraction stage is the binding gap at this scale
+    # (hypothesis from STAGE10_ANALYSIS §4.2).  NOT a mechanism flag for
+    # the mixer — independent of all the Family A/B/C/D mechanism flags.
+    use_frontend_v2: bool = False
     # Mamba-specific
     mamba_d_state: int = 16
     mamba_d_conv: int = 4
