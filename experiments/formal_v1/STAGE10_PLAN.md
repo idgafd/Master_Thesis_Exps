@@ -1,21 +1,24 @@
-# Stage 10+ Plan — Final Roadmap Before Big Experiments
+# Stage 10+ Plan — Roadmap and Execution Log
 
-**Status:** final planning step before the next wave of empirical work.
-Supersedes all earlier ad-hoc next-step lists. Every subsequent run
-should be attributable to a stage in this document. When an experiment
-completes, log its result to §9 (master comparison matrix) and, if it
-needs a full narrative, append a stage-N_RESULTS.md the way Stages 2-9
-were documented.
+**Status (2026-04-22): Stage 10 complete.** Phase I (10.1–10.4) and
+Phase II (10.5–10.7, CB sprint) both executed. CB-5 frontend_v2
+attempted twice (lean + matched); did not converge cleanly.
+Authoritative summary of Stage 10 findings: [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md).
+**Next: Stage 11 — causal architecture transfer study** (reframed in §5
+Phase III below).
 
 **Authoritative references (read in this order before editing this file):**
+- [CLAUDE.md](CLAUDE.md) — thesis framing, methodology, filtering
+  discipline, and the Lessons Learned live record. Read this first —
+  it's the project's operating manual.
+- [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md) — Stage 10 honest summary,
+  including what worked and the real bottlenecks.
 - [stages_2_9_summary.md](stages_2_9_summary.md) — chronological record
   of Stages 2-9, per-epoch trajectories, cross-experiment invariant.
 - [RESULTS.md](RESULTS.md) — CER/WER table for the existing spine.
 - [TODO_FUTURE_IDEAS.md](TODO_FUTURE_IDEAS.md) — paper-by-paper reviews
   (Papers 1-9) and Phase-4 cross-paper synthesis. Each stage below
   links into that document.
-- [CLAUDE.md](CLAUDE.md) — architecture rules, naming conventions, and
-  common pitfalls that must be respected by every new backbone.
 
 ---
 
@@ -184,54 +187,145 @@ matrix in §9 has pre-reserved rows.
 
 ---
 
-## 5. Experiment roadmap (priority-ordered)
+## 5. Experiment roadmap — execution log + forward plan
 
-Three phases, ordered by transferability-weighted value.
+### Phase I — RWKV-6 causal mechanism discovery (DONE, 2026-04-22)
 
-### Phase I — Transferable high-value (Stage 10.1–10.4)
+Targeted new axes (Families A, C) and validated mechanism extensions
+(Family A input-side) at the 30-ep discovery schedule.
 
-Target **new axes** (Families A, C) or **validated mechanism
-extensions** (Family A input-side), transferable to all three
-downstream architectures without major redesign.
+| Stage | Backbone | Verdict | Dev / Test CER |
+|---|---|---|---|
+| 10.1 | `rwkv6_loglinear` | **PLATEAU** — Fenwick buckets redundant with per-channel decay diversity on RWKV-6; natural home is LA/Mamba-2 | 0.1240 / 0.1226 |
+| 10.2 | `rwkv6_m2rnn_sparse` | **Tied-vanilla** (+1.3σ) — non-linearity axis saturated at this scale/deployment | 0.1276 / 0.1264 |
+| 10.3 | `rwkv6_convshift_multidil` (causal) | **REGRESSION vs primary** — isolates +0.008 causality penalty | 0.1229 / 0.1224 |
+| **10.3-sym** | **`rwkv6_convshift_multidil_symmetric`** | **MARGINAL — ties Stage-3 abs-best test CER without RSE** | **0.1153 / 0.1145** |
+| 10.4 | `rwkv6_chanmix_bypass` | **PLATEAU** — channel-mix bypass in same function class | 0.1251 / 0.1248 |
 
-- [ ] **Stage 10.1** — `rwkv6_loglinear` (plain Log-Linear RWKV-6) — Family A
-- [ ] **Stage 10.2** — `rwkv6_m2rnn_sparse` (M²RNN Phase A, sparing-use) — Family C
-- [ ] **Stage 10.3** — `rwkv6_convshift_multidil` (multi-dilation ConvShift) — Family A input-side
-- [ ] **Stage 10.4** — `rwkv6_chanmix_bypass` (Avey partial-embedding bypass) — Family D (channel-mix)
+### Phase II — Revisit characterised families and CB sprint (DONE, 2026-04-22)
 
-### Phase II — Revisit characterised families with alternatives (Stage 10.5–10.7)
+Alternative parametrisations of Family-B (10.5) and Family-D (10.6),
+followed by a CB-sprint testing composition of orthogonal axes with
+`multidil_sym`.
 
-These **do not reject** our existing Stage-6 / Stage-8 winners — they
-compare alternative parameterisations of the same families so we can
-characterise whether the engaged-null band is family-intrinsic or
-parameterisation-specific.
+| Stage | Backbone | Verdict | Dev / Test CER |
+|---|---|---|---|
+| 10.5 | `rwkv6_orthogonal` (Cayley rank-1) | **REGRESSION-track** — gap to T2 grew through ep 15 (0.1518), in line with the invariant | 0.1518 (ep 15) |
+| 10.6 | `rwkv6_pom_vlift` | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift family saturated | 0.1254 / 0.1253 |
+| 10.7 | `rwkv6_loglinear_rse_strong_viscosity` | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open | — |
+| CB-1 | `rwkv6_rse_convshift_multidil_symmetric` | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied with multidil_sym; H-orth falsified | 0.1169 / 0.1156 |
+| CB-3 | `rwkv6_convshift_multidil_symmetric_gated` | **PLATEAU** — content-conditional α_d ties fixed α_d within σ | 0.1167 / 0.1157 |
+| CB-5 | `rwkv6_frontend_v2` (lean + matched) | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; matched-variant rescue also non-converging | — |
+| CB-7 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym | 0.1159 / 0.1150 |
 
-- [ ] **Stage 10.5** — `rwkv6_orthogonal` (NCGRU Cayley-orthogonal, diagnostic vs T2) — Family B
-- [ ] **Stage 10.6** — `rwkv6_pom_vlift` (PoM polynomial value-lift, diagnostic vs qtail/hadamard_n2) — Family D
-- [ ] **Stage 10.7** — `rwkv6_loglinear_rse_strong_viscosity` (Log-Linear × RSE composition) — **Conditional on 10.1 ≥ MARGINAL**
+**Phase I + II consolidated finding.** One productive win
+(`multidil_sym`, input-side symmetric multi-dilation at phoneme scale).
+The cross-experiment invariant from Stages 8–9 extends cleanly across
+mechanism families and base mechanisms (see `STAGE10_SUMMARY.md` §3).
+See `CLAUDE.md` §Lessons Learned for the methodological record.
 
-### Phase III — Architecture transfer (Stage 11)
+### Phase III — Stage 11: Causal architecture transfer study (NEXT)
 
-Promoted mechanisms re-tested on Mamba-2 and Linear Attention.
-NaLaFormer gets its natural-home test here, not on RWKV-6.
+**Thesis question Stage 11 answers.** Do the mechanism-level solutions
+discovered on causal RWKV-6 (RSE-family transition, multi-dilation
+ConvShift input-side) generalise to other causal linear-time
+architectures — causal Mamba-2 and causal Linear Attention — with
+differential gains keyed to each architecture's structural deficit?
 
-- [ ] **Stage 11.0** — `mamba2` vanilla baseline at formal_v1 parity
-- [ ] **Stage 11.1** — Transfer Stage 10 winners to Mamba-2
-- [ ] **Stage 11.2** — `linear_attn_causal` baseline + NaLaFormer natural-home test
-- [ ] **Stage 11.3** — Transfer Stage 10 winners to Linear Attention
+This is the "same bottlenecks, same solution ideas, different
+adaptations" template (per `CLAUDE.md` §Research Context). All three
+architectures are causal linear-time RNNs. The transfer pattern is the
+thesis-level claim.
 
-### Phase IV — LION bidirectional (Stage 12)
+**Schedule.** 30 epochs per run, matched to the Stages 2–10 discovery
+schedule.
 
-LION baselines + LION-compatible mechanisms only. P6 NCGRU-Cayley
-and P9 M²RNN are excluded per §4.10 of TODO_FUTURE_IDEAS.md (both
-break LION's parallel form at the math level).
+**Transfer mechanism set (four mechanisms, filtered to task-prior-aligned
+wins plus one natural-home paper test):**
 
-- [ ] **Stage 12.0** — `lion` baseline
-- [ ] **Stage 12.1** — `lion_convshift`, `lion_headscale`, `lion_convshift_headscale`
-- [ ] **Stage 12.2** — `lion_lucid`, `lion_lucid_chunked` (corrected LUCID from CLAUDE.md)
-- [ ] **Stage 12.3** — `lion_delta` (causal-only delta, corrected)
-- [ ] **Stage 12.4** — `lion_loglinear` (mirror-Fenwick, design decision cell from Paper 1)
-- [ ] **Stage 12.5** — `lion_pom` (PoM's structural natural home)
+| Mechanism | Source | Why in Stage 11 |
+|---|---|---|
+| `multidil_sym` | Stage 10 win | Input-side temporal hierarchy at phoneme scale |
+| `rse_strong_viscosity` | Stage 5 win | Block-complex transition with physical-prior damping |
+| `rse_convshift` | Stage 3 abs-best | Cross-axis RSE × ConvShift combination |
+| `loglinear` | Paper 1 (Guo et al.) | Natural-home test on LA / Mamba-2 where per-channel decay does not absorb the Fenwick structure |
+
+Explicitly **excluded** from Stage 11 (closed in Stages 2–10, no new
+argument to run on a different architecture): NaLaFormer (P2, PLATEAU
+overlap with RSE), Avey bypass (P3, closed Family-D), PoM (P8, closed
+quadratic-lift), M²RNN (P9, breaks parallel form and tied-vanilla on
+RWKV-6 at this scale). CB-4 SwiGLU ChannelMix is deferred to a separate
+evaluation since it requires a new kernel.
+
+**Sub-stages.**
+
+- [ ] **Stage 11.0 — Baselines (prerequisite)**
+  - [ ] 11.0a `mamba2` causal (vanilla Mamba-2 on formal_v1 spine)
+  - [ ] 11.0b `linear_attn_causal` (Katharopoulos recurrent form with
+        explicit L1 denominator; **unknown CER on this spine** — the
+        number itself is new evidence)
+  - Gate: both baselines complete before any transfer run.
+- [ ] **Stage 11.1 — Input-side temporal transfer (multidil_sym)**
+  - [ ] 11.1a `mamba2_convshift_multidil_symmetric`
+  - [ ] 11.1b `linear_attn_convshift_multidil_symmetric`
+- [ ] **Stage 11.2 — Transition-side complex-pole transfer (RSE + viscosity)**
+  - [ ] 11.2a `mamba2_rse_strong_viscosity`
+  - [ ] 11.2b `linear_attn_rse_strong_viscosity`
+- [ ] **Stage 11.3 — Log-Linear natural-home tests (Paper 1)**
+  - [ ] 11.3a `mamba2_loglinear` (paper-direct replication at our spine)
+  - [ ] 11.3b `linear_attn_loglinear` (LA's natural home per analysis §6)
+- [ ] **Stage 11.4 — Cross-axis composition (gated on 11.1 AND 11.2 ≥ MARGINAL)**
+  - [ ] 11.4a `mamba2_rse_convshift_multidil_symmetric`
+  - [ ] 11.4b `linear_attn_rse_convshift_multidil_symmetric`
+
+**Pre-registered differential predictions.**
+
+| Mechanism | Mamba-2 | Linear Attention | Rationale |
+|---|---|---|---|
+| `multidil_sym` | small gain | **large gain** | Mamba-2 has native short DWConv; LA has no local bias |
+| `rse_strong_viscosity` | moderate gain | **large gain** | Mamba-2 has real selective Δt (partial analog); LA has no decay diversity |
+| `loglinear` | small-moderate gain | **large gain** | Mamba-2's Δt partially multi-scale; LA single-state has no multi-scale axis at all |
+| Composition (Stage 11.4) | conditional | conditional | Only if both axes independently MARGINAL+ |
+
+If the observed pattern matches this ordering, **the "mechanism value is
+architecture-deficit-proportional" claim is supported** — the thesis
+core result. If the pattern is flat (every cell ties architecture
+vanilla), **the ceiling is architecture-invariant at 7 M / 30 ep /
+clean-100**, which retires the mechanism-discovery line and signals a
+scale pivot.
+
+**Halt criterion.** If Stage 11.1 transfers show no differential across
+architectures (every cell tied vanilla within σ), halt the Stage-11
+queue before launching 11.2 / 11.3 / 11.4. Write up the
+architecture-invariant-ceiling finding and move the thesis to the
+next-scale question.
+
+### Phase IV — Stage 12: LION bidirectional chapter (parallel, not sequential)
+
+LION is a **separate research strand**, not a successor to Stage 11. It
+answers a different question: *what does removing causality add*, given
+the same mechanism vocabulary? Uses the 80-epoch reference schedule for
+final numbers (vanilla `lion` already at dev 0.0712 on this spine; see
+`outputs/exp09_lion_seed42/`). LION-compatible mechanisms only;
+P6 NCGRU-Cayley and P9 M²RNN excluded per §4.10 of TODO_FUTURE_IDEAS.md
+(both break parallel form).
+
+- [x] **Stage 12.0** — `lion` vanilla baseline (done, 80-ep, dev 0.0712)
+- [x] **Stage 12.1 (partial)** — `lion_convshift` (done, 30-ep, dev 0.1041);
+      `lion_lucid` (done, 30-ep, dev 0.1085); existing draft runs
+- [ ] **Stage 12.2** — `lion_convshift_multidil_symmetric` (the
+      Stage-10 win on LION's native bidirectional form; symmetric
+      padding matches LION's causal-agnostic structure)
+- [ ] **Stage 12.3** — `lion_rse_strong_viscosity` (RSE on LION)
+- [ ] **Stage 12.4** — `lion_rse_convshift_multidil_symmetric`
+      (cross-axis on LION)
+- [ ] **Stage 12.5** — `lion_loglinear` (mirror-Fenwick: suffix-Fenwick
+      on the backward sweep, per Paper 1 design cell)
+- [ ] **Stage 12.6** — `lion_lucid_chunked` (corrected chunked LUCID from CLAUDE.md)
+- [ ] **Stage 12.7** — `lion_delta` (causal-only delta, corrected)
+
+Stage 12 runs at 80 ep for thesis-grade reference numbers; 30-ep
+variants for matched-epoch comparison against Stage-11 causal cells.
 
 ---
 
@@ -247,7 +341,7 @@ Each subsection uses a fixed template:
 - **Decision rule** (pre-registered pass/halt criteria)
 - **Diagnostic probes** (what to measure regardless of CER outcome)
 
-### Stage 10.1 — `rwkv6_loglinear` (Log-Linear RWKV-6, plain)
+### Stage 10.1 — `rwkv6_loglinear` (Log-Linear RWKV-6, plain) — ✅ DONE, PLATEAU (0.1240 dev / 0.1226 test)
 
 - **Family.** A — Multi-scale temporal aggregation (new log-scale sub-axis).
 - **Paper review.** [TODO_FUTURE_IDEAS.md §Paper 1](TODO_FUTURE_IDEAS.md#paper-1--log-linear-attention-guo-et-al-arxiv-250604761).
@@ -293,7 +387,7 @@ Each subsection uses a fixed template:
   - Variable-length batch validity: verify padded-position $\lambda$
     contributions are correctly masked.
 
-### Stage 10.2 — `rwkv6_m2rnn_sparse` (M²RNN Phase A, sparing-use)
+### Stage 10.2 — `rwkv6_m2rnn_sparse` (M²RNN Phase A, sparing-use) — ✅ DONE, tied-vanilla +1.3σ (0.1276 / 0.1264)
 
 - **Family.** C — Non-linearity of state (sole member, new axis).
 - **Paper review.** [TODO_FUTURE_IDEAS.md §Paper 9](TODO_FUTURE_IDEAS.md#paper-9--mrnn-matrix-to-matrix-recurrent-neural-network-mishra-et-al-arxiv-260314360).
@@ -344,7 +438,7 @@ Each subsection uses a fixed template:
   - tanh saturation fraction (fraction of $|SW + kv^\top|_{ij} > 2$).
   - Gradient clipping rate on $\partial L / \partial S_t$ per step.
 
-### Stage 10.3 — `rwkv6_convshift_multidil` (multi-dilation ConvShift)
+### Stage 10.3 — `rwkv6_convshift_multidil` (multi-dilation ConvShift) — ✅ DONE. Causal REGRESSION (0.1229 / 0.1224, +0.008 causality penalty vs sym). Symmetric (10.3-sym) MARGINAL — **Stage 10 win** (0.1153 / 0.1145).
 
 - **Family.** A — Multi-scale temporal aggregation (input-side
   variant); extends validated ConvShift mechanism.
@@ -381,7 +475,7 @@ Each subsection uses a fixed template:
     the depth-graded receptive-field thread (Stage-2 `gen2`,
     Stage-4 `rse_depth`).
 
-### Stage 10.4 — `rwkv6_chanmix_bypass` (Avey partial-embedding bypass)
+### Stage 10.4 — `rwkv6_chanmix_bypass` (Avey partial-embedding bypass) — ✅ DONE, PLATEAU (0.1251 / 0.1248)
 
 - **Family.** D — Feature-map / channel-side enrichment (channel-mix
   structural sub-family).
@@ -413,7 +507,7 @@ Each subsection uses a fixed template:
   - Activation entropy at each layer (did ChannelMix contribute
     to entropy collapse pre-bypass?).
 
-### Stage 10.5 — `rwkv6_orthogonal` (NCGRU Cayley-orthogonal, diagnostic)
+### Stage 10.5 — `rwkv6_orthogonal` (NCGRU Cayley-orthogonal, diagnostic) — 🟡 IN-PROGRESS / REGRESSION-track (ep 15 dev 0.1518)
 
 - **Family.** B — Linear transition-operator family (strict superset
   of RSE's $SO(2)^{K/2}$ via full $SO(K)$).
@@ -461,7 +555,7 @@ Each subsection uses a fixed template:
   - Spectral radius of $O_t$: stays at 1 within numerical tolerance
     (orthogonal matrices have spectrum on unit circle).
 
-### Stage 10.6 — `rwkv6_pom_vlift` (PoM polynomial value-lift, diagnostic)
+### Stage 10.6 — `rwkv6_pom_vlift` (PoM polynomial value-lift, diagnostic) — ✅ DONE, PLATEAU (0.1254 / 0.1253 — ties `hadamard_n2` with 2× params)
 
 - **Family.** D — Feature-map / channel-side enrichment
   (element-wise polynomial variant).
@@ -503,7 +597,7 @@ Each subsection uses a fixed template:
   - $\gamma_2$ mobility per layer.
   - Effective rank of $W_h$ (SVD).
 
-### Stage 10.7 — `rwkv6_loglinear_rse_strong_viscosity` (composition, conditional)
+### Stage 10.7 — `rwkv6_loglinear_rse_strong_viscosity` (composition, conditional) — ⛔ CLOSED (gate never opened: 10.1 landed PLATEAU, not MARGINAL)
 
 - **Family.** A × B composition (multi-scale × transition-operator).
 - **Paper review.** [TODO_FUTURE_IDEAS.md §Paper 1](TODO_FUTURE_IDEAS.md#paper-1--log-linear-attention-guo-et-al-arxiv-250604761).
@@ -543,80 +637,150 @@ Each subsection uses a fixed template:
   - **REGRESSION** (dev $> 0.1230$): $M^S \odot M^H$ composition
     introduces identifiability issues — investigate.
 
-### Stage 11.0 — Mamba-2 vanilla baseline at formal_v1 parity
+### Stage 11.0a — Linear Attention causal baseline
 
-- **Scope.** Establish a clean `mamba2` baseline at 7 M, 6 layers,
-  30 ep on the same LibriSpeech clean-100 spine.
+- **Scope.** Establish causal recurrent Katharopoulos Linear Attention
+  baseline at 7 M, 6 layers, 30 ep on LibriSpeech clean-100.
+  **Unknown CER on this spine** — the number itself is new evidence.
+- **Backbone.** `linear_attn_causal`. Requires scaffolding the causal
+  recurrent form with explicit running-sum state
+  $z_t = z_{t-1} + \phi(k_t)$ and explicit normalisation
+  $o_t = \phi(q_t)^\top S_t / (\phi(q_t)^\top z_t + \varepsilon)$.
+  Current `blocks.py` `LinearAttentionLayer` is parallel bidirectional
+  ELU+1 without the L1 denominator — not the same object.
+- **Purpose.** Fill the LA row in the master comparison matrix. No
+  mechanism transfer yet. Lets Stage 11.1 / 11.3 quantify transfer
+  gains against the correct reference.
+- **Comparison cohort.** `rwkv6` (vanilla, 0.1258), `transformer_causal`.
+
+### Stage 11.0b — Mamba-2 causal baseline
+
+- **Scope.** Establish vanilla `mamba2` causal baseline at matched
+  formal_v1 parity (7 M, 6 layers, 30 ep).
 - **Backbone.** `mamba2` (already present: `mamba2_encoder.py`,
-  `mamba2_block.py`).
-- **Purpose.** Fill the Mamba-2 row in the master comparison matrix.
-  No mechanism transfer yet.
-- **Comparison cohort.** `rwkv6` (vanilla), `transformer_causal`.
+  `mamba2_block.py`). Partial evidence from `mamba2_ep10_seed42`
+  already on disk; needs clean 30-ep run.
+- **Purpose.** Fill the Mamba-2 row in the master matrix.
+- **Comparison cohort.** `rwkv6` (vanilla), `linear_attn_causal` (once
+  11.0a completes).
 
-### Stage 11.1 — Transfer surviving Stage-10 mechanisms to Mamba-2
+### Stage 11.1 — Input-side temporal transfer (multidil_sym)
 
-Run promoted mechanisms from Stage 10 on Mamba-2. Candidate list:
+Tests pre-registered prediction: **LA gain > Mamba-2 gain**. LA has no
+local inductive bias; Mamba-2 has native short DWConv that already
+captures part of what multidil_sym provides.
 
-- [ ] `mamba2_loglinear` (paper-direct; Triton kernel available)
-- [ ] `mamba2_m2rnn_sparse` (paper-tested: Hybrid Mamba-2 + M²RNN)
-- [ ] `mamba2_convshift_multidil` (Mamba-2 already has short DWConv;
-      replace with multi-dilation)
-- [ ] `mamba2_chanmix_bypass` (equivalent MLP/GLU slot)
-- [ ] `mamba2_pom_vlift` (value-lift port)
+- [ ] **11.1a** `mamba2_convshift_multidil_symmetric` — replace
+  Mamba-2's existing short DWConv (at `mamba2_block.py:194`) with
+  parallel dilated branches $\{1, 2, 4, 8\}$; rest of SSD chain
+  unchanged.
+- [ ] **11.1b** `linear_attn_convshift_multidil_symmetric` — pre-mix
+  before Q/K/V in `blocks.py`: $Q = W_q \tilde x$, $K = W_k \tilde x$,
+  $V = W_v \tilde x$, where $\tilde x$ is the multi-dilation-mixed
+  input.
+- **Zero-regression.** Both reduce to single-dilation at init
+  ($\alpha_1 = 1, \alpha_{2,4,8} = 0$), which in turn matches each
+  architecture's pre-existing local-mixing default.
 
-### Stage 11.2 — Linear Attention baseline + NaLaFormer natural-home test
+### Stage 11.2 — Transition-side complex-pole transfer (RSE + viscosity)
 
-- **Scope.** Establish causal recurrent Linear Attention baseline,
-  then test NaLaFormer (Paper 2) in its natural home.
-- **Paper review.** [TODO_FUTURE_IDEAS.md §Paper 2](TODO_FUTURE_IDEAS.md#paper-2--nalaformer-meng-et-al-arxiv-250621137).
-- **Rationale.** Current `blocks.py` `LinearAttentionLayer` is
-  bidirectional parallel ELU+1 without L1 denominator. NaLaFormer's
-  diagnosis (query-norm cancellation in Katharopoulos L1 form) does
-  not apply there. To test NaLaFormer faithfully, first add a
-  causal-recurrent Katharopoulos form with explicit L1 denominator,
-  then swap ELU+1 → NaLaFormer $\phi_q, \phi_k$.
-- **Sub-stages.**
-  - **11.2a** — `linear_attn_causal` — causal recurrent Katharopoulos
-    form with explicit $z_t = z_{t-1} + \phi(k_t)$ scalar running-sum
-    state and explicit $o_t = \phi(q_t) S_t / \phi(q_t)^\top z_t$
-    normalisation. Baseline only.
-  - **11.2b** — `linear_attn_causal_nalaformer` — signed-power kernel
-    $\tilde r = \text{sign}(r) \odot |r|^{p_t}, \tilde k = \text{sign}(k) \odot |k|^{\lambda_h}$
-    from B's synthesis; zero-init $p = \lambda = 1$.
+Tests pre-registered prediction: **LA gain ≥ Mamba-2 gain**. LA has no
+decay diversity at all; Mamba-2 has real selective $\Delta t$ that
+partially approximates continuous decay but not complex-pole dynamics.
 
-### Stage 11.3 — Transfer surviving Stage-10 mechanisms to Linear Attention
+- [ ] **11.2a** `mamba2_rse_strong_viscosity` — port RSE's
+  block-complex $z = e^{-\lambda + i\theta}$ transition into the
+  selective-Δt Mamba path. Non-trivial kernel change; requires
+  adapting `_forward_recurrent_rse` to operate on Mamba-2's
+  state-space discretisation.
+- [ ] **11.2b** `linear_attn_rse_strong_viscosity` — block-complex
+  LA: pair adjacent key/query channels into complex $k_c, q_c$, apply
+  per-step rotation $z_t = e^{-\lambda + i\theta_t}$ to the prefix
+  state $S_t = z_t S_{t-1} + k_{c,t} v_t^\top$, read
+  out $o_t = \Re(q_{c,t}^* S_t)$. Viscosity coupling
+  $\lambda_{\text{eff}} = \lambda + \eta \theta^2$ applied inside the
+  recurrence.
+- **Zero-regression.** $\theta = 0$ init + zero-init viscosity
+  $\eta = 0$ → reduces to the real-decay linear recurrence.
 
-- [ ] `linear_attn_loglinear` (paper-direct; composition with
-      causal LA mask)
-- [ ] `linear_attn_convshift_multidil` (FFN-agnostic, position-pointwise)
-- [ ] `linear_attn_chanmix_bypass` (FFN-after-attention slot)
+### Stage 11.3 — Log-Linear natural-home tests (Paper 1)
 
-### Stage 12 — LION bidirectional
+Per the "natural home" argument in `STAGE10_SUMMARY.md` §3 and the
+Phase-4 synthesis: Log-Linear's Fenwick-bucket structure is redundant
+with RWKV-6's per-channel decay diversity, but on LA (single
+accumulator) and Mamba-2 (single continuous-decay state) the structure
+is genuinely new.
 
-LION baselines first, then only LION-compatible mechanisms. **Excluded
-from Stage 12 (breaks parallel form):** P6 NCGRU-Cayley, P9 M²RNN.
+- [ ] **11.3a** `mamba2_loglinear` — paper-direct replication
+  (`log-linear Mamba-2` is one of Guo et al.'s validated
+  configurations; their Triton kernel exists). Tests whether the
+  paper's long-context NIAH win survives on our short-sequence CTC
+  regime.
+- [ ] **11.3b** `linear_attn_loglinear` — per-level numerator +
+  denominator states: $S_t^{(\ell)} = \sum \phi(k_s) v_s^\top$,
+  $z_t^{(\ell)} = \sum \phi(k_s)$, with per-bucket mixer
+  $o_t = \sum_\ell \lambda^{(\ell)} \phi(q_t)^\top S_t^{(\ell)} /
+  (\sum_\ell \lambda^{(\ell)} \phi(q_t)^\top z_t^{(\ell)} + \varepsilon)$.
+- **Zero-regression.** $\lambda_t^{(\ell)} \equiv 1$ at init → Fenwick
+  buckets sum to the single-state baseline, recovering plain causal
+  LA / Mamba-2.
 
-- **Stage 12.0** — `lion` vanilla baseline.
-- **Stage 12.1** — LION ablations per CLAUDE.md backbone naming:
-  `lion_convshift`, `lion_headscale`, `lion_convshift_headscale`.
-- **Stage 12.2** — `lion_lucid`, `lion_lucid_chunked` (corrected
-  LUCID from CLAUDE.md §LUCID Preconditioner).
-- **Stage 12.3** — `lion_delta` (causal-only delta from CLAUDE.md
-  §Delta Rule).
-- **Stage 12.4** — `lion_loglinear` (mirror-Fenwick design cell from
-  Paper 1; design decision: causal $M^H_\text{fwd}$ lower triangle
+### Stage 11.4 — Cross-axis composition (conditional)
+
+**Gate:** Stage 11.1 AND Stage 11.2 both land at MARGINAL or better on
+the same architecture. If only one axis of 11.1/11.2 works on an
+architecture, skip 11.4 for that architecture.
+
+- [ ] **11.4a** `mamba2_rse_convshift_multidil_symmetric` (if gate opens)
+- [ ] **11.4b** `linear_attn_rse_convshift_multidil_symmetric` (if gate opens)
+
+Tests whether the Stage-10 CB-1 null on RWKV-6 (temporal × temporal
+saturation on a single base) is architecture-specific. If 11.4 BREAKs
+where CB-1 PLATEAUed, composition is architecture-dependent.
+
+### Stage 11 halt criterion
+
+If Stage 11.1 transfers show **no differential across architectures**
+(every cell tied vanilla within σ), halt the Stage-11 queue before
+launching 11.2 / 11.3 / 11.4. Write up the architecture-invariant-ceiling
+finding. Thesis pivots to scale / paradigm / data, not another mechanism
+round at 7 M / 30 ep / clean-100.
+
+### Stage 12 — LION bidirectional chapter (parallel strand)
+
+Reframed as a parallel research strand (not a successor to Stage 11).
+LION answers "what does removing causality add?" — a different thesis
+question from Stage 11's causal-transfer question. Uses existing 80-ep
+infrastructure. LION-compatible mechanisms only; P6 NCGRU-Cayley and
+P9 M²RNN excluded per §4.10 of TODO_FUTURE_IDEAS.md (both break
+parallel form).
+
+- [x] **12.0** — `lion` vanilla baseline (dev 0.0712 / 80 ep, on disk at
+  `outputs/exp09_lion_seed42/`).
+- [x] **12.1 (partial)** — `lion_convshift` (30-ep, dev 0.1041, on disk
+  at `outputs/lucid_exp05_lion_convshift_seed42/`); `lion_lucid`
+  (30-ep, dev 0.1085); `lion_lucid_chunked` draft at
+  `outputs/lucid_exp04_lion_lucid_seed42/`.
+- [ ] **12.2** — `lion_convshift_multidil_symmetric` — Stage-10 win
+  on LION's native bidirectional form. Symmetric padding matches
+  LION's causal-agnostic structure; mechanism requires no adaptation.
+  30-ep + 80-ep reference runs.
+- [ ] **12.3** — `lion_rse_strong_viscosity` — RSE on LION's parallel
+  bidirectional form.
+- [ ] **12.4** — `lion_rse_convshift_multidil_symmetric` — cross-axis
+  on LION.
+- [ ] **12.5** — `lion_loglinear` (mirror-Fenwick) — design cell from
+  Paper 1 for bidirectional: causal $M^H_\text{fwd}$ lower triangle
   + suffix-Fenwick $M^H_\text{bwd}$ upper triangle, independent
-  $\lambda^{(\ell, \cdot)}$).
-- **Stage 12.5** — `lion_convshift_multidil` (direction-agnostic
-  DWConv, inherits existing symmetric-padding handling).
-- **Stage 12.6** — `lion_chanmix_bypass` (position-pointwise; mode
-  independent).
-- **Stage 12.7** — `lion_pom` (PoM's structural natural home via
-  permutation-equivariance; standalone block as additive branch,
-  with positional encoding to break set-equivariance).
-- **Stage 12.8** — LION + NaLaFormer cosine-inhibit (if 11.2b
-  shows signal; LION is closer to Katharopoulos parallel form
-  than causal RWKV).
+  $\lambda^{(\ell, \cdot)}$.
+- [ ] **12.6** — `lion_lucid_chunked` at formal_v1 parity with
+  corrected LUCID (per CLAUDE.md §LUCID Preconditioner).
+- [ ] **12.7** — `lion_delta` (causal-only delta, corrected per
+  CLAUDE.md §Delta Rule).
+
+Stage 12 runs ought to produce both a 30-ep number (matched to
+Stage-11 cells for cross-architecture comparison) and an 80-ep number
+(thesis-grade reference).
 
 ---
 
@@ -756,57 +920,76 @@ $B = 10, T = 1200$ mels on RTX PRO 6000.
 | `rwkv6_sparse_nonnormal_rse_viscosity` (S9A) | B (gated sparse) | 9 | 0.1467 (ep 15) | — | — | ≈ 7 M + mod | **271** | — | halted 15/30 | REGRESSION-track |
 | `rwkv6_sparse_nonnormal_rse_edge_only_viscosity` (S9B) | B (edge-only) | 9 | 0.1218 | 0.1216 | — | ≈ 7 M + mod | **152** | — | 30 | REGRESSION STABILITY |
 
-### 9.2 Stage 10 — planned (RWKV-6 causal continuations)
+### 9.2 Stage 10 — executed (RWKV-6 causal)
 
-| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | ms/iter | Time/ep | Epochs | Verdict |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| `rwkv6_loglinear` | A (log-scale readout) | 10.1 | **0.1240** | **0.1226** | 0.3647 | ≈ 7 M + 57 K | 172 (chunked) | 361 | 30 | **PLATEAU** — log-linear axis closed on causal RWKV-6 (see STAGE10_ANALYSIS.md §10.1) |
-| `rwkv6_m2rnn_sparse` | **C (sole member)** | 10.2 | **0.1276** | **0.1264** | 0.3768 | ≈ 7 M + 17 K | 310 | 511 | 30 | **REGRESSION** (tied vanilla within 1.3σ) — non-linearity axis closed at this scale |
-| `rwkv6_convshift_multidil` (causal) | A (input-side) | 10.3 | **0.1229** | **0.1224** | 0.3671 | ≈ 7 M + 18 K | 86 | 173 | 30 | **REGRESSION** vs `convshift_trap` primary — causality penalty +0.0076, not mechanism failure |
-| `rwkv6_convshift_multidil_symmetric` | A (input-side, control) | 10.3-sym | **0.1153** | **0.1145** | **0.3439** | ≈ 7 M + 18 K | 102 | 177 | 30 | **MARGINAL** — ties `rwkv6_rse_convshift` abs-best without RSE; 10.3b composition gate open |
-| `rwkv6_chanmix_bypass` | D (channel-mix) | 10.4 | **0.1251** | **0.1248** | 0.3701 | ≈ 7 M + 6 | 100 | 174 | 30 | **PLATEAU** (tied vanilla 0.5σ) — over-smoothing not the binding failure mode |
-| `rwkv6_orthogonal` (rank-1) | B (Cayley-orthogonal) | 10.5 | — | — | — | ≈ 7 M + 3 K | TBD (~3-5× anchor) | — | 30 | TBD — diagnostic vs T2 |
-| `rwkv6_pom_vlift` (thin) | D (polynomial) | 10.6 | — | — | — | ≈ 7 M + 96 K | TBD (~0 over) | — | 30 | TBD — diagnostic vs qtail |
-| `rwkv6_loglinear_rse_strong_viscosity` | A × B (composition) | 10.7 | — | — | — | ≈ 7 M + 57 K | TBD | — | 30 | **CLOSED** — conditional on 10.1 ≥ MARGINAL, 10.1 landed PLATEAU |
+| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | Epochs | Verdict |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| `rwkv6_loglinear` | A (log-scale readout) | 10.1 | **0.1240** | **0.1226** | 0.3647 | ≈ 7 M + 57 K | 30 | **PLATEAU** — Fenwick buckets redundant on RWKV-6 (per-channel decay already multi-scale); natural home is LA/Mamba-2 → Stage 11.3 |
+| `rwkv6_m2rnn_sparse` | C (sole member) | 10.2 | **0.1276** | **0.1264** | 0.3768 | ≈ 7 M + 17 K | 30 | **Tied-vanilla +1.3σ** — non-linearity axis saturated at this scale/deployment |
+| `rwkv6_convshift_multidil` (causal) | A (input-side) | 10.3 | **0.1229** | **0.1224** | 0.3671 | ≈ 7 M + 18 K | 30 | **REGRESSION vs primary** — isolates +0.008 causality penalty, not a mechanism failure |
+| **`rwkv6_convshift_multidil_symmetric`** | **A (input-side)** | **10.3-sym** | **0.1153** | **0.1145** | **0.3439** | ≈ 7 M + 18 K | 30 | **MARGINAL — the Stage 10 win.** Ties Stage-3 abs-best test CER without RSE. |
+| `rwkv6_chanmix_bypass` | D (channel-mix) | 10.4 | **0.1251** | **0.1248** | 0.3701 | ≈ 7 M + 6 | 30 | **PLATEAU** — channel-reweight axis tied Stage-6 Family-D cluster |
+| `rwkv6_orthogonal` (rank-1 Cayley) | B | 10.5 | 0.1518 (ep 15) | — | — | ≈ 7 M + 200 K | halted / in-progress | **REGRESSION-track** — tracks above T2 at matched ep; cross-experiment invariant holds at operator-family level |
+| `rwkv6_pom_vlift` (thin) | D (polynomial) | 10.6 | **0.1254** | **0.1253** | 0.3746 | ≈ 7 M + 198 K | 30 | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift function class saturated across parametrisations |
+| `rwkv6_loglinear_rse_strong_viscosity` | A × B | 10.7 | — | — | — | — | — | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open |
+| `rwkv6_rse_convshift_multidil_symmetric` (CB-1) | A × B composition | CB-1 | **0.1169** | **0.1156** | 0.3500 | ≈ 7 M + 93 K | 30 | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied; H-orth falsified, temporal mechanisms share a ceiling on RWKV-6 |
+| `rwkv6_convshift_multidil_symmetric_gated` (CB-3) | A dense-per-token | CB-3 | **0.1167** | **0.1157** | 0.3456 | ≈ 7 M + 0.5 K | 30 | **PLATEAU** — content-conditional α_d ties fixed α_d |
+| `rwkv6_frontend_v2` (lean 413 K + matched 1.94 M) | frontend redesign | CB-5 | non-converging | — | — | ≈ 6.2 M / 7.7 M | aborted | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; fresh-init frontend unstable at this scale |
+| `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` (CB-7) | A × D composition | CB-7 | **0.1159** | **0.1150** | 0.3456 | ≈ 7 M + 60 K | 30 | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym |
 
-### 9.3 Stage 11 — planned (Mamba-2, Linear Attention transfer)
+**Stage 10 synthesis** — see [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md).
+One productive win (`multidil_sym`). Cross-experiment invariant
+extended across mechanism families (A×B, A-dense, A×D) and base
+mechanisms. Real bottlenecks identified (input-side RF, transition
+Lie group, rotation budget + viscosity); non-bottlenecks closed
+(quadratic lifts, per-token state non-linearity, dense per-token
+transition freedom, structural multi-scale readout on RWKV-6,
+content-conditional RF, temporal × temporal composition).
 
-| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | ms/iter | Time/ep | Epochs | Verdict |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| `mamba2` (vanilla) | — | 11.0 | — | — | — | ~7 M | — | — | 30 | TBD (baseline) |
-| `mamba2_loglinear` | A | 11.1 | — | — | — | — | — | — | 30 | TBD |
-| `mamba2_m2rnn_sparse` | C | 11.1 | — | — | — | — | — | — | 30 | TBD |
-| `mamba2_convshift_multidil` | A (input-side) | 11.1 | — | — | — | — | — | — | 30 | TBD |
-| `mamba2_chanmix_bypass` | D | 11.1 | — | — | — | — | — | — | 30 | TBD |
-| `mamba2_pom_vlift` | D | 11.1 | — | — | — | — | — | — | 30 | TBD |
-| `linear_attn_causal` (baseline) | — | 11.2a | — | — | — | ~7 M | — | — | 30 | TBD (baseline) |
-| `linear_attn_causal_nalaformer` | D (natural home for Paper 2) | 11.2b | — | — | — | — | — | — | 30 | TBD |
-| `linear_attn_loglinear` | A | 11.3 | — | — | — | — | — | — | 30 | TBD |
-| `linear_attn_convshift_multidil` | A (input-side) | 11.3 | — | — | — | — | — | — | 30 | TBD |
-| `linear_attn_chanmix_bypass` | D | 11.3 | — | — | — | — | — | — | 30 | TBD |
+### 9.3 Stage 11 — causal architecture transfer (next)
 
-### 9.4 Stage 12 — planned (LION bidirectional)
+Reframed as the transferability study per CLAUDE.md §Research Context.
+Four mechanisms × two causal architectures (Mamba-2, LA) + two
+baselines + conditional cross-axis composition. See §5 Phase III for
+pre-registered differential predictions and halt criterion.
 
-| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | ms/iter | Time/ep | Epochs | Verdict |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| `lion` (vanilla) | — | 12.0 | — | — | — | ~7 M | — | — | 30 | TBD (baseline) |
-| `lion_convshift` | A (input-side) | 12.1 | — | — | — | — | — | — | 30 | TBD |
-| `lion_headscale` | B (per-head decay bias) | 12.1 | — | — | — | — | — | — | 30 | TBD |
-| `lion_convshift_headscale` | A + B | 12.1 | — | — | — | — | — | — | 30 | TBD |
-| `lion_lucid` | — (preconditioner) | 12.2 | — | — | — | — | — | — | 30 | TBD (CLAUDE.md corrected) |
-| `lion_lucid_chunked` | — | 12.2 | — | — | — | — | — | — | 30 | TBD (CLAUDE.md corrected) |
-| `lion_delta` | B (causal-only delta) | 12.3 | — | — | — | — | — | — | 30 | TBD (CLAUDE.md corrected) |
-| `lion_loglinear` (mirror-Fenwick) | A | 12.4 | — | — | — | — | — | — | 30 | TBD (design cell) |
-| `lion_convshift_multidil` | A (input-side) | 12.5 | — | — | — | — | — | — | 30 | TBD |
-| `lion_chanmix_bypass` | D | 12.6 | — | — | — | — | — | — | 30 | TBD |
-| `lion_pom` | D (PoM's natural home) | 12.7 | — | — | — | — | — | — | 30 | TBD |
-| `lion_nalaformer` | D (Paper 2 on LION) | 12.8 | — | — | — | — | — | — | 30 | TBD |
+| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | Epochs | Verdict |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| `mamba2` (vanilla) | — | 11.0b | — | — | — | ~7 M | 30 | TBD — baseline |
+| `linear_attn_causal` (Katharopoulos w/ L1 denom) | — | 11.0a | — | — | — | ~7 M | 30 | TBD — baseline, **unknown CER on this spine** |
+| `mamba2_convshift_multidil_symmetric` | A (input-side) | 11.1a | — | — | — | ~7 M + ~18 K | 30 | TBD — predicted small gain |
+| `linear_attn_convshift_multidil_symmetric` | A (input-side) | 11.1b | — | — | — | ~7 M + ~18 K | 30 | TBD — **predicted large gain** (LA has no local bias) |
+| `mamba2_rse_strong_viscosity` | B (complex-pole) | 11.2a | — | — | — | — | 30 | TBD — predicted moderate gain |
+| `linear_attn_rse_strong_viscosity` | B (complex-pole) | 11.2b | — | — | — | — | 30 | TBD — **predicted large gain** (LA has no decay diversity) |
+| `mamba2_loglinear` | A (natural-home for Paper 1) | 11.3a | — | — | — | — | 30 | TBD — paper-direct replication |
+| `linear_attn_loglinear` | A (natural-home for Paper 1) | 11.3b | — | — | — | — | 30 | TBD — **predicted large gain** (LA has no multi-scale axis) |
+| `mamba2_rse_convshift_multidil_symmetric` | A × B composition | 11.4a | — | — | — | — | 30 | Conditional on 11.1a + 11.2a ≥ MARGINAL |
+| `linear_attn_rse_convshift_multidil_symmetric` | A × B composition | 11.4b | — | — | — | — | 30 | Conditional on 11.1b + 11.2b ≥ MARGINAL |
 
-### 9.5 Explicit exclusions
+**Explicitly excluded from Stage 11** (closed in Stages 2–10, no
+architecture-specific argument): NaLaFormer (P2 overlap with RSE),
+Avey bypass (P3 closed Family-D), PoM (P8 closed quadratic-lift),
+M²RNN (P9 tied-vanilla + breaks parallel form).
 
-The following stage-10 mechanisms are **excluded from Stage 12** per
-TODO_FUTURE_IDEAS.md §4.10 (non-linearity / non-commutativity
-incompatible with parallel-form bidirectional execution):
+### 9.4 Stage 12 — LION bidirectional chapter (parallel strand)
+
+| Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | Epochs | Verdict |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| **`lion`** (vanilla) | — | 12.0 | **0.0712** | — | **0.2106** | ~7 M | **80** | **DONE — on disk at `outputs/exp09_lion_seed42/`** |
+| `lion_convshift` | A (input-side) | 12.1 | 0.1041 | — | 0.3092 | ~7 M + ~2 K | 30 | DONE — `outputs/lucid_exp05_lion_convshift_seed42/` |
+| `lion_lucid` | — (preconditioner) | 12.1 | 0.1085 | — | 0.3189 | — | 30 | DONE — `outputs/lucid_exp04_lion_lucid_seed42/` |
+| `lion_lucid_chunked` | — | 12.6 | — | — | — | — | 30 | TBD (corrected-LUCID 80-ep run pending) |
+| `lion_convshift_multidil_symmetric` | A (input-side) | 12.2 | — | — | — | — | 30 / 80 | TBD — Stage-10 win on LION native form |
+| `lion_rse_strong_viscosity` | B | 12.3 | — | — | — | — | 30 / 80 | TBD — RSE on LION |
+| `lion_rse_convshift_multidil_symmetric` | A × B | 12.4 | — | — | — | — | 30 / 80 | TBD — cross-axis on LION |
+| `lion_loglinear` (mirror-Fenwick) | A | 12.5 | — | — | — | — | 30 / 80 | TBD — Paper 1 bidirectional design cell |
+| `lion_delta` | B (causal-only delta) | 12.7 | 0.1366 | — | 0.3967 | — | 30 | DONE — `outputs/lion_delta_seed42/` (engaged-null, per analysis) |
+
+### 9.5 Explicit exclusions (LION parallel form)
+
+Excluded from Stage 12 per TODO_FUTURE_IDEAS.md §4.10
+(non-linearity / non-commutativity incompatible with parallel-form
+bidirectional execution):
 
 - `lion_orthogonal` — NCGRU-Cayley breaks $e^{cs}$ factorisation.
 - `lion_m2rnn` — M²RNN $\tanh(SW + kv^\top)$ breaks associativity.
@@ -815,17 +998,21 @@ Mamba-2 LION-style parallel-scan ports of these are similarly excluded.
 
 ---
 
-## 10. Completion criteria (exit of planning phase)
+## 10. Completion criteria and current status
 
-Stage 10+ planning is complete when:
+Stage-10 completion criteria (all met as of 2026-04-22):
 
-- [x] Families, priorities, and comparison cohorts are pre-registered.
+- [x] Families, priorities, and comparison cohorts were pre-registered.
 - [x] Baselines consolidated and referenced.
-- [x] Decision rules for each experiment are explicit and matched-epoch.
-- [x] Metrics schedule is binding for every run.
-- [x] Exclusions (LION-breaking mechanisms) are documented.
+- [x] Decision rules for each experiment were explicit and matched-epoch.
+- [x] Metrics schedule was binding (diagnostic probe gap documented in
+      CLAUDE.md §Lessons Learned; to be backfilled from checkpoints).
+- [x] Exclusions (LION-breaking mechanisms) documented.
+- [x] Stage 10 executed; honest summary in STAGE10_SUMMARY.md.
 
-**Planning is complete. Big experiments begin with Stage 10.1.**
+**Next. Stage 11 begins with 11.0a (LA causal baseline) and 11.0b
+(Mamba-2 causal baseline). Stage 11.1 onward follows the gate structure
+in §5 Phase III.**
 
 ---
 
@@ -833,4 +1020,12 @@ Stage 10+ planning is complete when:
 
 - **2026-04-21** — Initial creation. Drafted from Phase-4 synthesis in
   TODO_FUTURE_IDEAS.md, Stages-2-9 summary, and the 9 paper reviews.
-  All Stage 10+ runs must reference this version or a successor.
+- **2026-04-22** — Stage 10 executed. Updated §5 with execution log
+  (Phase I, Phase II + CB-sprint), reframed Stage 11 as causal
+  architecture transfer study with four mechanisms × two architectures
+  + composition gate, reframed Stage 12 as parallel LION strand with
+  existing 80-ep LION runs logged. §6 Stage 11 specs rewritten.
+  §9.2 filled with measured Stage-10 CER, §9.3/9.4 restructured for
+  transfer and LION. Authoritative Stage-10 summary:
+  [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md). Operating manual
+  (methodology, lessons learned): [CLAUDE.md](CLAUDE.md).
