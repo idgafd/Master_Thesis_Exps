@@ -1,0 +1,7 @@
+{"step": 50, "epoch": 1, "split": "train", "loss": 8.628433227539062, "grad_norm": 0.7866023182868958, "lr": 0.0003, "wall_sec": 6.998405933380127}
+{"step": 100, "epoch": 1, "split": "train", "loss": 8.39564323425293, "grad_norm": 0.7405284643173218, "lr": 0.00022524999999999997, "wall_sec": 13.459393978118896}
+{"step": 100, "epoch": 1, "split": "eval", "loss": 8.415743231773376, "per_query_acc": 0.0003662109375, "per_seq_acc": 0.0, "n_eval_examples": 512, "wall_sec": 13.992873430252075}
+{"step": 150, "epoch": 1, "split": "train", "loss": 8.393499374389648, "grad_norm": 0.7460566163063049, "lr": 7.575000000000003e-05, "wall_sec": 20.45416235923767}
+{"step": 200, "epoch": 1, "split": "train", "loss": 8.375434875488281, "grad_norm": 0.7410704493522644, "lr": 1e-06, "wall_sec": 26.90084195137024}
+{"step": 200, "epoch": 1, "split": "eval", "loss": 8.368765473365784, "per_query_acc": 0.0001220703125, "per_seq_acc": 0.0, "n_eval_examples": 512, "wall_sec": 27.41829252243042}
+{"step": 200, "epoch": 1, "split": "eval_final", "loss": 8.368765473365784, "per_query_acc": 0.0001220703125, "per_seq_acc": 0.0, "n_eval_examples": 512, "wall_sec": 27.93363070487976}

@@ -1,0 +1,43 @@
+2026-04-22 18:47:24,391 INFO src.training.train backbone=transformer params=8M seq_len=64 K=16 Q=16 batch=64
+2026-04-22 18:47:28,209 INFO src.training.train step=100 epoch=1 loss=9.0020 grad=0.653 lr=3.00e-05
+2026-04-22 18:47:30,689 INFO src.training.train step=200 epoch=1 loss=8.6012 grad=0.539 lr=6.00e-05
+2026-04-22 18:47:33,168 INFO src.training.train step=300 epoch=1 loss=8.3989 grad=0.523 lr=9.00e-05
+2026-04-22 18:47:35,647 INFO src.training.train step=400 epoch=1 loss=8.3461 grad=0.514 lr=1.20e-04
+2026-04-22 18:47:38,129 INFO src.training.train step=500 epoch=1 loss=8.3419 grad=0.519 lr=1.50e-04
+2026-04-22 18:47:40,617 INFO src.training.train step=600 epoch=1 loss=8.3355 grad=0.506 lr=1.80e-04
+2026-04-22 18:47:43,106 INFO src.training.train step=700 epoch=1 loss=8.3401 grad=0.508 lr=2.10e-04
+2026-04-22 18:47:45,604 INFO src.training.train step=800 epoch=2 loss=8.3273 grad=0.523 lr=2.40e-04
+2026-04-22 18:47:48,092 INFO src.training.train step=900 epoch=2 loss=8.0683 grad=0.713 lr=2.70e-04
+2026-04-22 18:47:50,580 INFO src.training.train step=1000 epoch=2 loss=7.5561 grad=0.814 lr=3.00e-04
+2026-04-22 18:47:51,127 INFO src.training.train EVAL step=1000 loss=7.3555 per_query_acc=0.1222 per_seq_acc=0.0000
+2026-04-22 18:47:53,615 INFO src.training.train step=1100 epoch=2 loss=6.2928 grad=1.089 lr=3.00e-04
+2026-04-22 18:47:56,102 INFO src.training.train step=1200 epoch=2 loss=4.3021 grad=1.573 lr=3.00e-04
+2026-04-22 18:47:58,590 INFO src.training.train step=1300 epoch=2 loss=2.3042 grad=2.342 lr=3.00e-04
+2026-04-22 18:48:01,079 INFO src.training.train step=1400 epoch=2 loss=0.8505 grad=2.000 lr=3.00e-04
+2026-04-22 18:48:03,567 INFO src.training.train step=1500 epoch=2 loss=0.2605 grad=1.703 lr=3.00e-04
+2026-04-22 18:48:06,057 INFO src.training.train step=1600 epoch=3 loss=0.0978 grad=1.198 lr=3.00e-04
+2026-04-22 18:48:08,554 INFO src.training.train step=1700 epoch=3 loss=0.0476 grad=0.847 lr=3.00e-04
+2026-04-22 18:48:11,042 INFO src.training.train step=1800 epoch=3 loss=0.0246 grad=1.105 lr=2.99e-04
+2026-04-22 18:48:13,531 INFO src.training.train step=1900 epoch=3 loss=0.0367 grad=1.336 lr=2.99e-04
+2026-04-22 18:48:16,019 INFO src.training.train step=2000 epoch=3 loss=0.0154 grad=0.644 lr=2.99e-04
+2026-04-22 18:48:16,528 INFO src.training.train EVAL step=2000 loss=0.0011 per_query_acc=0.9999 per_seq_acc=0.9983
+2026-04-22 18:48:16,528 INFO src.training.train EARLY STOP: per_seq_acc 0.9983 ≥ threshold 0.9900 at step 2000
+2026-04-22 18:48:17,033 INFO src.training.train DONE: {
+  "backbone": "transformer",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 2000,
+  "epochs_taken": 3,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9983333333333333,
+  "best_per_query_acc": 0.9998958333333333,
+  "best_step": 2000,
+  "final_per_seq_acc": 0.9983333333333333,
+  "final_per_query_acc": 0.9998958333333333,
+  "final_loss": 0.0010798261960347493,
+  "wall_sec": 51.86019849777222,
+  "seed": 42
+}

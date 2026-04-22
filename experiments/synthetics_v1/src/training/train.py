@@ -73,9 +73,16 @@ def train(
         total_steps=cfg.max_steps,
     )
 
+    # Track BOTH metrics. per_query_acc is the fine-grained learning signal
+    # (continuous, monotone-ish in real training); per_seq_acc is the headline
+    # convergence target but stays at 0 until the model is essentially perfect,
+    # which makes it useless for patience-based early-stop. So patience and
+    # threshold both run off per_query_acc; per_seq_acc is reported for sanity.
+    best_per_query_acc = -1.0
     best_per_seq_acc = -1.0
     best_step = -1
     evals_since_best = 0
+    PATIENCE_MIN_DELTA = 1e-3
     start_t = time.time()
 
     metrics_f = open(metrics_path, "a", buffering=1)  # line-buffered
@@ -143,14 +150,21 @@ def train(
                     "wall_sec": time.time() - start_t,
                 })
 
+                # Headline metric for results.json — track best independently.
                 if ev.per_seq_acc > best_per_seq_acc:
                     best_per_seq_acc = ev.per_seq_acc
+
+                # Patience metric — per_query_acc is what actually moves during
+                # training. Require a min-delta to avoid noise-triggered resets.
+                if ev.per_query_acc > best_per_query_acc + PATIENCE_MIN_DELTA:
+                    best_per_query_acc = ev.per_query_acc
                     best_step = step
                     evals_since_best = 0
                 else:
                     evals_since_best += 1
 
-                # Early stop: hit threshold OR no improvement for N evals.
+                # Early stop: per_seq_acc ≥ threshold (Zoology convergence
+                # convention) OR per_query_acc plateau for N evals.
                 if ev.per_seq_acc >= cfg.early_stop_threshold:
                     log.info(
                         "EARLY STOP: per_seq_acc %.4f ≥ threshold %.4f at step %d",
@@ -160,8 +174,10 @@ def train(
                     break
                 if evals_since_best >= cfg.early_stop_patience_evals:
                     log.info(
-                        "EARLY STOP: %d evals without improvement (best=%.4f at step %d)",
-                        evals_since_best, best_per_seq_acc, best_step,
+                        "EARLY STOP: %d evals without per_query_acc improvement "
+                        "(best=%.4f at step %d, per_seq_acc=%.4f)",
+                        evals_since_best, best_per_query_acc, best_step,
+                        best_per_seq_acc,
                     )
                     early_stopped = True
                     break
@@ -192,6 +208,7 @@ def train(
         "epochs_taken": epoch,
         "early_stopped": early_stopped,
         "best_per_seq_acc": best_per_seq_acc,
+        "best_per_query_acc": best_per_query_acc,
         "best_step": best_step,
         "final_per_seq_acc": final.per_seq_acc,
         "final_per_query_acc": final.per_query_acc,

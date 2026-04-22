@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone rwkv6 --seq-len 64 --n-kv-pairs 16 --seed 42 --output-dir outputs/cohort_reduced/rwkv6_T64_seed42

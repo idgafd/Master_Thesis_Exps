@@ -31,7 +31,6 @@ BACKBONES=(
     rwkv6
     rwkv6_lucid
     rwkv6_delta
-    rwkv6_lucid_delta
     mamba
     mamba2
     transformer

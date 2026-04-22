@@ -1,0 +1,8 @@
+backbone,T,K,seed,params_M,steps,early_stop,best_per_seq,final_per_seq,final_per_query,final_loss,steps_to_0.5,steps_to_0.9,wall_min,verdict
+mamba,64,16,42,9.6,6000,True,0.0,0.0,0.0002,8.4212,—,—,28.3,FAIL
+mamba2,64,16,42,9.56,6000,True,0.0,0.0,0.0003,8.4262,—,—,8.3,FAIL
+rwkv6,64,16,42,10.03,6000,True,0.0,0.0,0.0005,8.3635,—,—,6.3,FAIL
+rwkv6_delta,64,16,42,10.23,6000,True,0.0,0.0,0.0002,8.3593,—,—,63.0,FAIL
+rwkv6_lucid,64,16,42,10.03,7000,True,0.9963,0.9963,0.9998,0.0035,5000,5000,9.5,PASS
+transformer,64,16,42,8.55,2000,True,0.9983,0.9983,0.9999,0.0011,2000,2000,0.9,PASS
+transformer_causal,64,16,42,8.55,5000,True,0.999,0.999,0.9999,0.0008,5000,5000,2.1,PASS

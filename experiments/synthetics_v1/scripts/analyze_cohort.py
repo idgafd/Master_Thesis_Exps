@@ -29,6 +29,26 @@ def _verdict(per_seq_acc: float | None) -> str:
     return "FAIL"
 
 
+def _steps_to(metrics_path: Path, threshold: float) -> int | None:
+    """First eval step where per_query_acc crosses `threshold`. None if never."""
+    if not metrics_path.exists():
+        return None
+    with metrics_path.open() as f:
+        for line in f:
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if rec.get("split") not in ("eval", "eval_final"):
+                continue
+            pq = rec.get("per_query_acc")
+            if pq is None:
+                continue
+            if pq >= threshold:
+                return rec.get("step")
+    return None
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--root", default="outputs/cohort_reduced")
@@ -45,6 +65,9 @@ def main() -> None:
             continue
         with results_path.open() as f:
             r = json.load(f)
+        metrics_path = run_dir / "metrics.jsonl"
+        steps_50 = _steps_to(metrics_path, 0.5)
+        steps_90 = _steps_to(metrics_path, 0.9)
         rows.append({
             "backbone": r.get("backbone", "?"),
             "T": r.get("seq_len", 0),
@@ -57,6 +80,10 @@ def main() -> None:
             "final_per_seq": round(r.get("final_per_seq_acc", -1), 4),
             "final_per_query": round(r.get("final_per_query_acc", -1), 4),
             "final_loss": round(r.get("final_loss", float("nan")), 4),
+            # Zoology-style steps-to-solve at per_query_acc thresholds.
+            # `—` = never crossed within the trained budget.
+            "steps_to_0.5": steps_50 if steps_50 is not None else "—",
+            "steps_to_0.9": steps_90 if steps_90 is not None else "—",
             "wall_min": round(r.get("wall_sec", 0) / 60, 1),
             "verdict": _verdict(r.get("best_per_seq_acc")),
         })

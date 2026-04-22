@@ -1,0 +1,19 @@
+{
+  "backbone": "mamba2",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9559696,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.00025,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0002916666666666667,
+  "final_loss": 8.426232432047525,
+  "wall_sec": 496.5003025531769,
+  "seed": 42
+}

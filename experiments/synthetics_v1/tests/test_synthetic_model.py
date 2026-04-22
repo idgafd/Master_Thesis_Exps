@@ -77,6 +77,13 @@ def test_forward_shape(backbone, device):
 
 @pytest.mark.parametrize("backbone", sorted(SUPPORTED_BACKBONES))
 def test_backward_flows_to_all_params(backbone, device):
+    # RWKV-6 uses zero-init LoRA bottlenecks (time_maa_w1, time_decay_w1, and
+    # delta_params.a1) so that mechanism additions reduce to vanilla output at
+    # step 0 (zero-regression contract). At step 0 their LoRA partners
+    # (time_maa_x/w/w2, time_decay_w2, delta_params.{k_k,k_a,a0,a1,a2},
+    # delta_recurrent_gate) therefore receive exactly-zero gradient — by
+    # construction, not by bug. We warm up with a few SGD steps to break out
+    # of that init, then verify gradient flow on a fresh forward/backward.
     cfg = _tiny_cfg(backbone)
     model = SyntheticModel(cfg).to(device)
     spec = MQARSpec(
@@ -89,6 +96,19 @@ def test_backward_flows_to_all_params(backbone, device):
     ids, tgt = ids.to(device), tgt.to(device)
     lengths = torch.full((cfg.batch_size,), cfg.seq_len, dtype=torch.long, device=device)
 
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
+    for _ in range(3):
+        optimizer.zero_grad(set_to_none=True)
+        logits, _ = model(ids, lengths)
+        warm_loss = F.cross_entropy(
+            logits.reshape(-1, logits.size(-1)),
+            tgt.reshape(-1),
+            ignore_index=IGNORE_INDEX,
+        )
+        warm_loss.backward()
+        optimizer.step()
+
+    optimizer.zero_grad(set_to_none=True)
     logits, _ = model(ids, lengths)
     loss = F.cross_entropy(
         logits.reshape(-1, logits.size(-1)),

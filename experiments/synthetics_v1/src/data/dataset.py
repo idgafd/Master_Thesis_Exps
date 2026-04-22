@@ -24,14 +24,15 @@ class _Batch:
 
 
 def _collate_fixed_length(
-    items: list[tuple[torch.Tensor, torch.Tensor]]
+    item: tuple[torch.Tensor, torch.Tensor],
 ) -> _Batch:
-    """Stack pre-batched (input_ids, targets) pairs into a single _Batch.
+    """Wrap a pre-batched (input_ids, targets) pair into a `_Batch`.
 
-    The MQARTrainDataset already yields full batches, so `items` has length 1.
+    With `DataLoader(batch_size=None)`, PyTorch fires the `collate_fn` with
+    the dataset's yielded item directly (no list wrapping), so we receive the
+    `(input_ids, targets)` tuple itself.
     """
-    assert len(items) == 1, "MQARTrainDataset yields one batch per __next__"
-    input_ids, targets = items[0]
+    input_ids, targets = item
     B, T = input_ids.shape
     lengths = torch.full((B,), T, dtype=torch.long)
     return _Batch(input_ids=input_ids, targets=targets, lengths=lengths)

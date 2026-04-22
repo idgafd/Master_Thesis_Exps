@@ -1,0 +1,96 @@
+2026-04-22 16:48:24,550 INFO src.training.train backbone=rwkv6_lucid params=10M seq_len=64 K=16 Q=16 batch=32
+2026-04-22 16:48:29,162 INFO src.training.train step=50 epoch=1 loss=8.8075 grad=0.833 lr=3.00e-04
+2026-04-22 16:48:33,688 INFO src.training.train step=100 epoch=1 loss=8.4379 grad=0.741 lr=2.25e-04
+2026-04-22 16:48:33,997 INFO src.training.train EVAL step=100 loss=8.4379 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-22 16:48:38,591 INFO src.training.train step=150 epoch=1 loss=8.4172 grad=0.743 lr=7.58e-05
+2026-04-22 16:48:43,296 INFO src.training.train step=200 epoch=1 loss=8.3979 grad=0.746 lr=1.00e-06
+2026-04-22 16:48:43,604 INFO src.training.train EVAL step=200 loss=8.3788 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-22 16:48:43,896 INFO src.training.train DONE: {
+  "backbone": "rwkv6_lucid",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 10028056,
+  "steps_taken": 200,
+  "epochs_taken": 1,
+  "early_stopped": false,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.0001220703125,
+  "best_step": 100,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0001220703125,
+  "final_loss": 8.378802180290222,
+  "wall_sec": 19.34493064880371,
+  "seed": 42
+}
+2026-04-22 16:48:43,912 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:48:43,913 INFO debug_run [6/7] SMOKE transformer
+2026-04-22 16:48:43,913 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:48:44,233 INFO src.training.train backbone=transformer params=8M seq_len=64 K=16 Q=16 batch=32
+2026-04-22 16:48:47,936 INFO src.training.train step=50 epoch=1 loss=8.6527 grad=0.770 lr=3.00e-04
+2026-04-22 16:48:51,143 INFO src.training.train step=100 epoch=1 loss=8.3802 grad=0.729 lr=2.25e-04
+2026-04-22 16:48:51,244 INFO src.training.train EVAL step=100 loss=8.4133 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-22 16:48:55,042 INFO src.training.train step=150 epoch=1 loss=8.3898 grad=0.739 lr=7.58e-05
+2026-04-22 16:48:57,948 INFO src.training.train step=200 epoch=1 loss=8.3764 grad=0.736 lr=1.00e-06
+2026-04-22 16:48:58,055 INFO src.training.train EVAL step=200 loss=8.3664 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-22 16:48:58,154 INFO src.training.train DONE: {
+  "backbone": "transformer",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 200,
+  "epochs_taken": 1,
+  "early_stopped": false,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.000244140625,
+  "best_step": 100,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0001220703125,
+  "final_loss": 8.366391837596893,
+  "wall_sec": 13.92122483253479,
+  "seed": 42
+}
+2026-04-22 16:48:58,164 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:48:58,164 INFO debug_run [7/7] SMOKE transformer_causal
+2026-04-22 16:48:58,164 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:48:58,276 INFO src.training.train backbone=transformer_causal params=8M seq_len=64 K=16 Q=16 batch=32
+2026-04-22 16:49:02,019 INFO src.training.train step=50 epoch=1 loss=8.6634 grad=0.780 lr=3.00e-04
+2026-04-22 16:49:05,734 INFO src.training.train step=100 epoch=1 loss=8.4109 grad=0.735 lr=2.25e-04
+2026-04-22 16:49:05,837 INFO src.training.train EVAL step=100 loss=8.4124 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-22 16:49:09,633 INFO src.training.train step=150 epoch=1 loss=8.3900 grad=0.742 lr=7.58e-05
+2026-04-22 16:49:13,429 INFO src.training.train step=200 epoch=1 loss=8.3757 grad=0.734 lr=1.00e-06
+2026-04-22 16:49:13,526 INFO src.training.train EVAL step=200 loss=8.3667 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-22 16:49:13,624 INFO src.training.train DONE: {
+  "backbone": "transformer_causal",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 200,
+  "epochs_taken": 1,
+  "early_stopped": false,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.000244140625,
+  "best_step": 100,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0001220703125,
+  "final_loss": 8.366678655147552,
+  "wall_sec": 15.347872018814087,
+  "seed": 42
+}
+2026-04-22 16:49:13,634 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:49:13,634 INFO debug_run SMOKE SUMMARY (total wall: 185 s)
+2026-04-22 16:49:13,635 INFO debug_run ──────────────────────────────────────────────────────────────────────
+2026-04-22 16:49:13,635 INFO debug_run   mamba                     OK         params=9.6M best_per_seq=0.000 final_per_query=0.000 loss=8.369
+2026-04-22 16:49:13,635 INFO debug_run   mamba2                    OK         params=9.6M best_per_seq=0.000 final_per_query=0.000 loss=8.368
+2026-04-22 16:49:13,635 INFO debug_run   rwkv6                     OK         params=10.0M best_per_seq=0.000 final_per_query=0.000 loss=8.378
+2026-04-22 16:49:13,635 INFO debug_run   rwkv6_delta               OK         params=10.2M best_per_seq=0.000 final_per_query=0.000 loss=8.376
+2026-04-22 16:49:13,635 INFO debug_run   rwkv6_lucid               OK         params=10.0M best_per_seq=0.000 final_per_query=0.000 loss=8.379
+2026-04-22 16:49:13,635 INFO debug_run   transformer               OK         params=8.5M best_per_seq=0.000 final_per_query=0.000 loss=8.366
+2026-04-22 16:49:13,635 INFO debug_run   transformer_causal        OK         params=8.5M best_per_seq=0.000 final_per_query=0.000 loss=8.367
+2026-04-22 16:49:13,635 INFO debug_run summary written to /home/researcher/Master_Thesis_Exps/experiments/synthetics_v1/outputs/_smoke/_summary.json
+2026-04-22 16:49:13,635 INFO debug_run SMOKE OK for all 7 backbones

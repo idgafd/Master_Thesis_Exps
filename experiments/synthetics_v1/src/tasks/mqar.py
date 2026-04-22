@@ -128,30 +128,39 @@ def generate_mqar_batch(
         distractor_tokens = torch.empty(B, 0, dtype=torch.long, device=dev)
 
     # ── 5. Assemble the input sequence. ──────────────────────────────────
-    # Layout: [k1 v1 k2 v2 ... kK vK | distractors | q1 0 q2 0 ... qQ 0]
+    # Layout (Zoology convention, Arora et al. 2024):
+    #   [k1 v1 k2 v2 ... kK vK | distractors | q1 v_q1 q2 v_q2 ... qQ v_qQ]
+    # Queries are interleaved (q_i, v_q_i) pairs so the MODEL at position of
+    # q_i predicts v_q_i as the NEXT token (standard autoregressive LM).
+    # An earlier implementation of this generator used placeholder (0) tokens
+    # at the prediction positions; that layout requires the model to predict
+    # v given only a placeholder + positional encoding + one-hop back to the
+    # query key — empirically unlearnable for both vanilla Transformers and
+    # the full formal_v1 cohort within 25k+ steps, and all backbones pinned
+    # at per_query_acc = 1/K (uniform over in-context values). The Zoology
+    # layout converges the same vanilla GPT in ~300 steps.
     pair_block = torch.empty(B, 2 * K, dtype=torch.long, device=dev)
     pair_block[:, 0::2] = key_tokens
     pair_block[:, 1::2] = value_tokens
 
-    # Query placeholders use token id 0 (PAD); they are not scored as input,
-    # the model only needs to PREDICT the value token at the position AFTER
-    # each query key. We follow the Zoology convention of putting a marker
-    # token (here: 0) right after each query key as the prediction position.
     query_block = torch.empty(B, 2 * Q, dtype=torch.long, device=dev)
     query_block[:, 0::2] = query_keys
-    query_block[:, 1::2] = 0  # placeholder; loss is computed at this index
+    query_block[:, 1::2] = query_targets  # v_q_i — the model predicts this as next token
 
     input_ids = torch.cat([pair_block, distractor_tokens, query_block], dim=1)
     assert input_ids.shape == (B, T), \
         f"layout bug: got {input_ids.shape}, expected ({B}, {T})"
 
-    # ── 6. Build targets — -100 everywhere except at placeholder positions. ─
+    # ── 6. Build targets — -100 everywhere except at query-key positions. ─
+    # At each query-key position p, target = input[p+1] = v_q (next-token LM).
+    # Values are given to the model as inputs so it learns autoregressively;
+    # loss is masked to only score predictions at query-key positions.
     targets = torch.full((B, T), IGNORE_INDEX, dtype=torch.long, device=dev)
-    placeholder_offset = 2 * K + n_distractors  # absolute index of 1st placeholder
-    placeholder_indices = placeholder_offset + 1 + 2 * torch.arange(
+    query_key_offset = 2 * K + n_distractors  # absolute index of 1st query key
+    query_key_indices = query_key_offset + 2 * torch.arange(
         Q, device=dev
-    )                                               # 1, 3, 5, ... within query_block
-    targets[:, placeholder_indices] = query_targets
+    )                                               # 0, 2, 4, ... within query_block
+    targets[:, query_key_indices] = query_targets
 
     return input_ids, targets
 

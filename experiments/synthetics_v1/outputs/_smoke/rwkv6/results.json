@@ -1,0 +1,19 @@
+{
+  "backbone": "rwkv6",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 10028032,
+  "steps_taken": 200,
+  "epochs_taken": 1,
+  "early_stopped": false,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.000244140625,
+  "best_step": 100,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.000244140625,
+  "final_loss": 8.377992331981659,
+  "wall_sec": 18.58600163459778,
+  "seed": 42
+}

@@ -44,7 +44,11 @@ def test_targets_only_at_query_positions():
 
 def test_query_targets_match_presented_pairs():
     """Every query position must demand a value that was actually presented
-    earlier in the same sequence, paired with the matching key."""
+    earlier in the same sequence, paired with the matching key.
+
+    Under the Zoology-style layout the query key sits AT the target position
+    (model predicts v_q as the next token, standard autoregressive LM).
+    """
     spec = _spec(T=128, K=32)
     g = torch.Generator().manual_seed(0)
     ids, tgt = generate_mqar_batch(16, spec, generator=g)
@@ -65,12 +69,15 @@ def test_query_targets_match_presented_pairs():
             assert k not in kv, f"duplicate key in pairs: {k}"
             kv[k] = v
 
-        # For every query position, check that the preceding token is a
-        # presented key and the target equals the paired value.
+        # In the new layout, the query key is the INPUT token at the target
+        # position, and the value appears as the NEXT input token (= LM target).
         query_positions = (tgt[b] != IGNORE_INDEX).nonzero(as_tuple=True)[0]
         for qp in query_positions.tolist():
-            query_key = ids[b, qp - 1].item()
+            query_key = ids[b, qp].item()
             target_val = tgt[b, qp].item()
+            # Sanity: the value also appears as the next input token.
+            assert ids[b, qp + 1].item() == target_val, \
+                f"next-token contract broken at pos {qp}"
             assert query_key in kv, \
                 f"query at pos {qp} references key {query_key} not in pair table"
             assert kv[query_key] == target_val, \

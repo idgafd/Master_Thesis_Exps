@@ -29,7 +29,6 @@ SUPPORTED_BACKBONES = {
     "rwkv6",
     "rwkv6_lucid",
     "rwkv6_delta",
-    "rwkv6_lucid_delta",
     "mamba",
     "mamba2",
 }
@@ -111,7 +110,12 @@ def build_encoder(cfg: SyntheticsConfig) -> nn.Module:
         conv_shift=False,
         headscale=False,
         delta_rule=delta_rule,
-        delta_warmstart=False,
+        # warmstart=True keeps the delta branch ~off at init (iclr ≈ 0.013,
+        # a0_init=-5) so SGD can grow it where useful. The False default
+        # fires delta at full strength (iclr ≈ 1.76 at t=0) and empirically
+        # destroys the randomly-initialised wkv_state before useful
+        # associations form — see mechanisms/delta_rule.py:36-46 comment.
+        delta_warmstart=delta_rule,
         lucid=lucid,
         lucid_chunk_size=None,
         lucid_self_reg=False,
