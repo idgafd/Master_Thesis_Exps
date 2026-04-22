@@ -4,11 +4,12 @@ This file documents the diagnostic + fix pass I did on synthetics_v1 while execu
 
 - what broke in the existing code,
 - what I changed inside synthetics_v1,
-- the **one change that must be applied to formal_v1 for the pipeline to run** (not committed here, per the PI's direction — see §Required local formal_v1 patch below),
 - the cohort result, and
 - what the PI should do next.
 
 The headline research output (Phase 1a T=64 cohort) is in `outputs/REPORT_phase1a.md`.
+
+**Note on the formal_v1 dependency.** When I started this session the local clone did not yet contain Stage 10 work, and `formal_v1/src/models/rwkv6_encoder.py` did not accept the mechanism kwargs that the synthetics dispatcher passes (`use_loglinear`, `use_m2rnn`, `use_conv_shift_multidilation`, `use_chanmix_bypass`, `use_cayley_orthogonal`, `use_pom_vlift`, etc.). I worked around this with a temporary local stub and documented it here as "required local formal_v1 patch". After rebasing onto current `origin/main`, those kwargs are present and properly wired by Stage 10's commit `ecaac50` — the stub is no longer needed. The synthetics_v1 pipeline now runs end-to-end against upstream formal_v1 with **no formal_v1 changes required** (verified: `pytest tests/ -v` → 30/30 green). The §Required local formal_v1 patch section below is kept for historical context only.
 
 ## TL;DR
 
@@ -37,9 +38,11 @@ See `outputs/REPORT_phase1a.md` for interpretation, trajectory tables, and follo
 
 ---
 
-## Required local formal_v1 patch (not committed)
+## Required local formal_v1 patch (HISTORICAL — no longer needed after Stage 10 rebase)
 
-The synthetics_v1 dispatcher at `src/models/encoder.py:105-157` passes ~13 forward-looking mechanism kwargs (`use_loglinear`, `use_m2rnn`, `use_conv_shift_multidilation`, etc.) to `RWKV6Encoder`. The currently-symlinked `formal_v1/src/models/rwkv6_encoder.py` does **not** accept them. Running the test suite against the unpatched formal_v1 reproduces the initial blocker:
+> **Update:** As noted at the top of this file, the kwargs documented in this section landed in upstream `formal_v1` in Stage 10 commit `ecaac50` and are now properly wired (not stubs — they plumb through to RWKV6Block / RWKV6TimeMix). On a fresh clone of current `main`, no formal_v1 patch is required. This section is kept only as the audit trail for what blocked the cohort run before that rebase.
+
+The synthetics_v1 dispatcher at `src/models/encoder.py:105-157` passes ~13 forward-looking mechanism kwargs (`use_loglinear`, `use_m2rnn`, `use_conv_shift_multidilation`, etc.) to `RWKV6Encoder`. Before Stage 10 the symlinked `formal_v1/src/models/rwkv6_encoder.py` did **not** accept them. Running the test suite against the unpatched formal_v1 reproduces the initial blocker:
 
 ```
 TypeError: RWKV6Encoder.__init__() got an unexpected keyword argument 'use_loglinear'
@@ -186,12 +189,9 @@ cd experiments/synthetics_v1
 
 # 1. One-time env
 uv sync
-# IMPORTANT: apply the formal_v1 patch in §Required local formal_v1 patch above
-#            before running the symlinks step — otherwise test_synthetic_model
-#            will fail with TypeError on use_loglinear.
 bash scripts/setup_symlinks.sh
 
-# 2. Tests (30 expected, all green after formal_v1 patch)
+# 2. Tests (30 expected, all green; verified on current main)
 uv run --with pytest python -m pytest tests/ -v
 
 # 3. Phase 0 smoke (~3 min). Note: 200 steps is below breakthrough threshold
@@ -217,4 +217,3 @@ Copied from `outputs/REPORT_phase1a.md` "Recommended next steps" section — see
 3. **Phase 1b (T=256 cohort)** — ~2.5h. Confirms LUCID's lift extrapolates to longer sequences, where linear-mixer advantages should matter. The `delta` row of that table will be uninformative until step 2 above is resolved.
 4. **3-seed resampling of the T=64 cohort** — ~5h, would give error bars for the `LUCID > delta` claim.
 5. **Pre-empt the same layout bug in `state_tracking.py` / `induction.py`** (both planned per `CLAUDE.md`) before they ship.
-6. **Decide on the RWKV6Encoder kwargs situation** (§Required local formal_v1 patch above, option A vs B).
