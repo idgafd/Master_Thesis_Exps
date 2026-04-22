@@ -202,11 +202,12 @@ Targeted new axes (Families A, C) and validated mechanism extensions
 | **10.3-sym** | **`rwkv6_convshift_multidil_symmetric`** | **MARGINAL — ties Stage-3 abs-best test CER without RSE** | **0.1153 / 0.1145** |
 | 10.4 | `rwkv6_chanmix_bypass` | **PLATEAU** — channel-mix bypass in same function class | 0.1251 / 0.1248 |
 
-### Phase II — Revisit characterised families and CB sprint (DONE, 2026-04-22)
+### Phase II — Revisit characterised families and CB sprint (MOSTLY DONE, 2026-04-22; CB-2 pending)
 
 Alternative parametrisations of Family-B (10.5) and Family-D (10.6),
 followed by a CB-sprint testing composition of orthogonal axes with
-`multidil_sym`.
+`multidil_sym` — plus one remaining within-axis RF-expansion probe
+(CB-2) still pending.
 
 | Stage | Backbone | Verdict | Dev / Test CER |
 |---|---|---|---|
@@ -214,15 +215,20 @@ followed by a CB-sprint testing composition of orthogonal axes with
 | 10.6 | `rwkv6_pom_vlift` | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift family saturated | 0.1254 / 0.1253 |
 | 10.7 | `rwkv6_loglinear_rse_strong_viscosity` | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open | — |
 | CB-1 | `rwkv6_rse_convshift_multidil_symmetric` | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied with multidil_sym; H-orth falsified | 0.1169 / 0.1156 |
+| **CB-2** | **`rwkv6_convshift_multidil_symmetric_wide4` / `_dense`** | **⏳ PENDING** — within-axis RF-expansion probe; the one committed-but-unexecuted Stage-10 item. Falsifiable single-axis test: is ±8 frames the RF ceiling, or does phrase-scale RF help? Full spec in §6. | — |
 | CB-3 | `rwkv6_convshift_multidil_symmetric_gated` | **PLATEAU** — content-conditional α_d ties fixed α_d within σ | 0.1167 / 0.1157 |
 | CB-5 | `rwkv6_frontend_v2` (lean + matched) | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; matched-variant rescue also non-converging | — |
 | CB-7 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym | 0.1159 / 0.1150 |
 
-**Phase I + II consolidated finding.** One productive win
+**Phase I + II consolidated finding (modulo CB-2).** One productive win
 (`multidil_sym`, input-side symmetric multi-dilation at phoneme scale).
 The cross-experiment invariant from Stages 8–9 extends cleanly across
 mechanism families and base mechanisms (see `STAGE10_SUMMARY.md` §3).
 See `CLAUDE.md` §Lessons Learned for the methodological record.
+
+**CB-2 is the one remaining Stage-10 item** — a within-axis RF-expansion
+probe on the Stage-10 win. Recommended to run before Stage 11 kicks off
+so axis-1-on-RWKV-6-causal can be declared closed cleanly.
 
 ### Phase III — Stage 11: Causal architecture transfer study (NEXT)
 
@@ -260,11 +266,14 @@ evaluation since it requires a new kernel.
 **Sub-stages.**
 
 - [ ] **Stage 11.0 — Baselines (prerequisite)**
-  - [ ] 11.0a `mamba2` causal (vanilla Mamba-2 on formal_v1 spine)
-  - [ ] 11.0b `linear_attn_causal` (Katharopoulos recurrent form with
+  - [ ] 11.0a `linear_attn_causal` (Katharopoulos recurrent form with
         explicit L1 denominator; **unknown CER on this spine** — the
         number itself is new evidence)
-  - Gate: both baselines complete before any transfer run.
+  - [x] 11.0b `mamba2` causal (vanilla Mamba-2 on formal_v1 spine) —
+        30-ep run already on disk at `outputs/mamba2_seed42/`: dev
+        0.1198 / test 0.1192 / WER 0.3615 (git sha `0b65aab`). Encoder
+        5.36 M + frontend 1.90 M + CTC 8 K = 7.27 M total.
+  - Gate: both baselines complete before any transfer run (11.0a pending).
 - [ ] **Stage 11.1 — Input-side temporal transfer (multidil_sym)**
   - [ ] 11.1a `mamba2_convshift_multidil_symmetric`
   - [ ] 11.1b `linear_attn_convshift_multidil_symmetric`
@@ -637,6 +646,120 @@ Each subsection uses a fixed template:
   - **REGRESSION** (dev $> 0.1230$): $M^S \odot M^H$ composition
     introduces identifiability issues — investigate.
 
+### CB-2 — `multidil_wide4` / `multidil_dense` (within-axis RF-expansion probe) — ⏳ PENDING
+
+- **Family.** A — Multi-scale temporal aggregation (input-side,
+  same axis as Stage 10.3-sym).
+- **Status.** Committed in STAGE10_SUMMARY.md §6, never executed. The
+  one remaining Stage-10 item on axis 1.
+
+- **Motivation.** `multidil_sym` $\{1, 2, 4, 8\}$ (Stage 10.3-sym, dev
+  0.1153 / test 0.1145) is the Stage-10 win. The dilation set gives
+  post-subsampling RF = ±8 frames ≈ 160 ms, matching the
+  phoneme-to-syllable acoustic window. Unresolved single-axis question:
+  **is ±8 frames the RF ceiling, or would a larger RF access further
+  signal?** All other axis-1 probes (CB-1, CB-3, CB-7) mixed axes
+  and landed PLATEAU — CB-2 is within-axis, one knob, falsifiable
+  either way. AudioRWKV's ablation (`EXPRESSIVITY_AXES.md` §Axis 1)
+  suggests axis-1 has internal scale-structure worth probing:
+  their Q-Shift (±1) + ConvShift (learned DWC) compose productively
+  because they operate at different scales.
+
+- **Variants (two, each ~1.5 h wallclock).**
+
+  | Variant | Dilations | Post-subsampling RF | Question tested |
+  |---|---|---:|---|
+  | `multidil_symmetric_wide4` | $\{1, 2, 4, 8, 16\}$ | ±16 frames ≈ 320 ms | Does phrase-scale RF help? |
+  | `multidil_symmetric_dense` | $\{1, 2, 3, 4, 6, 8\}$ | ±8 frames (same as sym) | Does denser short-scale coverage avoid $\{2, 4, 8\}$ aliasing at the 10-ms frame rate? |
+
+- **Zero-regression contract.** Both: $\alpha_1 = 1, \alpha_{d > 1} = 0$
+  at init → reduces to single-dilation symmetric ConvShift, identically
+  to how `multidil_sym` reduces at init. **Bit-exact equivalent to
+  `convshift_trap`'s output at step 0** — maintains Stage 2–10 discipline.
+
+- **Parameters.**
+  - `_wide4`: +4.6 K extra vs `multidil_sym` (one additional DWConv
+    branch $256 \times 1 \times 3 = 768$ weights × 6 layers + α = ~4.6 K).
+  - `_dense`: +9.2 K extra (two additional branches, ~9 K).
+  - Both well within the 5 % parity rule (7 M total).
+
+- **Comparison cohort (matched-epoch 5 / 10 / 15 / 20 / 25 / 30).**
+  - **Primary:** `rwkv6_convshift_multidil_symmetric` (10.3-sym, dev
+    0.1153 / test 0.1145) — the mechanism being RF-expanded.
+  - **Reference:** `rwkv6_rse_convshift` (abs-best, 0.1145 / 0.1126)
+    and vanilla `rwkv6` (0.1258 / 0.1263).
+
+- **Decision rule (pre-registered).**
+
+  | Outcome | Dev CER | Interpretation |
+  |---|---|---|
+  | **BREAK** | $< 0.1130$ | Larger RF accesses new acoustic signal; axis 1 not at ceiling. Multi-seed required; push further ($\{1, \ldots, 32\}$). |
+  | **MARGINAL** | $0.1130$ – $0.1145$ | RF expansion matches abs-best; multi-seed gate. |
+  | **TIED** | $0.1145$ – $0.1165$ | ±8 frames is RF-saturated at 7 M / 30 ep; **axis-1-on-RWKV-6-causal closed.** Thesis-citable null: "phoneme-to-syllable window is sufficient; phrase scale adds nothing." |
+  | **REGRESSION** | $> 0.1165$ | Extra branches net-harmful; informative about axis-1 geometric-set tuning. |
+
+- **Implementation (minimal diff, ~15 lines across 3 files).**
+
+  1. **`src/models/encoder.py`** — add two backbone names to `mode_map`:
+     ```python
+     "rwkv6_convshift_multidil_symmetric_wide4": "recurrent",
+     "rwkv6_convshift_multidil_symmetric_dense": "recurrent",
+     ```
+  2. **`src/models/encoder.py`** — dilation-set extraction in the
+     substring-dispatch section (where
+     `conv_shift_multidil_padding_mode` is already derived):
+     ```python
+     if "multidil_symmetric_wide4" in backbone:
+         conv_shift_multidil_dilations = (1, 2, 4, 8, 16)
+     elif "multidil_symmetric_dense" in backbone:
+         conv_shift_multidil_dilations = (1, 2, 3, 4, 6, 8)
+     elif use_conv_shift_multidilation:
+         conv_shift_multidil_dilations = (1, 2, 4, 8)  # existing default
+     ```
+     Pass `conv_shift_multidil_dilations` through kwargs:
+     `encoder → block → time_mix`.
+  3. **`src/models/rwkv6_time_mix.py`** — replace the hardcoded
+     `dilations=(1, 2, 4, 8)` in the `MultiDilationDWConvShift`
+     constructor call with the passed-through value:
+     ```python
+     self.conv_shift_module = MultiDilationDWConvShift(
+         hidden_size,
+         kernel_size=3,
+         dilations=conv_shift_multidil_dilations,   # was hardcoded
+         padding_mode=pad_mode,
+     )
+     ```
+  4. **No changes needed** in `MultiDilationDWConvShift` itself — its
+     constructor already accepts arbitrary `dilations: Sequence[int]`
+     and the α-init logic generalises to any set containing 1.
+
+- **Diagnostic probes (mandatory, per `STAGE10_PLAN.md` §7.5).**
+  The Stage-10 procedural gap (no mechanism-specific probes logged for
+  10.1–10.7) must not repeat for CB-2. Log to
+  `outputs/rwkv6_convshift_multidil_symmetric_{wide4,dense}_seed42/diagnostics.json`:
+
+  - **α_d per layer at epochs {5, 10, 15, 20, 25, 30}.** Depth-graded
+    pattern? Do shallow layers favour $\alpha_1$, deep layers favour
+    larger $d$? Is the newly-added dilation ($d = 16$ for wide4;
+    $d = 3, 6$ for dense) driven to non-zero at any layer?
+  - **Branch-contribution magnitude** $\|\alpha_d \cdot \text{DWC}_d(x)\|_2$
+    per branch per layer at ep 30. Quantifies effective use of each
+    dilation.
+  - **Effective RF per layer** = weighted centroid of dilations under
+    final $\alpha_d$. Provides a scalar summary of where the mechanism
+    converged on the scale-structure question.
+
+  If the added branches ($d = 16$ for wide4) finish with $\alpha \approx 0$
+  at every layer, that's **direct mechanistic evidence** the RF was
+  saturated at ±8 — stronger than the CER number alone.
+
+- **Wallclock budget.** ~1.5 h per variant × 2 = ~3 GPU-h total. No
+  new kernels, no new training-path code.
+
+- **Priority.** Run before Stage 11.0a kicks off. Closes axis-1 on
+  RWKV-6 causal with either a ceiling-break follow-up path (BREAK /
+  MARGINAL) or a clean thesis-citable null (TIED / REGRESSION).
+
 ### Stage 11.0a — Linear Attention causal baseline
 
 - **Scope.** Establish causal recurrent Katharopoulos Linear Attention
@@ -933,6 +1056,8 @@ $B = 10, T = 1200$ mels on RTX PRO 6000.
 | `rwkv6_pom_vlift` (thin) | D (polynomial) | 10.6 | **0.1254** | **0.1253** | 0.3746 | ≈ 7 M + 198 K | 30 | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift function class saturated across parametrisations |
 | `rwkv6_loglinear_rse_strong_viscosity` | A × B | 10.7 | — | — | — | — | — | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open |
 | `rwkv6_rse_convshift_multidil_symmetric` (CB-1) | A × B composition | CB-1 | **0.1169** | **0.1156** | 0.3500 | ≈ 7 M + 93 K | 30 | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied; H-orth falsified, temporal mechanisms share a ceiling on RWKV-6 |
+| `rwkv6_convshift_multidil_symmetric_wide4` (CB-2a) | A (within-axis RF extension) | CB-2 | — | — | — | ≈ 7 M + 23 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,4,8,16\}$, RF ±16 ≈ 320 ms (phrase scale). Tests whether ±8 is RF ceiling. See §6 CB-2 spec. |
+| `rwkv6_convshift_multidil_symmetric_dense` (CB-2b) | A (within-axis dilation density) | CB-2 | — | — | — | ≈ 7 M + 28 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,3,4,6,8\}$, RF ±8 (same as sym) but denser short-scale. Tests whether $\{2,4,8\}$ aliasing is an issue. |
 | `rwkv6_convshift_multidil_symmetric_gated` (CB-3) | A dense-per-token | CB-3 | **0.1167** | **0.1157** | 0.3456 | ≈ 7 M + 0.5 K | 30 | **PLATEAU** — content-conditional α_d ties fixed α_d |
 | `rwkv6_frontend_v2` (lean 413 K + matched 1.94 M) | frontend redesign | CB-5 | non-converging | — | — | ≈ 6.2 M / 7.7 M | aborted | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; fresh-init frontend unstable at this scale |
 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` (CB-7) | A × D composition | CB-7 | **0.1159** | **0.1150** | 0.3456 | ≈ 7 M + 60 K | 30 | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym |
@@ -955,8 +1080,8 @@ pre-registered differential predictions and halt criterion.
 
 | Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | Epochs | Verdict |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| `mamba2` (vanilla) | — | 11.0b | — | — | — | ~7 M | 30 | TBD — baseline |
-| `linear_attn_causal` (Katharopoulos w/ L1 denom) | — | 11.0a | — | — | — | ~7 M | 30 | TBD — baseline, **unknown CER on this spine** |
+| `mamba2` (vanilla) | — | 11.0b | **0.1198** | **0.1192** | 0.3615 | 7.27 M | 30 | **DONE — baseline**, `outputs/mamba2_seed42/` (git `0b65aab`). Sits between RWKV-6 vanilla (0.1258) and the Stage-5 anchor (0.1185). |
+| `linear_attn_causal` (Katharopoulos w/ L1 denom) | — | 11.0a | **0.2235** | **0.2201** | 0.6342 | 6.26 M (enc 4.35 M) | 30 | **DONE — baseline**, `outputs/linear_attn_causal_seed42/`. Gap to Mamba-2 +0.1009 test CER (~+85% relative). Diagnostics (ep30): deep-layer attention collapses — L2/L4 have 99 % of φ(k) ≈ 0, denominator ε-floored at 65–70 % of valid positions, signal flows via residual+FFN with attention mechanism effectively dead beyond L1. |
 | `mamba2_convshift_multidil_symmetric` | A (input-side) | 11.1a | — | — | — | ~7 M + ~18 K | 30 | TBD — predicted small gain |
 | `linear_attn_convshift_multidil_symmetric` | A (input-side) | 11.1b | — | — | — | ~7 M + ~18 K | 30 | TBD — **predicted large gain** (LA has no local bias) |
 | `mamba2_rse_strong_viscosity` | B (complex-pole) | 11.2a | — | — | — | — | 30 | TBD — predicted moderate gain |
