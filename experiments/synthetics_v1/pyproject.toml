@@ -1,0 +1,40 @@
+[project]
+name = "synthetics-v1"
+version = "0.1.0"
+description = "Synthetic expressivity benchmarks (MQAR, state tracking) — Master Thesis Tier-1"
+requires-python = ">=3.10"
+dependencies = [
+    # Core: training only — no audio dependencies in this tier.
+    # Pinned to torch 2.7.x (cu128) — matches formal_v1 to share .venv if desired.
+    "torch>=2.7.0,<2.8.0",
+    "pyyaml>=6.0",
+    "einops>=0.7.0",
+
+    # Research harness (matches formal_v1 conventions)
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+    "rich>=13.7",
+    "tabulate>=0.9",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+# Optional fast Mamba backend — requires CUDA build, not part of core install.
+cuda-mamba = ["mamba-ssm>=2.0.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+# uv index configuration: pull torch from the cu128 index
+# (driver 570 / CUDA 12.8; Blackwell sm_120 requires cu128+).
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128" }]

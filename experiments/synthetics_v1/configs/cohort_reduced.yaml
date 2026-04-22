@@ -1,0 +1,27 @@
+# Reduced first-pass cohort — 8 backbones × 2 lengths × 1 seed = 16 runs.
+# See PLAN.md §4.0 for rationale.
+#
+# This file is consumed by scripts/run_cohort_reduced.sh, which iterates
+# over the (backbone, seq_len) matrix and invokes scripts/run_experiment.py
+# with overrides for each cell.
+
+base_config: configs/default.yaml
+seed: 42
+output_root: outputs/cohort_reduced
+
+# ── Length × n_kv_pairs schedule ──────────────────────────────────────
+# K = T / 4 by literature convention (RWKV-7 §7.3 ratio).
+length_sweep:
+  - { seq_len: 64,  n_kv_pairs: 16 }
+  - { seq_len: 256, n_kv_pairs: 64 }
+
+# ── Backbones ─────────────────────────────────────────────────────────
+backbones:
+  - transformer_causal       # softmax causal reference
+  - rwkv6                    # RWKV-6 baseline (diagonal decay)
+  - rwkv6_lucid              # + LUCID key decorrelation (novel test)
+  - rwkv6_delta              # + Delta Rule (literature-predicted MQAR booster)
+  - rwkv6_lucid_delta        # + both
+  - mamba                    # Mamba baseline
+  - mamba2                   # Mamba-2 baseline
+  - transformer              # bidirectional sanity (must saturate)

@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Data cache (large, regenerable from seed + config)
+data/mqar/
+data/state_tracking/
+data/cache/
+
+# Binary model weights — regenerable from git_sha + config
+*.pt
+*.bin
+*.safetensors
+
+# torch.compile Inductor cache — run-local
+.inductor_cache/
+**/.inductor_cache/
+
+# venv
+.venv/
+
+# Everything else under outputs/ IS committed to git:
+#   - results.json, history.csv, metrics.jsonl, train.log.gz
+#   - plots/*.png, config.yaml, cli_args.txt, git_sha.txt
+#   - _index.csv, _plots/*.png
+# The binary *.pt rule above keeps checkpoints out.

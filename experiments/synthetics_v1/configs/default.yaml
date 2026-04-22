@@ -1,0 +1,52 @@
+# synthetics_v1 — anchor MQAR config
+#
+# Fields here override the SyntheticsConfig dataclass defaults.
+# CLI flags in scripts/run_experiment.py override these.
+
+task: mqar
+
+# ── Task ──────────────────────────────────────────────────────────────
+vocab_size: 8192
+key_vocab_size: 4096
+value_vocab_size: 4096
+seq_len: 256                  # T
+n_kv_pairs: 64                # K (≈ T/4 by literature convention)
+n_queries: null               # null → equal to n_kv_pairs
+
+# ── Data pipeline ─────────────────────────────────────────────────────
+train_examples_per_epoch: 50000
+eval_examples: 3000
+batch_size: 64
+num_workers: 2
+
+# ── Model (matches formal_v1 7M / 6L / d=256 envelope) ───────────────
+backbone: transformer_causal
+d_model: 256
+n_layers: 6
+n_heads: 4
+head_size: 64
+dropout: 0.1
+
+# Mamba family — matches formal_v1 defaults
+mamba_d_state: 16
+mamba_d_conv: 4
+mamba_expand: 2
+mamba2_d_state: 64
+mamba2_headdim: 64
+mamba2_ngroups: 1
+mamba2_chunk_size: 64
+
+# ── Training ──────────────────────────────────────────────────────────
+max_steps: 30000
+eval_every_steps: 1000
+log_every_steps: 100
+early_stop_threshold: 0.99
+early_stop_patience_evals: 5
+lr: 3.0e-4
+weight_decay: 0.01
+warmup_steps: 1000
+grad_clip: 5.0
+seed: 42
+
+compile_encoder: false
+device: cuda
