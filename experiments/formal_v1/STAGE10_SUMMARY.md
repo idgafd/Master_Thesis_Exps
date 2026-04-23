@@ -549,6 +549,56 @@ multi-dilation extends it productively when gradient-reachable;
 earlier claims about multi-dilation being a null axis were an
 init-trap artifact."
 
+## 10. Stage 11 LUCID sweep (axis-2) — P7 / P8 / P9 / P10 (2026-04-23)
+
+Priority-1 sweep per `STAGE11_AGENT_QUEUE.md` §Priority 1. Tests
+LUCID preconditioner (axis-2) cross-architecture and as a
+composition partner with multidil_v2 (axis-1) and RSE (axis-1-sub).
+
+| Run | Architecture | Dev CER | Test CER | Notes |
+|---|---|---:|---:|---|
+| **P7 LUCID × multidil_v2** | RWKV-6 | 0.0929 | **0.0921** | **New causal RWKV-6 ceiling.** Δ vs CB-1 v2 (0.0961): −0.0040 (~3σ). MARGINAL per bands (0.0929 > 0.090 BREAK threshold). First genuine cross-axis composition on v2 baseline. |
+| P8 LUCID × RSE × multidil_v2 | RWKV-6 | 0.0958 | 0.0969 | Triple composition **underperforms P7 by ~3σ**. RSE's transition-side contribution is absorbed by LUCID's preconditioner once LUCID is active. |
+| P9 LUCID alone | LA | 0.2080 | 0.2057 | MARGINAL (−0.0144 vs vanilla LA). **Far below pre-registered 0.15–0.18 prediction** — LUCID alone on LA is much weaker than RSE alone (0.1422) or multidil_v2 alone (0.1700). |
+| P10 LUCID × multidil_v2 | LA | 0.1744 | 0.1718 | TIED with P3 LA+multidil_v2 (0.1700) within σ. **Cross-axis composition null on LA.** |
+
+**Key thesis findings from the LUCID sweep:**
+
+1. **P7 is the new single-run causal RWKV-6 ceiling at test 0.0921.**
+   LUCID × multidil_v2 is the best two-axis composition found on the
+   spine; first time axis-2 × axis-1 composes productively.
+
+2. **Axis-2 transfer is asymmetric across architectures.** On RWKV-6,
+   LUCID gave a clean ~0.008 test CER improvement on top of multidil_v2
+   (P7 vs P1 v2: 0.1000 → 0.0921). On LA, LUCID gave nearly nothing on
+   top of multidil_v2 (P10 vs P3: 0.1700 → 0.1718, tied). This is the
+   OPPOSITE pattern from axis-1 transfer (where LA had the biggest
+   absolute gain) and from RSE transfer (where LA had the biggest gain
+   and Mamba-2 had null). **LUCID's preconditioner benefits
+   architectures with rich internal state (RWKV-6's per-channel decay)
+   more than architectures with minimal state (LA's pure accumulator).**
+
+3. **RSE and LUCID saturate together on RWKV-6.** P8 triple composition
+   is *slightly worse* than P7 double composition. Both LUCID and RSE
+   operate on the transition dynamics; once one is active, the other
+   doesn't add.
+
+4. **LA's mechanism-specific preferences are now clearly differentiated:**
+   LA + multidil_v2: dev 0.174 (−0.050).
+   LA + RSE + viscosity: dev 0.143 (−0.081).
+   LA + LUCID: dev 0.208 (−0.015).
+   The RSE > multidil > LUCID ordering on LA is the opposite of what a
+   "LA benefits most from everything" model would predict. Mechanism
+   identity matters, not just architecture deficit magnitude.
+
+**Stage 11.3b (log-linear on LA) remains the cleanest untested
+axis-4 candidate**, and Priority 2 (cross-architecture CB-1 v2
+equivalents on Mamba-2 and LA = P11/P12) is the next queued slot
+now that the LUCID sweep has closed. Mamba-2 LUCID feasibility check
+flagged as structurally-incompatible: pure-SSD Mamba-2 has no explicit
+attention matrix to precondition; see `EXPRESSIVITY_AXES.md §Axis 2`
+for the reasoning.
+
 ---
 
 *Result log: `RESULTS.md`. Per-run output directories:

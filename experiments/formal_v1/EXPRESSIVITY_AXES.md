@@ -316,6 +316,46 @@ decorrelation, so LUCID's overlap with axis 5 is redundant there.
 Separates "axis-2 mechanism" from "specific algorithmic choice" in
 the thesis discussion.
 
+**LUCID cross-architecture transfer — results (2026-04-23).**
+The Priority-1 LUCID sweep (P7/P8/P9/P10 per STAGE11_AGENT_QUEUE.md)
+is now complete:
+
+| Composition | Architecture | Test CER | vs reference | Notes |
+|---|---|---:|---:|---|
+| **LUCID × multidil_v2 (P7)** | RWKV-6 | **0.0921** | −0.0040 vs CB-1 v2 (0.0961) | **New causal RWKV-6 ceiling.** First productive cross-axis composition (axis-2 × axis-1). |
+| LUCID × RSE × multidil_v2 (P8) | RWKV-6 | 0.0969 | +0.0048 vs P7 (worse) | Triple composition saturates. RSE's transition-side contribution absorbed by LUCID once active. |
+| LUCID alone (P9) | LA | 0.2057 | −0.0144 vs LA vanilla | Well below pre-registered 0.15–0.18 prediction. LUCID alone is weakest of the three transferred mechanisms on LA. |
+| LUCID × multidil_v2 (P10) | LA | 0.1718 | +0.0018 vs P3 LA+multidil_v2 (0.1700) | **TIED within σ.** Cross-axis composition null on LA — opposite pattern from RWKV-6. |
+
+**Axis-2 cross-architecture transfer is ASYMMETRIC**:
+- On RWKV-6, LUCID composes productively with multidil_v2 (P7 new ceiling).
+- On LA, LUCID alone barely helps and doesn't compose with multidil_v2.
+- Reverse from axis-1 (multidil_v2), where LA had the biggest gain.
+
+This sharpens the thesis claim: mechanism identity matters, not just
+architecture deficit size. LUCID's preconditioner benefits architectures
+with rich internal state structure (RWKV-6's per-channel decay diversity)
+more than architectures with minimal state (LA's pure accumulator).
+The natural-home argument for LUCID on LA (explicit attention matrix
+implies direct preconditioner applicability) is falsified by this
+result — LA's attention matrix is not poorly conditioned in a way LUCID
+fixes productively.
+
+**Mamba-2 LUCID — skipped (architectural incompatibility).** Per
+STAGE11_AGENT_QUEUE.md §Mamba-2 LUCID feasibility check: Mamba-2's SSD
+scan does NOT materialise an explicit attention matrix of the form
+`Y = A V` that LUCID's `Y = P^{-1} A V` preconditioner would apply to.
+The state update
+$h_t = dA_t \odot h_{t-1} + dB_t \otimes x_t, \quad y_t = C_t^\top h_t$
+has an implicit attention matrix (structured, lower-triangular, exponentially
+decaying) defined by the scan, not an explicitly materialised tensor.
+Porting LUCID to Mamba-2 would require either (a) materialising the
+implicit attention (defeats the efficiency of the SSD scan) or (b)
+applying a different preconditioner to the input $x$ or state $h$ —
+a Mamba-2-specific adaptation that wouldn't match LUCID's theoretical
+formulation. Skipped as structurally incompatible; documented for
+methodological completeness.
+
 ### Axis 3 — State-tracking (TC⁰ → NC¹)
 
 | Paper | Mechanism (short) | ASR result | Thesis verdict |

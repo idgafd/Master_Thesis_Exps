@@ -95,6 +95,8 @@ class CausalLinearAttentionLayer(nn.Module):
         multidil_dilations: tuple = (1, 2, 4, 8),
         use_convshift_sym: bool = False,
         convshift_sym_kernel: int = 3,
+        use_lucid: bool = False,
+        lucid_chunk_size: int = 64,
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
@@ -157,6 +159,18 @@ class CausalLinearAttentionLayer(nn.Module):
                 d_model=d_model, kernel_size=convshift_sym_kernel,
             )
 
+        # P9 — LUCID preconditioner applied to values before they enter the
+        # causal accumulator.  Uses the same `_apply_lucid_recurrent`
+        # implementation as RWKV-6; decorrelates V against K's chunk-local
+        # Gram matrix so that the running sum accumulates less-correlated
+        # content.  Natural home for LUCID given LA's explicit attention
+        # structure.  Zero-regression: tau zero-init ⇒ P ≈ I ⇒ v' ≈ v to
+        # within clamp + regulariser precision.
+        self.use_lucid = use_lucid
+        self.lucid_chunk_size = lucid_chunk_size
+        if use_lucid:
+            self.lucid_temperature = nn.Parameter(torch.zeros(n_heads))
+
     # ----------------------------------------------------------------------
     # Parallel (cumsum) path — training + chunked inference with state carry
     # ----------------------------------------------------------------------
@@ -181,6 +195,19 @@ class CausalLinearAttentionLayer(nn.Module):
 
         phi_q = phi_elu1(q)
         phi_k = phi_elu1(k)
+
+        # Stage 11 P9 — LUCID preconditioner on values (before accumulation).
+        # Uses raw K (not phi(K)) for the Gram matrix, matching the paper's
+        # formulation and RWKV-6's implementation.  With lucid_temperature = 0
+        # at init, P reduces to the unit-diagonal identity-ish within clamp
+        # precision, leaving v nearly unchanged (zero-regression within
+        # regulariser tolerance).
+        if self.use_lucid:
+            from src.models.rwkv6_time_mix import _apply_lucid_recurrent
+            temp = F.softplus(self.lucid_temperature)
+            v = _apply_lucid_recurrent(
+                k, v, temp, chunk_size=self.lucid_chunk_size,
+            )
 
         if key_padding_mask is not None:
             keep = (~key_padding_mask).to(phi_k.dtype).view(B, 1, T, 1)
@@ -318,6 +345,8 @@ class CausalLinearAttentionEncoder(nn.Module):
         multidil_dilations: tuple = (1, 2, 4, 8),
         use_convshift_sym: bool = False,
         convshift_sym_kernel: int = 3,
+        use_lucid: bool = False,
+        lucid_chunk_size: int = 64,
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -340,6 +369,8 @@ class CausalLinearAttentionEncoder(nn.Module):
                 multidil_dilations=multidil_dilations,
                 use_convshift_sym=use_convshift_sym,
                 convshift_sym_kernel=convshift_sym_kernel,
+                use_lucid=use_lucid,
+                lucid_chunk_size=lucid_chunk_size,
             )
             for _ in range(n_layers)
         ])

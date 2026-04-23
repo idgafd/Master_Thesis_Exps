@@ -44,19 +44,31 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "linear_attn_convshift_multidil_symmetric",
         "linear_attn_convshift_multidil_symmetric_v2",
     }
+    # P9 / P10 — LUCID on LA.  `linear_attn_lucid` is the axis-2 cross-arch
+    # transfer (LUCID alone on LA).  `linear_attn_lucid_convshift_multidil_symmetric_v2`
+    # is the conditional P10 (LUCID × multidil_v2 on LA).
+    _la_lucid_backbones = {
+        "linear_attn_lucid",
+        "linear_attn_lucid_convshift_multidil_symmetric_v2",
+    }
     if backbone in (
         "linear_attn_causal",
         "linear_attn_convshift_symmetric",
-    ) or backbone in _la_multidil_backbones:
+    ) or backbone in _la_multidil_backbones or backbone in _la_lucid_backbones:
         from src.models.linear_attn_causal import CausalLinearAttentionEncoder
+        use_multidil = (
+            backbone in _la_multidil_backbones
+            or backbone == "linear_attn_lucid_convshift_multidil_symmetric_v2"
+        )
         return CausalLinearAttentionEncoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
             n_heads=cfg.n_heads,
             ffn_dim=cfg.ffn_dim,
             dropout=cfg.dropout,
-            use_multidil_sym=(backbone in _la_multidil_backbones),
+            use_multidil_sym=use_multidil,
             use_convshift_sym=(backbone == "linear_attn_convshift_symmetric"),
+            use_lucid=(backbone in _la_lucid_backbones),
         )
 
     # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
@@ -298,6 +310,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_rse_convshift_multidil_symmetric_v2": "recurrent",
         "rwkv6_convshift_multidil_symmetric_gated_v2": "recurrent",
         "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2": "recurrent",
+        # Stage 11 P7 + P8 — LUCID × multidil_v2 composition (P7 MARGINAL+
+        # triggered P8 per STAGE11_AGENT_QUEUE decision tree):
+        "rwkv6_lucid_convshift_multidil_symmetric_v2": "recurrent",
+        "rwkv6_lucid_rse_convshift_multidil_symmetric_v2": "recurrent",
         # CB-1 — Composition of RSE (Stage 3 transition-side) × multidil_sym
         # (Stage 10.3-sym input-side). Tests whether input-side RF expansion
         # and transition-side rotation are orthogonal gains over `convshift_trap`.
