@@ -1167,21 +1167,33 @@ $B = 10, T = 1200$ mels on RTX PRO 6000.
 | `rwkv6_orthogonal` (rank-1 Cayley) | B | 10.5 | 0.1518 (ep 15) | — | — | ≈ 7 M + 200 K | halted / in-progress | **REGRESSION-track** — tracks above T2 at matched ep; cross-experiment invariant holds at operator-family level |
 | `rwkv6_pom_vlift` (thin) | D (polynomial) | 10.6 | **0.1254** | **0.1253** | 0.3746 | ≈ 7 M + 198 K | 30 | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift function class saturated across parametrisations |
 | `rwkv6_loglinear_rse_strong_viscosity` | A × B | 10.7 | — | — | — | — | — | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open |
-| `rwkv6_rse_convshift_multidil_symmetric` (CB-1) | A × B composition | CB-1 | **0.1169** | **0.1156** | 0.3500 | ≈ 7 M + 93 K | 30 | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied; H-orth falsified, temporal mechanisms share a ceiling on RWKV-6 |
-| `rwkv6_convshift_multidil_symmetric_wide4` (CB-2a) | A (within-axis RF extension) | CB-2 | — | — | — | ≈ 7 M + 23 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,4,8,16\}$, RF ±16 ≈ 320 ms (phrase scale). Tests whether ±8 is RF ceiling. See §6 CB-2 spec. |
-| `rwkv6_convshift_multidil_symmetric_dense` (CB-2b) | A (within-axis dilation density) | CB-2 | — | — | — | ≈ 7 M + 28 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,3,4,6,8\}$, RF ±8 (same as sym) but denser short-scale. Tests whether $\{2,4,8\}$ aliasing is an issue. |
-| `rwkv6_convshift_multidil_symmetric_gated` (CB-3) | A dense-per-token | CB-3 | **0.1167** | **0.1157** | 0.3456 | ≈ 7 M + 0.5 K | 30 | **PLATEAU** — content-conditional α_d ties fixed α_d |
-| `rwkv6_frontend_v2` (lean 413 K + matched 1.94 M) | frontend redesign | CB-5 | non-converging | — | — | ≈ 6.2 M / 7.7 M | aborted | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; fresh-init frontend unstable at this scale |
-| `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` (CB-7) | A × D composition | CB-7 | **0.1159** | **0.1150** | 0.3456 | ≈ 7 M + 60 K | 30 | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym |
+| `rwkv6_lucid` | **axis 2** (key-correlation decorrelation preconditioner) | pre-Stage-10 / draft-phase on formal_v1 | — | **0.1216** | — | ≈ 7 M + 24 K | 30 | **MARGINAL — previously overlooked.** −0.0047 vs vanilla 0.1263 (~3σ). `outputs/lucid_exp03_rwkv6_lucid_seed42/`. First measured axis-2 contribution on our spine. Differential from Delta-rule T1 null (0.1258) within same axis. Hypothesis: LUCID has axis-5 normalization overlap. See EXPRESSIVITY_AXES.md §Axis 2. |
+| `rwkv6_rse_convshift_multidil_symmetric` (CB-1 broken-init) | A × B composition | CB-1 | **0.1169** | **0.1156** | 0.3500 | ≈ 7 M + 93 K | 30 | **Originally PLATEAU — SUPERSEDED by CB-1 v2** (commit `e9f6d10`). Broken-init multidil tied broken-init CB-1; the null was mechanism-suppressed artefact. |
+| **`rwkv6_convshift_multidil_symmetric_v2`** (P1 v2) | **A (input-side, fixed init)** | **10.3-sym v2** | **0.1013** | **0.1000** | **0.3010** | ≈ 7 M + 18 K | 30 | **✅ BREAK vs broken-init (~10σ).** Multi-dilation actually engages — α₂ > α₁ at L1-5, α₈ at L5 = 1.23. Paper 7 replicates. Commit `3af846d`. |
+| **`rwkv6_rse_convshift_multidil_symmetric_v2`** (CB-1 v2 / P4) | **A × B composition (fixed init)** | **CB-1 v2** | **0.0973** | **0.0961** | **0.2874** | ≈ 7 M + 93 K | 30 | **✅ BREAK — first sub-0.10 causal RWKV-6 result.** RSE × multidil compose orthogonally within axis 1. H-orth *supported*; CB-1 broken null retracted. Commit `e9f6d10`. |
+| `rwkv6_convshift_multidil_symmetric_wide4` (CB-2a) | A (within-axis RF extension) | CB-2 | — | — | — | ≈ 7 M + 23 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,4,8,16\}$, RF ±16 ≈ 320 ms (phrase scale). Reopened post-v2: α₈ at L5 = 1.23 indicates non-trivial engagement. |
+| `rwkv6_convshift_multidil_symmetric_dense` (CB-2b) | A (within-axis dilation density) | CB-2 | — | — | — | ≈ 7 M + 28 K | 30 (planned) | **⏳ PENDING** — dilations $\{1,2,3,4,6,8\}$, RF ±8 (same as sym) but denser short-scale. |
+| `rwkv6_convshift_multidil_symmetric_gated` (CB-3 broken-init) | A dense-per-token | CB-3 | **0.1167** | **0.1157** | 0.3456 | ≈ 7 M + 0.5 K | 30 | **PLATEAU** on broken-init; tied broken-init multidil. |
+| **`rwkv6_convshift_multidil_symmetric_gated_v2`** (CB-3 v2 / P5) | A dense-per-token (fixed init) | **CB-3 v2** | **0.1150** | **0.1136** | 0.3433 | ≈ 7 M + 0.5 K | 30 | **❌ REGRESSION vs CB-1 v2 (+0.0175 test).** Content-conditional gating on top of working multidil disrupts the learned per-layer α pattern. **First measured destructive composition.** Commit `848c3fb`. |
+| `rwkv6_frontend_v2` (lean 413 K + matched 1.94 M) | frontend redesign | CB-5 | non-converging | — | — | ≈ 6.2 M / 7.7 M | aborted | **Did not converge** — SiLU on final conv → asymmetric truncated distribution. |
+| `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` (CB-7 broken-init) | A × D composition | CB-7 | **0.1159** | **0.1150** | 0.3456 | ≈ 7 M + 60 K | 30 | **PLATEAU** on broken-init; tied broken-init multidil. |
+| **`rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2`** (CB-7 v2 / P6) | A × D composition (fixed init) | **CB-7 v2** | **0.0989** | **0.0988** | 0.2942 | ≈ 7 M + 60 K | 30 | **MARGINAL — tied CB-1 v2 within ~2σ.** Kronecker (axis 5) absorbed on top of working multidil (axis 1); cross-axis composition doesn't add over within-axis CB-1 v2. Commit `848c3fb`. |
 
-**Stage 10 synthesis** — see [STAGE10_SUMMARY.md](STAGE10_SUMMARY.md).
-One productive win (`multidil_sym`). Cross-experiment invariant
-extended across mechanism families (A×B, A-dense, A×D) and base
-mechanisms. Real bottlenecks identified (input-side RF, transition
-Lie group, rotation budget + viscosity); non-bottlenecks closed
-(quadratic lifts, per-token state non-linearity, dense per-token
-transition freedom, structural multi-scale readout on RWKV-6,
-content-conditional RF, temporal × temporal composition).
+**Stage 10 synthesis — revised 2026-04-23** — see
+[STAGE10_SUMMARY.md](STAGE10_SUMMARY.md). Four productive wins on
+RWKV-6 causal after the init-trap fix:
+- `multidil_sym` (Stage 10.3-sym broken-init): 0.1153 — single-dil +
+  per-layer scalar effective mechanism
+- **P1 v2** (`multidil_sym_v2`): **0.1013** — real multi-dilation
+- **CB-1 v2** (RSE × multidil v2): **0.0961** — first sub-0.10 causal
+- `rwkv6_lucid` (axis-2 preconditioner, overlooked): 0.1216 — axis-2
+  signal on ASR
+
+Real bottlenecks identified (input-side RF, transition Lie group,
+rotation budget + viscosity, key-correlation decorrelation);
+non-bottlenecks closed (quadratic lifts, per-token state non-linearity,
+dense per-token transition freedom via delta-rule T1, structural
+multi-scale readout on RWKV-6, content-conditional RF via CB-3/P5).
 
 ### 9.3 Stage 11 — causal architecture transfer (in progress)
 

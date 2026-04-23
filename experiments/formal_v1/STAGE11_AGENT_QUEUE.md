@@ -1,192 +1,171 @@
 # Stage 11 Agent — Next-Experiment Queue
 
-**Audience:** the Stage-11 agent on this instance (the one that ran
-11.0, 11.1, 11.2, 11.5). You have both GPUs free now. Another agent
-on a separate instance completed P1 v2 + P4 v2 (init-fix + CB-1 v2);
-their work is already committed to main at `3af846d` and `e9f6d10`.
-**Do not run P1 or P4 again — they are done.**
+**Audience:** the Stage-11 agent on this instance. Both GPUs are free now.
+**Last updated 2026-04-23 after commits `3af846d`, `e9f6d10`, `848c3fb`.**
 
-**Current state (2026-04-23):**
-- Init fix for `MultiDilationDWConvShift` is in `src/models/mechanisms/conv_shift.py`. Verify by reading the `__init__` — α_{d>1} should init to 0.01 and non-main branches should have `nn.init.normal_(std=0.01)`.
-- New causal RWKV-6 ceiling: dev **0.0973 / test 0.0961** (CB-1 v2). See `STAGE10_PLAN.md` §9.2.
-- Priority order driven by `SHAPING_THE_THESIS.md` §Priority order (updated 2026-04-23).
-- MQAR / axis-2 work is on a separate track — **not your scope**.
+**Current state:**
+- **Init fix** for `MultiDilationDWConvShift` is in `src/models/mechanisms/conv_shift.py` (Option-B). `_v2` dispatch is wired for RWKV-6, Mamba-2, and LA. Unit tests passing.
+- **RWKV-6 ceiling:** CB-1 v2 at dev **0.0973 / test 0.0961** (RSE × multidil_v2).
+- **Mamba-2 single-mechanism leader:** P2 v2 at test **0.0967** (Mamba-2 + multidil_v2). Within σ of CB-1 v2.
+- **Axis-2 gap identified:** `rwkv6_lucid` at test **0.1216** (previously overlooked in `outputs/lucid_exp03_rwkv6_lucid_seed42/`) — measurable axis-2 signal on ASR, differential from Delta-rule null. See `EXPRESSIVITY_AXES.md` §Axis 2.
+- **Priority order driven by `SHAPING_THE_THESIS.md` §Priority order.**
+- **MQAR / axis-2-benchmark work is on a separate track — not your scope.**
 
 **Binding discipline** (carry-over from Stage-10):
-- All new fixed-init reruns use the `_v2` suffix in backbone name and output directory. Do not overwrite any existing directory.
-- `diagnostics.json` is mandatory for each run per `STAGE10_PLAN.md` §7.5. Log α_d per layer per epoch at minimum; mechanism-specific probes listed below.
-- Matched-epoch 15 halt criterion fires if dev CER is ≥ +0.006 behind the stage-specific primary reference.
-- Seed 42, 30 ep, canonical LibriSpeech clean-100 spine unless noted.
+- `_v2` suffix for every fixed-init rerun; never overwrite an existing output directory.
+- `diagnostics.json` is mandatory per `STAGE10_PLAN.md` §7.5. Log α_d per layer per epoch + mechanism-specific probes listed below each experiment.
+- Matched-epoch 15 halt criterion: ≥ +0.006 behind stage-specific primary reference → halt.
+- Seed 42, 30 ep, canonical LibriSpeech clean-100 spine.
 
 ---
 
-## Priority 1 — P5 and P6 parallel on 2 GPUs (~1.5 h wallclock)
+## ✅ COMPLETED (earlier sessions)
 
-Close the v2 composition matrix on RWKV-6. Both runs use the fixed-init
-`MultiDilationDWConvShift` (already in `conv_shift.py`); no new code
-changes in the mechanism file.
+- **Priority 1 (original)** — P5 (CB-3 v2) + P6 (CB-7 v2): done, commit `848c3fb`.
+  - P5 landed dev 0.1150 / test 0.1136 — **REGRESSION**; gating hurts on top of working multidil.
+  - P6 landed dev 0.0989 / test 0.0988 — **MARGINAL**; axis-5 absorbed on top of axis-1.
+- **Priority 2 (original)** — P2 (Mamba-2 multidil_v2) + P3 (LA multidil_v2): done, commit `848c3fb`.
+  - P2 test 0.0967 — Mamba-2 single-backbone leader.
+  - P3 test 0.1700 — largest absolute multidil gain (cross-arch differential confirmed).
+- **P1 v2, P4 v2** (RWKV-6 multidil_v2, CB-1 v2): done on a separate instance, commits `3af846d` + `e9f6d10`.
 
-### P5 — `rwkv6_convshift_multidil_symmetric_gated_v2` (CB-3 v2)
-
-- **Backbone:** `rwkv6_convshift_multidil_symmetric_gated_v2`
-- **Output dir:** `outputs/rwkv6_convshift_multidil_symmetric_gated_v2_seed42/`
-- **Launch on:** GPU 0 (or whichever is free first)
-- **Runtime:** ~1.5 h
-- **Substring-dispatch requirement:** the substring `gated` must continue to trigger the content-conditional softmax-α path (existing in broken-init CB-3). Verify by reading `encoder.py` / `rwkv6_time_mix.py` for the `gated_alpha` branch.
-
-**What it tests:** content-conditional softmax-α (from CB-3) on top of *working* multi-dilation. CB-3 broken-init tied multidil_sym within σ; the gate had nothing to gate because d>1 branches were inert. With fixed init, the gate has four real branches to mix. Two outcomes:
-- Gate learns to shift α toward specific (layer, token) dilation preferences → content-conditional RF is an axis beyond static α_d.
-- Gate stays near uniform / matches the fixed α_d pattern of P1 v2 → content-conditional RF adds nothing; static α_d is sufficient.
-
-**Mandatory diagnostics in `diagnostics.json`:**
-- α_d per layer at epochs {5, 10, 15, 20, 25, 30}
-- Gate output distribution per layer (mean + percentiles) at ep 15 and 30
-- Per-token α variance — does the gate produce materially different α at different tokens?
-
-**Decision rule:**
-- **BREAK** (dev < 0.0960): gated α is a genuinely productive sub-axis; content-conditional RF selection matters.
-- **MARGINAL** (dev 0.0960–0.1010): within σ of P1 v2 0.1013; gate adds marginal value, confirm with second seed.
-- **TIED** (dev 0.1010–0.1030): content-conditional α adds nothing beyond static multi-dilation; close the sub-axis.
-- **REGRESSION** (dev > 0.1030): gate destabilises training relative to P1 v2; investigate.
-
-### P6 — `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2` (CB-7 v2)
-
-- **Backbone:** `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2`
-- **Output dir:** `outputs/rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2_seed42/`
-- **Launch on:** GPU 1
-- **Runtime:** ~1.5 h
-- **Substring-dispatch requirement:** `qtail_lowrank_all` triggers the Kronecker feature-side lift (Stage 6 mechanism).
-
-**What it tests:** cross-axis composition of channel-side Kronecker (axis 5, mild Stage-6 ~1σ gain) × working multi-dilation (axis 1, P1 v2 at 0.1013). CB-7 broken-init tied multidil_sym at 0.1159. With fixed multidil, CB-7 v2 tests whether axis-5 and axis-1 compose orthogonally or remain independent.
-
-**Pre-registered prediction:** the two axes are structurally orthogonal (position-wise temporal mixing × channel-wise quadratic), so additive composition is plausible. Expected dev CER band: 0.0955–0.1005, with BREAK possible.
-
-**Mandatory diagnostics:**
-- α_d per layer at {5, 10, 15, 20, 25, 30}
-- qtail branch magnitude (Kronecker contribution norm) per layer at ep 15, 30
-- Effective rank of Kronecker feature lift via SVD of `qtail_W` at ep 30
-
-**Decision rule:**
-- **BREAK** (dev < 0.0960): axis-1 × axis-5 composition works. Strong evidence for cross-axis additivity; thesis-paper-worthy.
-- **MARGINAL** (dev 0.0960–0.1010): tied P1 v2; qtail adds within σ; multi-seed gate.
-- **TIED** (dev 0.1010–0.1030): qtail adds nothing on top of working multidil; axis-5 contribution absorbed.
-- **REGRESSION** (> 0.1030): destructive composition; investigate.
-
-### After P5 + P6 finish
-
-Decision tree:
-- If both land ≤ P1 v2 (≤ 0.1013): the broken-init CB-sprint "invariant extension" narrative is fully retracted. Compositions on top of working multidil produce further gain. Flag for coordinated rewrite of `STAGE10_SUMMARY.md` §3 and §4.
-- If both tie P1 v2 within σ: CB-1 v2 was the *only* productive composition; gated α and Kronecker don't compound further. Update composition-candidates interpretation.
-- If one BREAKs and one doesn't: the axis-pair structure of CB-1 (axis 1 × axis 1 sub-axes) and CB-7 (axis 1 × axis 5) differentiate; the result guides Stage 12 LION composition queue.
-
-**Commit + push after P5, P6 finish.** Two new entries in `STAGE10_PLAN.md §9.2` table; brief caveat in `STAGE10_SUMMARY.md` §3; update `SHAPING_THE_THESIS.md` §Priority order to mark P5/P6 complete.
+Results surfaced in `STAGE10_PLAN.md §9.2` and `STAGE10_SUMMARY.md`.
 
 ---
 
-## Priority 2 — Dispatch wiring + P2/P3 cross-architecture v2 transfer (~2 h wallclock, +30–60 min engineering)
+## Priority 1 — LUCID cross-architecture sweep + LUCID × multidil composition (~6 h serial / ~3 h parallel on 2 GPUs)
 
-Current state: only `rwkv6_*_v2` backbones dispatch to the fixed-init
-`MultiDilationDWConvShift`. Mamba-2 and LA paths have their own
-convshift wiring (existing broken-init runs `mamba2_convshift_multidil_symmetric`
-and `linear_attn_convshift_multidil_symmetric`). You need to wire the
-`_v2` substring into those architectures' dispatch paths too.
+Open the previously-overlooked axis-2 track. `rwkv6_lucid` (already on
+disk at `outputs/lucid_exp03_rwkv6_lucid_seed42/`, test CER 0.1216)
+shows **measurable axis-2 signal on ASR** — −0.0047 vs vanilla RWKV-6,
+which directly differs from the Delta-rule T1 null on the same axis.
+The gap suggests LUCID may partially overlap axis 5 (content-adaptive
+decorrelation / normalization). Three experiments close the axis-2
+track cross-architecture and test its composition with axis 1.
 
-### Engineering step — wire `_v2` into Mamba-2 and LA dispatch (30–60 min)
+**Dispatch status:** `lucid` substring is already recognised in
+`encoder.py` (lines ~357, 560 — verify). Existing backbones
+`rwkv6_lucid`, `lion_lucid`, `lion_lucid_chunked`, `rwkv6_lucid_delta`,
+`rwkv6_lucid_sr` are already wired. For LA, check whether the substring
+triggers on the LA path too; if not, add minimal dispatch (same as the
+multidil_v2 dispatch pattern for Mamba-2 / LA).
 
-In `src/models/encoder.py` (or wherever the dispatch logic lives):
+### P7 — `rwkv6_lucid_convshift_multidil_symmetric_v2` (LUCID × multidil_v2, axis-2 × axis-1 composition)
 
-1. Register new backbone names in `mode_map` (or equivalent):
-   ```python
-   "mamba2_convshift_multidil_symmetric_v2": "recurrent",
-   "linear_attn_convshift_multidil_symmetric_v2": "causal",
-   ```
-2. Substring dispatch for `_v2` → fixed-init mode. Check whether the
-   fix-agent already added a config flag (e.g., `conv_shift_multidil_fixed_init`).
-   If yes, propagate the flag into the Mamba-2 and LA module
-   instantiations. If no, simply check the `_v2` substring in the
-   architecture-specific convshift wiring (Mamba-2's `mamba.conv1d.alpha`
-   path, LA's `premix.alpha` path) and pass `fixed_init=True`.
-3. Write a unit test (mirror of `test_multidil_init_gradient_flow_symmetric`
-   in `tests/test_mechanisms.py`) that exercises Mamba-2 and LA `_v2`
-   paths for gradient flow through the d>1 branches. This must pass
-   before training launches.
-
-Keep the change minimal: the `MultiDilationDWConvShift` class itself
-is already fixed. You're only adding dispatch paths on two new
-architectures.
-
-### P2 — `mamba2_convshift_multidil_symmetric_v2`
-
-- **Backbone:** `mamba2_convshift_multidil_symmetric_v2`
-- **Output dir:** `outputs/mamba2_convshift_multidil_symmetric_v2_seed42/`
-- **Launch:** as soon as dispatch wiring is verified and test passes
+- **Backbone:** `rwkv6_lucid_convshift_multidil_symmetric_v2`
+  - Triggers: `lucid` + `convshift` + `multidil` + `symmetric` + `_v2`
+  - If the existing substring dispatcher doesn't compose these, add a single substring-check — all three mechanism flags are already independently recognised.
+- **Output dir:** `outputs/rwkv6_lucid_convshift_multidil_symmetric_v2_seed42/`
+- **GPU:** 0 (run first)
 - **Runtime:** ~1.5 h
 
-**What it tests:** whether multi-dilation actually engages on Mamba-2
-when the gradient trap is fixed. Broken-init Mamba-2 multidil
-(`mamba2_convshift_multidil_symmetric` at dev 0.1079) tied the
-single-dilation control (`mamba2_convshift_symmetric` at 0.1074) —
-confirming the broken-init multidil on Mamba-2 was effectively
-single-dilation. **The open question:** does multi-dilation actually
-help on Mamba-2, or does Mamba-2's native short DWConv substitute
-for what wider dilations would add?
+**What it tests — the highest-EV composition remaining.** CB-1 v2 at
+0.0961 was axis-1 × axis-1 (RSE × multidil, both axis 1 in our
+placement). This is the first **genuine cross-axis composition** on the
+v2 baseline: axis-2 (LUCID) × axis-1 (multidil). LUCID alone adds
+~0.005 on RWKV-6; multidil_v2 alone adds ~0.026. If they compose
+additively, predicted dev ~0.070-0.085 (large BREAK). If they compose
+partially (LUCID's axis-5 overlap redundant on top of working
+multidil), predicted dev ~0.095-0.100 (tied P1 v2 / below).
 
-**Pre-registered prediction:** gain smaller than on RWKV-6 because
-Mamba-2's built-in short DWConv already covers the d=1 scale.
-Expected dev: 0.093–0.100 range. If the gain matches P1 v2's
-magnitude (~0.014), the differential-transfer prediction weakens.
-If the gain is substantially smaller (~0.005), the
-architecture-deficit-proportional prediction holds.
+**Pre-registered decision rule:**
+- **BREAK** (dev < 0.090): axis-2 × axis-1 compose orthogonally and strongly. Paper-worthy cross-axis claim.
+- **MARGINAL** (dev 0.090 – 0.100): composition adds on top of P1 v2 but axis-2 contribution partly redundant. Still thesis-positive.
+- **TIED** (dev 0.100 – 0.108): LUCID's axis-5 overlap absorbs its contribution on top of working multidil. Axis-2 matters only when axis-1 is not already maxed out.
+- **REGRESSION** (dev > 0.108): destructive composition; investigate preconditioner interaction with depth-graded α_d.
+
+**Decision for the composition if LUCID alone helps on LA (P9 below):**
+if P9 shows LUCID gain on LA, queue a LA LUCID × multidil_v2 after P7
+(P10 below) — predicted largest cross-arch cross-axis composition gain.
 
 **Mandatory diagnostics:**
-- α_d per layer at {5, 10, 15, 20, 25, 30}
-- Mamba-2 native DWConv weight statistics at ep 30 — do they change
-  when the external multi-dilation is active?
-- Δt selective-gate distribution — does multi-dilation interact with
-  Mamba-2's selective decay?
+- α_d per layer per epoch (standard multidil probe)
+- LUCID preconditioner statistics per layer at ep 15, 30:
+  - $\tau$ temperature value per head
+  - $\|P - I\|_F$ / $\|I\|_F$ per layer (how far from identity)
+  - Condition number of $P$ at ep 30
+- LUCID-multidil interaction: does α_d differ between P1 v2 (no LUCID) and P7 (with LUCID)?
 
-### P3 — `linear_attn_convshift_multidil_symmetric_v2`
+### P8 — `rwkv6_lucid_rse_convshift_multidil_symmetric_v2` (LUCID × RSE × multidil_v2, three-mechanism composition) — CONDITIONAL
 
-- **Backbone:** `linear_attn_convshift_multidil_symmetric_v2`
-- **Output dir:** `outputs/linear_attn_convshift_multidil_symmetric_v2_seed42/`
-- **Launch:** in parallel with P2 on the other GPU
+- **Launch only if P7 lands MARGINAL or BREAK** (dev ≤ 0.100). Otherwise skip.
+- **Backbone:** `rwkv6_lucid_rse_convshift_multidil_symmetric_v2`
+- **Output dir:** `outputs/rwkv6_lucid_rse_convshift_multidil_symmetric_v2_seed42/`
+- **Runtime:** ~1.5 h
+- **Tests:** whether LUCID adds to CB-1 v2 (0.0961) — stacking axis-1-sub-axis + axis-1-sub-axis + axis-2 in one backbone. If P7 already lands below P1 v2, this tests whether RSE also contributes on top.
+
+### P9 — `linear_attn_lucid` (cross-architecture axis-2 transfer)
+
+- **Backbone:** `linear_attn_lucid`
+  - LA has explicit attention (parallel Katharopoulos form), which is LUCID's natural home.
+  - If substring dispatch doesn't cover the LA path: add one line in `encoder.py` mode_map + verify `lucid` flag propagates to the LA module instantiation (pattern as multidil_v2 dispatch for LA).
+- **Output dir:** `outputs/linear_attn_lucid_seed42/`
+- **GPU:** 1 (parallel with P7)
 - **Runtime:** ~1.5 h
 
-**What it tests:** whether multi-dilation transfers cleanly to LA
-(no native local-bias path at all) with the init fix applied. Broken-init
-LA multidil at 0.1978 was massive improvement over LA vanilla (0.2235),
-entirely driven by the d=1 single-dilation component. If multi-dilation
-engages on LA too, the gain should be substantially larger than on
-RWKV-6 (since LA has the most structural room for local-bias
-restoration).
-
-**Pre-registered prediction:** largest absolute multi-dilation gain of
-the three architectures. Expected dev: 0.16–0.19 range (vs 0.1978
-broken-init, vs vanilla LA 0.2235). If the improvement is ~0.03 or
-more, the axis-1 cross-architecture transfer claim is empirically
-validated at its sharpest.
+**What it tests:** does LUCID transfer to LA? LA has explicit attention
+matrix $A = \phi(Q) \phi(K)^\top$; LUCID's preconditioner directly
+applies. LA has no native decorrelation in the accumulator (unlike
+Mamba-2's Δt which doesn't substitute for decorrelation specifically),
+so LUCID's gain should be substantial. Pre-registered prediction: gain
+comparable to or larger than RSE+viscosity on LA (−0.078 at 11.2b);
+final dev likely in 0.15-0.18 range.
 
 **Mandatory diagnostics:**
-- α_d per layer at {5, 10, 15, 20, 25, 30}
-- LA running-sum normaliser Z_t stability — does ConvShift pre-mixing
-  affect the L1 denominator convergence?
+- LUCID τ per head + $\|P - I\|_F$ per layer at ep 15, 30
+- LA-specific: does LUCID preconditioner stabilise LA's L1 denominator?
+  (The 11.5c LA init-confound suggests LA's attention matrix is
+  poorly-conditioned by default; LUCID should help precisely there.)
 
-### After P2 + P3 finish
+### P10 — `linear_attn_lucid_convshift_multidil_symmetric_v2` (LA LUCID × multidil_v2) — CONDITIONAL
 
-Commit + push. Two rows added to `STAGE10_PLAN.md §9.3` master matrix.
-Brief caveat in `STAGE10_SUMMARY.md §8` (Stage 11.1 reinterpretation)
-noting the cross-architecture v2 transfer results. Update
-`SHAPING_THE_THESIS.md §Priority order` to mark priority 2 complete.
+- **Launch only if P9 lands MARGINAL or BREAK (meaningful gain over LA vanilla 0.2201).**
+- **Backbone:** `linear_attn_lucid_convshift_multidil_symmetric_v2`
+- **Output dir:** `outputs/linear_attn_lucid_convshift_multidil_symmetric_v2_seed42/`
+- **Runtime:** ~1.5 h
+- **Tests:** cross-architecture cross-axis composition. LA is the most mechanism-hungry architecture (biggest deficit on both axes); the composition should therefore give the largest absolute gain. LA + RSE+viscosity alone: 0.1422. LA + multidil_v2 alone: 0.1700. LA + LUCID: expected 0.15-0.18. Three-way composition predicted: 0.11-0.14 range.
 
-**Decision tree:**
-- If P2 and P3 gain ≈ P1 v2 gain across all architectures: architecture-
-  independent axis-1 mechanism. Simpler thesis framing.
-- If gain ordering LA > Mamba-2 > RWKV-6 matches the pre-registered
-  differential prediction: confirms axis-deficit-proportional transfer
-  *with working multi-dilation*, strengthening both the cross-architecture
-  claim AND the axis-decomposition framework.
-- If any architecture shows near-zero gain: that architecture's native
-  structure substitutes for multi-dilation; informative null.
+### Mamba-2 LUCID — feasibility check first (DO NOT launch blind)
+
+Mamba-2's SSM path does NOT have an explicit attention matrix that
+LUCID's $P^{-1} A V$ form directly applies to. Before attempting a run:
+
+1. Read `src/models/mamba2_block.py` and `mamba2_encoder.py` to identify whether there's an analogue of the attention-output path where LUCID's preconditioner would fit.
+2. If yes and the port is ≤30 min engineering: queue `mamba2_lucid` as P11 on the Mamba-2 spine.
+3. If structurally not applicable: document the incompatibility in a brief note in `EXPRESSIVITY_AXES.md §Axis 2` ("LUCID does not apply to pure-SSM architectures because there is no explicit attention matrix to precondition"), and skip.
+
+This is genuinely an open question — don't force a square-peg port. Flag the result either way.
+
+### Joint decision after P7 + P9 finish
+
+- **P7 BREAK + P9 BREAK:** axis-2 transfers and composes across architectures. Major thesis finding. Queue P8 + P10.
+- **P7 MARGINAL + P9 BREAK:** LUCID is genuinely axis-2-primary (works on LA where it's the only mechanism) but has limited within-RWKV-6 composition value. Still informative. Queue P10.
+- **P7 TIED + P9 BREAK:** LUCID's axis-2 contribution on RWKV-6 overlaps axis-5 (redundant with multidil's structural gains); on LA its pure-axis-2 effect is clean. Queue P10 but skip P8.
+- **P7 REGRESSION:** destructive composition on RWKV-6. Skip P10; investigate.
+
+Commit + push after P7 + P9 both finish. Add four rows to `STAGE10_PLAN.md §9.2` or §9.3 (appropriate subsection) — RWKV-6 lucid× composition + LA lucid alone + LA lucid×composition + any conditional follow-ups.
+
+---
+
+## Priority 2 — Cross-architecture CB-1 v2 equivalents on Mamba-2 + LA (~3 h parallel on 2 GPUs, +15 min engineering)
+
+Tests whether CB-1 v2's within-axis-1 composition (RSE × multidil_v2, which gave 0.0961 on RWKV-6) transfers to other architectures.
+
+### P11 — `mamba2_rse_convshift_multidil_symmetric_v2`
+
+- **Prediction:** likely minimal additional gain over P2 v2 (Mamba-2 multidil_v2 at 0.0967). RSE alone on Mamba-2 was null (11.2a). Composition of (null mechanism) × (working mechanism) may stay tied the working one.
+- **Still worth running** because: (a) confirms that Mamba-2 RSE is null regardless of composition partner, (b) provides cross-architecture CB-1-matrix completion, (c) single-seed at our spine cost is low.
+- Output dir: `outputs/mamba2_rse_convshift_multidil_symmetric_v2_seed42/`
+- Runtime: ~1.5 h
+
+### P12 — `linear_attn_rse_convshift_multidil_symmetric_v2`
+
+- **Prediction:** large gain. LA + RSE (11.2b): −0.078 gain. LA + multidil_v2 (P3): −0.050 gain. Composition plausibly stacks partially: expected dev 0.115-0.140 range, potentially **below vanilla RWKV-6 (0.1263)** which would be a strong cross-architecture claim.
+- Output dir: `outputs/linear_attn_rse_convshift_multidil_symmetric_v2_seed42/`
+- Runtime: ~1.5 h
+- Mandatory diagnostics: RSE θ mobility per head per layer + multidil α_d + LA running-sum Z stability.
+
+**Launch as serial pair (P11 then P12) or parallel if compute allows.** After both finish: commit + push; update `STAGE10_PLAN.md §9.3` with two new rows.
 
 ---
 
@@ -268,38 +247,33 @@ priorities 1–3 complete.
 
 ## Don't-do list
 
-- **Don't re-run P1 or P4.** They're done, committed at `3af846d`
-  and `e9f6d10`.
-- **Don't modify `src/models/mechanisms/conv_shift.py`.** The init
-  fix is already in. Read it to understand, don't edit.
-- **Don't touch `outputs/rwkv6_convshift_multidil_symmetric_v2_seed42/`
-  or `outputs/rwkv6_rse_convshift_multidil_symmetric_v2_seed42/`.**
-  Those are the other instance's committed results.
-- **Don't run MQAR or any synthetic benchmark** until Priorities 1–4
-  close. Another agent handles axis 2.
-- **Don't overwrite existing broken-init result directories.** Use
-  `_v2` naming for all fixed-init reruns.
-- **Don't skip `diagnostics.json`.** The Stage-10 procedural gap
-  (no mechanism probes logged) must not repeat. Extract α_d values
-  at minimum; log to `diagnostics.json` via the existing probe
-  infrastructure.
+- **Don't re-run any experiment in the ✅ COMPLETED list** (P1 v2, P4 v2, P5 v2, P6 v2, P2 v2, P3 v2, 11.0/11.1/11.2/11.5). They're done, committed at `3af846d`, `e9f6d10`, `848c3fb`.
+- **Don't modify `src/models/mechanisms/conv_shift.py`.** The init fix is in. Read to understand, don't edit.
+- **Don't touch any committed `_v2` output directory.** They're on disk and on main.
+- **Don't run MQAR or any axis-2/axis-3 synthetic benchmark.** Another agent handles those tracks.
+- **Don't overwrite existing broken-init result directories.** Use `_v2` / explicit suffix naming for all new reruns.
+- **Don't skip `diagnostics.json`.** α_d per layer + mechanism-specific probes per experiment spec. The Stage-10 procedural gap (no mechanism probes logged) must not repeat.
+- **Don't force LUCID into Mamba-2** if the SSM path has no attention-matrix analog. Document the incompatibility and skip rather than port poorly.
 
 ---
 
 ## Workflow summary
 
-1. **Now:** Launch P5 on GPU 0, P6 on GPU 1 in parallel. ~1.5 h wallclock.
-2. **+1.5 h:** Check results; commit with `_v2` rows added to `STAGE10_PLAN.md §9.2` and a brief caveat in `STAGE10_SUMMARY.md §3`. Push.
-3. **+1.5 h:** Engineering — wire `_v2` dispatch for Mamba-2 and LA (~30–60 min). Write unit tests. Verify gradient flow.
-4. **+2.5 h:** Launch P2 on GPU 0, P3 on GPU 1 in parallel. ~1.5 h wallclock.
-5. **+4 h:** Commit P2/P3 results. Push.
-6. **Then:** CB-2 wide4 + dense (priority 3), 11.5c retest (priority 4).
-7. **At end of all priorities 1–4:** coordinated doc revision — update `SHAPING_THE_THESIS.md`, `STAGE10_SUMMARY.md`, `EXPRESSIVITY_AXES.md` to reflect the full v2 matrix. Then push the thesis framework up to $S_3$-benchmark-ready state.
+1. **Now:** Launch **P7** (RWKV-6 LUCID × multidil_v2) on GPU 0 + **P9** (LA LUCID) on GPU 1 in parallel. ~1.5 h wallclock.
+2. **+1.5 h:** Check results; commit with matrix rows added to `STAGE10_PLAN.md §9.2` / §9.3 and a brief note in `STAGE10_SUMMARY.md` / `EXPRESSIVITY_AXES.md §Axis 2`. Push.
+3. **+1.5 h:** Conditional on P7/P9 outcomes (decision tree above):
+   - If P7 BREAK/MARGINAL: launch **P8** (LUCID × RSE × multidil_v2 triple composition) on GPU 0.
+   - If P9 BREAK/MARGINAL: launch **P10** (LA LUCID × multidil_v2 cross-axis on LA) on GPU 1.
+4. **+3 h:** Feasibility-check Mamba-2 LUCID (~15 min). If feasible, queue as **P11** on next free GPU; if not, document incompatibility.
+5. **+4–5 h:** Launch **P11 / P12** (Priority 2 — cross-architecture CB-1 v2 equivalents on Mamba-2 and LA).
+6. **+6–7 h:** CB-2 wide4 + dense (Priority 3) on RWKV-6 v2.
+7. **+8 h:** 11.5c LA identity-init retest (Priority 4).
+8. **At end:** coordinated doc revision — update `SHAPING_THE_THESIS.md`, `STAGE10_SUMMARY.md`, `EXPRESSIVITY_AXES.md` to reflect the full v2 matrix including LUCID axis. Push thesis-framework state up to $S_3$-benchmark-ready.
 
-Total wallclock from start to end of priorities 1–4: **~7–8 h** on
+Total wallclock from start to end of priorities 1–4: **~8–10 h** on
 two GPUs. All single-seed.
 
-Any blocker, missing infrastructure, or ambiguous result — escalate
-by documenting the state in the run's `diagnostics.json` plus a
-terminal `train.log` tail, and pause before proceeding. Do not force
-through unclear results.
+Any blocker, missing infrastructure, or ambiguous result — escalate by
+documenting the state in the run's `diagnostics.json` plus a terminal
+`train.log` tail, and pause before proceeding. Do not force through
+unclear results.

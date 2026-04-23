@@ -65,41 +65,48 @@ Each axis answers an objection the other two cannot.
 
 ## Priority order for remaining GPU-h and writing effort
 
-**Updated 2026-04-23** post-v2 init-fix results. Previous priority
-order re-ranked given:
-- P1 v2 (`multidil_sym_v2`) landed dev 0.1013 / test 0.1000, 10σ gain.
-- CB-1 v2 landed dev 0.0973 / test 0.0961 — **first sub-0.10 causal
-  RWKV-6**. RSE × multidil compose orthogonally within axis 1.
-- Stage 11.0a LA baseline complete (0.2235 test vanilla). Stage 11.2
-  RSE transfer complete on both Mamba-2 (ambiguous-engaged, predicted)
-  and LA (BREAK, −0.081 vs vanilla, predicted).
-- Stage 11.5 single-dil controls complete (11.5a/b tie broken-init
-  multidil within σ; 11.5c LA is init-confounded).
+**Updated 2026-04-23** after the full v2 matrix landed (commits `3af846d`, `e9f6d10`, `848c3fb`). Previous priority order re-ranked given:
+
+**Completed since last update:**
+- P1 v2 (`multidil_sym_v2`): dev 0.1013 / test 0.1000, 10σ gain on RWKV-6.
+- CB-1 v2 (`rse_convshift × multidil_v2`): dev 0.0973 / test 0.0961 — **first sub-0.10 causal RWKV-6**.
+- P2 v2 (Mamba-2 multidil_v2): test **0.0967** — single-backbone leader.
+- P3 v2 (LA multidil_v2): test 0.1700, largest absolute multidil gain.
+- P5 v2 (CB-3 v2, gated × multidil_v2): test 0.1136 — REGRESSION (first measured destructive composition).
+- P6 v2 (CB-7 v2, qtail × multidil_v2): test 0.0988 — tied CB-1 v2.
+- Stage 11.2 (RSE × viscosity transfers): Mamba-2 null (predicted), LA BREAK −0.081 (predicted).
+- **Architecture-deficit-proportional transfer confirmed on two axes** (multidil and RSE): LA > RWKV-6 > Mamba-2.
+
+**Surfaced from draft-phase archive:**
+- `rwkv6_lucid` (`outputs/lucid_exp03_rwkv6_lucid_seed42/`): test 0.1216 on LibriSpeech formal_v1. **Axis-2 signal on ASR** — 3σ below vanilla; differential from Delta-rule T1 null. Previously unlabelled in the master matrix.
 
 Ordered by marginal contribution to the thesis, post-update:
 
-1. **P5 + P6 on RWKV-6 — close the v2 composition matrix.**
-   ~1.5 h each (parallel on 2 GPUs → 1.5 h wallclock).
-   - **P5** `rwkv6_convshift_multidil_symmetric_gated_v2` (CB-3 v2) —
-     tests whether content-conditional α matters now that multidil
-     actually engages.
-   - **P6** `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2`
-     (CB-7 v2) — tests whether channel-side Kronecker composes
-     orthogonally with working multidil (mirror of CB-1 v2 on a
-     different axis-pair).
-   - Either result is thesis-relevant: confirms or revises the scope
-     of the broken-init Group-3 invariant extension (see
-     `STAGE10_SUMMARY.md` §3 revision note).
+1. **LUCID cross-architecture sweep + LUCID × multidil_v2 composition.**
+   Highest-EV remaining batch. Tests the previously-overlooked axis-2
+   mechanism across architectures and its cross-axis composition with
+   multidil_v2. ~6 h serial / ~3 h parallel on 2 GPUs. Key runs:
+   - **P7** `rwkv6_lucid_convshift_multidil_symmetric_v2` —
+     axis-2 × axis-1 composition on RWKV-6. If BREAK, paper-grade
+     cross-axis claim.
+   - **P8** `rwkv6_lucid_rse_convshift_multidil_symmetric_v2`
+     (conditional on P7) — three-mechanism stack.
+   - **P9** `linear_attn_lucid` — LA has explicit attention, LUCID's
+     natural home. Predicted large gain.
+   - **P10** `linear_attn_lucid_convshift_multidil_symmetric_v2`
+     (conditional on P9) — LA cross-axis composition.
+   - **P11** `mamba2_lucid` — feasibility-check-first; Mamba-2's SSM
+     path may not have an attention-matrix analog.
+   - Full spec in `STAGE11_AGENT_QUEUE.md` Priority 1.
 
-2. **Dispatch wiring for multidil_v2 on Mamba-2 / LA** +
-   **P2, P3 cross-architecture v2 transfer.** Engineering ~30–60 min;
-   runs ~1.5 h each (parallel on 2 GPUs → ~2 h wallclock total).
-   - **P2** `mamba2_convshift_multidil_symmetric_v2`,
-     **P3** `linear_attn_convshift_multidil_symmetric_v2`.
-   - Pre-registered prediction (updated post-v2): LA > Mamba-2 > RWKV-6
-     in absolute multidil gain. Tests whether the differential-transfer
-     pattern from broken-init (confirmed for single-dil + scalar) also
-     holds with working multi-dilation.
+2. **Cross-architecture CB-1 v2 equivalents on Mamba-2 + LA.**
+   Closes the within-axis-1 composition matrix cross-architecture.
+   ~3 h parallel + 15 min engineering.
+   - **P12** `mamba2_rse_convshift_multidil_symmetric_v2` — likely
+     minimal gain (Mamba-2 RSE alone is null).
+   - **P13** `linear_attn_rse_convshift_multidil_symmetric_v2` —
+     plausibly sub-vanilla-RWKV-6 (i.e., < 0.1263) given LA's
+     architectural deficit.
 
 3. **CB-2 wide4 / dense (axis 1, now reopened).**
    ~3 GPU-h. Multi-dilation's widest existing branch (d = 8, α = 1.23
@@ -107,33 +114,30 @@ Ordered by marginal contribution to the thesis, post-update:
    clean prior now. See `STAGE10_PLAN.md` §6 CB-2.
 
 4. **11.5c LA identity-init retest.** ~50 min. Resolves the Stage 11.5
-   LA init-mismatch confound — tells us whether α_1 scalar itself helps
-   on LA or whether 11.5c's regression was entirely init-driven.
+   LA init-mismatch confound.
 
 5. **$S_3$ permutation composition benchmark (axis 3).** Highest
-   novelty per unit effort remaining. ~50-line synthetic-data generator
-   + reuse of existing training harness. Directly tests the formal
-   NC¹ vs PNC¹ separation proved in arXiv:2603.01959 + arXiv:2603.03612.
-   See `EXPRESSIVITY_AXES.md` §Task suite implication / §Two task
-   options.
+   novelty per unit effort remaining on the synthetic-benchmark side.
+   Directly tests the formal NC¹ vs PNC¹ separation (arXiv:2603.01959
+   + arXiv:2603.03612). See `EXPRESSIVITY_AXES.md` §Task suite
+   implication / §Two task options.
 
-6. **MQAR benchmark completion (axis 2).** Already in progress on
-   a separate track. Produces the sharpest mechanism-task differential
-   in the thesis: DeltaNet / DeltaProduct predicted major win;
-   multidil_sym / RSE predicted flat. The prediction shape *is* the
-   axis-2 claim.
+6. **MQAR benchmark completion (axis 2).** Already in progress on a
+   separate track. Produces the sharpest mechanism-task differential
+   in the thesis: DeltaNet / DeltaProduct / **LUCID** predicted major
+   win; multidil_sym / RSE predicted flat.
 
-7. **Dyck-$k$ (axis 3 secondary).** Only after $S_3$ completes. Adds
-   robustness evidence; doesn't carry load-bearing claim.
+7. **Dyck-$k$ (axis 3 secondary).** Only after $S_3$ completes.
 
-8. **Stage 12 LION-chapter — multidil_v2 and CB-1 v2 on LION.**
-   Direct transfer of the two post-tonight wins to bidirectional form.
-   Load-bearing for the causal-vs-bidirectional gap analysis in the
-   synthesis chapter. 80-ep reference runs.
+8. **Stage 12 LION-chapter — multidil_v2 + CB-1 v2 + LUCID on LION.**
+   Direct transfer of the three post-tonight RWKV-6 wins to
+   bidirectional parallel form. 80-ep reference runs. Load-bearing
+   for the causal-vs-bidirectional gap analysis in the synthesis
+   chapter.
 
 ### One-pass rationale for the re-ordering
 
-Priorities 1 and 2 close the v2 matrix cleanly (RWKV-6 compositions + cross-architecture transfer), which is the most direct next-step yield from the init-fix result. Priority 3 (CB-2) and Priority 4 (11.5c LA) tie up the single remaining Stage-10 item and the one confound in Stage 11, respectively. Priority 5 ($S_3$) remains the highest-novelty axis-3 test. Priorities 6–8 are the axis-2, axis-3-secondary, and bidirectional-extension chapters. **Stage 11.0a (LA baseline) is removed from the priority list — it has landed.**
+Priority 1 (LUCID sweep + composition) is the highest-EV remaining work because it opens the previously-overlooked axis-2 track with mechanism-architecture-axis cross evidence. The `rwkv6_lucid` result at 0.1216 showed axis-2 signal on ASR that Delta rule (T1 null) missed; running LUCID on LA and composing with multidil_v2 fills the two biggest gaps in the axis-2 row of the transfer matrix and tests cross-axis composition for the first time on the v2 baseline. Priority 2 (cross-arch CB-1 v2) finishes the within-axis-1 composition matrix. Priority 3 (CB-2) and Priority 4 (11.5c LA) tie up remaining Stage-10 and Stage-11 single-axis items. Priorities 5–8 are the axis-2, axis-3, and bidirectional-extension chapters.
 
 ---
 

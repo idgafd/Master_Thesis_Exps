@@ -301,9 +301,20 @@ the linear-time-RNN literature at this scale.
 
 | Paper | Mechanism (short) | ASR result | Thesis verdict |
 |---|---|---|---|
+| **LUCID preconditioner** (draft-phase + formal_v1 `rwkv6_lucid`) | Output preconditioner $P = I + \exp(\tau K^\top K)$; solve $P Y = A V$ for decorrelated output. Content-dependent via key-correlation matrix; temperature $\tau$ learnable per head. | **MARGINAL on ASR — test 0.1216** via `outputs/lucid_exp03_rwkv6_lucid_seed42/` (formal_v1 LibriSpeech, previously unlabelled in master matrix), **−0.0047 vs vanilla 0.1263 (~3σ)**. `lion_lucid` on LibriSpeech: test 0.1074, tied LION vanilla 0.1074 within σ. | **Different algorithmic approach from Delta rule to the same axis** — key-correlation-aware decorrelation instead of rank-1 erasure. Unlike Delta rule (null on ASR), LUCID shows measurable axis-2 signal even on ASR. Possible interpretation: LUCID overlaps axis 5 (normalization) in addition to axis 2. LION's parallel full T×T attention already does decorrelation implicitly → LUCID null on LION, supporting this reading. **High-value untested compositions: LUCID × multidil_v2 (axis-2 × axis-1) and LUCID on LA (cross-architecture axis-2).** |
 | **DeltaNet** (Yang et al. / IDSIA-EPFL Householder formulation) | Rank-1 Householder erasure $(I - \beta k k^\top)$ per token; interpreted as one gradient step on $\|v - S^\top k\|^2$ | **Null — 0.1258 tied vanilla** via Stage-8 T1 `rwkv6_delta_warmstart_fixed`. Mechanism engaged: $g_\delta \le 0.65$, $\beta$ p95 > 1, up to 24 % state-norm erased per token. | ASR at $T \le 500, d^2 = 4096$ is nowhere near state saturation; directional erasure has no task-prior alignment here. **Run on MQAR — predicted major win.** Candidate Stage-11.3 LA transfer. |
 | **DeltaProduct** (arXiv:2502.10297) | $n_h$ Householder products per token (rank-$n_h$ + diagonal); bounded operator norm; formal proof of finite-automaton simulation at sufficient $n_h$ | Not run — **predicted null on ASR** (same axis as Delta rank-1, more rank of a solution to a non-problem at our regime). | Run on MQAR and parity. Expected to dominate on both by construction. Best single candidate to split memory-capacity axis from state-tracking axis if we titrate $n_h$. |
 | **Paper 6 — CRT / NCGRU-Cayley** (arXiv:2505.00929) | Per-token Cayley orthogonal transition $(I - A)(I + A)^{-1}$ with skew-symmetric $A$ | **REGRESSION-track — 0.1518 ep 15** via Stage 10.5 `rwkv6_orthogonal` | Family-B member adjacent to Delta / DeltaProduct; dense per-token rotation without task-prior alignment. Co-axis evidence on ASR-null side. Breaks LION parallel form — excluded from Stage 12. |
+
+**Axis-2 differential summary.** Delta rule and LUCID target the same
+axis via different algorithms; they land differently on ASR (Delta null,
+LUCID marginal-positive). That differential is itself thesis-relevant:
+it suggests LUCID has a secondary axis-5 (normalization/decorrelation)
+contribution beyond its axis-2 primary. The `lion_lucid` null supports
+this — LION's parallel T×T attention already provides implicit
+decorrelation, so LUCID's overlap with axis 5 is redundant there.
+Separates "axis-2 mechanism" from "specific algorithmic choice" in
+the thesis discussion.
 
 ### Axis 3 — State-tracking (TC⁰ → NC¹)
 
