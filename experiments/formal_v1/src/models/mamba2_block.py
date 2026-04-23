@@ -38,6 +38,147 @@ from src.models.mamba2_kernels import (
 _MODES_WITH_CARRY = {"recurrent"}
 
 
+class SymmetricDWConv1d(nn.Module):
+    """Stage 11.5b — single-dilation symmetric depthwise Conv1d.
+
+    Plain ``nn.Conv1d`` with manual symmetric padding; no multi-dilation,
+    no per-layer alpha scalar.  For even kernels the padding split is
+    ``(k//2 - 1 ... actually floor(k-1 / 2), ceil(k-1 / 2))`` — left
+    receives the fewer taps.
+
+    Isolates the *symmetric-padding* effect from the multi-dilation axis
+    (which is inert due to a multiplicative-zero init trap on
+    ``MultiDilationDWConv1d``; see MULTIDIL_INIT_FIX_HANDOFF).  Output
+    length equals input length.
+    """
+
+    def __init__(
+        self,
+        channels: int,
+        kernel_size: int = 4,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+    ) -> None:
+        super().__init__()
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.conv = nn.Conv1d(
+            channels, channels, kernel_size=kernel_size,
+            padding=0, groups=channels, bias=bias, dtype=dtype,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """(B, C, N) -> (B, C, N)."""
+        pad_total = self.kernel_size - 1
+        left = pad_total // 2
+        right = pad_total - left
+        x_p = F.pad(x, (left, right))
+        return self.conv(x_p)
+
+
+class MultiDilationDWConv1d(nn.Module):
+    """Stage 11.1a — channel-first multi-dilation depthwise Conv1d drop-in
+    replacement for Mamba-2's internal xBC conv.
+
+    Per §6 Stage 11.1a spec: parallel DWConv1d branches at dilations
+    {1, 2, 4, 8}, symmetric padding per branch, per-layer learnable alpha_d
+    with alpha_1 = 1 and alpha_{2,4,8} = 0 at init.  At init the module
+    reduces to a SINGLE-DILATION k=4 SYMMETRIC DWConv on xBC — not
+    bit-exact vs vanilla Mamba-2 (which uses causal padding) because the
+    "sym" variant deliberately uses symmetric padding, matching the
+    RWKV-6 Stage 10.3-sym zero-regression contract.
+
+    Interface matches what Mamba2Block expects from ``self.conv1d``: input
+    ``(B, C, N)`` returns ``(B, C, N)`` (same length, not N+3 like vanilla
+    with padding=3 — the length difference is absorbed by the
+    ``conv_out_all[..., prefix_len : prefix_len + L]`` slice downstream,
+    which works for either output length as long as L + prefix_len covers
+    the slice range).
+    """
+
+    def __init__(
+        self,
+        channels: int,
+        kernel_size: int = 4,
+        dilations: Tuple[int, ...] = (1, 2, 4, 8),
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        fixed_init: bool = True,
+    ) -> None:
+        super().__init__()
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.dilations = tuple(int(d) for d in dilations)
+
+        self.branches = nn.ModuleList([
+            nn.Conv1d(
+                channels, channels,
+                kernel_size=kernel_size,
+                padding=0,
+                groups=channels,
+                bias=bias,
+                dtype=dtype,
+            )
+            for _ in self.dilations
+        ])
+
+        # ───────── FIXED INIT (gradient-trap safe, Option B) ─────────
+        # Pre-fix bug mirrored the MultiDilationDWConvShift trap: α_{d>1}=0
+        # AND branch_{d>1}.weight=0 gave a zero-zero product for both
+        # ∂L/∂α_d and ∂L/∂branch_d.weight → no SGD signal for any d>1
+        # branch.  Option-B fix: α_{d>1}=0.01 + branch_{d>1}.weight ~
+        # N(0, 0.01²).  Matches ``src/models/mechanisms/conv_shift.py``
+        # as of commit ``3af846d``.  The ``fixed_init=False`` toggle is
+        # kept only for bit-exact reproducibility of the original
+        # broken-init runs (11.1a ``mamba2_convshift_multidil_symmetric``,
+        # pre-v2).
+        NON_MAIN_ALPHA = 0.01 if fixed_init else 0.0
+        NON_MAIN_WEIGHT_STD = 0.01 if fixed_init else 0.0
+
+        d1 = self.dilations.index(1) if 1 in self.dilations else 0
+        alphas = torch.zeros(len(self.dilations), dtype=dtype)
+        for i, d in enumerate(self.dilations):
+            alphas[i] = 1.0 if i == d1 else NON_MAIN_ALPHA
+        self.alpha = nn.Parameter(alphas)
+
+        # Branches: main branch keeps PyTorch default Kaiming init.  For d>1,
+        # weights init small random (so ∂L/∂α_d flows when α_d is nonzero
+        # AND ∂L/∂branch_d.weight flows when α_d is nonzero).  Biases zeroed.
+        with torch.no_grad():
+            for idx, d in enumerate(self.dilations):
+                if idx == d1:
+                    continue
+                if fixed_init:
+                    self.branches[idx].weight.normal_(mean=0.0, std=NON_MAIN_WEIGHT_STD)
+                else:
+                    self.branches[idx].weight.zero_()
+                if self.branches[idx].bias is not None:
+                    self.branches[idx].bias.zero_()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """x: (B, C, N) -> (B, C, N).  Symmetric padding per branch.
+
+        For even kernel sizes the split is biased by one tap (left
+        receives floor(pad/2), right receives ceil(pad/2)) — matches
+        ``MultiDilationDWConvShift`` in ``mechanisms/conv_shift.py``.
+        """
+        out = None
+        for idx, (d, branch) in enumerate(zip(self.dilations, self.branches)):
+            pad_total = (self.kernel_size - 1) * d
+            left = pad_total // 2
+            right = pad_total - left
+            x_p = F.pad(x, (left, right))
+            y = F.conv1d(
+                x_p, branch.weight,
+                bias=branch.bias,
+                stride=1, padding=0,
+                dilation=d, groups=self.channels,
+            )
+            contrib = self.alpha[idx] * y
+            out = contrib if out is None else out + contrib
+        return out
+
+
 class Mamba2Block(nn.Module):
     """Mamba-2 block with mode dispatch.
 
@@ -69,6 +210,9 @@ class Mamba2Block(nn.Module):
         bias: bool = False,
         conv_bias: bool = True,
         dtype: torch.dtype = torch.float32,
+        use_multidil_sym: bool = False,
+        multidil_dilations: Tuple[int, ...] = (1, 2, 4, 8),
+        use_convshift_sym: bool = False,
     ):
         super().__init__()
         if mode not in {"recurrent", "lion", "lion_chunk"}:
@@ -100,15 +244,39 @@ class Mamba2Block(nn.Module):
 
         conv_dim = self.d_inner + 2 * ngroups * d_state
         self.conv_dim = conv_dim
-        self.conv1d = nn.Conv1d(
-            in_channels=conv_dim,
-            out_channels=conv_dim,
-            kernel_size=d_conv,
-            groups=conv_dim,
-            padding=d_conv - 1,
-            bias=conv_bias,
-            dtype=dtype,
-        )
+        self.use_multidil_sym = use_multidil_sym
+        self.use_convshift_sym = use_convshift_sym
+        if use_multidil_sym and use_convshift_sym:
+            raise ValueError(
+                "use_multidil_sym and use_convshift_sym are mutually exclusive"
+            )
+        if use_multidil_sym:
+            self.conv1d = MultiDilationDWConv1d(
+                channels=conv_dim,
+                kernel_size=d_conv,
+                dilations=multidil_dilations,
+                bias=conv_bias,
+                dtype=dtype,
+            )
+        elif use_convshift_sym:
+            # Stage 11.5b — single-dilation symmetric DWConv; isolates
+            # padding-direction effect from multi-dilation.
+            self.conv1d = SymmetricDWConv1d(
+                channels=conv_dim,
+                kernel_size=d_conv,
+                bias=conv_bias,
+                dtype=dtype,
+            )
+        else:
+            self.conv1d = nn.Conv1d(
+                in_channels=conv_dim,
+                out_channels=conv_dim,
+                kernel_size=d_conv,
+                groups=conv_dim,
+                padding=d_conv - 1,
+                bias=conv_bias,
+                dtype=dtype,
+            )
 
         # ── dt bias (softplus range [dt_min, dt_max]) ────────────────────
         dt = torch.exp(
@@ -278,6 +446,22 @@ class Mamba2Block(nn.Module):
         if not self.supports_carry_state:
             raise RuntimeError(
                 f"step() not supported for mode={self.mode!r}"
+            )
+        if self.use_multidil_sym:
+            # step() reads self.conv1d.weight directly, which assumes an
+            # nn.Conv1d.  Multidil uses a ModuleList of branches; single-
+            # token streaming inference for multidil would need per-branch
+            # state tracking.  Chunked eval via forward() handles state
+            # correctly through prefix concatenation, so we only disallow
+            # the single-token path here.
+            raise NotImplementedError(
+                "step() is not implemented for multidil_sym; use the "
+                "chunked forward() path for state-carry evaluation."
+            )
+        if self.use_convshift_sym:
+            raise NotImplementedError(
+                "step() is not implemented for convshift_sym; use the "
+                "chunked forward() path for state-carry evaluation."
             )
 
         B = x.size(0)

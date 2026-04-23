@@ -1,0 +1,1 @@
+--backbone mamba2_convshift_multidil_symmetric --epochs 30 --seed 42 --output-dir outputs/mamba2_convshift_multidil_symmetric_seed42

@@ -29,6 +29,50 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             dropout=cfg.dropout,
         )
 
+    # Stage 11.0a — causal Katharopoulos Linear Attention with explicit L1
+    # denominator.  Distinct from the parallel bidirectional ELU+1 layer in
+    # `blocks.py::LinearAttentionLayer` (no denominator, no causality).
+    # Stage 11.1b — same backbone + symmetric multi-dilation pre-mix before
+    # Q/K/V.  Zero-regression at init: pre-mix branch_1 is center-tap
+    # identity, alpha_{2,4,8}=0 ⇒ vanilla linear_attn_causal bit-exact.
+    # Stage 11.1b / 11.5c / P3 v2 — the LA family registered here.
+    # ``*_v2`` routes through the same LA multidil path as the pre-v2
+    # variant; the ``MultiDilationDWConvShift`` class in conv_shift.py
+    # was fixed universally (commit ``3af846d``), so the only difference
+    # is the output directory name for distinguishability.
+    _la_multidil_backbones = {
+        "linear_attn_convshift_multidil_symmetric",
+        "linear_attn_convshift_multidil_symmetric_v2",
+    }
+    if backbone in (
+        "linear_attn_causal",
+        "linear_attn_convshift_symmetric",
+    ) or backbone in _la_multidil_backbones:
+        from src.models.linear_attn_causal import CausalLinearAttentionEncoder
+        return CausalLinearAttentionEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            n_heads=cfg.n_heads,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+            use_multidil_sym=(backbone in _la_multidil_backbones),
+            use_convshift_sym=(backbone == "linear_attn_convshift_symmetric"),
+        )
+
+    # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
+    # The chunked complex scan replaces the cumsum-based LA forward;
+    # exponential decay subsumes the L1-denominator role on this path.
+    if backbone == "linear_attn_rse_strong_viscosity":
+        from src.models.linear_attn_rse import CausalLinearAttentionRSEEncoder
+        return CausalLinearAttentionRSEEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            n_heads=cfg.n_heads,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+            rse_viscosity=True,
+        )
+
     if backbone == "mamba":
         from src.models.mamba_encoder import MambaEncoder
         return MambaEncoder(
@@ -67,14 +111,32 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
 
     # ── Mamba-2 family (LION-compatible bidirectional via `mode`) ──────────
     # Naming: `mamba2` (causal), `mamba2_lion` (full bidir attention),
-    # `mamba2_lion_chunk` (chunkwise bidir, long sequences).
-    if backbone in ("mamba2", "mamba2_lion", "mamba2_lion_chunk"):
+    # `mamba2_lion_chunk` (chunkwise bidir, long sequences),
+    # `mamba2_convshift_multidil_symmetric` (Stage 11.1a — replaces the
+    # internal xBC short DWConv with parallel dilated {1,2,4,8} branches
+    # under symmetric padding, per §6 Stage 11.1a).
+    # Stage 11.5b — Mamba-2 with a single-dilation SYMMETRIC DWConv
+    # replacing the native causal Conv1d.  Isolates padding-direction
+    # effect from multi-dilation (which is inert on the existing
+    # `mamba2_convshift_multidil_symmetric` due to an init-gradient trap
+    # in MultiDilationDWConv1d).
+    # ``*_v2`` variants route through the same Mamba-2 multidil path as
+    # their pre-v2 sibling; the Option-B init fix in
+    # ``MultiDilationDWConv1d.__init__`` (mamba2_block.py) applies
+    # universally, so the ``_v2`` naming is for output-directory
+    # distinguishability relative to the pre-fix 11.1a result.
+    _mamba2_backbones = {
+        # (mode, use_multidil_sym, use_convshift_sym)
+        "mamba2": ("recurrent", False, False),
+        "mamba2_lion": ("lion", False, False),
+        "mamba2_lion_chunk": ("lion_chunk", False, False),
+        "mamba2_convshift_multidil_symmetric": ("recurrent", True, False),
+        "mamba2_convshift_multidil_symmetric_v2": ("recurrent", True, False),
+        "mamba2_convshift_symmetric": ("recurrent", False, True),
+    }
+    if backbone in _mamba2_backbones:
         from src.models.mamba2_encoder import Mamba2Encoder
-        mode_for_backbone = {
-            "mamba2": "recurrent",
-            "mamba2_lion": "lion",
-            "mamba2_lion_chunk": "lion_chunk",
-        }[backbone]
+        mode_for_backbone, use_multidil, use_convshift_sym = _mamba2_backbones[backbone]
         return Mamba2Encoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
@@ -87,6 +149,27 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             ngroups=cfg.mamba2_ngroups,
             chunk_size=cfg.mamba2_chunk_size,
             mode=mode_for_backbone,
+            use_multidil_sym=use_multidil,
+            use_convshift_sym=use_convshift_sym,
+        )
+
+    # Stage 11.2a — Mamba-2 + RSE (block-complex SSD transition) + viscosity.
+    # Per §6 Stage 11.2a: pure-PyTorch chunked complex SSD scan replaces the
+    # vanilla ssd_scan_causal; rest of the Mamba-2 stack unchanged.
+    if backbone == "mamba2_rse_strong_viscosity":
+        from src.models.mamba2_rse import Mamba2RSEEncoder
+        return Mamba2RSEEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            dropout=cfg.dropout,
+            ffn_dim=cfg.ffn_dim,
+            d_state=cfg.mamba2_d_state,
+            d_conv=cfg.mamba_d_conv,
+            headdim=cfg.mamba2_headdim,
+            expand=cfg.mamba_expand,
+            ngroups=cfg.mamba2_ngroups,
+            chunk_size=cfg.mamba2_chunk_size,
+            rse_viscosity=True,
         )
 
     # All RWKV-6 variants (rwkv6, lion, and all mechanism combinations)
@@ -114,6 +197,11 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_gen2_trap_init": "recurrent",
         "rwkv6_ab3": "recurrent",
         "rwkv6_convshift_trap": "recurrent",
+        # Stage 11.5a — plain symmetric single-dilation DWConvShift on
+        # default (zoh) discretisation; isolates padding-direction effect
+        # from multi-dilation (which is inert due to an init-gradient
+        # trap on MultiDilationDWConvShift; see MULTIDIL_INIT_FIX_HANDOFF).
+        "rwkv6_convshift_symmetric": "recurrent",
         # Stage 3 RSE variants (causal recurrent only)
         "rwkv6_rse": "recurrent",
         "rwkv6_rse_convshift": "recurrent",
@@ -203,9 +291,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # MultiDilationDWConvShift (α_{d>1}=0.01, branch_{d>1}.weight ~ N(0, 0.01)).
         # Code path is identical; the suffix is purely for output-directory
         # naming and result accounting. See MULTIDIL_INIT_FIX_HANDOFF.md.
+        # NOTE: mamba2_* and linear_attn_* _v2 variants dispatch through
+        # their own architecture-specific branches above; the entries here
+        # are RWKV-6 only.
         "rwkv6_convshift_multidil_symmetric_v2": "recurrent",
-        "mamba2_convshift_multidil_symmetric_v2": "recurrent",
-        "linear_attn_convshift_multidil_symmetric_v2": "recurrent",
         "rwkv6_rse_convshift_multidil_symmetric_v2": "recurrent",
         "rwkv6_convshift_multidil_symmetric_gated_v2": "recurrent",
         "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2": "recurrent",

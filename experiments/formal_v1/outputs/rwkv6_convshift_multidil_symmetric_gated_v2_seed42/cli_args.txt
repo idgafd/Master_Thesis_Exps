@@ -1,0 +1,1 @@
+--backbone rwkv6_convshift_multidil_symmetric_gated_v2 --epochs 30 --seed 42 --output-dir outputs/rwkv6_convshift_multidil_symmetric_gated_v2_seed42

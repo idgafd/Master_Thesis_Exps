@@ -32,7 +32,7 @@ import numpy as np
 import torch
 
 
-SNAPSHOT_EPOCHS = {1, 5, 10, 20, 40}
+SNAPSHOT_EPOCHS = {1, 5, 10, 15, 20, 30, 40}
 
 
 def _rng_state() -> dict:

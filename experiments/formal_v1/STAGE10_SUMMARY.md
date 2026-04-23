@@ -433,20 +433,72 @@ the Stage 10.3-sym headline, need partial revision:
   11.5b (`mamba2_convshift_symmetric`, pure single-dilation,
   test 0.1044) ties 11.1a multidil (test 0.1055) within σ,
   confirming that on Mamba-2 the broken-init multidil was
-  effectively single-dilation. Whether the fixed-init v2 variants
-  (`mamba2_*_v2`, `linear_attn_*_v2`) would unlock multi-dilation
-  on those architectures too — and by how much — is a new open
-  question the other-instance handoff flags for follow-up.
+  effectively single-dilation.
 
-The revised Stage-10 principle from §6 — "symmetric-padded local
-mixing at the phoneme window, not multi-scale receptive field" —
-now reads more carefully: **symmetric-padded local mixing is what
-the broken-init multidil runs were doing**; multi-scale receptive
-field IS a real additional axis when gradient-reachable, at least
-on RWKV-6. Thesis write-up should present the broken/fixed-init
-comparison as its own mini-story within chapter 2: a mechanism
-that was misattributed for weeks due to an init trap, then cleanly
-separated once the trap was diagnosed.
+### P2 + P3: cross-architecture multi-dilation v2 (2026-04-23)
+
+Both of the flagged follow-up runs are now complete:
+
+- **P2 `mamba2_convshift_multidil_symmetric_v2`**: dev 0.0982 /
+  test **0.0967** / WER 0.2926 (7.33 M total; enc 5.41 M). Δ test
+  CER vs 11.1a broken-init (0.1055): **−0.0088 (~6σ)**. Multi-
+  dilation genuinely engages on Mamba-2 with the init fix. **This
+  is the new single-backbone spine leader at 0.0967 test**,
+  overtaking RWKV-6 P1 v2 (0.1000) and within σ of CB-1 v2
+  composition (0.0961).
+- **P3 `linear_attn_convshift_multidil_symmetric_v2`**: dev 0.1741 /
+  test **0.1700** / WER 0.4854 (6.28 M total; enc 4.36 M). Δ test
+  CER vs 11.1b broken-init (0.1930): **−0.0230 (~16σ)**. Largest
+  absolute multi-dilation gain of the three architectures.
+
+**Pre-registered architecture-deficit-proportional prediction
+confirmed monotonically** across the three architectures with
+working multi-dilation:
+
+| Architecture | Broken-init test | v2 test | Δ test CER |
+|---|---:|---:|---:|
+| Mamba-2 (native DWConv, smallest deficit) | 0.1055 | 0.0967 | **−0.0088** |
+| RWKV-6 (per-channel decay diversity, middle deficit) | 0.1145 | 0.1000 | **−0.0145** |
+| LA (no local bias at all, largest deficit) | 0.1930 | 0.1700 | **−0.0230** |
+
+Ordering LA > RWKV-6 > Mamba-2 in absolute gain, matching the
+§5 Phase III pre-registered table. This is the cleanest
+architecture-deficit-proportional pattern in the Stage-11 corpus:
+each architecture's gain from the same axis-1 mechanism scales
+inversely with how much of that mechanism the architecture
+already has natively.
+
+**Revised Stage-10 principle.** Symmetric-padded local mixing and
+multi-scale receptive field are BOTH real axes: the former is what
+the broken-init runs were delivering; the latter is what the v2
+fix unlocks. Thesis chapter 2 should present this as a two-part
+discovery — the Stage-10 "win" was the first half, the v2 fix
+uncovered the second half. On RWKV-6, the single-dilation symmetric
+(11.5a, 0.1137) ablation and multidil-v2 (P1, 0.1000) differ by
+0.0137, quantifying the multi-scale-axis contribution on that
+architecture.
+
+### P5 + P6: compositions on working multi-dilation (2026-04-23)
+
+Tests whether gated-α (CB-3) or Kronecker-feature (CB-7) add on
+top of the working multidil substrate. CB-1 v2 (RSE × multidil,
+test 0.0961) is the reference.
+
+- **P5 `rwkv6_convshift_multidil_symmetric_gated_v2`**: dev 0.1150 /
+  test **0.1136** / WER 0.3427. Δ vs CB-1 v2: **+0.0175 test CER
+  → REGRESSION band**. Content-conditional gated α is a null axis
+  even with working multidil — ties broken-init CB-3 within σ.
+- **P6 `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2`**:
+  dev 0.0989 / test **0.0988** / WER 0.2935. Δ vs CB-1 v2: +0.0027
+  test CER → **MARGINAL band, tied within ~2σ**. Kronecker feature-
+  side × working multidil doesn't add orthogonally above RSE ×
+  multidil.
+
+**Composition result**: on working multidil, only axis-1 (RSE ×
+multidil_sym, via CB-1 v2 at 0.0961) adds productively. Neither
+content-conditional gating (axis-1 dense-per-token) nor Kronecker
+feature-side (axis-5) compose additively. RSE × multi-dilation
+remains the sole productive composition.
 
 ## 9. Stage 11.5 — single-dilation symmetric DWConv ablation
 

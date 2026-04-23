@@ -34,6 +34,8 @@ class Mamba2EncoderLayer(nn.Module):
         dropout: float = 0.1,
         layer_id: int = 0,
         dtype: torch.dtype = torch.float32,
+        use_multidil_sym: bool = False,
+        use_convshift_sym: bool = False,
     ):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model, dtype=dtype)
@@ -50,6 +52,8 @@ class Mamba2EncoderLayer(nn.Module):
             chunk_size=chunk_size,
             mode=mode,
             dtype=dtype,
+            use_multidil_sym=use_multidil_sym,
+            use_convshift_sym=use_convshift_sym,
         )
 
         self.ffn = nn.Sequential(
@@ -95,6 +99,8 @@ class Mamba2Encoder(nn.Module):
         chunk_size: int = 64,
         mode: str = "recurrent",
         dtype: torch.dtype = torch.float32,
+        use_multidil_sym: bool = False,
+        use_convshift_sym: bool = False,
     ):
         super().__init__()
         self.d_model = d_model
@@ -116,6 +122,8 @@ class Mamba2Encoder(nn.Module):
                 dropout=dropout,
                 layer_id=i,
                 dtype=dtype,
+                use_multidil_sym=use_multidil_sym,
+                use_convshift_sym=use_convshift_sym,
             )
             for i in range(n_layers)
         ])

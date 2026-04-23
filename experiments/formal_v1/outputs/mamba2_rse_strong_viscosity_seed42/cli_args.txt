@@ -1,0 +1,1 @@
+--backbone mamba2_rse_strong_viscosity --epochs 30 --seed 42 --output-dir outputs/mamba2_rse_strong_viscosity_seed42

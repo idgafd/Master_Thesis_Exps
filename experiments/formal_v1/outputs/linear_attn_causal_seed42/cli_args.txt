@@ -1,0 +1,1 @@
+--backbone linear_attn_causal --epochs 30 --seed 42 --output-dir outputs/linear_attn_causal_seed42
