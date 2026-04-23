@@ -17,6 +17,7 @@ K=64, σ ≈ 0.0014.
 | `rwkv6_convshift_multidil` causal (10.3) | A | 0.1229 | 0.1224 | causality penalty |
 | **`rwkv6_convshift_multidil_symmetric` (10.3-sym)** | **A** | **0.1153** | **0.1145** | **matches abs-best without RSE** |
 | **`rwkv6_convshift_multidil_symmetric_v2` (10.3-sym + init-fix)** | **A** | **0.1013** | **0.1000** | **Paper 7 multi-dilation genuinely engages; see note below** |
+| **`rwkv6_rse_convshift_multidil_symmetric_v2` (CB-1 + init-fix)** | **A × B** | **0.0973** | **0.0961** | **RSE × multidil orthogonal composition; first sub-0.10 causal RWKV-6** |
 | `rwkv6_chanmix_bypass` (10.4) | D | 0.1251 | 0.1248 | PLATEAU |
 | `rwkv6_orthogonal` (10.5, still training at ep 15) | B | 0.1518 (ep 15) | — | regression-track |
 | `rwkv6_pom_vlift` (10.6) | D | 0.1254 | 0.1253 | PLATEAU |
@@ -34,7 +35,10 @@ K=64, σ ≈ 0.0014.
 > 0.1013 / test 0.1000 (−0.0140 dev vs broken-init, ~10σ); at ep 30, α₂ exceeds
 > α₁ at every layer 1–5, α₈ at layer 5 = 1.23 — full multi-scale engagement with
 > a depth gradient. Paper 7's multi-dilation claim does replicate on RWKV-6 ASR.
-> Cross-architecture `_v2` reruns (Mamba-2, LA, CB-1/3/7) pending. See
+> Cross-architecture `_v2` reruns (Mamba-2, LA, CB-3, CB-7) pending. CB-1
+> `_v2` (above) lands at dev 0.0973 / test 0.0961 — RSE × multidil
+> compose orthogonally (multidil α-pattern preserved under RSE; CB-1 is
+> P1 −0.004 dev, broken-init CB-1 −0.020 dev ≈ 14σ). See
 > `MULTIDIL_INIT_FIX_HANDOFF.md`.
 
 ## 1. What this stage established
