@@ -7,7 +7,7 @@ RWKV-6 in this repo.  Parameter count is identical to the causal encoder.
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -36,6 +36,10 @@ class Mamba2EncoderLayer(nn.Module):
         dtype: torch.dtype = torch.float32,
         use_multidil_sym: bool = False,
         use_convshift_sym: bool = False,
+        use_lucid: bool = False,
+        lucid_key_source: str = "B",
+        use_novelty_gate: bool = False,
+        novelty_gamma_fixed: Optional[float] = None,
     ):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model, dtype=dtype)
@@ -54,6 +58,10 @@ class Mamba2EncoderLayer(nn.Module):
             dtype=dtype,
             use_multidil_sym=use_multidil_sym,
             use_convshift_sym=use_convshift_sym,
+            use_lucid=use_lucid,
+            lucid_key_source=lucid_key_source,
+            use_novelty_gate=use_novelty_gate,
+            novelty_gamma_fixed=novelty_gamma_fixed,
         )
 
         self.ffn = nn.Sequential(
@@ -101,6 +109,10 @@ class Mamba2Encoder(nn.Module):
         dtype: torch.dtype = torch.float32,
         use_multidil_sym: bool = False,
         use_convshift_sym: bool = False,
+        use_lucid: bool = False,
+        lucid_key_source: str = "B",
+        use_novelty_gate: bool = False,
+        novelty_gamma_fixed: Optional[float] = None,
     ):
         super().__init__()
         self.d_model = d_model
@@ -124,6 +136,10 @@ class Mamba2Encoder(nn.Module):
                 dtype=dtype,
                 use_multidil_sym=use_multidil_sym,
                 use_convshift_sym=use_convshift_sym,
+                use_lucid=use_lucid,
+                lucid_key_source=lucid_key_source,
+                use_novelty_gate=use_novelty_gate,
+                novelty_gamma_fixed=novelty_gamma_fixed,
             )
             for i in range(n_layers)
         ])

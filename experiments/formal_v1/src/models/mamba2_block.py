@@ -30,6 +30,7 @@ import torch.nn.functional as F
 
 from src.models.mamba2_kernels import (
     ssd_scan_causal,
+    ssd_scan_causal_novelty,
     ssd_scan_lion,
     ssd_scan_lion_chunk,
 )
@@ -213,6 +214,10 @@ class Mamba2Block(nn.Module):
         use_multidil_sym: bool = False,
         multidil_dilations: Tuple[int, ...] = (1, 2, 4, 8),
         use_convshift_sym: bool = False,
+        use_lucid: bool = False,
+        lucid_key_source: str = "B",
+        use_novelty_gate: bool = False,
+        novelty_gamma_fixed: Optional[float] = None,
     ):
         super().__init__()
         if mode not in {"recurrent", "lion", "lion_chunk"}:
@@ -298,6 +303,87 @@ class Mamba2Block(nn.Module):
         self.D = nn.Parameter(torch.ones(self.nheads, dtype=dtype))
         self.D._no_weight_decay = True
 
+        # ── LUCID preconditioner on the chunked SSD dual form ───────────
+        # Per-head temperature initialised so that softplus(raw) = 1.0
+        # exactly: raw = log(e - 1) ≈ 0.5413.  Matches the paper's unit
+        # scaling and the RWKV-6 LUCID implementation (rwkv6_time_mix.py).
+        # At tau = 1.0 with chunk_size=64 and d_state=64, off-diagonal P
+        # entries are exp(-sqrt(d_state)) ≈ exp(-8) ≈ 3e-4 → P ≈ I within
+        # fp32 noise, so X_c_precond ≈ X_c at init (~0.03% off, not 20%).
+        # Earlier zero-init bug gave softplus(0) = 0.693, which attenuated
+        # the DC component of X_c by ~20% per chunk and caused a first-epoch
+        # loss deficit — diagnosed and fixed 2026-04-23.
+        self.use_lucid = use_lucid
+        self.lucid_key_source = lucid_key_source
+        if use_lucid:
+            if mode != "recurrent":
+                raise ValueError(
+                    f"LUCID is only defined on the recurrent SSD dual form; "
+                    f"got mode={mode!r}. LION modes don't apply."
+                )
+            if lucid_key_source not in ("B", "C"):
+                raise ValueError(
+                    f"lucid_key_source must be 'B' or 'C', got "
+                    f"{lucid_key_source!r}"
+                )
+            self.lucid_temperature = nn.Parameter(
+                torch.full(
+                    (self.nheads,),
+                    math.log(math.e - 1),  # softplus(log(e-1)) = 1.0 exactly
+                    dtype=dtype,
+                )
+            )
+
+        # ── Write-novelty gate (per-chunk Σ variant) ────────────────────
+        # ω_t = 1 / (1 + γ_h / (B_t^T Σ_c^{-1} B_t + ε)).
+        #
+        # Parameterisation: γ_h = softplus(γ_raw − NOVELTY_SHIFT).
+        # Init γ_raw = 0 → γ = softplus(-5) ≈ 6.7e-3 → ω ≈ 0.993 at
+        # init (≈ 0.7% off vanilla — within the "near-identity" envelope
+        # but deliberately NOT bit-exact, to keep the gradient path
+        # trainable by Adam).  The naive γ_raw=-30 init would give
+        # bit-exact vanilla at step 0 but σ(-30) ≈ 9e-14 collapses the
+        # softplus chain-rule scale to ~1e-13 — γ_raw sees an update of
+        # ~5e-5/step through Adam's ε floor and never moves off init.
+        # Shifted parameterisation: σ(0) = 0.5 on the γ_raw side gives
+        # responsiveness comparable to lucid_temperature (τ_raw init
+        # 0.54, σ(0.54)≈0.63).  Only (H,) parameters added.
+        # Two modes:
+        #  - Trainable (novelty_gamma_fixed=None, default): γ =
+        #    softplus(γ_raw - shift) with γ_raw as parameter, init 0 →
+        #    γ ≈ 6.7e-3; SGD lifts γ during training.
+        #  - Fixed ablation (novelty_gamma_fixed=<value>): γ is a buffer,
+        #    no gradient, applied directly (no softplus).  Forces gate
+        #    into engagement regardless of SGD preference — isolates
+        #    "mechanism productive at fixed γ?" from "mechanism
+        #    reachable via training?".
+        self.use_novelty_gate = use_novelty_gate
+        self._novelty_shift = 5.0
+        self._novelty_trainable = use_novelty_gate and novelty_gamma_fixed is None
+        if use_novelty_gate:
+            if mode != "recurrent":
+                raise ValueError(
+                    f"novelty-gate is only defined on the recurrent SSD "
+                    f"dual form; got mode={mode!r}."
+                )
+            if novelty_gamma_fixed is None:
+                self.novelty_gamma_raw = nn.Parameter(
+                    torch.zeros(self.nheads, dtype=dtype)
+                )
+            else:
+                if novelty_gamma_fixed < 0:
+                    raise ValueError(
+                        f"novelty_gamma_fixed must be non-negative, got "
+                        f"{novelty_gamma_fixed}"
+                    )
+                self.register_buffer(
+                    "novelty_gamma_buf",
+                    torch.full(
+                        (self.nheads,), float(novelty_gamma_fixed),
+                        dtype=dtype,
+                    ),
+                )
+
         # ── output stack ────────────────────────────────────────────────
         # RMSNorm requires torch >= 2.4.  Caller is on torch 2.7.
         self.norm = nn.RMSNorm(self.d_inner, dtype=dtype)
@@ -319,7 +405,7 @@ class Mamba2Block(nn.Module):
             conv : (B, conv_dim, d_conv - 1)
             ssm  : (B, nheads, headdim, d_state)
         """
-        return {
+        st = {
             "conv": torch.zeros(
                 batch_size, self.conv_dim, self.d_conv - 1,
                 device=device, dtype=torch.float32,
@@ -329,6 +415,14 @@ class Mamba2Block(nn.Module):
                 device=device, dtype=torch.float32,
             ),
         }
+        if self.use_novelty_gate:
+            # Σ_0 = 0; the eps_reg · I regulariser at inversion time
+            # handles the first-chunk case (matches "no keys seen yet").
+            st["sigma"] = torch.zeros(
+                batch_size, self.nheads, self.d_state, self.d_state,
+                device=device, dtype=torch.float32,
+            )
+        return st
 
     # ------------------------------------------------------------------
     # Forward
@@ -406,12 +500,39 @@ class Mamba2Block(nn.Module):
 
         ssm_state = state.get("ssm") if state is not None else None
 
-        # Dispatch to kernel.
+        # Dispatch to kernel.  LUCID temperature passed only when enabled;
+        # ssd_scan_causal applies the chunk-local preconditioner on X_c
+        # using B-correlation before the intra/inter einsums.
+        lucid_temp = (
+            F.softplus(self.lucid_temperature) if self.use_lucid else None
+        )
+        new_sigma: Optional[torch.Tensor] = None
         if self.mode == "recurrent":
-            y_heads, new_ssm = ssd_scan_causal(
-                x_heads, dt, A_cont, B_h, C_h,
-                chunk_size=self.chunk_size, state=ssm_state,
-            )
+            if self.use_novelty_gate:
+                sigma_in = (
+                    state.get("sigma") if state is not None else None
+                )
+                if self._novelty_trainable:
+                    novelty_gamma = F.softplus(
+                        self.novelty_gamma_raw - self._novelty_shift
+                    )
+                else:
+                    novelty_gamma = self.novelty_gamma_buf
+                y_heads, new_ssm, new_sigma = ssd_scan_causal_novelty(
+                    x_heads, dt, A_cont, B_h, C_h,
+                    chunk_size=self.chunk_size, state=ssm_state,
+                    sigma_state=sigma_in,
+                    novelty_gamma=novelty_gamma,
+                    lucid_temp=lucid_temp,
+                    lucid_key_source=self.lucid_key_source,
+                )
+            else:
+                y_heads, new_ssm = ssd_scan_causal(
+                    x_heads, dt, A_cont, B_h, C_h,
+                    chunk_size=self.chunk_size, state=ssm_state,
+                    lucid_temp=lucid_temp,
+                    lucid_key_source=self.lucid_key_source,
+                )
         elif self.mode == "lion":
             y_heads = ssd_scan_lion(x_heads, dt, A_cont, B_h, C_h)
             new_ssm = None
@@ -430,6 +551,8 @@ class Mamba2Block(nn.Module):
         out = self.out_proj(y)
 
         new_state = {"conv": new_conv_state, "ssm": new_ssm}
+        if self.use_novelty_gate:
+            new_state["sigma"] = new_sigma
         return out, new_state
 
     # ------------------------------------------------------------------
@@ -461,6 +584,19 @@ class Mamba2Block(nn.Module):
         if self.use_convshift_sym:
             raise NotImplementedError(
                 "step() is not implemented for convshift_sym; use the "
+                "chunked forward() path for state-carry evaluation."
+            )
+        if self.use_lucid:
+            raise NotImplementedError(
+                "step() is not implemented for LUCID; the preconditioner "
+                "is chunk-local, and single-token streaming would need a "
+                "per-token update of the chunk-local Gram matrix.  Use "
+                "the chunked forward() path for state-carry evaluation."
+            )
+        if self.use_novelty_gate:
+            raise NotImplementedError(
+                "step() is not implemented for the novelty gate; the "
+                "running Σ is maintained at chunk granularity.  Use the "
                 "chunked forward() path for state-carry evaluation."
             )
 

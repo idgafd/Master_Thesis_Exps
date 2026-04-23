@@ -341,20 +341,70 @@ implies direct preconditioner applicability) is falsified by this
 result — LA's attention matrix is not poorly conditioned in a way LUCID
 fixes productively.
 
-**Mamba-2 LUCID — skipped (architectural incompatibility).** Per
-STAGE11_AGENT_QUEUE.md §Mamba-2 LUCID feasibility check: Mamba-2's SSD
-scan does NOT materialise an explicit attention matrix of the form
-`Y = A V` that LUCID's `Y = P^{-1} A V` preconditioner would apply to.
-The state update
-$h_t = dA_t \odot h_{t-1} + dB_t \otimes x_t, \quad y_t = C_t^\top h_t$
-has an implicit attention matrix (structured, lower-triangular, exponentially
-decaying) defined by the scan, not an explicitly materialised tensor.
-Porting LUCID to Mamba-2 would require either (a) materialising the
-implicit attention (defeats the efficiency of the SSD scan) or (b)
-applying a different preconditioner to the input $x$ or state $h$ —
-a Mamba-2-specific adaptation that wouldn't match LUCID's theoretical
-formulation. Skipped as structurally incompatible; documented for
-methodological completeness.
+**Mamba-2 LUCID — RETRACTED INCOMPATIBILITY (2026-04-23).**  An
+earlier note here claimed Mamba-2 was structurally incompatible with
+LUCID because "Mamba-2 doesn't materialise an explicit T×T attention
+matrix."  That argument was wrong at the chunk level.  Mamba-2's SSD
+dual form already materialises **chunk-local** $T_c \times T_c$
+attention ($\mathbf{C}_c \mathbf{B}_c^\top$) inside each training
+chunk — that's exactly the computational trick that makes SSD
+training fast.  LUCID's chunked formulation operates on exactly
+that granularity (the RWKV-6 implementation `_apply_lucid_recurrent`
+solves chunk-local $T_c \times T_c$ systems; it never builds full-T
+attention).  The two are at the same computational scale and shape —
+structurally compatible, not incompatible.
+
+**Adaptation, Alt-0 (B-correlation):** Within each SSD dual-form chunk,
+use $\mathbf{B}_c$ (the key analog in $\mathbf{C}_c \mathbf{B}_c^\top$)
+as the correlation source:
+
+  1. $\mathbf{B}_c^{\text{RN}} = \sqrt{d_{\text{state}}} \cdot \text{normalize}(\mathbf{B}_c, \text{dim}=-1)$
+  2. $\mathbf{G}_c = \mathbf{B}_c^{\text{RN}} (\mathbf{B}_c^{\text{RN}})^\top$, shape $T_c \times T_c$
+  3. $\mathbf{P}_c = \exp(\tau_h \cdot (\mathbf{G}_c / \sqrt{d_{\text{state}}} - \sqrt{d_{\text{state}}})) + \varepsilon \mathbf{I}$
+  4. $\tilde{\mathbf{X}}_c = \mathbf{P}_c^{-1} \mathbf{X}_c$ (one linalg.solve per chunk, per head)
+  5. Unchanged SSD scan on preconditioned $\tilde{\mathbf{X}}_c$.
+
+Implemented in `src/models/mamba2_kernels.py::_apply_lucid_mamba2_chunked`
+and wired into `ssd_scan_causal` via an optional `lucid_temp` kwarg.
+Overhead at $T_c = 64$, $d_{\text{state}} = 64$: $T_c^3 = 262$K FLOPs per
+chunk per head — negligible vs the scan.  Per-run cost ~83 ms/iter at
+B=2, T=200 (vs vanilla Mamba-2 ~37 ms), driven almost entirely by
+`torch.linalg.solve`.  New parameters: one scalar $\tau_h$ per head.
+
+Alternative formulations (state-covariance preconditioner, C-correlation,
+combined B+C correlation) are plausible but either require separate
+motivation or depart from the paper's formulation; not explored unless
+Alt-0 produces a null result.
+
+**Mamba-2 LUCID follow-ups — results (2026-04-23):**
+
+| Variant | Test CER | Δ vs vanilla mamba2 (0.1192) |
+|---|---|---|
+| `mamba2_lucid` (B-side, Alt-0) | **0.1113** | **−0.0079 (~6σ)** — productive |
+| `mamba2_lucid_c` (C-side, query-analog) | **0.1109** | **−0.0083 (~6σ)** — productive, near-identical to B |
+| `mamba2_lucid_convshift_multidil_symmetric_v2` | 0.0993 | vs multidil_v2 0.1000 — see composition entry below |
+| `mamba2_novelty_gate` (write-novelty gate, γ trainable) | 0.1186 | −0.0006 (tied) — see §Novelty gate below |
+| `mamba2_novelty_fixed_g05` (γ=0.5 fixed, buffer) | 0.1187 | −0.0005 (tied) |
+
+B vs C-side LUCID are near-identical (differ by 0.0004 test CER) →
+**decorrelating by key-similarity or by query-similarity produces the
+same ~0.008 gain on this spine**; they are not orthogonal
+decorrelators, just two algebraic descriptions of the same
+within-chunk correlation structure.
+
+**Write-novelty gate — null (H2: structurally inert).**  Attempts to
+extend LUCID's kernel machinery from value-decorrelation to per-write
+novelty scoring via $\omega_t = 1/(1 + \gamma_h/(B_t^\top\Sigma_c^{-1}B_t))$.
+Two runs spanning 50× γ range (trainable γ settled ~0.011; fixed
+γ=0.5) both tied vanilla within noise. Diagnostic evidence
+(`outputs/mamba2_novelty_*_seed42/diagnostics.json`): trained Mamba-2
+produces Mahalanobis $q^2 \sim 10^4$–$10^5$ on real tokens; for the
+gate to engage ($\omega \approx 0.9$) γ must reach $\sim 10^3$ —
+**4-5 orders of magnitude above what the softplus-shift parameterisation
+or a plausible fixed value can explore**.  Not a task-prior mismatch
+(no deficit under fixed γ=0.5) — a scale mismatch between the gate's
+free parameter and the quantity it operates on.  Details:
+`MAMBA2_NOVELTY_GATE.md §12`.
 
 ### Axis 3 — State-tracking (TC⁰ → NC¹)
 

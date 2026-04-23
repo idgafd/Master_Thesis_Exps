@@ -594,10 +594,109 @@ composition partner with multidil_v2 (axis-1) and RSE (axis-1-sub).
 **Stage 11.3b (log-linear on LA) remains the cleanest untested
 axis-4 candidate**, and Priority 2 (cross-architecture CB-1 v2
 equivalents on Mamba-2 and LA = P11/P12) is the next queued slot
-now that the LUCID sweep has closed. Mamba-2 LUCID feasibility check
-flagged as structurally-incompatible: pure-SSD Mamba-2 has no explicit
-attention matrix to precondition; see `EXPRESSIVITY_AXES.md §Axis 2`
-for the reasoning.
+now that the LUCID sweep has closed. The previous "Mamba-2 LUCID
+structural incompatibility" claim has been retracted (see §11
+below); the correct analysis and the actual Mamba-2 LUCID result
+are captured there.
+
+## 11. Stage 11 — Mamba-2 LUCID adaptation + novelty-gate null (2026-04-23)
+
+Retracts the earlier "Mamba-2 doesn't materialise explicit T×T
+attention, so LUCID cannot apply" claim (see `EXPRESSIVITY_AXES.md
+§Axis 2`). Mamba-2's SSD dual form materialises **chunk-local**
+$T_c \times T_c$ attention $\mathbf{C}_c \mathbf{B}_c^\top$ as part
+of training — exactly the granularity LUCID was designed for. The
+chunked LUCID implementation in the RWKV-6 line is structurally
+compatible without modification.
+
+### 11.1 Mamba-2 LUCID — productive
+
+| Run | Test CER | Δ vs vanilla mamba2 (0.1192) |
+|---|---:|---|
+| `mamba2_lucid` (B-correlation, Alt-0) | **0.1113** | **−0.0079 (~6σ)** |
+| `mamba2_lucid_c` (C-correlation, query-analog) | **0.1109** | **−0.0083 (~6σ)** |
+
+Both variants are productive and **near-identical** (differ by
+0.0004 test CER). B vs C-side decorrelation are not orthogonal
+axes; they are two algebraic descriptions of the same within-chunk
+correlation structure. The small edge for C-side is within single-seed noise.
+
+Initialisation note: the unit-scaled-at-init contract requires
+`τ_raw = log(e − 1)` so `softplus(τ_raw) = 1.0`. An earlier run
+initialised `τ_raw = 0` (giving `softplus(0) = 0.693` → ω ≈ 0.85
+at init); the run was restarted with the correct init.
+Regularisation `ε I` bumped from 1e-6 to 1e-4 after observing a
+singular-solve failure during chunked eval (highly similar B rows
+within a chunk on the trained model).
+
+### 11.2 Mamba-2 write-novelty gate — structurally inert (H2)
+
+Follow-up per `MAMBA2_NOVELTY_GATE.md`: extend LUCID's kernel
+machinery from value-decorrelation to per-write novelty scoring
+via $\omega_t = 1/(1 + \gamma_h / (B_t^\top \Sigma_c^{-1} B_t))$,
+with $\Sigma_c$ a running key-covariance updated once per chunk.
+
+Two-run ablation (seed 42):
+
+| Run | γ regime | Test CER | Δ vs vanilla |
+|---|---|---:|---|
+| `mamba2_novelty_gate` | trainable, `softplus(γ_raw − 5)`, γ ended ≈ 0.011 | 0.1186 | **−0.0006 (tied)** |
+| `mamba2_novelty_fixed_g05` | γ = 0.5 fixed (buffer, no grad, no softplus) | 0.1187 | **−0.0005 (tied)** |
+
+Two runs with γ differing by 50× produce test CER within 0.0001 of
+each other, both tied with vanilla. The verdict is H2 (neutral /
+structurally inert) from the pre-registered hypothesis set:
+
+- Not H1 (productive at forced engagement): fixed γ=0.5 does not
+  beat vanilla.
+- Not H3 (fights the task prior): no deficit under fixed γ=0.5.
+- H2: the mechanism is irrelevant at this probe for a concrete
+  structural reason, not a mystery.
+
+**Diagnostic evidence for the H2 reading:**
+
+Diagnostics captured at ep1/5/15/30/best (`outputs/*/diagnostics.json`).
+Trained Mamba-2 produces Mahalanobis $q^2 \in [10^4, 10^5]$ on real
+tokens across all layers. The gate formula is
+$\omega = 1/(1 + \gamma/q^2)$; for meaningful attenuation
+($\omega \le 0.9$), γ must reach $\sim 10^3$. Both runs explore γ
+in $[0.01, 0.5]$ — **4-5 orders of magnitude below engagement**.
+
+| Regime | γ | $\gamma/q^2$ at q²=3e4 | ω |
+|---|---|---|---|
+| Run 1 trainable, ep30 max | 1.1e-2 | 4e-7 | 0.9999996 |
+| Run 2 fixed | 5e-1 | 2e-5 | 0.999983 |
+| For ω = 0.9 | **3e3** | 0.11 | 0.9 |
+
+The scale mismatch is structural: `softplus(γ_raw)` with any
+realistic raw init cannot reach γ ~ 10³, and a direct-valued γ in
+the thousands is implausible as a prior. Follow-ups (log-γ
+parameterisation, normalised-q² reformulation, alternate gate
+forms) are enumerated in `MAMBA2_NOVELTY_GATE.md §12.6` but not
+launched — the thesis-framing finding is clean as-is.
+
+### 11.3 What the chapter-3 (architecture transfer) thesis claim now looks like
+
+Stage 11 axis-2 on Mamba-2 gives one productive result and one
+structural null:
+
+- **LUCID preconditioner** (chunked, B- or C-side) transfers
+  productively. Δ test CER = −0.008 on Mamba-2, same-magnitude gain
+  as on RWKV-6 (Δ = −0.0040 on top of multidil_v2). This is the
+  second architecture that benefits from LUCID; the architecture-
+  deficit-proportional pattern holds (Mamba-2's intra-chunk
+  B-correlation does not self-orthogonalise — established in the
+  diagnostic triad).
+
+- **Write-novelty gate** (LUCID's kernel machinery redeployed to
+  per-write gating) does not engage at Mamba-2's operating point.
+  **This is a scale-mismatch null, not a task-prior null** — which
+  distinguishes it from the dense-per-token-freedom cluster
+  (A1′/T1/T2/S9A/S9B) that the chapter-2 invariant describes.
+  The scale-mismatch null is a different failure mode worth
+  documenting separately in chapter 3: "structurally sound
+  extension, operationally disconnected from the architecture's
+  regime."
 
 ---
 

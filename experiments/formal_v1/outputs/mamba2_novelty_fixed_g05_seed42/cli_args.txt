@@ -1,0 +1,1 @@
+--backbone mamba2_novelty_fixed_g05 --epochs 30 --seed 42 --output-dir outputs/mamba2_novelty_fixed_g05_seed42

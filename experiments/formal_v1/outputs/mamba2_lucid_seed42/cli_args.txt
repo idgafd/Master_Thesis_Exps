@@ -1,0 +1,1 @@
+--backbone mamba2_lucid --epochs 30 --seed 42 --output-dir outputs/mamba2_lucid_seed42
