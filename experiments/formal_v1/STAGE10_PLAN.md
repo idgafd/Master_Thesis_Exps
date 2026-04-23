@@ -214,21 +214,34 @@ followed by a CB-sprint testing composition of orthogonal axes with
 | 10.5 | `rwkv6_orthogonal` (Cayley rank-1) | **REGRESSION-track** — gap to T2 grew through ep 15 (0.1518), in line with the invariant | 0.1518 (ep 15) |
 | 10.6 | `rwkv6_pom_vlift` | **PLATEAU** — ties `hadamard_n2` with 2× params; quadratic-lift family saturated | 0.1254 / 0.1253 |
 | 10.7 | `rwkv6_loglinear_rse_strong_viscosity` | **CLOSED** — gated on 10.1 ≥ MARGINAL; 10.1 landed PLATEAU, gate did not open | — |
-| CB-1 | `rwkv6_rse_convshift_multidil_symmetric` | **PLATEAU (dev) / MARGINAL (test)** — saturation-tied with multidil_sym; H-orth falsified | 0.1169 / 0.1156 |
-| **CB-2** | **`rwkv6_convshift_multidil_symmetric_wide4` / `_dense`** | **⏳ PENDING** — within-axis RF-expansion probe; the one committed-but-unexecuted Stage-10 item. Falsifiable single-axis test: is ±8 frames the RF ceiling, or does phrase-scale RF help? Full spec in §6. | — |
-| CB-3 | `rwkv6_convshift_multidil_symmetric_gated` | **PLATEAU** — content-conditional α_d ties fixed α_d within σ | 0.1167 / 0.1157 |
+| CB-1 (broken-init) | `rwkv6_rse_convshift_multidil_symmetric` | **Originally PLATEAU / H-orth-falsified** — saturation-tied with broken-init multidil_sym. **Superseded by CB-1 v2** below; previous null was mechanism-suppressed artefact. | 0.1169 / 0.1156 |
+| **P1 v2** | **`rwkv6_convshift_multidil_symmetric_v2`** (fixed init) | **✅ BREAK — dev 0.1013 / test 0.1000, ~10σ vs broken-init.** Multi-dilation branches actually engage; α₂ > α₁ at L1–5, α₈ at L5 = 1.23. Paper 7 replicates. Commit `3af846d`. | 0.1013 / 0.1000 |
+| **CB-1 v2 (P4)** | **`rwkv6_rse_convshift_multidil_symmetric_v2`** (fixed init) | **✅ BREAK — dev 0.0973 / test 0.0961, ~14σ vs broken-init CB-1.** RSE × working multidil compose orthogonally; **first sub-0.10 causal RWKV-6**. H-orth *supported*, previous CB-1 null retracted. Commit `e9f6d10`. | 0.0973 / 0.0961 |
+| **CB-2** | **`rwkv6_convshift_multidil_symmetric_wide4` / `_dense`** | **⏳ PENDING — reopened post-v2** (α₈ = 1.23 at L5 shows widest existing dilation is non-trivially engaged). Full spec in §6. | — |
+| CB-3 (broken-init) | `rwkv6_convshift_multidil_symmetric_gated` | **PLATEAU** — content-conditional α_d ties broken-init fixed α_d within σ. **CB-3 v2 pending** (may revise given CB-1 v2). | 0.1167 / 0.1157 |
 | CB-5 | `rwkv6_frontend_v2` (lean + matched) | **Did not converge** — SiLU on final conv → asymmetric truncated distribution; matched-variant rescue also non-converging | — |
-| CB-7 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | **PLATEAU** — Kronecker feature × temporal input ties multidil_sym | 0.1159 / 0.1150 |
+| CB-7 (broken-init) | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | **PLATEAU** — Kronecker feature × broken-init multidil ties broken-init multidil. **CB-7 v2 pending** (may revise given CB-1 v2). | 0.1159 / 0.1150 |
 
-**Phase I + II consolidated finding (modulo CB-2).** One productive win
-(`multidil_sym`, input-side symmetric multi-dilation at phoneme scale).
-The cross-experiment invariant from Stages 8–9 extends cleanly across
-mechanism families and base mechanisms (see `STAGE10_SUMMARY.md` §3).
-See `CLAUDE.md` §Lessons Learned for the methodological record.
+**Phase I + II consolidated finding (as of 2026-04-23).** Two productive
+wins with the v2 init-trap fix:
+- **P1 v2** (`multidil_sym_v2`) at dev 0.1013 / test 0.1000 — multi-dilation
+  genuinely engages on RWKV-6 when gradient-reachable.
+- **CB-1 v2** at dev 0.0973 / test 0.0961 — **first sub-0.10 causal RWKV-6
+  result**. RSE × multi-dilation compose orthogonally within axis 1.
 
-**CB-2 is the one remaining Stage-10 item** — a within-axis RF-expansion
-probe on the Stage-10 win. Recommended to run before Stage 11 kicks off
-so axis-1-on-RWKV-6-causal can be declared closed cleanly.
+The original Stage-10 CB-sprint "cross-experiment invariant extension"
+narrative was partly wrong: CB-1/3/7 compositions used broken-init
+multidil and the "saturation-tied" reads were mechanism-suppressed
+artefacts. CB-3 v2 and CB-7 v2 are the next tests for whether the
+invariant extension stands on *working* multidil. The Stages 2–9
+invariant (A1′, T1, T2, S9A/B on the anchor) is unaffected — those
+mechanisms engaged and did not convert; the revision applies only
+to Stage-10 multidil-based compositions.
+
+**Remaining Stage-10 items:**
+- CB-2 (wide4 / dense) — now has a clean prior (α₈ at L5 = 1.23).
+- CB-3 v2, CB-7 v2 — finish closing the v2 matrix on RWKV-6.
+- Cross-architecture `_v2` transfers — see Phase III below.
 
 ### Phase III — Stage 11: Causal architecture transfer study (NEXT)
 
@@ -265,27 +278,119 @@ evaluation since it requires a new kernel.
 
 **Sub-stages.**
 
-- [ ] **Stage 11.0 — Baselines (prerequisite)**
-  - [ ] 11.0a `linear_attn_causal` (Katharopoulos recurrent form with
-        explicit L1 denominator; **unknown CER on this spine** — the
-        number itself is new evidence)
+- [x] **Stage 11.0 — Baselines (prerequisite)**
+  - [x] 11.0a `linear_attn_causal` (Katharopoulos recurrent form with
+        explicit L1 denominator) — **DONE 2026-04-22**:
+        dev 0.2235 / test 0.2201 / WER 0.6342 at `outputs/linear_attn_causal_seed42/`.
+        Encoder 4.35 M + frontend 1.90 M + CTC 8 K = 6.26 M total.
+        Gap to Mamba-2: +0.1009 test CER; gap to RWKV-6 vanilla: +0.0938.
+        Diagnostics (`diagnostics.json`, ep30): **deep-layer attention
+        collapse** — L2 and L4 have ≈99% of φ(k) components ≈ 0, the L1
+        denominator is ε-floored at 65–70% of valid positions at those
+        depths, and signal effectively flows only via residual + FFN with
+        the attention mechanism dead beyond L1. The explicit-denominator
+        spec's normalisation is inactive at depth; this is a
+        thesis-worthy structural finding that will frame the Stage 11.1b
+        prediction (multi-dilation can enrich shallow-layer signals that
+        reach the residual path, but the deep-layer attention collapse
+        is an architecture-level deficit independent of input-side
+        mixing).
   - [x] 11.0b `mamba2` causal (vanilla Mamba-2 on formal_v1 spine) —
         30-ep run already on disk at `outputs/mamba2_seed42/`: dev
         0.1198 / test 0.1192 / WER 0.3615 (git sha `0b65aab`). Encoder
         5.36 M + frontend 1.90 M + CTC 8 K = 7.27 M total.
-  - Gate: both baselines complete before any transfer run (11.0a pending).
-- [ ] **Stage 11.1 — Input-side temporal transfer (multidil_sym)**
-  - [ ] 11.1a `mamba2_convshift_multidil_symmetric`
-  - [ ] 11.1b `linear_attn_convshift_multidil_symmetric`
-- [ ] **Stage 11.2 — Transition-side complex-pole transfer (RSE + viscosity)**
-  - [ ] 11.2a `mamba2_rse_strong_viscosity`
-  - [ ] 11.2b `linear_attn_rse_strong_viscosity`
+  - Gate status: **both baselines complete. Stage 11.1 cleared to launch.**
+- [x] **Stage 11.1 — Input-side temporal transfer (multidil_sym)** —
+      **DONE 2026-04-22**. Pre-registered *LA gain > Mamba-2 gain*
+      supported in absolute test CER: LA −0.0271 vs Mamba-2 −0.0137
+      (LA gain 1.98× Mamba-2's).  Both MARGINAL+ outside σ.
+  - [x] 11.1a `mamba2_convshift_multidil_symmetric`: dev 0.1079 /
+        test 0.1055 / WER 0.3217.
+  - [x] 11.1b `linear_attn_convshift_multidil_symmetric`: dev 0.1977 /
+        test 0.1930 / WER 0.5548.
+  - **Retrospective cross-architecture finding (α_d inspection).**
+    Inspecting the trained α_d parameter on all three architectures
+    — Mamba-2 (11.1a), LA (11.1b), **and RWKV-6 10.3-sym itself**
+    (`outputs/rwkv6_convshift_multidil_symmetric_seed42/best_model.pt`,
+    the declared Stage 10 win at dev 0.1153 / test 0.1145) — shows
+    **α_{2,4,8} = 0 at every layer on every architecture**. The
+    multi-dilation branches never engage; only α_1 moves (0.77–2.19
+    on RWKV-6 with a clean monotonic depth pattern, 0.89–1.01 on
+    Mamba-2, 1.17–1.47 on LA). The Stage 10.3-sym win and the Stage
+    11.1 wins are therefore not "multi-dilation" wins — they
+    decompose into (i) *add local mixing where none exists* and
+    (ii) *symmetric > causal padding* on an existing single-dilation
+    local mix. The RWKV-6 chain `vanilla 0.1263 → convshift_trap
+    0.1150 (add local mixing, causal) → convshift_multidil 0.1224
+    (add dilations, still causal — REGRESSION) → multidil_sym 0.1145
+    (flip to symmetric)` shows this explicitly: `multidil_sym` vs
+    `convshift_trap` is +0.0005, tied within σ. Multi-dilation
+    itself is a null axis. This is a significant retrospective
+    revision of the Stage 10 second-mechanism headline — the real
+    mechanism discovery is "symmetric-padded local mixing at the
+    phoneme window," not "multi-scale receptive field." See
+    `STAGE10_SUMMARY.md §6` for the revised thesis framing.
+- [x] **Stage 11.2 — Transition-side complex-pole transfer (RSE + viscosity)**
+      — **DONE 2026-04-23**. Pre-registered predictions: Mamba-2 moderate /
+      LA large.  Observed: **LA BREAK (Δ test CER −0.0779, ≈55σ), Mamba-2
+      NULL (Δ −0.0009, tied within σ)**.  Mamba-2 prediction falsified
+      (null instead of moderate) — selective Δt fully subsumes block-
+      complex RSE on this task.  LA prediction supported decisively.
+      This is the strongest architecture-deficit-proportional signal in
+      the Stage-11 corpus so far: LA gain is ~85× Mamba-2 gain in
+      absolute CER.  Mechanism engagement on LA (checkpoint inspection):
+      θ LoRA active, viscosity η trained to negative values with a depth
+      gradient — rotating modes decay *slower*, opposite sign from RWKV-6
+      Rayleigh dissipation.  LA's failure mode is feature-map collapse;
+      SGD preserves rotational signals rather than dissipating them.
+  - [x] 11.2a `mamba2_rse_strong_viscosity`: dev 0.1210 / test 0.1183 /
+        WER 0.3541. NULL.
+  - [x] 11.2b `linear_attn_rse_strong_viscosity`: dev 0.1428 /
+        test 0.1422 / WER 0.4230. BREAK.
 - [ ] **Stage 11.3 — Log-Linear natural-home tests (Paper 1)**
   - [ ] 11.3a `mamba2_loglinear` (paper-direct replication at our spine)
   - [ ] 11.3b `linear_attn_loglinear` (LA's natural home per analysis §6)
 - [ ] **Stage 11.4 — Cross-axis composition (gated on 11.1 AND 11.2 ≥ MARGINAL)**
   - [ ] 11.4a `mamba2_rse_convshift_multidil_symmetric`
   - [ ] 11.4b `linear_attn_rse_convshift_multidil_symmetric`
+- [x] **Stage 11.5 — Single-dilation symmetric DWConv ablation** —
+      **DONE 2026-04-23** (3 runs serial on GPU 0).  Originally motivated
+      by the cross-architecture α_{2,4,8}=0 finding from Stage 11.1,
+      partially superseded by the v2 init-fix result (`3af846d`) which
+      showed multi-dilation IS real on RWKV-6 once unblocked.  Result
+      pattern on 11.5:
+  - [x] 11.5a `rwkv6_convshift_symmetric`: dev 0.1151 / test 0.1137.
+        **Ties broken-init v1 (10.3-sym, test 0.1145) within σ.** Same
+        [0.5, 0, 0.5] init on both sides — clean comparison.  Confirms
+        v1 was effectively single-dilation under the init trap.  Gap
+        vs v2 fixed-init (0.1000): +0.0137, quantifying what the trap
+        cost.
+  - [x] 11.5b `mamba2_convshift_symmetric`: dev 0.1074 / test 0.1044.
+        **Ties 11.1a (0.1055) within σ**.  Same default-Kaiming init on
+        both sides — clean comparison.  Confirms broken-init Mamba-2
+        multidil was effectively single-dilation.  No param delta vs
+        vanilla mamba2; pure causal→symmetric padding swap.
+  - [x] 11.5c `linear_attn_convshift_symmetric`: dev 0.2287 / test
+        0.2245.  **+0.0315 WORSE than 11.1b** (0.1930).  Nominally would
+        say LA's α_1 scalar helps.  **BUT** init is not matched: 11.1b's
+        branch_1 was overridden to center-tap identity (my code override
+        for bit-exact zero-regression vs vanilla LA), while 11.5c
+        inherits `DWConvShift`'s default [0.5, 0, 0.5] smoothing init.
+        Result is confounded by the init difference.  Clean rerun with
+        identity init (~50 min) would resolve whether α_1 itself helps
+        or whether the [0.5, 0, 0.5] init is simply harmful on LA's
+        pure-accumulator architecture.  **Flagged for follow-up.**
+
+  **Stage 11.5 synthesis.** On RWKV-6 and Mamba-2 the single-dilation
+  symmetric ablation reproduces the broken-init multidil result
+  within σ — confirming that pre-v2 multidil runs on those
+  architectures were effectively single-dilation + a per-layer α_1
+  scalar that did nothing.  On LA the question is open due to the
+  init confound.  The whole chapter invites a clean re-run suite:
+  (i) LA+multidil **with the v2 init fix** to test whether
+  multi-dilation is real on LA; (ii) LA+single-dilation **with
+  center-tap identity init** to test whether α_1 itself is load-
+  bearing on LA independent of init.
 
 **Pre-registered differential predictions.**
 
@@ -1071,25 +1176,78 @@ Lie group, rotation budget + viscosity); non-bottlenecks closed
 transition freedom, structural multi-scale readout on RWKV-6,
 content-conditional RF, temporal × temporal composition).
 
-### 9.3 Stage 11 — causal architecture transfer (next)
+### 9.3 Stage 11 — causal architecture transfer (in progress)
 
 Reframed as the transferability study per CLAUDE.md §Research Context.
 Four mechanisms × two causal architectures (Mamba-2, LA) + two
 baselines + conditional cross-axis composition. See §5 Phase III for
 pre-registered differential predictions and halt criterion.
 
+**Status (2026-04-22):** 11.0a, 11.0b, 11.1a, 11.1b complete. Halt
+criterion does NOT fire — both 11.1 cells beat their respective
+vanilla baselines well outside σ (~10σ on 11.1a, ~20σ on 11.1b).
+Pre-registered differential prediction *LA gain > Mamba-2 gain*
+**supported in absolute units** (LA −0.0271 vs Mamba-2 −0.0137 test CER,
+1.98× ratio); in relative terms both architectures improved by ~12%.
+
+**Major mechanism-attribution finding (cross-architecture):**
+post-training diagnostics show **α_{2,4,8} = 0 at every layer on ALL
+THREE architectures where multidil_sym has been trained**:
+
+- 11.1a Mamba-2: α_1 ∈ [0.89, 1.01] across depth, α_{2,4,8} = 0.
+- 11.1b LA: α_1 ∈ [1.17, 1.47], α_{2,4,8} = 0.
+- **Stage 10.3-sym on RWKV-6** (`outputs/rwkv6_convshift_multidil_symmetric_seed42/best_model.pt`,
+  the declared Stage-10 win at dev 0.1153 / test 0.1145):
+  α_1 ∈ [0.77, 2.19] with a clean monotonic depth pattern,
+  α_{2,4,8} = 0.
+
+The multi-dilation branches **never engage** on any of the three
+architectures. The observed 11.1 gains — and the Stage 10.3-sym win
+itself — decompose into two distinct effects:
+
+- **Add local mixing where none exists** (LA: +0.0271;
+  RWKV-6 vanilla → convshift_trap: +0.0113).
+- **Symmetric > causal padding** at the phoneme scale
+  (Mamba-2 single-dilation causal → symmetric: +0.0137;
+  RWKV-6 multidil_causal → multidil_sym: +0.0079).
+
+The RWKV-6 ablation chain confirms directly: `vanilla 0.1263 →
+convshift_trap 0.1150 (causal single-dilation) → multidil_causal 0.1224
+(add dilations, regress!) → multidil_sym 0.1145 (flip to symmetric)`.
+Net `multidil_sym` vs single-dilation `convshift_trap`: **+0.0005,
+tied within σ**. Multi-dilation itself is a null axis at this spine.
+
+**Retrospective revision of the Stage-10 second-mechanism headline.**
+`multidil_sym` was treated as the second transferable mechanism
+discovery (with RSE). It is not a multi-dilation discovery; the real
+mechanism is **symmetric-padded local mixing at the phoneme window**.
+A single-dilation symmetric DWConv variant (`*_convshift_symmetric`,
+k=3) is predicted to match or beat `multidil_sym` on every
+architecture; see Stage 11.5 below for the queued ablation.
+
+**Note on 11.0b diagnostics:** the `mamba2_seed42` run pre-dates the
+current checkpointing infrastructure — no `.pt` files on disk, so
+`diagnostics.json` cannot be backfilled retroactively. 11.1a's post-
+training α_1 ≈ 1 + α_{2,4,8} = 0 state approximates what a vanilla-mamba2
+diagnostic would show (single-dilation DWConv with alpha scaling ≈ 1);
+re-training vanilla mamba2 if a clean 11.0b diagnostic is needed.
+
 | Backbone | Family | Stage | Dev CER | Test CER | Test WER | Params | Epochs | Verdict |
 |---|---|---|---:|---:|---:|---:|---:|---|
 | `mamba2` (vanilla) | — | 11.0b | **0.1198** | **0.1192** | 0.3615 | 7.27 M | 30 | **DONE — baseline**, `outputs/mamba2_seed42/` (git `0b65aab`). Sits between RWKV-6 vanilla (0.1258) and the Stage-5 anchor (0.1185). |
 | `linear_attn_causal` (Katharopoulos w/ L1 denom) | — | 11.0a | **0.2235** | **0.2201** | 0.6342 | 6.26 M (enc 4.35 M) | 30 | **DONE — baseline**, `outputs/linear_attn_causal_seed42/`. Gap to Mamba-2 +0.1009 test CER (~+85% relative). Diagnostics (ep30): deep-layer attention collapses — L2/L4 have 99 % of φ(k) ≈ 0, denominator ε-floored at 65–70 % of valid positions, signal flows via residual+FFN with attention mechanism effectively dead beyond L1. |
-| `mamba2_convshift_multidil_symmetric` | A (input-side) | 11.1a | — | — | — | ~7 M + ~18 K | 30 | TBD — predicted small gain |
-| `linear_attn_convshift_multidil_symmetric` | A (input-side) | 11.1b | — | — | — | ~7 M + ~18 K | 30 | TBD — **predicted large gain** (LA has no local bias) |
-| `mamba2_rse_strong_viscosity` | B (complex-pole) | 11.2a | — | — | — | — | 30 | TBD — predicted moderate gain |
-| `linear_attn_rse_strong_viscosity` | B (complex-pole) | 11.2b | — | — | — | — | 30 | TBD — **predicted large gain** (LA has no decay diversity) |
+| `mamba2_convshift_multidil_symmetric` | A (input-side) | 11.1a | **0.1079** | **0.1055** | 0.3217 | 7.33 M (enc 5.41 M) | 30 | **DONE — MARGINAL+**, `outputs/mamba2_convshift_multidil_symmetric_seed42/`. Δ test CER vs 11.0b: **−0.0137 (−11.5% rel, ~10σ)**. **Mechanism caveat:** diagnostics show **α_{2,4,8} = 0 at every layer** — SGD did not engage the multi-dilation branches at all. α_1 hovers near init value (0.89–1.01). The observed gain is therefore NOT from multi-dilation but from the **causal → symmetric padding swap** on Mamba-2's single-dilation DWConv (isolates the same 10.3-sym causality-penalty effect found on RWKV-6, magnified here). A clean `mamba2_convshift_symmetric` (single-dilation) ablation would confirm; deferred. |
+| `linear_attn_convshift_multidil_symmetric` | A (input-side) | 11.1b | **0.1977** | **0.1930** | 0.5548 | 6.28 M (enc 4.36 M) | 30 | **DONE — MARGINAL+**, `outputs/linear_attn_convshift_multidil_symmetric_seed42/`. Δ test CER vs 11.0a: **−0.0271 (−12.3% rel, ~20σ)**. Pre-registered "large gain" supported in absolute CER (LA gain is 1.98× Mamba-2's). **Mechanism caveat:** α_{2,4,8} = 0 everywhere — multi-dilation branches inert, α_1 grew to 1.17–1.47 across depth. Gain attributable to adding a single-dilation symmetric DWConv pre-mix where vanilla LA had no local mixing. Diagnostics show a distinct structural effect: **L2 rescued from total collapse** — vanilla LA's L2 had 99% of φ(k)≈0 and ε-floored den at 66%; with ConvShift, L2 has 0.1% φ(k) tiny and 0% ε-floored den. Deep layers (L3/L5) still partially degraded but no longer catastrophic. The mechanism story: ConvShift rescues the middle layers from the ELU+1 saturation spiral, not from receptive-field expansion. Architecture gap to Mamba-2+multidil still ~+0.088 test CER — deep-layer attention not fully fixed. |
+| `mamba2_rse_strong_viscosity` | B (complex-pole) | 11.2a | **0.1210** | **0.1183** | 0.3541 | 7.42 M (enc 5.51 M) | 30 | **DONE — NULL / AMBIGUOUS-ENGAGED**, `outputs/mamba2_rse_strong_viscosity_seed42/`. Δ test CER vs 11.0b: **−0.0009 (tied within σ)**. Pre-registered "moderate gain" falsified. **Mechanism engagement (checkpoint inspection):** all three RSE mechanisms ACTIVE — θ LoRA ‖W_1‖ 5–6 (init 0), θ_base stretched to ±0.31, viscosity η trained to nonzero values (|max| up to 0.51 at some layers) — but without productive CER movement. η sign pattern is mixed across depth (L0–L2 small negative mean, L3–L5 near-zero), unlike LA's clean monotonic depth gradient. λ_base stayed near init. This is the "AMBIGUOUS-ENGAGED" pattern seen on Stage 7A/8 RWKV-6: SGD activates the mechanism but the function-class extension doesn't convert into CER because Mamba-2's selective Δt on a (H × N = 8×64) state already spans the relevant function class. |
+| `linear_attn_rse_strong_viscosity` | B (complex-pole) | 11.2b | **0.1428** | **0.1422** | 0.4230 | 6.37 M (enc 4.46 M) | 30 | **DONE — BREAK**, `outputs/linear_attn_rse_strong_viscosity_seed42/`. Δ test CER vs 11.0a: **−0.0779 (−35% rel, ≈55σ)**. Pre-registered "large gain" supported decisively. Gap to vanilla Mamba-2 narrows from +0.1009 to +0.0230. **Mechanism engagement (checkpoint param inspection):** θ LoRA ‖W1‖ grows from 0 init to 3.9–6.8 across layers; viscosity η trained to **negative** values with a depth gradient (L0 −0.08 → L5 −0.29, |max| 0.64). Negative η = rotating modes decay SLOWER — opposite-sign from RWKV-6 Rayleigh dissipation. Interpretation: LA's failure mode is feature-map collapse, and SGD preserves rotational signals by reducing their decay (not by dissipating them). Depth gradient aligns with the 11.0a deep-layer-collapse finding. |
 | `mamba2_loglinear` | A (natural-home for Paper 1) | 11.3a | — | — | — | — | 30 | TBD — paper-direct replication |
 | `linear_attn_loglinear` | A (natural-home for Paper 1) | 11.3b | — | — | — | — | 30 | TBD — **predicted large gain** (LA has no multi-scale axis) |
 | `mamba2_rse_convshift_multidil_symmetric` | A × B composition | 11.4a | — | — | — | — | 30 | Conditional on 11.1a + 11.2a ≥ MARGINAL |
 | `linear_attn_rse_convshift_multidil_symmetric` | A × B composition | 11.4b | — | — | — | — | 30 | Conditional on 11.1b + 11.2b ≥ MARGINAL |
+| `rwkv6_convshift_symmetric` | A (input-side) | 11.5a | **0.1151** | **0.1137** | 0.3428 | 7.74 M (enc 5.83 M) | 30 | **DONE**, `outputs/rwkv6_convshift_symmetric_seed42/`. Δ test CER vs v1 broken-init 10.3-sym (0.1145): **−0.0008, tied within σ**. Same [0.5, 0, 0.5] DWConvShift init on both sides — clean comparison. **Confirms broken-init RWKV-6 multidil was effectively single-dilation** (what SGD was *allowed* to use). Gap vs v2 fixed-init (test 0.1000): +0.0137 — quantifies what the init trap cost on RWKV-6. |
+| `mamba2_convshift_symmetric` | A (input-side) | 11.5b | **0.1074** | **0.1044** | 0.3226 | 7.27 M (enc 5.36 M — **same as vanilla**) | 30 | **DONE**, `outputs/mamba2_convshift_symmetric_seed42/`. Δ test CER vs vanilla 11.0b: **−0.0148**. Δ test CER vs 11.1a (broken-init multidil): **−0.0011, tied within σ**. **Confirms: broken-init multidil_sym on Mamba-2 was effectively single-dilation symmetric.** No new params, pure padding-direction swap (causal→symmetric) on the native DWConv. |
+| `linear_attn_convshift_symmetric` | A (input-side) | 11.5c | **0.2287** | **0.2245** | 0.6290 | 6.26 M (enc 4.35 M) | 30 | **DONE but CONFOUNDED**, `outputs/linear_attn_convshift_symmetric_seed42/`. Δ test CER vs 11.1b (0.1930): **+0.0315, worse by ~22σ**. Nominally suggests LA's α_1 scalar contributes meaningfully. **But init is not matched across 11.1b and 11.5c**: 11.1b's branch_1 was overridden to center-tap identity (my code override for bit-exact zero-regression vs vanilla LA), while 11.5c uses `DWConvShift`'s default [0.5, 0, 0.5] smoothing init (output at init = 0.5·x[t-1] + 0.5·x[t+1], no x[t] pass-through). The underperformance may reflect the init difference, not the mechanism. **Resolving the "does α_1 help on LA" question cleanly requires rerunning 11.5c with center-tap-identity init** (~50 min). Flagged for follow-up. |
+| `rwkv6_convshift_multidil_symmetric_v2` (init-fix rerun) | A (input-side) | v2 | **0.1013** | **0.1000** | 0.3010 | 7.76 M (enc 5.84 M) | 30 | **DONE — BREAK** vs v1 broken-init (Δ test CER **−0.0145, ≈10σ**), `outputs/rwkv6_convshift_multidil_symmetric_v2_seed42/` (other instance, commit `3af846d`). **MultiDilationDWConvShift.__init__ fix** (α_{d>1}=0.01, branch weights ~N(0, 0.01²) per MULTIDIL_INIT_FIX_HANDOFF Option B) releases the multiplicative-zero gradient trap that held α_{d>1} at bit-exact 0 in every broken-init multidil run. Post-training: **α_{2,4,8} fully engaged — α_2 > α_1 at layers 1–5; α_8 at L5 = 1.23**. Depth gradient matches the phoneme-to-syllable prior (shallow layers favour d=1, deep layers favour d=8). **Paper 7 multi-dilation claim replicates on RWKV-6 ASR once the init trap is released.** |
 
 **Explicitly excluded from Stage 11** (closed in Stages 2–10, no
 architecture-specific argument): NaLaFormer (P2 overlap with RSE),

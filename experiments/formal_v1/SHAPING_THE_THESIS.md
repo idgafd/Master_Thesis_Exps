@@ -65,33 +65,75 @@ Each axis answers an objection the other two cannot.
 
 ## Priority order for remaining GPU-h and writing effort
 
-Ordered by marginal contribution to the thesis:
+**Updated 2026-04-23** post-v2 init-fix results. Previous priority
+order re-ranked given:
+- P1 v2 (`multidil_sym_v2`) landed dev 0.1013 / test 0.1000, 10σ gain.
+- CB-1 v2 landed dev 0.0973 / test 0.0961 — **first sub-0.10 causal
+  RWKV-6**. RSE × multidil compose orthogonally within axis 1.
+- Stage 11.0a LA baseline complete (0.2235 test vanilla). Stage 11.2
+  RSE transfer complete on both Mamba-2 (ambiguous-engaged, predicted)
+  and LA (BREAK, −0.081 vs vanilla, predicted).
+- Stage 11.5 single-dil controls complete (11.5a/b tie broken-init
+  multidil within σ; 11.5c LA is init-confounded).
 
-1. **Stage 11.0a — Linear Attention causal baseline.** Unknown CER on
-   this spine. Load-bearing for every downstream transfer claim across
-   axes 1, 2, 3. Prerequisite. Not optional.
+Ordered by marginal contribution to the thesis, post-update:
 
-2. **MQAR benchmark (axis 2).** Already in progress. Finish to
-   completion. Produces the sharpest mechanism-task differential in
-   the thesis: DeltaNet / DeltaProduct predicted major win; multidil_sym
-   / RSE predicted flat. The prediction shape *is* the axis-2 claim.
+1. **P5 + P6 on RWKV-6 — close the v2 composition matrix.**
+   ~1.5 h each (parallel on 2 GPUs → 1.5 h wallclock).
+   - **P5** `rwkv6_convshift_multidil_symmetric_gated_v2` (CB-3 v2) —
+     tests whether content-conditional α matters now that multidil
+     actually engages.
+   - **P6** `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2`
+     (CB-7 v2) — tests whether channel-side Kronecker composes
+     orthogonally with working multidil (mirror of CB-1 v2 on a
+     different axis-pair).
+   - Either result is thesis-relevant: confirms or revises the scope
+     of the broken-init Group-3 invariant extension (see
+     `STAGE10_SUMMARY.md` §3 revision note).
 
-3. **$S_3$ permutation composition benchmark (axis 3).** Highest
-   novelty per unit effort. ~50-line synthetic-data generator, reuses
-   existing training harness. Directly tests the formal NC¹ vs PNC¹
-   separation proved in arXiv:2603.01959 + arXiv:2603.03612. See
-   `EXPRESSIVITY_AXES.md` §Task suite implication / §Two task options.
+2. **Dispatch wiring for multidil_v2 on Mamba-2 / LA** +
+   **P2, P3 cross-architecture v2 transfer.** Engineering ~30–60 min;
+   runs ~1.5 h each (parallel on 2 GPUs → ~2 h wallclock total).
+   - **P2** `mamba2_convshift_multidil_symmetric_v2`,
+     **P3** `linear_attn_convshift_multidil_symmetric_v2`.
+   - Pre-registered prediction (updated post-v2): LA > Mamba-2 > RWKV-6
+     in absolute multidil gain. Tests whether the differential-transfer
+     pattern from broken-init (confirmed for single-dil + scalar) also
+     holds with working multi-dilation.
 
-4. **CB-2 wide4 / dense (axis 1).** ~3 GPU-h. Closes the single
-   remaining within-axis-1 question on RWKV-6 causal (is ±8 frames the
-   RF ceiling?). Spec in `STAGE10_PLAN.md` §6 CB-2.
+3. **CB-2 wide4 / dense (axis 1, now reopened).**
+   ~3 GPU-h. Multi-dilation's widest existing branch (d = 8, α = 1.23
+   at L5 in P1 v2) is non-trivially engaged → pushing to d = 16 has a
+   clean prior now. See `STAGE10_PLAN.md` §6 CB-2.
 
-5. **Stage 11.1 / 11.2 transfers.** Multidil_sym + RSE on Mamba-2 and
-   LA. Pre-registered differential predictions in `STAGE10_PLAN.md` §5
-   Phase III. Axis-1 and axis-2-or-3 transfer evidence.
+4. **11.5c LA identity-init retest.** ~50 min. Resolves the Stage 11.5
+   LA init-mismatch confound — tells us whether α_1 scalar itself helps
+   on LA or whether 11.5c's regression was entirely init-driven.
 
-6. **Dyck-$k$ (axis 3 secondary).** Only after $S_3$ completes. Adds
+5. **$S_3$ permutation composition benchmark (axis 3).** Highest
+   novelty per unit effort remaining. ~50-line synthetic-data generator
+   + reuse of existing training harness. Directly tests the formal
+   NC¹ vs PNC¹ separation proved in arXiv:2603.01959 + arXiv:2603.03612.
+   See `EXPRESSIVITY_AXES.md` §Task suite implication / §Two task
+   options.
+
+6. **MQAR benchmark completion (axis 2).** Already in progress on
+   a separate track. Produces the sharpest mechanism-task differential
+   in the thesis: DeltaNet / DeltaProduct predicted major win;
+   multidil_sym / RSE predicted flat. The prediction shape *is* the
+   axis-2 claim.
+
+7. **Dyck-$k$ (axis 3 secondary).** Only after $S_3$ completes. Adds
    robustness evidence; doesn't carry load-bearing claim.
+
+8. **Stage 12 LION-chapter — multidil_v2 and CB-1 v2 on LION.**
+   Direct transfer of the two post-tonight wins to bidirectional form.
+   Load-bearing for the causal-vs-bidirectional gap analysis in the
+   synthesis chapter. 80-ep reference runs.
+
+### One-pass rationale for the re-ordering
+
+Priorities 1 and 2 close the v2 matrix cleanly (RWKV-6 compositions + cross-architecture transfer), which is the most direct next-step yield from the init-fix result. Priority 3 (CB-2) and Priority 4 (11.5c LA) tie up the single remaining Stage-10 item and the one confound in Stage 11, respectively. Priority 5 ($S_3$) remains the highest-novelty axis-3 test. Priorities 6–8 are the axis-2, axis-3-secondary, and bidirectional-extension chapters. **Stage 11.0a (LA baseline) is removed from the priority list — it has landed.**
 
 ---
 

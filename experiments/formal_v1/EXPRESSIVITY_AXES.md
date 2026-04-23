@@ -362,7 +362,8 @@ problem, worth naming explicitly for the Chapter 4 comparison:
 |---|---|---|
 | **Log-Linear × DeltaProduct on LA** | 2 × 4 | Paper 1 says log-linear composes with any semiseparable mask; DeltaProduct is semiseparable. Potential Stage-11.3 follow-up if both single-mechanism transfers land. |
 | **RSE × Log-Linear on LA / Mamba-2** | 1 × 4 | Cross-architecture analogue of the Stage-10.7 composition that closed without running. Natural home is LA where both mechanisms address independent deficits. |
-| **Multidil_sym × RSE on LION** | 1 × 1 | Same temporal axis, different sub-axes (input-RF and transition-rotation). CB-1 null on RWKV-6 does not generalise to bidirectional form — worth Stage 12.4 test. |
+| **Multidil_sym × RSE on RWKV-6 causal (CB-1 v2)** | 1 × 1 | **LANDED 2026-04-23, dev 0.0973 / test 0.0961.** Same axis (1), different sub-axes (input-side multi-scale × transition-side complex poles) — they compose productively. Broken-init CB-1 at 0.1156 was a mechanism-suppressed artefact; with the init fix, composition produces a 14σ drop vs broken-init and a 4σ drop vs P1 v2 single-mechanism. First sub-0.10 causal RWKV-6 result. |
+| **Multidil_sym × RSE on LION** | 1 × 1 | Post-CB-1-v2 prior: expected to replicate on LION bidirectional — same composition on the same axis, different sequence-access pattern. Worth Stage 12.4 test. |
 
 ---
 
