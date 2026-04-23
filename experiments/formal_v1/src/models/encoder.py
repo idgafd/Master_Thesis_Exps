@@ -199,6 +199,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Stage 10.3-sym — Symmetric-padding multi-dilation control, resolves
         # the causality-vs-dilation confound against `rwkv6_convshift_trap`.
         "rwkv6_convshift_multidil_symmetric": "recurrent",
+        # _v2 suffix = reruns with the init-gradient-trap fix in
+        # MultiDilationDWConvShift (α_{d>1}=0.01, branch_{d>1}.weight ~ N(0, 0.01)).
+        # Code path is identical; the suffix is purely for output-directory
+        # naming and result accounting. See MULTIDIL_INIT_FIX_HANDOFF.md.
+        "rwkv6_convshift_multidil_symmetric_v2": "recurrent",
+        "mamba2_convshift_multidil_symmetric_v2": "recurrent",
+        "linear_attn_convshift_multidil_symmetric_v2": "recurrent",
+        "rwkv6_rse_convshift_multidil_symmetric_v2": "recurrent",
+        "rwkv6_convshift_multidil_symmetric_gated_v2": "recurrent",
+        "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2": "recurrent",
         # CB-1 — Composition of RSE (Stage 3 transition-side) × multidil_sym
         # (Stage 10.3-sym input-side). Tests whether input-side RF expansion
         # and transition-side rotation are orthogonal gains over `convshift_trap`.

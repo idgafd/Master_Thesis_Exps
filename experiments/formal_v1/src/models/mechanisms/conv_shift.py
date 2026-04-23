@@ -88,11 +88,25 @@ class MultiDilationDWConvShift(nn.Module):
             )
             self.branches.append(branch)
 
+        # ───────── FIXED INIT (gradient-trap safe) ─────────
+        # Pre-fix bug: α_{d>1}=0 AND branch_{d>1}.weight=0 gave a zero-zero
+        # product for both ∂L/∂α_d and ∂L/∂branch_d.weight → no SGD signal
+        # for any d>1 branch. Fix breaks one leg of the product by using
+        # small non-zero values for both, so gradients flow and zero-regression
+        # holds to within ~3e-4 (below activation noise).
+        MAIN_DIL = 1 if 1 in self.dilations else self.dilations[0]
+        NON_MAIN_ALPHA = 0.01
+        NON_MAIN_WEIGHT_STD = 0.01
+
         if content_conditional:
             # Per-token content-conditional α via softmax. Logits for the
             # d=1 dilation are biased high at init so softmax collapses
             # to one-hot(d=1) regardless of x_t, matching the scalar variant's
             # initial behaviour. SGD then grows W_α and redistributes b_d.
+            # The softmax bias is still skewed to d=1 but the branch weights
+            # for d>1 are now non-zero so ∂L/∂(alpha_proj.bias_d) receives
+            # a non-zero signal through DWC_d(x) once the softmax has any
+            # finite mass on d>1.
             self.alpha_proj = nn.Linear(d_model, len(self.dilations), bias=True)
             with torch.no_grad():
                 self.alpha_proj.weight.zero_()
@@ -102,39 +116,39 @@ class MultiDilationDWConvShift(nn.Module):
                 self.alpha_proj.bias[d1_idx] = 10.0
             self.alpha = None
         else:
-            # Per-layer α_d: init α_1 = 1 and others 0.
+            # Per-layer α_d: init α_{d=1}=1.0, α_{d>1}=NON_MAIN_ALPHA.
             alphas = torch.zeros(len(self.dilations))
-            if 1 in self.dilations:
-                alphas[self.dilations.index(1)] = 1.0
-            else:
-                alphas[0] = 1.0
+            for i, d in enumerate(self.dilations):
+                alphas[i] = 1.0 if d == MAIN_DIL else NON_MAIN_ALPHA
             self.alpha = nn.Parameter(alphas)
             self.alpha_proj = None
 
-        # Init branch 0 (dilation=1) to reduce to single-dilation ConvShift.
-        # Other branches are zero-init (inert at init).
+        # Init branch for MAIN_DIL (d=1) to reduce to single-dilation ConvShift.
+        # Branches for d>1 get small N(0, NON_MAIN_WEIGHT_STD) so their gradient
+        # path to α_d is non-zero (α_d gets ∂L/∂y · DWC_d(x) ≠ 0).
         #
         # PyTorch conv1d with left-only pad = (k-1)*d produces, for kernel=3
         # and dilation=d: output[t] = w[0]·x[t-2d] + w[1]·x[t-d] + w[2]·x[t].
-        # Hence the "taps in time" are: w[0] ↔ x[t-2d], w[1] ↔ x[t-d], w[2] ↔ x[t].
         # Symmetric pad = (k-1)*d//2 on each side gives:
         # output[t] = w[0]·x[t-d] + w[1]·x[t] + w[2]·x[t+d].
         with torch.no_grad():
-            for branch in self.branches:
-                branch.weight.zero_()
-            b0 = self.branches[self.dilations.index(1)] if 1 in self.dilations else self.branches[0]
-            if kernel_size == 3:
-                if padding_mode == "symmetric":
-                    # Bidirectional neighbor average: 0.5·x[t-1] + 0.5·x[t+1]
-                    # (matches existing DWConvShift convention.)
-                    b0.weight[:, 0, 0] = 0.5   # x[t-1]
-                    b0.weight[:, 0, -1] = 0.5  # x[t+1]
-                else:  # causal — past-only, x[t-1]/x[t] average
-                    # Causal analog of the bidirectional average: skip the
-                    # x[t-2] tap (index 0) and weight the two most recent
-                    # causal taps equally: 0.5·x[t-1] + 0.5·x[t].
-                    b0.weight[:, 0, 1] = 0.5   # x[t-1]
-                    b0.weight[:, 0, 2] = 0.5   # x[t]
+            for i, branch in enumerate(self.branches):
+                d = self.dilations[i]
+                if d == MAIN_DIL:
+                    branch.weight.zero_()
+                    if kernel_size == 3:
+                        if padding_mode == "symmetric":
+                            # Bidirectional neighbor average: 0.5·x[t-d] + 0.5·x[t+d]
+                            branch.weight[:, 0, 0] = 0.5
+                            branch.weight[:, 0, -1] = 0.5
+                        else:  # causal
+                            # 0.5·x[t-d] + 0.5·x[t]
+                            branch.weight[:, 0, 1] = 0.5
+                            branch.weight[:, 0, 2] = 0.5
+                else:
+                    nn.init.normal_(
+                        branch.weight, mean=0.0, std=NON_MAIN_WEIGHT_STD
+                    )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x: (B, T, D) -> (B, T, D)"""

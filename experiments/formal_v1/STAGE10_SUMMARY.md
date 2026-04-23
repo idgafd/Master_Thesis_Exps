@@ -16,6 +16,7 @@ K=64, σ ≈ 0.0014.
 | `rwkv6_m2rnn_sparse` (10.2) | C | 0.1276 | 0.1264 | tied-vanilla |
 | `rwkv6_convshift_multidil` causal (10.3) | A | 0.1229 | 0.1224 | causality penalty |
 | **`rwkv6_convshift_multidil_symmetric` (10.3-sym)** | **A** | **0.1153** | **0.1145** | **matches abs-best without RSE** |
+| **`rwkv6_convshift_multidil_symmetric_v2` (10.3-sym + init-fix)** | **A** | **0.1013** | **0.1000** | **Paper 7 multi-dilation genuinely engages; see note below** |
 | `rwkv6_chanmix_bypass` (10.4) | D | 0.1251 | 0.1248 | PLATEAU |
 | `rwkv6_orthogonal` (10.5, still training at ep 15) | B | 0.1518 (ep 15) | — | regression-track |
 | `rwkv6_pom_vlift` (10.6) | D | 0.1254 | 0.1253 | PLATEAU |
@@ -24,6 +25,17 @@ K=64, σ ≈ 0.0014.
 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` (CB-7) | A × D | 0.1159 | 0.1150 | tied 10.3-sym |
 | `rwkv6_frontend_v2` (CB-5a lean) | frontend | did not converge | — | failure mode (see §4) |
 | `rwkv6_frontend_v2_matched` rescue ep 1 (CB-5b) | frontend | 0.8403 @ ep 1 | — | did not converge |
+
+> *Init-gradient-trap footnote (2026-04-23).* In the broken-init `multidil_sym`
+> runs above, dilation branches $d \in \{2, 4, 8\}$ had $\alpha_d = 0$ exactly
+> at ep 30 — the mechanism collapsed to single-dilation DWConvShift + per-layer
+> scalar. `_v2` reruns carry the init fix (α_{d>1}=0.01, branch_{d>1}.weight
+> ~N(0, 0.01)) so gradients reach all branches. Priority-1 `_v2` result: dev
+> 0.1013 / test 0.1000 (−0.0140 dev vs broken-init, ~10σ); at ep 30, α₂ exceeds
+> α₁ at every layer 1–5, α₈ at layer 5 = 1.23 — full multi-scale engagement with
+> a depth gradient. Paper 7's multi-dilation claim does replicate on RWKV-6 ASR.
+> Cross-architecture `_v2` reruns (Mamba-2, LA, CB-1/3/7) pending. See
+> `MULTIDIL_INIT_FIX_HANDOFF.md`.
 
 ## 1. What this stage established
 
