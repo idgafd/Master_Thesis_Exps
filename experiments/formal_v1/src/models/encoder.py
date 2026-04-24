@@ -138,42 +138,44 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # universally, so the ``_v2`` naming is for output-directory
     # distinguishability relative to the pre-fix 11.1a result.
     _mamba2_backbones = {
-        # (mode, multidil, convshift_sym, lucid, lucid_key, novelty, γ_fixed)
-        "mamba2": ("recurrent", False, False, False, "B", False, None),
-        "mamba2_lion": ("lion", False, False, False, "B", False, None),
-        "mamba2_lion_chunk": ("lion_chunk", False, False, False, "B", False, None),
-        "mamba2_convshift_multidil_symmetric": ("recurrent", True, False, False, "B", False, None),
-        "mamba2_convshift_multidil_symmetric_v2": ("recurrent", True, False, False, "B", False, None),
-        "mamba2_convshift_symmetric": ("recurrent", False, True, False, "B", False, None),
+        # (mode, multidil, convshift_sym, lucid, lucid_key, dlucid, novelty, γ_fixed, householder)
+        "mamba2":                                         ("recurrent", False, False, False, "B", False, False, None, False),
+        "mamba2_lion":                                    ("lion",      False, False, False, "B", False, False, None, False),
+        "mamba2_lion_chunk":                              ("lion_chunk", False, False, False, "B", False, False, None, False),
+        "mamba2_convshift_multidil_symmetric":            ("recurrent", True,  False, False, "B", False, False, None, False),
+        "mamba2_convshift_multidil_symmetric_v2":         ("recurrent", True,  False, False, "B", False, False, None, False),
+        "mamba2_convshift_symmetric":                     ("recurrent", False, True,  False, "B", False, False, None, False),
         # LUCID on Mamba-2 SSD dual form.  B-correlation preconditioner
-        # applied to X_c within each chunk (faithful port of RWKV-6 LUCID
-        # to the Mamba-2 chunked dual form; see mamba2_kernels.py).
-        "mamba2_lucid": ("recurrent", False, False, True, "B", False, None),
-        "mamba2_lucid_convshift_multidil_symmetric_v2": ("recurrent", True, False, True, "B", False, None),
-        # C-side variant — query-analog correlation.  Analytical mirror of
-        # the B-side LUCID; tests whether decorrelating by query similarity
-        # adds orthogonally to (or tests against) decorrelating by key
-        # similarity.  Same math otherwise; identical init.
-        "mamba2_lucid_c": ("recurrent", False, False, True, "C", False, None),
-        # Write-novelty gate (chunked Σ variant).  Gates X_t writes into
-        # SSM state by B_t^T Σ_c^{-1} B_t; Σ_c maintained once per chunk.
-        # Trainable γ via softplus(γ_raw - 5); init γ_raw=0 → γ ≈ 6.7e-3
-        # → ω ≈ 1 at init (near-vanilla reduction with Adam-reachable γ_raw).
-        "mamba2_novelty_gate": ("recurrent", False, False, False, "B", True, None),
-        # Composition: B-side LUCID + novelty gate.  Novelty gates X_c
-        # first (semantic), LUCID decorrelates the gated write.
-        "mamba2_lucid_novelty": ("recurrent", False, False, True, "B", True, None),
-        # Fixed-γ ablation.  γ=0.5 frozen (registered as buffer, no
-        # softplus).  Forces the gate into engagement regardless of SGD
-        # preference — isolates "mechanism productive at engaged γ?"
-        # from "mechanism reachable via training?".
-        "mamba2_novelty_fixed_g05": ("recurrent", False, False, False, "B", True, 0.5),
+        # applied to X_c within each chunk.
+        "mamba2_lucid":                                   ("recurrent", False, False, True,  "B", False, False, None, False),
+        "mamba2_lucid_convshift_multidil_symmetric_v2":   ("recurrent", True,  False, True,  "B", False, False, None, False),
+        # C-side variant — query-analog correlation.
+        "mamba2_lucid_c":                                 ("recurrent", False, False, True,  "C", False, False, None, False),
+        # D-LUCID (v6, decay-aware via additive γ·Δcs penalty on the LUCID
+        # exponent).  See `_apply_lucid_mamba2_chunked_decay_aware`.  γ = 0
+        # reduces bit-exactly to LUCID.
+        "mamba2_dlucid":                                  ("recurrent", False, False, True,  "B", True,  False, None, False),
+        "mamba2_dlucid_c":                                ("recurrent", False, False, True,  "C", True,  False, None, False),
+        "mamba2_dlucid_convshift_multidil_symmetric_v2":  ("recurrent", True,  False, True,  "B", True,  False, None, False),
+        # Write-novelty gate (chunked Σ variant).
+        "mamba2_novelty_gate":                            ("recurrent", False, False, False, "B", False, True,  None, False),
+        "mamba2_lucid_novelty":                           ("recurrent", False, False, True,  "B", False, True,  None, False),
+        "mamba2_novelty_fixed_g05":                       ("recurrent", False, False, False, "B", False, True,  0.5,  False),
+        # Generalised partial Householder on inter-chunk state transition.
+        # Replaces the diagonal-only inter-chunk propagation with
+        #     s_{c+1} = D_c · H_h · s_c + produced_c,
+        #     H_h = I − 2(1 − α_h) u_h u_hᵀ,  α_h ∈ [0, 1] (via sigmoid).
+        # α_raw init = 5 ⇒ α ≈ 0.993 ⇒ H ≈ I at step 0 ⇒ near-vanilla
+        # Mamba-2 at init, Adam-engageable afterwards.  Replaces the
+        # vectorised inter-chunk einsum with a per-chunk loop — nC ~ 5–10
+        # extra matmuls of tiny (N×N) matrices per head per batch ≈ negligible.
+        "mamba2_householder":                             ("recurrent", False, False, False, "B", False, False, None, True),
     }
     if backbone in _mamba2_backbones:
         from src.models.mamba2_encoder import Mamba2Encoder
         (mode_for_backbone, use_multidil, use_convshift_sym, use_lucid,
-         lucid_key_source, use_novelty_gate,
-         novelty_gamma_fixed) = _mamba2_backbones[backbone]
+         lucid_key_source, lucid_decay_aware, use_novelty_gate,
+         novelty_gamma_fixed, use_householder) = _mamba2_backbones[backbone]
         return Mamba2Encoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
@@ -190,8 +192,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             use_convshift_sym=use_convshift_sym,
             use_lucid=use_lucid,
             lucid_key_source=lucid_key_source,
+            lucid_decay_aware=lucid_decay_aware,
             use_novelty_gate=use_novelty_gate,
             novelty_gamma_fixed=novelty_gamma_fixed,
+            use_householder=use_householder,
         )
 
     # Stage 11.2a — Mamba-2 + RSE (block-complex SSD transition) + viscosity.

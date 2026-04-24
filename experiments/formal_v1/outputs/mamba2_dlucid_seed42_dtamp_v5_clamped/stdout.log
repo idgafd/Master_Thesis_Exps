@@ -1,0 +1,79 @@
+2026-04-24 20:55:33,919 INFO Loading LibriSpeech split=train.100 from HuggingFace...
+2026-04-24 20:55:34,018 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-24 20:55:34,019 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-04-24 20:55:34,031 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,083 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:55:34,209 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:55:34,265 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/revision/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1 "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,319 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-24 20:55:34,406 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,461 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftest?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,512 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean?recursive=false&expand=false "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,634 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.100?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,703 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Ftrain.360?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,780 INFO HTTP Request: GET https://huggingface.co/api/datasets/openslr/librispeech_asr/tree/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/clean%2Fvalidation?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-24 20:55:34,833 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:28,631 INFO Loaded 28538 utterances from train.100 (skipped 1 outside [0.5s, 20.0s])
+2026-04-24 20:57:28,735 INFO Loading LibriSpeech split=validation from HuggingFace...
+2026-04-24 20:57:28,814 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-24 20:57:28,823 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-24 20:57:28,873 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:29,014 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:29,074 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:29,156 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-24 20:57:29,238 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:35,037 INFO Loaded 2642 utterances from validation (skipped 61 outside [0.5s, 20.0s])
+2026-04-24 20:57:35,038 INFO Loading LibriSpeech split=test from HuggingFace...
+2026-04-24 20:57:35,112 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+2026-04-24 20:57:35,119 INFO HTTP Request: HEAD https://huggingface.co/api/resolve-cache/datasets/openslr/librispeech_asr/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/README.md "HTTP/1.1 200 OK"
+2026-04-24 20:57:35,167 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:35,299 INFO HTTP Request: HEAD https://s3.amazonaws.com/datasets.huggingface.co/datasets/datasets/openslr/librispeech_asr/openslr/librispeech_asr.py "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:35,371 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/.huggingface.yaml "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:35,497 INFO HTTP Request: GET https://datasets-server.huggingface.co/info?dataset=openslr/librispeech_asr "HTTP/1.1 200 OK"
+2026-04-24 20:57:35,578 INFO HTTP Request: HEAD https://huggingface.co/datasets/openslr/librispeech_asr/resolve/71cacbfb7e2354c4226d01e70d77d5fca3d04ba1/dataset_infos.json "HTTP/1.1 404 Not Found"
+2026-04-24 20:57:41,668 INFO Loaded 2528 utterances from test (skipped 92 outside [0.5s, 20.0s])
+2026-04-24 20:57:42,539 INFO Backbone: mamba2_dlucid | Params: 7.27M
+2026-04-24 20:57:42,539 INFO   Frontend: 1.90M | Encoder: 5.36M | Head: 8.0K
+2026-04-24 20:57:46,675 INFO Epoch 1 | Batch 0 | Loss: 4.3947 | LR: 3.00e-07
+2026-04-24 20:57:52,017 INFO Epoch 1 | Batch 50 | Loss: 3.8641 | LR: 1.53e-05
+2026-04-24 20:57:57,744 INFO Epoch 1 | Batch 100 | Loss: 3.1865 | LR: 3.03e-05
+2026-04-24 20:58:02,774 INFO Epoch 1 | Batch 150 | Loss: 2.9417 | LR: 4.53e-05
+2026-04-24 20:58:08,291 INFO Epoch 1 | Batch 200 | Loss: 3.0519 | LR: 6.03e-05
+2026-04-24 20:58:13,462 INFO Epoch 1 | Batch 250 | Loss: 3.0878 | LR: 7.53e-05
+2026-04-24 20:58:19,062 INFO Epoch 1 | Batch 300 | Loss: 2.8619 | LR: 9.03e-05
+2026-04-24 20:58:24,343 INFO Epoch 1 | Batch 350 | Loss: 2.8715 | LR: 1.05e-04
+2026-04-24 20:58:29,650 INFO Epoch 1 | Batch 400 | Loss: 2.9073 | LR: 1.20e-04
+2026-04-24 20:58:34,660 INFO Epoch 1 | Batch 450 | Loss: 2.8615 | LR: 1.35e-04
+2026-04-24 20:58:40,131 INFO Epoch 1 | Batch 500 | Loss: 2.8525 | LR: 1.50e-04
+2026-04-24 20:58:45,189 INFO Epoch 1 | Batch 550 | Loss: 2.8797 | LR: 1.65e-04
+2026-04-24 20:58:50,548 INFO Epoch 1 | Batch 600 | Loss: 2.9247 | LR: 1.80e-04
+2026-04-24 20:58:55,559 INFO Epoch 1 | Batch 650 | Loss: 2.8716 | LR: 1.95e-04
+2026-04-24 20:59:01,041 INFO Epoch 1 | Batch 700 | Loss: 2.8820 | LR: 2.10e-04
+2026-04-24 20:59:06,058 INFO Epoch 1 | Batch 750 | Loss: 2.8755 | LR: 2.25e-04
+2026-04-24 20:59:11,346 INFO Epoch 1 | Batch 800 | Loss: 2.9177 | LR: 2.40e-04
+2026-04-24 20:59:16,827 INFO Epoch 1 | Batch 850 | Loss: 2.8730 | LR: 2.55e-04
+2026-04-24 20:59:22,156 INFO Epoch 1 | Batch 900 | Loss: 2.8868 | LR: 2.70e-04
+2026-04-24 20:59:27,144 INFO Epoch 1 | Batch 950 | Loss: 2.8841 | LR: 2.85e-04
+2026-04-24 20:59:32,649 INFO Epoch 1 | Batch 1000 | Loss: 2.8824 | LR: 3.00e-04
+2026-04-24 20:59:37,761 INFO Epoch 1 | Batch 1050 | Loss: 2.8696 | LR: 3.00e-04
+2026-04-24 20:59:43,060 INFO Epoch 1 | Batch 1100 | Loss: 2.9687 | LR: 3.00e-04
+2026-04-24 20:59:48,087 INFO Epoch 1 | Batch 1150 | Loss: 2.9275 | LR: 3.00e-04
+2026-04-24 20:59:53,498 INFO Epoch 1 | Batch 1200 | Loss: 2.9385 | LR: 3.00e-04
+2026-04-24 21:00:07,822 INFO Epoch 1 | Train: 2.9896 | Dev CER: 0.9962 | Dev WER: 1.0000 | Time: 145s | Peak: 2.5 GB
+2026-04-24 21:00:07,823 INFO   New best CER: 0.9962
+2026-04-24 21:00:12,578 INFO Epoch 2 | Batch 0 | Loss: 2.8950 | LR: 3.00e-04
+2026-04-24 21:00:17,738 INFO Epoch 2 | Batch 50 | Loss: 2.9114 | LR: 3.00e-04
+2026-04-24 21:00:23,369 INFO Epoch 2 | Batch 100 | Loss: 2.8854 | LR: 3.00e-04
+2026-04-24 21:00:28,463 INFO Epoch 2 | Batch 150 | Loss: 2.8991 | LR: 3.00e-04
+2026-04-24 21:00:34,021 INFO Epoch 2 | Batch 200 | Loss: 2.9055 | LR: 3.00e-04
+2026-04-24 21:00:39,023 INFO Epoch 2 | Batch 250 | Loss: 2.8984 | LR: 3.00e-04
+2026-04-24 21:00:44,375 INFO Epoch 2 | Batch 300 | Loss: 2.8908 | LR: 3.00e-04
+2026-04-24 21:00:49,346 INFO Epoch 2 | Batch 350 | Loss: 2.8815 | LR: 3.00e-04
+2026-04-24 21:00:54,620 INFO Epoch 2 | Batch 400 | Loss: 2.8966 | LR: 3.00e-04
+2026-04-24 21:00:59,611 INFO Epoch 2 | Batch 450 | Loss: 2.9081 | LR: 3.00e-04
+2026-04-24 21:01:05,038 INFO Epoch 2 | Batch 500 | Loss: 2.8831 | LR: 3.00e-04
+2026-04-24 21:01:10,060 INFO Epoch 2 | Batch 550 | Loss: 2.8820 | LR: 3.00e-04
+2026-04-24 21:01:15,432 INFO Epoch 2 | Batch 600 | Loss: 2.8723 | LR: 3.00e-04
+2026-04-24 21:01:20,652 INFO Epoch 2 | Batch 650 | Loss: 2.8652 | LR: 3.00e-04
+2026-04-24 21:01:26,075 INFO Epoch 2 | Batch 700 | Loss: 2.9917 | LR: 3.00e-04

@@ -145,6 +145,139 @@ def _compute_novelty_gates(
     return omega, sigma
 
 
+def _apply_lucid_mamba2_chunked_decay_aware(
+    X_c: torch.Tensor,         # (B, nC, T_c, H, P)
+    key_c: torch.Tensor,       # (B, nC, T_c, H, N) — either B_c or C_c
+    lucid_temp: torch.Tensor,  # (H,) — already softplus'd per-head temperature
+    A_cumsum: torch.Tensor,    # (B, H, nC, T_c) — chunk-local cumsum of dt*A (≤ 0)
+    decay_penalty: torch.Tensor,  # (H,) — per-head γ_h ≥ 0, already softplus'd
+) -> torch.Tensor:
+    """D-LUCID: LUCID with an additive decay-distance penalty.
+
+    Idea.  Vanilla LUCID decorrelates value-writes against key similarity
+    uniformly across the chunk.  But the SSD intra-chunk operator
+    weights every pair of writes (j, k) by a decay mask L[i, j]·L[i, k]
+    when a reader at output position i integrates them.  Two writes
+    with aligned keys but large temporal distance are **not actually
+    redundant in the operator sense** — a reader weights them very
+    differently.  LUCID still tries to merge them; that merging is
+    unhelpful, and can even hurt, because it enforces a statistical
+    relationship between writes that the operator itself will never
+    impose.
+
+    D-LUCID adds a per-pair penalty on the LUCID exponent that is
+    proportional to the decay-cumulant distance between the two
+    tokens:
+
+        G_ij       = N · cos(B_i, B_j)                 (vanilla LUCID Gram)
+        Δcs_ij     = | cs[i] − cs[j] |                 ≥ 0,  = 0 on diagonal
+        scaled_ij  = τ_h · (G_ij/√N − √N)  −  γ_h · Δcs_ij
+        P          = exp(clamp(scaled, −30, 30)) + ε·I
+
+    γ_h ≥ 0 is a per-head learnable scalar parameterised as
+    ``softplus(γ_raw − 5)`` with γ_raw init 0, so γ ≈ 0.007 at init
+    (near-vanilla LUCID) while still sitting on a smooth gradient path
+    Adam can climb into the engagement regime.
+
+    Structural properties (why this formulation, finally).
+
+    - **Init = vanilla LUCID** (γ ≈ 0, and γ · Δcs ≈ 0 on every pair):
+      the kernel's output at step 0 matches vanilla LUCID to within
+      fp32 noise.  The mechanism starts from a known-good operating
+      point and engages only if SGD finds it productive.  Unlike
+      v4/v5 (dt-amplified), there is no "concentration on noise" at
+      init — γ barely moves P away from LUCID.
+    - **Zero-decay reduction is bit-exact for any γ**: when dt · A = 0
+      (Δcs_ij ≡ 0), the penalty term vanishes entirely, so v6 = LUCID
+      even at large γ.
+    - **Unit diagonal for any γ, any decay profile**: Δcs_ii = 0, so
+      the penalty term is 0 on the diagonal; the LUCID term gives
+      diag_ii = 0 by construction.  P_ii = exp(0) = 1.
+    - **Lower-bounded by zero off-diagonal**: because γ ≥ 0 and
+      Δcs ≥ 0, the penalty only *decreases* scaled, i.e., only pushes
+      P_ij toward 0 (never toward 1 or ∞).  No rank-1 collapse path.
+      cond(P) stays O(1) across all γ in probe (1.01–1.05).
+    - **Additive, not multiplicative**.  The v1–v5 family modified
+      LUCID's exponent multiplicatively and either attenuated LUCID
+      everywhere (v2, v3 — ran +0.005 behind LUCID) or concentrated
+      LUCID's action on noise (v4, v5 — broke at init).  The additive
+      penalty is in a genuinely different function class: γ = 0 *is*
+      LUCID; γ > 0 **selectively removes merging** on far pairs
+      without touching close pairs.  The down-side is bounded below
+      by vanilla LUCID (γ = 0 limit).
+
+    Semantic reading.  ``γ · Δcs_ij`` is a *log-space* penalty on
+    merging temporally-distant aligned writes.  On trained Mamba-2,
+    per-chunk Δcs spans ~0 to ~30; a γ of 0.05–0.5 puts the penalty
+    in the 0.5–15 range — spanning "barely perturbs LUCID" to "fully
+    suppresses merging on far pairs."  That engagement regime is
+    directly reachable by Adam from the softplus(γ_raw − 5) init, in
+    contrast to the novelty-gate parameterisation the scientist
+    diagnosed as stuck at 4–5 orders of magnitude below its target.
+
+    Archived failure modes of the earlier D-LUCID drafts.
+
+    - v1 (naïve K̃ K̃^T with √N·m_i m_j compensation): cond(P) ≈ 6e5,
+      signal blow-up 10⁴×. Rank-1 collapse when m_i, m_j → 0.
+      Archived: ``mamba2_dlucid_seed42_broken_v1``.
+    - v2 (diagonal-blend G̃ = mm^T·G + (1−mm^T)·NI): well-conditioned
+      but quartered preconditioning on middle-chunk pairs.
+      +0.005 dev CER behind LUCID through ep15.
+      Archived: ``mamba2_dlucid_seed42_blend_v2``.
+    - v3 (row-scaled P = I + m·(P_LUCID − I)): well-conditioned but
+      attenuated LUCID on aged output rows.  Same +0.005 band.
+      Archived: ``mamba2_dlucid_seed42_row_v3``.
+    - v4 (dt-amplified unbounded) and v5 (dt-amplified, clamped
+      [0.5, 2.0]): catastrophic at init (CER 0.97–0.996 ep1) because
+      dt at random-init is noise, and concentrating LUCID's action
+      on noise-indexed positions corrupts gradient flow through the
+      whole encoder from step 0.  Archived:
+      ``mamba2_dlucid_seed42_dtamp_v4_unbounded`` and
+      ``mamba2_dlucid_seed42_dtamp_v5_clamped``.
+    """
+    Bsz, nC, Tc, H, P = X_c.shape
+    N = key_c.shape[-1]
+    sqrt_d = N ** 0.5
+
+    # Reshape for batched matmul / solve: (B, nC, H, T_c, N) / (..., T_c, P).
+    key_perm = key_c.permute(0, 1, 3, 2, 4).contiguous()   # (B, nC, H, T_c, N)
+    X_perm = X_c.permute(0, 1, 3, 2, 4).contiguous()       # (B, nC, H, T_c, P)
+
+    # RMS-normalised keys (as in LUCID); diag(G) = N by construction.
+    B_rn = sqrt_d * F.normalize(key_perm, dim=-1)          # (B, nC, H, T_c, N)
+    gram = torch.matmul(B_rn, B_rn.transpose(-2, -1))      # (B, nC, H, T_c, T_c)
+
+    # Pairwise decay-cumulant distance Δcs_ij = |cs[i] − cs[j]|.
+    # A_cumsum is (B, H, nC, T_c); reshape to the (B, nC, H, T_c) layout
+    # so the outer-difference broadcasts cleanly onto the Gram axes.
+    cs = A_cumsum.permute(0, 2, 1, 3).to(gram.dtype)       # (B, nC, H, T_c)
+    delta_cs = (cs.unsqueeze(-1) - cs.unsqueeze(-2)).abs() # (B, nC, H, T_c, T_c)
+
+    # Broadcast per-head scalars to match (B, nC, H, T_c, T_c).
+    tau = lucid_temp.view(1, 1, H, 1, 1).to(gram.dtype)
+    gamma = decay_penalty.view(1, 1, H, 1, 1).to(gram.dtype)
+
+    # Additive decay-penalty exponent.
+    #   scaled_ij = τ · (G_ij/√N − √N)  −  γ · Δcs_ij
+    # Diagonal: Δcs_ii = 0, so the penalty is 0 there; the LUCID term
+    # gives (N/√N − √N) = 0; P_ii = exp(0) = 1 for any τ, any γ, any
+    # decay profile — unit diagonal preserved by construction.
+    # γ = 0 reduces bit-exactly to vanilla LUCID.  Δcs ≡ 0 (zero-decay
+    # within-chunk) also reduces bit-exactly to LUCID for any γ.
+    scaled_lucid = tau * (gram / sqrt_d - sqrt_d)
+    scaled = (scaled_lucid - gamma * delta_cs).clamp(-30, 30)
+    Pm = torch.exp(scaled)
+
+    # Same ε·I bump as vanilla LUCID (1e-4 per the eps_reg fix; see the
+    # comment in _apply_lucid_mamba2_chunked).  Stays well below the
+    # gram magnitude (~N) so the preconditioner character is preserved.
+    eye = torch.eye(Tc, device=Pm.device, dtype=Pm.dtype)
+    Pm = Pm + 1e-4 * eye
+
+    X_precond = torch.linalg.solve(Pm, X_perm)             # (B, nC, H, T_c, P)
+    return X_precond.permute(0, 1, 3, 2, 4).contiguous()
+
+
 def _apply_lucid_mamba2_chunked(
     X_c: torch.Tensor,        # (B, nC, T_c, H, P)
     key_c: torch.Tensor,      # (B, nC, T_c, H, N) — either B_c or C_c
@@ -225,6 +358,10 @@ def ssd_scan_causal(
     state: Optional[torch.Tensor] = None,
     lucid_temp: Optional[torch.Tensor] = None,
     lucid_key_source: str = "B",
+    lucid_decay_aware: bool = False,
+    lucid_decay_penalty: Optional[torch.Tensor] = None,
+    householder_u: Optional[torch.Tensor] = None,
+    householder_alpha: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """Mamba-2 SSD chunked selective scan.
 
@@ -246,6 +383,11 @@ def ssd_scan_causal(
             the math.
         lucid_key_source: "B" or "C".  Which of B (key-analog, default)
             or C (query-analog) to use as the correlation source.
+        lucid_decay_aware: if True, use the decay-aware variant
+            (``_apply_lucid_mamba2_chunked_decay_aware``) that weights
+            the Gram by each token's chunk-end residual mass
+            ``m_i = exp(A_cumsum[-1] − A_cumsum[i])``.  Reduces exactly
+            to vanilla LUCID when dt·A → 0 within a chunk.
 
     Returns:
         Y:           (B, L, H, P)
@@ -274,26 +416,39 @@ def ssd_scan_causal(
     B_c = B_f.reshape(Bsz, nC, chunk_size, H, N)
     C_c = C_f.reshape(Bsz, nC, chunk_size, H, N)
 
-    # ── Optional: LUCID preconditioner on X_c using B-correlation ───────
+    # (B, H, nC, L) — move H out for the segsum.
+    # Compute A_cumsum early so both vanilla and decay-aware LUCID paths
+    # can consume it.  This is a pure reordering — no numerical change.
+    A_cl = A_c.permute(0, 3, 1, 2)                         # (B, H, nC, L)
+    A_cumsum = torch.cumsum(A_cl, dim=-1)                  # (B, H, nC, L)
+
+    # ── Optional: LUCID preconditioner on X_c using B- or C-correlation ─
     # Chunk-local T_c × T_c preconditioner P_c = exp(τ_h · (G_c/√N − √N))
     # applied to X_c via P_c^{-1} X_c.  Inter-chunk scan runs on
     # preconditioned X unchanged.  Faithful to the RWKV-6 LUCID formulation
     # (see _apply_lucid_recurrent in rwkv6_time_mix.py) adapted to the
-    # Mamba-2 dual-form B-as-key convention.
+    # Mamba-2 dual-form B-as-key convention.  The decay-aware variant
+    # weights the Gram by the chunk-local residual mass m_i.
     if lucid_temp is not None:
         if lucid_key_source == "B":
-            X_c = _apply_lucid_mamba2_chunked(X_c, B_c, lucid_temp)
+            key_c = B_c
         elif lucid_key_source == "C":
-            X_c = _apply_lucid_mamba2_chunked(X_c, C_c, lucid_temp)
+            key_c = C_c
         else:
             raise ValueError(
                 f"lucid_key_source must be 'B' or 'C', got "
                 f"{lucid_key_source!r}"
             )
-
-    # (B, H, nC, L) — move H out for the segsum.
-    A_cl = A_c.permute(0, 3, 1, 2)                         # (B, H, nC, L)
-    A_cumsum = torch.cumsum(A_cl, dim=-1)                  # (B, H, nC, L)
+        if lucid_decay_aware:
+            if lucid_decay_penalty is None:
+                raise ValueError(
+                    "lucid_decay_aware=True requires lucid_decay_penalty (per-head γ)"
+                )
+            X_c = _apply_lucid_mamba2_chunked_decay_aware(
+                X_c, key_c, lucid_temp, A_cumsum, lucid_decay_penalty,
+            )
+        else:
+            X_c = _apply_lucid_mamba2_chunked(X_c, key_c, lucid_temp)
 
     # ── 1. intra-chunk (diagonal blocks) ──────────────────────────────────
     L_mask = torch.exp(_segsum(A_cl))                      # (B, H, nC, L, L)
@@ -310,19 +465,61 @@ def ssd_scan_causal(
     )  # (B, nC, H, P, N)
 
     # ── 3. inter-chunk propagation (left factor) ─────────────────────────
-    if state is None:
-        init = torch.zeros(Bsz, 1, H, P, N, device=X.device, dtype=torch.float32)
-    else:
-        init = state.float().unsqueeze(1)                  # (B, 1, H, P, N)
-    produced_full = torch.cat([init, produced], dim=1)     # (B, nC+1, H, P, N)
-
+    # Vanilla path: vectorised cumulative propagation via exp(cumsum(A)).
+    # Householder path: sequential loop applying per-head orthogonal
+    # rotation at each chunk boundary before the diagonal decay.
+    #
+    # The state recursion in Householder mode is
+    #     s_{c+1} = D_c · H_h · s_c  +  produced_c
+    # where D_c = exp(chunk_boundary_c) is the scalar per-head chunk-total
+    # decay (commutes with H because it's scalar × I), and H_h is a
+    # generalised per-head partial Householder reflection
+    #     H_h = I − 2(1 − α_h) · u_h · u_hᵀ,     α_h ∈ [0, 1]
+    # - α = 1 ⇒ H = I ⇒ bit-exact vanilla inter-chunk propagation.
+    # - α = 0 ⇒ full reflection along the u direction.
+    # - α ∈ (0, 1) ⇒ partial reflection with operator norm ≤ 1 (stable).
+    # u is a unit N-vector per head (caller must normalise).  Applied on
+    # the state's N-axis (d_state); acts identically across the P-axis.
     chunk_boundary = A_cumsum[..., -1]                     # (B, H, nC)
-    decay_chunk = torch.exp(_segsum(F.pad(chunk_boundary, (1, 0))))  # (B, H, nC+1, nC+1)
-    propagated = torch.einsum(
-        "bhzc,bchpn->bzhpn",
-        decay_chunk, produced_full,
-    )                                                      # (B, nC+1, H, P, N)
-    entering, final_state = propagated[:, :-1], propagated[:, -1]
+    if householder_u is None:
+        if state is None:
+            init = torch.zeros(Bsz, 1, H, P, N, device=X.device, dtype=torch.float32)
+        else:
+            init = state.float().unsqueeze(1)              # (B, 1, H, P, N)
+        produced_full = torch.cat([init, produced], dim=1) # (B, nC+1, H, P, N)
+        decay_chunk = torch.exp(_segsum(F.pad(chunk_boundary, (1, 0))))  # (B, H, nC+1, nC+1)
+        propagated = torch.einsum(
+            "bhzc,bchpn->bzhpn",
+            decay_chunk, produced_full,
+        )                                                  # (B, nC+1, H, P, N)
+        entering, final_state = propagated[:, :-1], propagated[:, -1]
+    else:
+        if householder_alpha is None:
+            raise ValueError("householder_u provided but householder_alpha is None")
+        # H_h acts on the state's N-axis.  coef_h = 2·(1 − α_h), u_h (H, N).
+        u_h = householder_u.to(torch.float32)              # (H, N)
+        coef_h = (2.0 * (1.0 - householder_alpha.to(torch.float32)))  # (H,)
+        if state is None:
+            s = torch.zeros(Bsz, H, P, N, device=X.device, dtype=torch.float32)
+        else:
+            s = state.float()
+        entering_list = []
+        for c in range(nC):
+            entering_list.append(s)
+            # Householder on state: s' = s − coef · u · (u · s).
+            # s is (B, H, P, N); u is (H, N); inner product (u · s) is (B, H, P).
+            u_dot_s = torch.einsum("hn,bhpn->bhp", u_h, s)
+            reflection = (
+                coef_h.view(1, H, 1, 1)
+                * u_h.view(1, H, 1, N)
+                * u_dot_s.unsqueeze(-1)
+            )                                              # (B, H, P, N)
+            s_reflected = s - reflection
+            # Diagonal chunk decay (scalar per b, h).
+            chunk_decay = torch.exp(chunk_boundary[:, :, c])  # (B, H)
+            s = chunk_decay.view(Bsz, H, 1, 1) * s_reflected + produced[:, c]
+        entering = torch.stack(entering_list, dim=1)       # (B, nC, H, P, N)
+        final_state = s
 
     # ── 4. state → output per chunk (middle factor) ──────────────────────
     state_decay_out = torch.exp(A_cumsum)                  # (B, H, nC, L)
@@ -354,6 +551,8 @@ def ssd_scan_causal_novelty(
     novelty_gamma: torch.Tensor,                     # (H,) required
     lucid_temp: Optional[torch.Tensor] = None,
     lucid_key_source: str = "B",
+    lucid_decay_aware: bool = False,
+    lucid_decay_penalty: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Mamba-2 SSD chunked scan with per-chunk write-novelty gate.
 
@@ -411,14 +610,24 @@ def ssd_scan_causal_novelty(
     # ── Optional LUCID preconditioner, composed after novelty gating ───
     if lucid_temp is not None:
         if lucid_key_source == "B":
-            X_c = _apply_lucid_mamba2_chunked(X_c, B_c, lucid_temp)
+            key_c = B_c
         elif lucid_key_source == "C":
-            X_c = _apply_lucid_mamba2_chunked(X_c, C_c, lucid_temp)
+            key_c = C_c
         else:
             raise ValueError(
                 f"lucid_key_source must be 'B' or 'C', got "
                 f"{lucid_key_source!r}"
             )
+        if lucid_decay_aware:
+            if lucid_decay_penalty is None:
+                raise ValueError(
+                    "lucid_decay_aware=True requires lucid_decay_penalty (per-head γ)"
+                )
+            X_c = _apply_lucid_mamba2_chunked_decay_aware(
+                X_c, key_c, lucid_temp, A_cumsum, lucid_decay_penalty,
+            )
+        else:
+            X_c = _apply_lucid_mamba2_chunked(X_c, key_c, lucid_temp)
 
     # ── Rest of the chunked SSD (same as ssd_scan_causal) ──────────────
     L_mask = torch.exp(_segsum(A_cl))

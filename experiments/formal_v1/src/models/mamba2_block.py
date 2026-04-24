@@ -216,8 +216,10 @@ class Mamba2Block(nn.Module):
         use_convshift_sym: bool = False,
         use_lucid: bool = False,
         lucid_key_source: str = "B",
+        lucid_decay_aware: bool = False,
         use_novelty_gate: bool = False,
         novelty_gamma_fixed: Optional[float] = None,
+        use_householder: bool = False,
     ):
         super().__init__()
         if mode not in {"recurrent", "lion", "lion_chunk"}:
@@ -315,6 +317,25 @@ class Mamba2Block(nn.Module):
         # loss deficit — diagnosed and fixed 2026-04-23.
         self.use_lucid = use_lucid
         self.lucid_key_source = lucid_key_source
+        # D-LUCID (decay-aware LUCID, v6 additive-decay-penalty).
+        # Adds a per-pair decay-distance penalty to LUCID's exponent:
+        #   scaled_ij = τ_h · (G_ij/√N − √N) − γ_h · |cs[i] − cs[j]|
+        # γ_h ≥ 0 via softplus(γ_raw − 5); γ_raw init 0 ⇒ γ ≈ 0.007 at
+        # init (near-vanilla LUCID) while still on a smooth gradient
+        # path Adam can climb.  γ = 0 exactly recovers LUCID; Δcs = 0
+        # (zero-decay within-chunk) also recovers LUCID for any γ.
+        #
+        # The shift of 5 is deliberate: softplus directly (γ_raw init 0)
+        # would give γ ≈ 0.69, already in the engagement regime and too
+        # far from vanilla LUCID at init.  Shift 5 gives γ ≈ 0.007, close
+        # to zero but with a non-vanishing gradient path — σ(−5) ≈ 0.007,
+        # the same order the scientist used successfully on lucid_temperature.
+        self.lucid_decay_aware = lucid_decay_aware
+        self._dlucid_gamma_shift = 5.0
+        if lucid_decay_aware and not use_lucid:
+            raise ValueError(
+                "lucid_decay_aware=True requires use_lucid=True"
+            )
         if use_lucid:
             if mode != "recurrent":
                 raise ValueError(
@@ -332,6 +353,40 @@ class Mamba2Block(nn.Module):
                     math.log(math.e - 1),  # softplus(log(e-1)) = 1.0 exactly
                     dtype=dtype,
                 )
+            )
+            if lucid_decay_aware:
+                # Per-head γ_raw; γ = softplus(γ_raw − 5).  Init 0 gives
+                # γ ≈ 0.007 at step 0 — near-vanilla LUCID, non-saturated.
+                self.dlucid_gamma_raw = nn.Parameter(
+                    torch.zeros(self.nheads, dtype=dtype)
+                )
+
+        # ── Householder inter-chunk state rotation ──────────────────────
+        # Generalised partial Householder applied at chunk boundaries in
+        # the SSD scan's inter-chunk propagation:
+        #     H_h = I − 2(1 − α_h) · u_h · u_hᵀ       α_h ∈ [0, 1]
+        # Per-head parameters (H·N for u_raw, H for α_raw).  α = 1 gives
+        # bit-exact vanilla Mamba-2 (H = I).  α ∈ [0, 1] guarantees
+        # operator norm ≤ 1 → stability preserved.
+        #
+        # Parameterisation chosen so init α ≈ 1 (so the backbone starts
+        # at vanilla Mamba-2 and SGD engages Householder as useful):
+        #   α_raw init = 5 ⇒ α = sigmoid(5) ≈ 0.9933 ⇒ (1 − α) ≈ 0.007.
+        # u_raw is initialised with small random values and is unit-
+        # normalised at use, giving a well-defined reflection direction
+        # that can move freely during training.
+        self.use_householder = use_householder
+        if use_householder and mode != "recurrent":
+            raise ValueError(
+                f"Householder is only defined on the recurrent SSD scan; "
+                f"got mode={mode!r}"
+            )
+        if use_householder:
+            self.householder_u_raw = nn.Parameter(
+                torch.randn(self.nheads, d_state, dtype=dtype) * 0.01
+            )
+            self.householder_alpha_raw = nn.Parameter(
+                torch.full((self.nheads,), 5.0, dtype=dtype)
             )
 
         # ── Write-novelty gate (per-chunk Σ variant) ────────────────────
@@ -506,6 +561,21 @@ class Mamba2Block(nn.Module):
         lucid_temp = (
             F.softplus(self.lucid_temperature) if self.use_lucid else None
         )
+        lucid_decay_penalty = (
+            F.softplus(self.dlucid_gamma_raw - self._dlucid_gamma_shift)
+            if self.lucid_decay_aware else None
+        )
+        if self.use_householder:
+            # Normalise u_raw to a unit direction per head; sigmoid α_raw
+            # into [0, 1].  Broadcasting handles the inner product in the
+            # kernel; u must be a clean unit vector for the spec to hold.
+            u_norm = F.normalize(self.householder_u_raw, dim=-1)
+            alpha = torch.sigmoid(self.householder_alpha_raw)
+            householder_u = u_norm
+            householder_alpha = alpha
+        else:
+            householder_u = None
+            householder_alpha = None
         new_sigma: Optional[torch.Tensor] = None
         if self.mode == "recurrent":
             if self.use_novelty_gate:
@@ -525,6 +595,8 @@ class Mamba2Block(nn.Module):
                     novelty_gamma=novelty_gamma,
                     lucid_temp=lucid_temp,
                     lucid_key_source=self.lucid_key_source,
+                    lucid_decay_aware=self.lucid_decay_aware,
+                    lucid_decay_penalty=lucid_decay_penalty,
                 )
             else:
                 y_heads, new_ssm = ssd_scan_causal(
@@ -532,6 +604,10 @@ class Mamba2Block(nn.Module):
                     chunk_size=self.chunk_size, state=ssm_state,
                     lucid_temp=lucid_temp,
                     lucid_key_source=self.lucid_key_source,
+                    lucid_decay_aware=self.lucid_decay_aware,
+                    lucid_decay_penalty=lucid_decay_penalty,
+                    householder_u=householder_u,
+                    householder_alpha=householder_alpha,
                 )
         elif self.mode == "lion":
             y_heads = ssd_scan_lion(x_heads, dt, A_cont, B_h, C_h)
@@ -586,7 +662,7 @@ class Mamba2Block(nn.Module):
                 "step() is not implemented for convshift_sym; use the "
                 "chunked forward() path for state-carry evaluation."
             )
-        if self.use_lucid:
+        if self.use_lucid or self.lucid_decay_aware:
             raise NotImplementedError(
                 "step() is not implemented for LUCID; the preconditioner "
                 "is chunk-local, and single-token streaming would need a "

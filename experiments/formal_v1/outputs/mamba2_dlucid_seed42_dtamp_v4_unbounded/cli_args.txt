@@ -1,0 +1,1 @@
+--backbone mamba2_dlucid --epochs 30 --seed 42 --output-dir outputs/mamba2_dlucid_seed42 --gpu 0

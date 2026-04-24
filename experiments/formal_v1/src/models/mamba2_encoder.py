@@ -38,8 +38,10 @@ class Mamba2EncoderLayer(nn.Module):
         use_convshift_sym: bool = False,
         use_lucid: bool = False,
         lucid_key_source: str = "B",
+        lucid_decay_aware: bool = False,
         use_novelty_gate: bool = False,
         novelty_gamma_fixed: Optional[float] = None,
+        use_householder: bool = False,
     ):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model, dtype=dtype)
@@ -60,8 +62,10 @@ class Mamba2EncoderLayer(nn.Module):
             use_convshift_sym=use_convshift_sym,
             use_lucid=use_lucid,
             lucid_key_source=lucid_key_source,
+            lucid_decay_aware=lucid_decay_aware,
             use_novelty_gate=use_novelty_gate,
             novelty_gamma_fixed=novelty_gamma_fixed,
+            use_householder=use_householder,
         )
 
         self.ffn = nn.Sequential(
@@ -111,8 +115,10 @@ class Mamba2Encoder(nn.Module):
         use_convshift_sym: bool = False,
         use_lucid: bool = False,
         lucid_key_source: str = "B",
+        lucid_decay_aware: bool = False,
         use_novelty_gate: bool = False,
         novelty_gamma_fixed: Optional[float] = None,
+        use_householder: bool = False,
     ):
         super().__init__()
         self.d_model = d_model
@@ -138,8 +144,10 @@ class Mamba2Encoder(nn.Module):
                 use_convshift_sym=use_convshift_sym,
                 use_lucid=use_lucid,
                 lucid_key_source=lucid_key_source,
+                lucid_decay_aware=lucid_decay_aware,
                 use_novelty_gate=use_novelty_gate,
                 novelty_gamma_fixed=novelty_gamma_fixed,
+                use_householder=use_householder,
             )
             for i in range(n_layers)
         ])
