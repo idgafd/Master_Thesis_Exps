@@ -2550,8 +2550,18 @@ def _apply_lucid_recurrent(
         # Regularize for numerical stability (ensures P is always invertible)
         P = P + 1e-6 * torch.eye(end - start, device=P.device, dtype=P.dtype)
 
-        # Solve P · Y = V for preconditioned values
-        v_out[:, :, start:end, :] = torch.linalg.solve(P, v_c.float()).to(v.dtype)
+        # Solve P · Y = V for preconditioned values. solve_ex is the
+        # non-raising form: it returns an info code per batch element
+        # (0 = ok, !=0 = singular). At trained tau values during chunked
+        # eval, P can become numerically singular for individual batch
+        # elements; falling back to v_c (no decorrelation) for those keeps
+        # the run alive instead of crashing the whole eval. Observed at
+        # 50-ep RWKV-6 LUCID chunked-streaming eval, batch element 42.
+        solved, info = torch.linalg.solve_ex(P, v_c.float())
+        if (info != 0).any():
+            bad = (info != 0).view(*info.shape, 1, 1)
+            solved = torch.where(bad, v_c.float(), solved)
+        v_out[:, :, start:end, :] = solved.to(v.dtype)
 
     return v_out
 

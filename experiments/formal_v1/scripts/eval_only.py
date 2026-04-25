@@ -88,18 +88,23 @@ def main():
     chunked_results = {}
     for chunk_sec in cfg.chunk_sizes_sec:
         for carry in [False, True]:
+            mode = "carry" if carry else "reset"
             max_utt = (
                 cfg.max_carry_eval_utterances if carry
                 else cfg.max_reset_eval_utterances
             )
-            result = evaluate_chunked(
-                model, dev_ds, vocab, chunk_sec, cfg, device,
-                carry_state=carry,
-                batch_size=cfg.chunked_eval_batch_size,
-                max_utterances=max_utt,
-            )
+            try:
+                result = evaluate_chunked(
+                    model, dev_ds, vocab, chunk_sec, cfg, device,
+                    carry_state=carry,
+                    batch_size=cfg.chunked_eval_batch_size,
+                    max_utterances=max_utt,
+                )
+            except Exception as e:
+                print(f"  chunked {chunk_sec}s {mode}: SKIPPED ({type(e).__name__}: {e})")
+                chunked_results[f"{chunk_sec}s_{mode}"] = {"_error": f"{type(e).__name__}: {e}"}
+                continue
             if result is not None:
-                mode = "carry" if carry else "reset"
                 chunked_results[f"{chunk_sec}s_{mode}"] = result
                 print(f"  chunked {chunk_sec}s {mode}: CER {result['cer']:.4f}")
 
