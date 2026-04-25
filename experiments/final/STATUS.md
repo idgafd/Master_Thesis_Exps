@@ -84,7 +84,7 @@ variants land in subsequent batches once their prerequisites are met.
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ⚪ | ⚪ `lucid_c` | ⚪ |
-| Linear Attention causal | ⚪ | ⚪ | ⚪ `lucid` | ⚪ |
+| Linear Attention causal | ✅ 0.1879 | ⚪ | ⚪ `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
 Master_Plan §13, where:
@@ -269,3 +269,10 @@ Per `Master_Plan.md §19`:
   at 50 ep (0.0788) already beats the 30-ep P7 composition** (LUCID
   × multidil_v2 = 0.0921 test). Will revisit composition value once
   50-ep LUCID and RSE cells land. 80 min wall on GPU 3.
+- **2026-04-25 20:14 UTC** — `7m_linear_attn_causal_vanilla_seed42`
+  landed. Best dev 0.1903, **test CER 0.1879** (6.26M params; note
+  LA is structurally smaller than RWKV-6/Mamba-2 in this codebase).
+  30-ep prior was ~0.220 — Δ ≈ −0.032, largest vanilla gain from
+  the longer schedule, consistent with LA being most under-fit at
+  30 ep. **Round 1 complete (4 vanillas + multidil_v2/RWKV).** 88
+  min wall on GPU 2.
