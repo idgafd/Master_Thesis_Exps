@@ -83,7 +83,7 @@ variants land in subsequent batches once their prerequisites are met.
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
-| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ⚪ `lucid_c` | ⚪ |
+| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ⚪ |
 | Linear Attention causal | ✅ 0.1879 | ⚪ | ⚪ `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
@@ -284,3 +284,11 @@ Per `Master_Plan.md §19`:
   (RWKV-6 −0.026, Mamba-2 −0.021) is reproducing the
   deficit-proportional ordering predicted by Mechanisms_Overview.
   ~75 min wall on GPU 3.
+- **2026-04-25 21:26 UTC** — `7m_mamba2_causal_lucid_c_seed42`
+  landed. Best dev 0.0966 @ ep49, **test CER 0.0958** (7.27M params,
+  +48 params — single τ per head). Δ −0.0078 over 50-ep Mamba-2
+  vanilla, matching the 30-ep mechanism Δ (−0.0083) within ~0.0005.
+  Both Mamba-2 single mechanisms preserve their Δ across schedules
+  cleanly: multidil_v2 ~3× the gain of LUCID-c, matching closed-cell
+  ordering. LUCID overhead ~40% epoch time on Mamba-2. ~92 min
+  wall on GPU 1.

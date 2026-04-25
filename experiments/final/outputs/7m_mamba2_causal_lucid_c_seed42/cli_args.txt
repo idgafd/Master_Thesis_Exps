@@ -1,0 +1,1 @@
+--backbone mamba2_lucid_c --epochs 50 --seed 42 --gpu 1 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/7m_mamba2_causal_lucid_c_seed42
