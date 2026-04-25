@@ -84,7 +84,7 @@ variants land in subsequent batches once their prerequisites are met.
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ⚪ |
-| Linear Attention causal | ✅ 0.1879 | ⚪ | ✅ 0.1714 `lucid` | ⚪ |
+| Linear Attention causal | ✅ 0.1879 | ✅ 0.1409 | ✅ 0.1714 `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
 Master_Plan §13, where:
@@ -360,3 +360,12 @@ Per `Master_Plan.md §19`:
   and made `eval_only.py` tolerant of per-chunk failures. Recovery
   rescue (test eval + tolerant chunked) pending GPU availability.
   Cell will flip to ✅ once results.json is written.
+- **2026-04-25 22:56 UTC** — `7m_linear_attn_causal_multidil_v2_seed42`
+  landed. Best dev 0.1448 @ ep49, **test CER 0.1409** (6.28M params,
+  +18k vs LA vanilla). **Δ −0.0470 over LA vanilla** — the largest
+  mechanism gain in the matrix so far. **Cross-architecture multidil_v2
+  matrix complete at 50 ep with deficit-proportional ordering
+  reproduced**: LA −0.047 > RWKV-6 −0.026 > Mamba-2 −0.021. Mechanism
+  Δ across all three archs is invariant within ~0.002 between 30 ep
+  and 50 ep — clean confirmation. ~91 min wall on GPU 3. **GPU 3 now
+  idle**, kicking off rwkv6_lucid_chunked rescue there next.
