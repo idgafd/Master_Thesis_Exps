@@ -110,8 +110,45 @@ Master_Plan §13, where:
 
 **Subsequent batches in this 50-ep cycle** (out of scope for current launch — listed for awareness only):
 - 7M causal compositions (3 cells, cell 5 per §4 / §5)
-- 7M LION (15 cells, gated on unified-LION-wrapper engineering)
+- 7M LION non-vanilla / RSE (composition cells; tracked below)
 - 14M (30 cells, gated on 14M-config engineering)
+
+---
+
+## LibriSpeech base matrix — 7M LION, 50-ep (current focus)
+
+Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
+- RWKV-6 LION uses the canonical `lion_attention.lion_parallel_attention` (mode="lion" of `RWKV6TimeMix`) — LION-S (per-channel data-dep λ).
+- Mamba-2 LION uses `mamba2_kernels.ssd_scan_lion` — LION-S (scalar per-head λ from dt·A).
+- LA LION uses `linear_attn_lion.LIONLinearAttentionEncoder` (new) — **LION-LIT** (no decay, λ=1) per Afzal et al. 2025 Table 1's natural mapping for Katharopoulos LA.
+  - Bit-exact verified: `lion_parallel_attention(phi_q, phi_k, v, w=0)` = bidirectional `phi(Q) phi(K)^T V`.
+
+### LION singles (9 cells: 3 archs × {vanilla, multidil_v2, rse_strong_viscosity})
+
+| Architecture | vanilla | + multidil_v2 | + rse_strong_viscosity |
+|---|:---:|:---:|:---:|
+| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ⚪ | ❌ engineering blocker |
+| Mamba-2 LION | 🟡 training | ⚪ | ❌ engineering blocker |
+| LA LION (LION-LIT) | 🟡 training | ⚪ | ❌ engineering blocker |
+
+**LUCID LION cells** (3 cells, would complete the §4 5-cell shape per arch) — explicitly deferred per agent instruction (LUCID is special; start with single convshift and rse first).
+
+**Backbone identifier (codebase) ↔ cell mapping**:
+
+| Cell output dir | Codebase backbone identifier |
+|---|---|
+| `7m_rwkv6_lion_vanilla_seed42` | `lion` |
+| `7m_rwkv6_lion_multidil_v2_seed42` | `lion_convshift_multidil_symmetric_v2` |
+| `7m_mamba2_lion_vanilla_seed42` | `mamba2_lion` |
+| `7m_mamba2_lion_multidil_v2_seed42` | `mamba2_lion_convshift_multidil_symmetric_v2` |
+| `7m_linear_attn_lion_vanilla_seed42` | `linear_attn_lion` |
+| `7m_linear_attn_lion_multidil_v2_seed42` | `linear_attn_lion_convshift_multidil_symmetric_v2` |
+
+**RSE LION cells** are blocked on extending `rwkv6_time_mix.py` (assert at L381),
+`mamba2_rse.py` (mode hardcoded to "recurrent"), and `linear_attn_rse.py`
+(no LION dispatch) to support a complex-valued `lion_complex_attention`
+kernel.  Scope decision deferred until vanilla + multidil_v2 LION cells
+land (per agent instruction, plan B).
 
 ---
 
@@ -254,6 +291,11 @@ Per `Master_Plan.md §19`:
   single mechanisms}), no compositions, no LION. Compositions and
   LION/14M follow once their prereqs are met. The 30-ep tables stay
   in place as a sanity-check floor.
+- **2026-04-25 (LION batch 1)** — Added `linear_attn_lion` backbone
+  (LION-LIT for LA per Afzal et al. 2025 Table 1) and
+  `mamba2_lion_convshift_multidil_symmetric_v2` to the encoder
+  factory. Launched 3 vanilla LION cells across 2 GPUs.
+  `7m_rwkv6_lion_vanilla_seed42` landed at dev 0.0858 / test 0.0859.
 - **2026-04-25 19:52 UTC** — `7m_mamba2_causal_vanilla_seed42` landed.
   Best dev CER 0.1057 @ ep49, **test CER 0.1036**. 30-ep prior was
   0.1192 — 50-ep schedule buys ~Δ −0.014. 1h 5min wall on GPU 1.
