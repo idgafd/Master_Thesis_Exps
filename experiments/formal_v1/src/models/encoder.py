@@ -162,6 +162,11 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "mamba2":                                         ("recurrent", False, False, False, "B", False, False, None, False),
         "mamba2_lion":                                    ("lion",      False, False, False, "B", False, False, None, False),
         "mamba2_lion_chunk":                              ("lion_chunk", False, False, False, "B", False, False, None, False),
+        # LION + multidil_v2 — Mamba-2 LION with the Stage 11.1a multi-dilation
+        # xBC pre-mix.  Same internal conv replacement as the recurrent
+        # multidil_symmetric_v2 path; mode=lion sees the multidil branch
+        # at every forward pass through self.conv1d.
+        "mamba2_lion_convshift_multidil_symmetric_v2":    ("lion",      True,  False, False, "B", False, False, None, False),
         "mamba2_convshift_multidil_symmetric":            ("recurrent", True,  False, False, "B", False, False, None, False),
         "mamba2_convshift_multidil_symmetric_v2":         ("recurrent", True,  False, False, "B", False, False, None, False),
         "mamba2_convshift_symmetric":                     ("recurrent", False, True,  False, "B", False, False, None, False),
