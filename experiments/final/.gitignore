@@ -33,3 +33,11 @@ outputs/*/last_model.pt
 # Launch-script logs (master + per-run) duplicate train.log content
 # and grow without bound — keep local.
 outputs/_50ep_singles_launch_logs/
+outputs/_50ep_lion_vanilla_launch_logs/
+outputs/_50ep_lion_multidil_v2_launch_logs/
+
+# Pre-fix runs of buggy implementations — kept locally for diagnosis
+# (e.g. magnitude-of-bug evidence) but not committed as canonical results.
+# The canonical run-dir name (without the _PRE_*_FIX suffix) holds the
+# fixed result.
+outputs/*_PRE_*_FIX_*/

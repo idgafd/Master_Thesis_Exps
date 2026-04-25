@@ -2,32 +2,37 @@
 
 Mirrors the LION paper's mapping (Afzal et al. 2025, Table 1) for the
 Katharopoulos linear attention family: ``LinAtt → LION-LIT`` (no decay,
-λ = 1).  Provides the bidirectional analog of ``CausalLinearAttentionLayer``
-in ``linear_attn_causal.py`` so the matrix slot (LA, mode=lion) is filled
-with a paper-faithful LION wrapper rather than the naive non-balanced
-bidir LA in ``blocks.py::LinearAttentionLayer``.
+λ = 1, with SCALE).
 
-Mathematical form
------------------
+Mathematical form (paper Eq. 8 + Table 1 "+ Scaling" entry for LinAtt)
+---------------------------------------------------------------------
 
-For LION-LIT (no decay), the unified LION kernel
-``lion_attention.lion_parallel_attention(r, k, v, w)`` reduces to:
+    Y = SCALE(  phi(Q) @ phi(K)^T  ) @ V
 
-    A_fwd = tril(  phi(Q) @ phi(K)^T )      (lower-triangular, includes diagonal)
-    A_bwd = triu(  phi(Q) @ phi(K)^T , 1 )  (strictly upper-triangular)
-    Y     = (A_fwd + A_bwd) @ V             (full bidirectional sum)
+where SCALE divides each row of the attention matrix by its row-sum.
+In the bidirectional case (no decay), the row-sum factorises:
 
-with ``w = 0`` (zero log-decay) so ``exp(cs) = exp(-cs) = 1`` and the
-forward / backward decomposition collapses to the full QK^T matrix
-without double counting (A_bwd excludes the diagonal).
+    sum_j phi(Q)[t] · phi(K)[j]  =  phi(Q)[t] · sum_j phi(K)[j]
 
-Feature map ``phi = elu + 1`` matches the existing causal LA so the
-choice of feature map is consistent across modes 5 (causal) and 6 (LION).
-No L1 normalisation: matches the unscaled form used by RWKV-6 LION
-(``lion_attention.lion_parallel_attention``) and Mamba-2 LION
-(``mamba2_kernels.ssd_scan_lion``).  Sticking to the unscaled form
-keeps the LION wrapper truly unified across the three architectures —
-the same ``A · V`` shape with mechanism-specific decay (none, here).
+so SCALE reduces to dividing the output by ``phi(Q) · phi(K).sum(j)``.
+Matches the L1 denominator pattern used by the existing causal LA
+(``linear_attn_causal.py``: ``Z = phi_k.cumsum``) and the naive bidir
+LA in ``blocks.py::LinearAttentionLayer``.
+
+Implementation reuses the unified ``lion_attention.lion_parallel_attention``
+kernel with ``w = 0`` for the numerator (gives the bidirectional
+``phi(Q) @ phi(K)^T @ V`` with diagonal correction baked in by the
+tril/triu split), then divides by the L1 denominator.
+
+Why SCALE matters here: RWKV-6 / Mamba-2 LION wrappers run unscaled
+because their data-dependent decay (λ < 1, cumulative product) bounds
+output magnitudes naturally.  LA has no decay; without SCALE the
+``phi(Q) @ phi(K)^T`` row-sum scales as O(T · head_dim), output
+magnitudes blow up, training diverges.  Pre-fix LA LION vanilla
+landed at dev 0.4551 vs causal LA 0.1879 — fixed by adding SCALE.
+
+Feature map ``phi = elu + 1`` matches the existing causal LA, so mode 5
+(causal) and mode 6 (LION) share both feature map and SCALE convention.
 
 The optional ``multidil_v2`` pre-mix mirrors the causal layer (Stage 11.1b):
 symmetric padding by mode default, ``MAIN_DIL=1`` branch initialised to
@@ -71,6 +76,7 @@ class LIONLinearAttentionLayer(nn.Module):
         use_multidil_sym: bool = False,
         multidil_kernel: int = 3,
         multidil_dilations: tuple = (1, 2, 4, 8),
+        eps: float = 1e-6,
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
@@ -79,6 +85,7 @@ class LIONLinearAttentionLayer(nn.Module):
             )
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
+        self.eps = eps
 
         self.q_proj = nn.Linear(d_model, d_model)
         self.k_proj = nn.Linear(d_model, d_model)
@@ -137,11 +144,20 @@ class LIONLinearAttentionLayer(nn.Module):
             phi_k = phi_k * keep
             v = v * keep
 
-        # LION-LIT: zero log-decay ⇒ unified kernel reduces to bidirectional
-        # phi(Q) @ phi(K)^T @ V with the diagonal correction baked in by
-        # the tril/triu split (A_bwd excludes the diagonal).
+        # LION-LIT numerator: zero log-decay ⇒ unified kernel reduces to
+        # bidirectional phi(Q) @ phi(K)^T @ V with the diagonal correction
+        # baked in by the tril/triu split (A_bwd excludes the diagonal).
         w = torch.zeros_like(phi_q)
         attn_out = lion_parallel_attention(phi_q, phi_k, v, w)  # (B, H, T, K)
+
+        # SCALE per LION paper Eq. 8: divide each row by its row-sum.
+        # For the no-decay bidirectional case, row-sum factorises as
+        # phi(Q)[t] · sum_j phi(K)[j].  Padded positions contribute 0 to
+        # the sum because phi_k was zeroed above.  Without this term the
+        # output magnitude scales as O(T · head_dim) and training diverges.
+        phi_k_sum = phi_k.float().sum(dim=2, keepdim=True)  # (B, H, 1, K)
+        denom = (phi_q.float() * phi_k_sum).sum(dim=-1, keepdim=True) + self.eps
+        attn_out = attn_out / denom
 
         attn_out = attn_out.to(x.dtype).transpose(1, 2).reshape(B, T, D)
         attn_out = self.dropout(self.o_proj(attn_out))
