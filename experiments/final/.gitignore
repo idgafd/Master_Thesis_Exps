@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Data cache (large, regenerable)
+data/librispeech/
+data/common_voice/
+
+# torch.compile Inductor cache — run-local
+.inductor_cache/
+**/.inductor_cache/
+
+# Final-stage policy: COMMIT model weights for thesis reproducibility.
+# Counter to formal_v1/.gitignore (which excludes *.pt). The single
+# best_model.pt per run is committed under outputs/<exp_name>_seed42/.
+# Per-epoch diagnostic snapshots (ep1/ep5/ep15/ep30/best/final) keep
+# their JSON committed; the .pt they reference via model_state_path
+# stays local under outputs/<exp_name>_seed42/checkpoints/ and is NOT
+# committed (those are kept for in-flight diagnostics, not archived).
+
+outputs/*/checkpoints/
+outputs/*/checkpoints/**

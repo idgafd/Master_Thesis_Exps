@@ -184,3 +184,8 @@ Per `Master_Plan.md §19`:
 - **2026-04-25** — Master plan v2.1 locked. Three-mechanism overview
   written. Top-level CLAUDE.md and STATUS.md added. 7M causal matrix
   (15 cells) confirmed on disk.
+- **2026-04-25 (post-lock decision)** — Final-stage policy: per-run
+  `best_model.pt` is committed to git under `experiments/final/`
+  (counter to `formal_v1/.gitignore`). Per-epoch diagnostic snapshot
+  checkpoints stay local. See `Master_Plan.md §13` and §18 entry 14.
+  `experiments/final/.gitignore` added.

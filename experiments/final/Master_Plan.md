@@ -5,6 +5,10 @@
 
 *Locked 2026-04-25. Executable. Edit only via explicit decision.*
 
+*Decision update 2026-04-25 (post-lock): per-run `best_model.pt` is committed
+to git under `experiments/final/`; per-epoch checkpoint snapshots are not.
+See §13 and §18 entry 14 for the binding rule.*
+
 ---
 
 ## 1. Thesis claim
@@ -376,7 +380,9 @@ First 100 dev set predictions. Tab-separated, one utterance per line:
 ```
 
 ### `best_model.pt`
-PyTorch checkpoint at best dev CER. Contains: model state dict, optimizer state (optional), epoch, dev_cer, full config.
+PyTorch checkpoint at best dev CER. Contains: model state dict, optimizer state (optional), epoch, dev_cer, full config. **Committed to git under `experiments/final/`** (counter to `formal_v1/.gitignore`, which excluded all `*.pt`). Final-stage policy is to keep `best_model.pt` reachable from a clean clone for thesis-grade reproducibility.
+
+The six diagnostic snapshots' `model_state_path` fields point to per-epoch checkpoints under `outputs/<exp_name>_seed42/checkpoints/`. Those checkpoints are **NOT committed** (kept local; regenerable from `best_model.pt` + config + git_commit_hash if needed for re-diagnosis).
 
 ### `run.log`
 Training log, rotated if it exceeds 100 MB. Captures stdout/stderr from training process.
@@ -458,6 +464,7 @@ Reported in a "Closed Cells" section. Each strengthens the cross-experiment inva
 | 11 | Per-run output directory spec per §13, mandatory on every run |
 | 12 | Supplementary evidence drawn from existing on-disk runs |
 | 13 | P8 saturation: brief mention; expanded paragraph conditional on time |
+| 14 | Per-run `best_model.pt` is committed to git under `experiments/final/` (decision 2026-04-25, post-lock); per-epoch diagnostic snapshots remain local. Counter to `formal_v1/.gitignore`. |
 
 ---
 
