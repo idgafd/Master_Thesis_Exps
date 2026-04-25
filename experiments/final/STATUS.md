@@ -84,7 +84,7 @@ variants land in subsequent batches once their prerequisites are met.
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ⚪ |
-| Linear Attention causal | ✅ 0.1879 | ⚪ | ⚪ `lucid` | ⚪ |
+| Linear Attention causal | ✅ 0.1879 | ⚪ | ✅ 0.1714 `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
 Master_Plan §13, where:
@@ -334,3 +334,20 @@ Per `Master_Plan.md §19`:
   cleanly: multidil_v2 ~3× the gain of LUCID-c, matching closed-cell
   ordering. LUCID overhead ~40% epoch time on Mamba-2. ~92 min
   wall on GPU 1.
+- **2026-04-25 22:16 UTC** — `7m_linear_attn_causal_lucid_seed42`
+  landed. Best dev 0.1730 @ ep46, **test CER 0.1714** (6.26M params,
+  +24 params). Δ −0.0165 over 50-ep LA vanilla — **bigger LUCID
+  gain than on Mamba-2** (−0.0078) at 50 ep. Notable narrative
+  shift: at 30 ep Mechanisms_Overview called LA + LUCID "weak"
+  / "the anomaly"; at 50 ep LUCID converts on LA more than on
+  Mamba-2. Asymmetric-transfer claim in §LUCID needs a 50-ep
+  update once rwkv6_lucid_chunked rescue lands. ~120 min wall
+  on GPU 2.
+- **2026-04-25 ~21:55 UTC** — `7m_rwkv6_causal_lucid_chunked_seed42`
+  training succeeded (best dev 0.1007 @ ep49 saved to best_model.pt)
+  but **chunked-streaming eval crashed** on `torch.linalg.solve` →
+  singular P at trained τ. Patched `_apply_lucid_recurrent` to
+  use `solve_ex` with element-wise fallback (commit `048073d`)
+  and made `eval_only.py` tolerant of per-chunk failures. Recovery
+  rescue (test eval + tolerant chunked) pending GPU availability.
+  Cell will flip to ✅ once results.json is written.
