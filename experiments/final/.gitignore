@@ -21,3 +21,15 @@ data/common_voice/
 
 outputs/*/checkpoints/
 outputs/*/checkpoints/**
+
+# Codebase saves per-epoch diagnostic snapshots at run-dir top level
+# (not in a checkpoints/ subdir as the §13 spec text suggests). They
+# are kept local for in-flight diagnostics and NOT committed —
+# only best_model.pt is. last_model.pt is the resume target and also
+# kept local (regenerable from best_model.pt + history).
+outputs/*/checkpoint_ep*.pt
+outputs/*/last_model.pt
+
+# Launch-script logs (master + per-run) duplicate train.log content
+# and grow without bound — keep local.
+outputs/_50ep_singles_launch_logs/

@@ -83,7 +83,7 @@ variants land in subsequent batches once their prerequisites are met.
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ⚪ | ⚪ | ⚪ `lucid_chunked` | ⚪ |
-| Mamba-2 causal | ⚪ | ⚪ | ⚪ `lucid_c` | ⚪ |
+| Mamba-2 causal | ✅ 0.1036 | ⚪ | ⚪ `lucid_c` | ⚪ |
 | Linear Attention causal | ⚪ | ⚪ | ⚪ `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
@@ -254,3 +254,6 @@ Per `Master_Plan.md §19`:
   single mechanisms}), no compositions, no LION. Compositions and
   LION/14M follow once their prereqs are met. The 30-ep tables stay
   in place as a sanity-check floor.
+- **2026-04-25 19:52 UTC** — `7m_mamba2_causal_vanilla_seed42` landed.
+  Best dev CER 0.1057 @ ep49, **test CER 0.1036**. 30-ep prior was
+  0.1192 — 50-ep schedule buys ~Δ −0.014. 1h 5min wall on GPU 1.
