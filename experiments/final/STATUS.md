@@ -83,7 +83,7 @@ variants land in subsequent batches once their prerequisites are met.
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
-| Mamba-2 causal | ✅ 0.1036 | ⚪ | ⚪ `lucid_c` | ⚪ |
+| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ⚪ `lucid_c` | ⚪ |
 | Linear Attention causal | ✅ 0.1879 | ⚪ | ⚪ `lucid` | ⚪ |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
@@ -276,3 +276,11 @@ Per `Master_Plan.md §19`:
   the longer schedule, consistent with LA being most under-fit at
   30 ep. **Round 1 complete (4 vanillas + multidil_v2/RWKV).** 88
   min wall on GPU 2.
+- **2026-04-25 21:23 UTC** — `7m_mamba2_causal_multidil_v2_seed42`
+  landed. Best dev 0.0839 @ ep50 (still improving at end), **test
+  CER 0.0825** (7.33M params, +57k vs vanilla). Δ −0.0211 over
+  50-ep Mamba-2 vanilla — mirrors the 30-ep mechanism gain
+  (−0.0225) almost exactly. Cross-arch multidil_v2 transfer
+  (RWKV-6 −0.026, Mamba-2 −0.021) is reproducing the
+  deficit-proportional ordering predicted by Mechanisms_Overview.
+  ~75 min wall on GPU 3.
