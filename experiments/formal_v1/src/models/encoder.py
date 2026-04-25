@@ -71,6 +71,26 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             use_lucid=(backbone in _la_lucid_backbones),
         )
 
+    # ── LA LION family (LION-LIT bidirectional) ───────────────────────────
+    # `linear_attn_lion`                                — vanilla LION-LIT LA
+    # `linear_attn_lion_convshift_multidil_symmetric_v2` — + multidil_v2 pre-mix
+    # See linear_attn_lion.py.  Maps Katharopoulos LA → LION-LIT (no decay)
+    # per Afzal et al. 2025 Table 1; the unified lion_attention kernel with
+    # w=0 implements the bidirectional balanced form.
+    _la_lion_multidil_backbones = {
+        "linear_attn_lion_convshift_multidil_symmetric_v2",
+    }
+    if backbone == "linear_attn_lion" or backbone in _la_lion_multidil_backbones:
+        from src.models.linear_attn_lion import LIONLinearAttentionEncoder
+        return LIONLinearAttentionEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            n_heads=cfg.n_heads,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+            use_multidil_sym=(backbone in _la_lion_multidil_backbones),
+        )
+
     # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
     # The chunked complex scan replaces the cumsum-based LA forward;
     # exponential decay subsumes the L1-denominator role on this path.
