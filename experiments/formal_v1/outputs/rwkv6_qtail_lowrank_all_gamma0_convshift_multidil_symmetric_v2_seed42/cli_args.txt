@@ -1,0 +1,1 @@
+--backbone rwkv6_qtail_lowrank_all_gamma0_convshift_multidil_symmetric_v2 --gpu 1 --seed 42 --epochs 30

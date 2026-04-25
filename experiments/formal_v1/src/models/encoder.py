@@ -343,6 +343,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_rse_convshift_multidil_symmetric_v2": "recurrent",
         "rwkv6_convshift_multidil_symmetric_gated_v2": "recurrent",
         "rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2": "recurrent",
+        # H1 — per-(head, channel-pair) β allocation on the Kronecker branch.
+        # `betapp` substring → use_qtail_beta_per_pair=True.  Tests whether
+        # the Family-D nulls were β-allocation-limited rather than capacity-
+        # limited.  No `gamma` substring ⇒ no γ coupling (clean isolation).
+        "rwkv6_qtail_lowrank_all_betapp_convshift_multidil_symmetric_v2": "recurrent",
+        # H2 — γ=0 init on the Kronecker decay coupling (undecayed accumulator).
+        # `gamma0` substring → use_qtail_gamma=True with qtail_gamma_init=0.0.
+        # Tests whether cross-channel state needs longer memory than per-
+        # channel decay implies (paper's literal Taylor formulation).
+        "rwkv6_qtail_lowrank_all_gamma0_convshift_multidil_symmetric_v2": "recurrent",
         # Stage 11 P7 + P8 — LUCID × multidil_v2 composition (P7 MARGINAL+
         # triggered P8 per STAGE11_AGENT_QUEUE decision tree):
         "rwkv6_lucid_convshift_multidil_symmetric_v2": "recurrent",
@@ -502,6 +512,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # layer (not just top-2).  Only applicable for lowrank because full
     # K²=4096 Kronecker at 6 layers wouldn't fit memory.
     qtail_all_layers = use_qtail and "lowrank_all" in backbone
+    # H1 — per-(head, channel-pair) β allocation, triggered by "betapp".
+    use_qtail_beta_per_pair = use_qtail and "betapp" in backbone
+    # H2 — γ=0 init for the Kronecker decay coupling, triggered by "gamma0".
+    # Forces use_qtail_gamma=True (γ machinery must exist for init to apply)
+    # and overrides the default 1.0 init to 0.0 (undecayed accumulator).
+    if use_qtail and "gamma0" in backbone:
+        use_qtail_gamma = True
+        qtail_gamma_init = 0.0
+    else:
+        qtail_gamma_init = 1.0
 
     # ── Stage 10 — new mechanism families ────────────────────────────────
     # 10.1 Log-Linear RWKV-6 (Fenwick bucket readout).
@@ -628,6 +648,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         use_qtail_dbeta=use_qtail_dbeta,
         use_qtail_lowrank=use_qtail_lowrank,
         qtail_top_k=(cfg.n_layers if qtail_all_layers else 2),
+        use_qtail_beta_per_pair=use_qtail_beta_per_pair,
+        qtail_gamma_init=qtail_gamma_init,
         use_data_dep_readphase=use_data_dep_readphase,
         readphase_clip=readphase_clip,
         use_nonnormal_rse=use_nonnormal_rse,

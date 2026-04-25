@@ -1,0 +1,1 @@
+--backbone rwkv6_qtail_lowrank_all_betapp_convshift_multidil_symmetric_v2 --gpu 0 --seed 42 --epochs 30

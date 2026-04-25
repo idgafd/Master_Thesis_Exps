@@ -63,6 +63,39 @@ LibriSpeech clean via HuggingFace: `train.100` (~28 539 utterances),
 | CB-3 | `rwkv6_convshift_multidil_symmetric_gated` | 0.1167 | 0.1157 |
 | CB-5 | `rwkv6_frontend_v2` (lean + matched) | did not converge | — |
 | CB-7 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric` | 0.1159 | 0.1150 |
+| CB-7 v2 | `rwkv6_qtail_lowrank_all_convshift_multidil_symmetric_v2` | 0.0989 | 0.0988 |
+| H1 | `rwkv6_qtail_lowrank_all_betapp_convshift_multidil_symmetric_v2` | 0.1003 | 0.0992 |
+| H2 | `rwkv6_qtail_lowrank_all_gamma0_convshift_multidil_symmetric_v2` | **0.0977** | **0.0982** |
+
+## H1 / H2 — Family-D bottleneck probes (seed 42, 30 ep)
+
+Two single-seed probes on top of CB-7 v2 (= `qtail_lowrank_all × multidil_v2`,
+dev 0.0989 / test 0.0988) testing why qtail saturates on ASR.
+
+- **H1 — per-(head, channel-pair) β allocation (`betapp`).** Adds 6.1k params
+  (β_pp shape `(n_head, K'²) = (4, 256)` per active layer), init 1.0; outer
+  `beta_qtail` per-head scalar still zero-init for bit-exact reduction.
+  Result: dev 0.1003 / test 0.0992 — **TIED within σ ≈ 0.0014**. Hypothesis
+  "scalar β was the allocation bottleneck" falsified at this scale.
+- **H2 — γ=0 init Kronecker (`gamma0`).** Initialises `qtail_gamma` at 0.0
+  instead of 1.0 (undecayed-accumulator regime, paper's literal Taylor form).
+  +24 params. Result: dev **0.0977** / test **0.0982** — **MARGINAL+** (dev
+  −0.0012 vs CB-7 v2, test −0.0006). Per-epoch trajectory: H2 ahead of
+  cohort at all six checkpoints from ep 10 (peak Δ = −0.0028 at ep 20),
+  end-of-cosine narrowing to dev 1σ / test 0.4σ.
+
+Differential reading: Family-D nulls on ASR were partly a *decay-handling*
+limitation (cross-channel state needs longer memory horizon than per-channel
+decay implies), not a *capacity* or *β-allocation* limitation. dev 0.0977
+sits within 0.4σ of CB-1 v2's all-time-best 0.0973, with a different
+mechanism family — first time Family-D × multidil_v2 ties RSE × multidil_v2
+on dev. Multi-seed (seeds 43, 44) needed to lift H2 from MARGINAL+ to BREAK
+per `STAGE10_PLAN.md §8.2`.
+
+Both runs preserve the bit-exact-reduction-at-init contract via β_qtail = 0
+gating; smoke-tested in `scripts/smoke_qtail_h1_h2.py`. Implementation:
+`use_qtail_beta_per_pair` flag (substring `betapp`) and `qtail_gamma_init`
+constructor knob (substring `gamma0` → 0.0) in `rwkv6_time_mix.py`.
 
 **Best causal result:** `rwkv6_rse_convshift` at dev **0.1145** /
 test **0.1126** (Stage 3); matched at test-CER by

@@ -212,6 +212,23 @@ class RWKV6TimeMix(nn.Module):
         # w_i + w_j averaged across channel pairs).
         use_qtail_lowrank: bool = False,
         qtail_lr_rank: int = 16,
+        # H1 — Per-(head, channel-pair) β allocation on the Kronecker branch.
+        # Hypothesis: a per-head scalar β has to absorb both "is this
+        # mechanism useful here" and "which channel-pairs matter" — too
+        # coarse for SGD to allocate the lift cleanly.  This flag adds
+        # `beta_qtail_per_pair` of shape (n_head, K2) where K2 = K'² (low-
+        # rank) or K² (full), init 1.0, applied as an element-wise scale on
+        # k_kron (gates per-pair contributions to the lifted state).  Zero-
+        # regression-at-init still holds via the outer `beta_qtail` per-head
+        # scalar (zero-init); β_pp gets gradient once β_qtail moves, same
+        # γ-style mobility pattern used in qtail_gamma.  Requires use_qtail.
+        use_qtail_beta_per_pair: bool = False,
+        # H2 — Init value for `qtail_gamma`.  Default 1.0 ⇒ bit-exact reduction
+        # to the no-gamma baseline at t=0 (current behaviour).  Set to 0.0 to
+        # test the "undecayed Kronecker accumulator" hypothesis: with γ=0 the
+        # lifted state has no decay (paper's literal Taylor formulation).
+        # Only meaningful when use_qtail_gamma=True.
+        qtail_gamma_init: float = 1.0,
         # ── Stage 7A (A1′) — Data-dependent readout phase φ_{t,h,b} ─────
         # Adds a learnable per-(token, head, block) phase that rotates the
         # complex readout contraction before .real collapses it:
@@ -336,6 +353,8 @@ class RWKV6TimeMix(nn.Module):
         self.use_qtail_dbeta = use_qtail_dbeta
         self.use_qtail_lowrank = use_qtail_lowrank
         self.qtail_lr_rank = qtail_lr_rank
+        self.use_qtail_beta_per_pair = use_qtail_beta_per_pair
+        self.qtail_gamma_init = qtail_gamma_init
         self.use_data_dep_readphase = use_data_dep_readphase
         self.readphase_clip = readphase_clip
         self.use_nonnormal_rse = use_nonnormal_rse
@@ -495,10 +514,13 @@ class RWKV6TimeMix(nn.Module):
         if self.use_qtail:
             self.beta_qtail = nn.Parameter(torch.zeros(n_head, dtype=dtype))
             # Learnable per-head decay coupling γ on the Kronecker-lifted
-            # pair-decay w_pair[i,j] = γ · (w_i + w_j). Init 1.0 ⇒ bit-exact
-            # reduction to qtail at t=0.  Requires use_qtail.
+            # pair-decay w_pair[i,j] = γ · (w_i + w_j). Init `qtail_gamma_init`
+            # (default 1.0 ⇒ bit-exact reduction; 0.0 ⇒ undecayed accumulator
+            # H2 hypothesis).  Requires use_qtail.
             if self.use_qtail_gamma:
-                self.qtail_gamma = nn.Parameter(torch.ones(n_head, dtype=dtype))
+                self.qtail_gamma = nn.Parameter(
+                    torch.full((n_head,), float(self.qtail_gamma_init), dtype=dtype)
+                )
             # R2 — Data-dependent β projector: Linear(hidden, n_head).
             # Zero-init weights AND bias ⇒ data-dep term adds exactly 0 at
             # t=0.  Combined with static beta_qtail (zero-init), effective
@@ -520,6 +542,15 @@ class RWKV6TimeMix(nn.Module):
                 self.qtail_lr_proj_k = nn.Parameter(torch.empty(n_head, head_size, r, dtype=dtype))
                 nn.init.kaiming_uniform_(self.qtail_lr_proj_r, a=math.sqrt(5))
                 nn.init.kaiming_uniform_(self.qtail_lr_proj_k, a=math.sqrt(5))
+            # H1 — per-(head, lifted-pair) β allocation, init 1.0.
+            # Lifted dim K2 = K'² for low-rank or K² for full Kronecker.
+            # Acts as element-wise scale on k_kron in the lifted state update;
+            # outer β_qtail (zero-init) still gates the whole branch off at t=0.
+            if self.use_qtail_beta_per_pair:
+                K2_pp = (self.qtail_lr_rank ** 2) if self.use_qtail_lowrank else (head_size ** 2)
+                self.beta_qtail_per_pair = nn.Parameter(
+                    torch.ones(n_head, K2_pp, dtype=dtype)
+                )
 
         # ── Mechanism: ConvShift ─────────────────────────────────────────
         if self.use_conv_shift:
@@ -2078,6 +2109,14 @@ class RWKV6TimeMix(nn.Module):
                     gamma = self.qtail_gamma.view(1, H, 1, 1, 1).to(w_pair.dtype)
                     w_pair = gamma * w_pair
                 w_kron = w_pair.reshape(B, H, T, K2)
+            # H1 — per-(head, lifted-pair) β multiplies k_kron element-wise.
+            # Init β_pp = 1.0 makes this a no-op at t=0; outer β_qtail (zero-
+            # init) still gates the branch off, so zero-regression holds.
+            # Once SGD grows β_qtail, β_pp gets gradient and starts allocating
+            # the lift to specific channel-pairs (the H1 hypothesis).
+            if self.use_qtail_beta_per_pair:
+                beta_pp = self.beta_qtail_per_pair.view(1, H, 1, K2).to(in_dtype)
+                k_kron = k_kron * beta_pp
             u_kron = torch.zeros(1, H, 1, K2, dtype=in_dtype, device=device)
             s_kron_init = torch.zeros(B, H, K2, K, dtype=torch.float32, device=device)
             y_q, _ = _chunked_wkv(r_kron, k_kron, v, w_kron, u_kron, s_kron_init)

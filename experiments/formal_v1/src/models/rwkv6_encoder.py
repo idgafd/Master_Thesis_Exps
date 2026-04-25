@@ -54,6 +54,8 @@ class RWKV6Encoder(nn.Module):
         use_qtail_lowrank: bool = False,
         qtail_lr_rank: int = 16,
         qtail_top_k: int = 2,
+        use_qtail_beta_per_pair: bool = False,
+        qtail_gamma_init: float = 1.0,
         # Stage 7A (A1′) — data-dependent readout phase
         use_data_dep_readphase: bool = False,
         # Soft clip on |φ| via tanh. None → TimeMix default (π).
@@ -155,6 +157,8 @@ class RWKV6Encoder(nn.Module):
                     use_qtail_dbeta=use_qtail_dbeta and qtail_active_here,
                     use_qtail_lowrank=use_qtail_lowrank and qtail_active_here,
                     qtail_lr_rank=qtail_lr_rank,
+                    use_qtail_beta_per_pair=use_qtail_beta_per_pair and qtail_active_here,
+                    qtail_gamma_init=qtail_gamma_init,
                     use_data_dep_readphase=use_data_dep_readphase,
                     readphase_clip=readphase_clip,
                     use_nonnormal_rse=nonnormal_here,
