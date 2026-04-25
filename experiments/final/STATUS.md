@@ -20,7 +20,15 @@ Legend: ✅ done · 🟡 in progress · ⚪ pending · ❌ blocked · 🔁 needs
 | MQAR length sweep | 30 | 0 | 30 |
 | **Mandatory total** | **94** | **~15** | **~79** |
 
-Current best results on the spine (test CER, single seed, 7M, 30 ep):
+> **Schedule note (2026-04-25):** the ~15 done cells above were trained
+> on the 30-epoch discovery schedule (Stages 2–11). Per Master_Plan §7
+> the locked matched budget is **50 epochs**. All 7M + 14M LibriSpeech
+> cells must be re-run at 50 ep with full §13 output spec before they
+> count against the mandate. The 30-ep results are kept as a reference
+> floor for sanity-checking the 50-ep reruns. See the dedicated 50-ep
+> section below the 30-ep tables.
+
+Current best results on the spine (test CER, single seed, 7M, **30 ep — legacy reference, not the 50-ep target**):
 - **Causal RWKV-6:** 0.0921 (LUCID × multidil_v2, P7) — new ceiling
 - **Causal Mamba-2:** 0.0967 (multidil_v2 alone) / 0.0993 (× LUCID)
 - **Causal LA:** ~0.170 (multidil_v2)
@@ -28,7 +36,12 @@ Current best results on the spine (test CER, single seed, 7M, 30 ep):
 
 ---
 
-## LibriSpeech base matrix — 7M (30 cells)
+## LibriSpeech base matrix — 7M (30 cells) — 30-ep legacy reference
+
+> Tables in this section are the prior 30-ep schedule (pre-§7-lock).
+> Kept verbatim for reference and as a sanity-check floor for the
+> 50-ep rerun matrix below. None of these cells count against the
+> 50-ep mandate.
 
 ### Causal cells (15 cells)
 
@@ -55,6 +68,50 @@ Engineering prerequisite: unified LION wrapper extension to Mamba-2
 and LA per `Master_Plan.md §15`. Existing `lion` mode in
 `RWKV6TimeMix` is the canonical wrapper; the same pattern needs to be
 applied to Mamba-2 and LA blocks.
+
+---
+
+## LibriSpeech base matrix — 7M, 50-ep rerun (current focus)
+
+Per Master_Plan §7 (50-ep matched budget) and §13 (output spec).
+**First batch — causal only, 12 cells**: 3 architectures × {vanilla
++ 3 single mechanisms}. Compositions (cell 5 per §4) and LION
+variants land in subsequent batches once their prerequisites are met.
+
+### Causal singles (12 cells)
+
+| Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
+|---|:---:|:---:|:---:|:---:|
+| RWKV-6 causal | ⚪ | ⚪ | ⚪ `lucid_chunked` | ⚪ |
+| Mamba-2 causal | ⚪ | ⚪ | ⚪ `lucid_c` | ⚪ |
+| Linear Attention causal | ⚪ | ⚪ | ⚪ `lucid` | ⚪ |
+
+**Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
+Master_Plan §13, where:
+- `<arch>` ∈ {rwkv6, mamba2, linear_attn}
+- `<cellname>` ∈ {vanilla, multidil_v2, lucid_chunked | lucid_c | lucid, rse_strong_viscosity}
+
+**Backbone identifier (codebase) ↔ cell mapping** (locked):
+
+| Cell output dir | Codebase backbone identifier |
+|---|---|
+| `7m_rwkv6_causal_vanilla_seed42` | `rwkv6` |
+| `7m_rwkv6_causal_multidil_v2_seed42` | `rwkv6_convshift_multidil_symmetric_v2` |
+| `7m_rwkv6_causal_lucid_chunked_seed42` | `rwkv6_lucid` |
+| `7m_rwkv6_causal_rse_strong_viscosity_seed42` | `rwkv6_rse_strong_viscosity` |
+| `7m_mamba2_causal_vanilla_seed42` | `mamba2` |
+| `7m_mamba2_causal_multidil_v2_seed42` | `mamba2_convshift_multidil_symmetric_v2` |
+| `7m_mamba2_causal_lucid_c_seed42` | `mamba2_lucid_c` |
+| `7m_mamba2_causal_rse_strong_viscosity_seed42` | `mamba2_rse_strong_viscosity` |
+| `7m_linear_attn_causal_vanilla_seed42` | `linear_attn_causal` |
+| `7m_linear_attn_causal_multidil_v2_seed42` | `linear_attn_convshift_multidil_symmetric_v2` |
+| `7m_linear_attn_causal_lucid_seed42` | `linear_attn_lucid` |
+| `7m_linear_attn_causal_rse_strong_viscosity_seed42` | `linear_attn_rse_strong_viscosity` |
+
+**Subsequent batches in this 50-ep cycle** (out of scope for current launch — listed for awareness only):
+- 7M causal compositions (3 cells, cell 5 per §4 / §5)
+- 7M LION (15 cells, gated on unified-LION-wrapper engineering)
+- 14M (30 cells, gated on 14M-config engineering)
 
 ---
 
@@ -189,3 +246,11 @@ Per `Master_Plan.md §19`:
   (counter to `formal_v1/.gitignore`). Per-epoch diagnostic snapshot
   checkpoints stay local. See `Master_Plan.md §13` and §18 entry 14.
   `experiments/final/.gitignore` added.
+- **2026-04-25 (rerun mandate)** — All previously-✅ 7M cells were on
+  the 30-ep discovery schedule. Per Master_Plan §7 (locked 50-ep
+  matched budget) they don't satisfy the final-stage spec. New
+  dedicated `LibriSpeech base matrix — 7M, 50-ep rerun` section
+  added. First batch = 12 causal singles (3 archs × {vanilla + 3
+  single mechanisms}), no compositions, no LION. Compositions and
+  LION/14M follow once their prereqs are met. The 30-ep tables stay
+  in place as a sanity-check floor.
