@@ -94,7 +94,15 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
     # The chunked complex scan replaces the cumsum-based LA forward;
     # exponential decay subsumes the L1-denominator role on this path.
-    if backbone == "linear_attn_rse_strong_viscosity":
+    # LA RSE family — vanilla viscosity and the §5 LA composition
+    # (RSE × multidil_v2).  Both share the same RSE chunked complex scan;
+    # the composition variant prepends the symmetric multi-dilation
+    # pre-mix between norm1 and Q/K/V projections.
+    _la_rse_backbones = {
+        "linear_attn_rse_strong_viscosity",
+        "linear_attn_rse_strong_viscosity_convshift_multidil_symmetric_v2",
+    }
+    if backbone in _la_rse_backbones:
         from src.models.linear_attn_rse import CausalLinearAttentionRSEEncoder
         return CausalLinearAttentionRSEEncoder(
             d_model=cfg.d_model,
@@ -103,6 +111,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             ffn_dim=cfg.ffn_dim,
             dropout=cfg.dropout,
             rse_viscosity=True,
+            use_multidil_sym=(backbone == "linear_attn_rse_strong_viscosity_convshift_multidil_symmetric_v2"),
         )
 
     if backbone == "mamba":
@@ -176,6 +185,10 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "mamba2_lucid_convshift_multidil_symmetric_v2":   ("recurrent", True,  False, True,  "B", False, False, None, False),
         # C-side variant — query-analog correlation.
         "mamba2_lucid_c":                                 ("recurrent", False, False, True,  "C", False, False, None, False),
+        # Mamba-2 composition per Master_Plan §3+§5: lucid_c × multidil_v2
+        # (C-correlation LUCID with the symmetric multi-dilation pre-mix).
+        # B-correlation sibling above is `mamba2_lucid_convshift_multidil_symmetric_v2`.
+        "mamba2_lucid_c_convshift_multidil_symmetric_v2": ("recurrent", True,  False, True,  "C", False, False, None, False),
         # D-LUCID (v6, decay-aware via additive γ·Δcs penalty on the LUCID
         # exponent).  See `_apply_lucid_mamba2_chunked_decay_aware`.  γ = 0
         # reduces bit-exactly to LUCID.

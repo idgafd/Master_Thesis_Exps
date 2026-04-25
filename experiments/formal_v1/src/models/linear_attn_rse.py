@@ -64,6 +64,7 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
         rse_viscosity: bool = True,
         rse_lambda_init_range: Tuple[float, float] = (0.5, 6.0),
         rse_chunk_size: int = 64,
+        use_multidil_sym: bool = False,
     ) -> None:
         super().__init__(
             d_model=d_model,
@@ -71,7 +72,7 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
             ffn_dim=ffn_dim,
             dropout=dropout,
             eps=eps,
-            use_multidil_sym=False,
+            use_multidil_sym=use_multidil_sym,
         )
         if self.head_dim % 2 != 0:
             raise ValueError(
@@ -142,6 +143,8 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
         Bk = self.n_blocks
         residual = x
         x_n = self.norm1(x)
+        if self.premix is not None:
+            x_n = self.premix(x_n)
 
         # Projections — q / k / v all (B, H, T, K).
         q = self.q_proj(x_n).view(B, T, H, K).transpose(1, 2)
@@ -265,6 +268,7 @@ class CausalLinearAttentionRSEEncoder(nn.Module):
         rse_theta_lora_dim: int = 48,
         rse_viscosity: bool = True,
         rse_lambda_init_range: Tuple[float, float] = (0.5, 6.0),
+        use_multidil_sym: bool = False,
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -283,6 +287,7 @@ class CausalLinearAttentionRSEEncoder(nn.Module):
                 rse_theta_lora_dim=rse_theta_lora_dim,
                 rse_viscosity=rse_viscosity,
                 rse_lambda_init_range=rse_lambda_init_range,
+                use_multidil_sym=use_multidil_sym,
             )
             for _ in range(n_layers)
         ])
