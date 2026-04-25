@@ -127,9 +127,9 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 
 | Architecture | vanilla | + multidil_v2 | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|
-| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ⚪ | ❌ engineering blocker |
+| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | 🟡 training (GPU 0) | ❌ engineering blocker |
 | Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | 🟡 training (GPU 1) | ❌ engineering blocker |
-| LA LION (LION-LIT) | 🟡 training (GPU 0) | ⚪ | ❌ engineering blocker |
+| LA LION (LION-LIT) | 🔁 needs rerun (SCALE fix landed) | 🔁 needs rerun (after vanilla) | ❌ engineering blocker |
 
 **LUCID LION cells** (3 cells, would complete the §4 5-cell shape per arch) — explicitly deferred per agent instruction (LUCID is special; start with single convshift and rse first).
 
@@ -296,6 +296,15 @@ Per `Master_Plan.md §19`:
   `mamba2_lion_convshift_multidil_symmetric_v2` to the encoder
   factory. Launched 3 vanilla LION cells across 2 GPUs.
   `7m_rwkv6_lion_vanilla_seed42` landed at dev 0.0858 / test 0.0859.
+  `7m_mamba2_lion_vanilla_seed42` landed at dev 0.0871 / test 0.0853.
+- **2026-04-25 (LA LION SCALE fix)** — Pre-fix `linear_attn_lion`
+  omitted the L1 SCALE normalization. Without it, the bidirectional
+  `phi(Q) phi(K)^T` row-sum scales as O(T·head_dim); LA LION vanilla
+  landed at dev 0.4551 / test 0.4501 (broken). Added SCALE per LION
+  paper Eq. 8; smoke-tested encoder magnitudes O(1) post-fix. Pre-fix
+  artifact stashed locally under
+  `7m_linear_attn_lion_vanilla_PRE_SCALE_FIX_seed42/` (gitignored).
+  Rerun queued for next free GPU.
 - **2026-04-25 19:52 UTC** — `7m_mamba2_causal_vanilla_seed42` landed.
   Best dev CER 0.1057 @ ep49, **test CER 0.1036**. 30-ep prior was
   0.1192 — 50-ep schedule buys ~Δ −0.014. 1h 5min wall on GPU 1.
