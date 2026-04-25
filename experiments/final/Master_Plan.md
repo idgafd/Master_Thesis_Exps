@@ -11,6 +11,10 @@
 
 > *Mechanism-prior alignment is the predictive criterion for when causal linear-time RNN extensions convert into measurable gain. Mechanisms transfer in proportion to architectural deficit, with architecture-specific adaptation in how they engage. The cross-experiment invariant — dense per-token freedom does not convert without prior alignment — extends across architectures, modes, base mechanisms, and tasks.*
 
+**Thesis question.** Can causal linear-time RNNs — RWKV-6, Mamba-2, Linear Attention — be systematically understood and improved as an alternative architectural family to Transformer causal attention, by identifying where their expressivity bottlenecks are, discovering mechanism-level solutions, and showing those solutions generalise across the family?
+
+
+
 ---
 
 ## 2. Architecture × mode matrix (6 cells)
