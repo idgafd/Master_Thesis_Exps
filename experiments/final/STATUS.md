@@ -82,7 +82,7 @@ variants land in subsequent batches once their prerequisites are met.
 
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
+| RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ✅ 0.1007 `lucid_chunked` (rescued) | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ⚪ |
 | Linear Attention causal | ✅ 0.1879 | ✅ 0.1409 | ✅ 0.1714 `lucid` | ⚪ |
 
@@ -369,3 +369,15 @@ Per `Master_Plan.md §19`:
   Δ across all three archs is invariant within ~0.002 between 30 ep
   and 50 ep — clean confirmation. ~91 min wall on GPU 3. **GPU 3 now
   idle**, kicking off rwkv6_lucid_chunked rescue there next.
+- **2026-04-25 23:28 UTC** — `7m_rwkv6_causal_lucid_chunked_seed42`
+  rescue completed (54 sec on GPU 3). best_dev 0.1005, **test CER
+  0.1007**, all 6 chunked-streaming windows produced clean numbers
+  (no fallback triggered visibly — patched `solve_ex` handled the
+  singular case). **LUCID transfer matrix complete at 50 ep**:
+  LA −0.0165 > Mamba-2 −0.0078 > RWKV-6 −0.0042. **Narrative
+  inversion vs 30 ep**, where Mechanisms_Overview called LA + LUCID
+  "the anomaly / weak". At 50 ep LUCID is biggest on LA. The
+  architecture-specific deployment story (parallel on LA,
+  lucid_chunked on RWKV-6, lucid_c on Mamba-2) still holds, but
+  the magnitudes shifted with the longer schedule. Worth a
+  writeup paragraph.
