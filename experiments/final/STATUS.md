@@ -82,7 +82,7 @@ variants land in subsequent batches once their prerequisites are met.
 
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1049 | ⚪ | ⚪ `lucid_chunked` | ⚪ |
+| RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ⚪ `lucid_chunked` | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ⚪ | ⚪ `lucid_c` | ⚪ |
 | Linear Attention causal | ⚪ | ⚪ | ⚪ `lucid` | ⚪ |
 
@@ -262,3 +262,10 @@ Per `Master_Plan.md §19`:
   prior was 0.1263 — Δ −0.0212, the bigger gain. RWKV-6 vanilla and
   Mamba-2 vanilla now essentially tied at 50 ep (0.1049 vs 0.1036),
   vs the 0.007 Mamba-2 lead at 30 ep. 73 min wall on GPU 0.
+- **2026-04-25 20:06 UTC** — `7m_rwkv6_causal_multidil_v2_seed42`
+  landed. Best dev 0.0803, **test CER 0.0788** (7.76M params, +18k
+  vs vanilla). Δ −0.0261 single-mechanism gain over 50-ep RWKV-6
+  vanilla. Crosses an interesting threshold: the **single mechanism
+  at 50 ep (0.0788) already beats the 30-ep P7 composition** (LUCID
+  × multidil_v2 = 0.0921 test). Will revisit composition value once
+  50-ep LUCID and RSE cells land. 80 min wall on GPU 3.
