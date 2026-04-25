@@ -82,7 +82,7 @@ variants land in subsequent batches once their prerequisites are met.
 
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ⚪ | ⚪ | ⚪ `lucid_chunked` | ⚪ |
+| RWKV-6 causal | ✅ 0.1049 | ⚪ | ⚪ `lucid_chunked` | ⚪ |
 | Mamba-2 causal | ✅ 0.1036 | ⚪ | ⚪ `lucid_c` | ⚪ |
 | Linear Attention causal | ⚪ | ⚪ | ⚪ `lucid` | ⚪ |
 
@@ -257,3 +257,8 @@ Per `Master_Plan.md §19`:
 - **2026-04-25 19:52 UTC** — `7m_mamba2_causal_vanilla_seed42` landed.
   Best dev CER 0.1057 @ ep49, **test CER 0.1036**. 30-ep prior was
   0.1192 — 50-ep schedule buys ~Δ −0.014. 1h 5min wall on GPU 1.
+- **2026-04-25 20:02 UTC** — `7m_rwkv6_causal_vanilla_seed42` landed.
+  Best dev CER 0.1051, **test CER 0.1049** (7.74M params). 30-ep
+  prior was 0.1263 — Δ −0.0212, the bigger gain. RWKV-6 vanilla and
+  Mamba-2 vanilla now essentially tied at 50 ep (0.1049 vs 0.1036),
+  vs the 0.007 Mamba-2 lead at 30 ep. 73 min wall on GPU 0.
