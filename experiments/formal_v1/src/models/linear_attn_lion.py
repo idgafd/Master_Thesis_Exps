@@ -1,8 +1,15 @@
-"""LION-LIT bidirectional Linear Attention encoder.
+"""LION-LIT and LION-S bidirectional Linear Attention encoders.
 
-Mirrors the LION paper's mapping (Afzal et al. 2025, Table 1) for the
-Katharopoulos linear attention family: ``LinAtt → LION-LIT`` (no decay,
-λ = 1, with SCALE).
+Two decay variants per the LION paper (Afzal et al. 2025) Table 1:
+
+  - ``decay_mode="lit"`` — LION-LIT (λ=1, no decay).  Natural mapping
+    of Katharopoulos LinAtt; default.
+  - ``decay_mode="s"``   — LION-S (per-head selective σ-decay, mirrors
+    Gated RFA → LION-S).  Used as a control for the "decay is the
+    missing piece" hypothesis on LA: causal LA at 50 ep landed test
+    0.1879; LA LION-LIT vanilla landed dev ~0.30 / test ~0.30
+    (worse — no per-position weighting in the bidirectional sum
+    leads to attention smearing on CTC ASR).
 
 Mathematical form (paper Eq. 8 + Table 1 "+ Scaling" entry for LinAtt)
 ---------------------------------------------------------------------
@@ -59,12 +66,21 @@ def phi_elu1(x: torch.Tensor) -> torch.Tensor:
 
 
 class LIONLinearAttentionLayer(nn.Module):
-    """Pre-norm LION-LIT linear attention layer.
+    """Pre-norm LION linear attention layer.
 
     Parallels ``CausalLinearAttentionLayer`` in shape and parameter count
     so the LION matrix slot is param-matched against its causal
-    counterpart.  No L1 denominator (LION-LIT unscaled form, consistent
-    with RWKV-6 / Mamba-2 LION wrappers in this codebase).
+    counterpart.
+
+    ``decay_mode``:
+      - ``"lit"``: λ = 1 (no decay).  Bidirectional QK^T with SCALE.
+        Denominator factorises as phi(Q)·sum_j phi(K_j) — cheap.
+      - ``"s"``:   per-head selective decay λ_t = σ(W_λ · x_t + b_λ),
+        broadcast across the K-dim.  Bidirectional cumulative-product
+        decay matrix; SCALE denominator does NOT factorise — computed
+        via the v-extended trick (concatenate a column of ones to V,
+        the extra output column gives the row-sum).  Init: b_λ = +5
+        ⇒ σ ≈ 0.993 ⇒ near-LION-LIT at step 0 (zero-regression).
     """
 
     def __init__(
@@ -77,15 +93,19 @@ class LIONLinearAttentionLayer(nn.Module):
         multidil_kernel: int = 3,
         multidil_dilations: tuple = (1, 2, 4, 8),
         eps: float = 1e-6,
+        decay_mode: str = "lit",
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
             raise ValueError(
                 f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
             )
+        if decay_mode not in {"lit", "s"}:
+            raise ValueError(f"decay_mode must be 'lit' or 's', got {decay_mode!r}")
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
         self.eps = eps
+        self.decay_mode = decay_mode
 
         self.q_proj = nn.Linear(d_model, d_model)
         self.k_proj = nn.Linear(d_model, d_model)
@@ -94,6 +114,16 @@ class LIONLinearAttentionLayer(nn.Module):
 
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
+
+        # LION-S: per-head selective decay λ_t = σ(W_λ x + b_λ).  Init so
+        # σ(b_λ) ≈ 1 (b_λ = +5 ⇒ 0.9933) — zero-regression vs LION-LIT.
+        if decay_mode == "s":
+            self.decay_proj = nn.Linear(d_model, n_heads)
+            with torch.no_grad():
+                self.decay_proj.weight.zero_()
+                self.decay_proj.bias.fill_(5.0)
+        else:
+            self.decay_proj = None
 
         self.ffn = nn.Sequential(
             nn.Linear(d_model, ffn_dim),
@@ -144,20 +174,37 @@ class LIONLinearAttentionLayer(nn.Module):
             phi_k = phi_k * keep
             v = v * keep
 
-        # LION-LIT numerator: zero log-decay ⇒ unified kernel reduces to
-        # bidirectional phi(Q) @ phi(K)^T @ V with the diagonal correction
-        # baked in by the tril/triu split (A_bwd excludes the diagonal).
-        w = torch.zeros_like(phi_q)
-        attn_out = lion_parallel_attention(phi_q, phi_k, v, w)  # (B, H, T, K)
+        if self.decay_mode == "lit":
+            # LION-LIT numerator: w=0 ⇒ unified kernel reduces to
+            # bidirectional phi(Q) @ phi(K)^T @ V with the diagonal
+            # correction baked in by the tril/triu split.
+            w = torch.zeros_like(phi_q)
+            attn_out = lion_parallel_attention(phi_q, phi_k, v, w)  # (B, H, T, K)
 
-        # SCALE per LION paper Eq. 8: divide each row by its row-sum.
-        # For the no-decay bidirectional case, row-sum factorises as
-        # phi(Q)[t] · sum_j phi(K)[j].  Padded positions contribute 0 to
-        # the sum because phi_k was zeroed above.  Without this term the
-        # output magnitude scales as O(T · head_dim) and training diverges.
-        phi_k_sum = phi_k.float().sum(dim=2, keepdim=True)  # (B, H, 1, K)
-        denom = (phi_q.float() * phi_k_sum).sum(dim=-1, keepdim=True) + self.eps
-        attn_out = attn_out / denom
+            # SCALE: row-sum factorises as phi(Q)[t] · sum_j phi(K)[j].
+            phi_k_sum = phi_k.float().sum(dim=2, keepdim=True)  # (B, H, 1, K)
+            denom = (phi_q.float() * phi_k_sum).sum(dim=-1, keepdim=True) + self.eps
+            attn_out = attn_out / denom
+        else:
+            # LION-S: λ_t = σ(W_λ x + b_λ) ∈ (0, 1)^(B, T, H), broadcast
+            # to (B, H, T, K).  log-decay w = log(λ); the kernel applies
+            # cumprod via cumsum-of-log + exp internally.
+            lam = torch.sigmoid(self.decay_proj(x_n))  # (B, T, H)
+            log_lam = torch.log(lam.clamp(min=1e-8))   # (B, T, H), <= 0
+            w = log_lam.permute(0, 2, 1).unsqueeze(-1).expand(B, H, T, K)
+
+            # SCALE for non-factorising decay: numerator and denominator
+            # both go through lion_parallel_attention with the same (phi_q,
+            # phi_k, w).  For the denominator we set v = constant column 1
+            # so the output is sum_j A[t, j] · 1 = the row-sum (same value
+            # across all K dims; take the first column).
+            ones_v = torch.ones(B, H, T, K, dtype=v.dtype, device=v.device)
+            if key_padding_mask is not None:
+                ones_v = ones_v * keep
+            attn_num = lion_parallel_attention(phi_q, phi_k, v, w)
+            attn_den = lion_parallel_attention(phi_q, phi_k, ones_v, w)
+            denom = attn_den[..., :1].clamp(min=self.eps)  # (B, H, T, 1)
+            attn_out = attn_num / denom
 
         attn_out = attn_out.to(x.dtype).transpose(1, 2).reshape(B, T, D)
         attn_out = self.dropout(self.o_proj(attn_out))
@@ -185,12 +232,14 @@ class LIONLinearAttentionEncoder(nn.Module):
         use_multidil_sym: bool = False,
         multidil_kernel: int = 3,
         multidil_dilations: tuple = (1, 2, 4, 8),
+        decay_mode: str = "lit",
     ) -> None:
         super().__init__()
         self.d_model = d_model
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
+        self.decay_mode = decay_mode
 
         self.ln0 = nn.LayerNorm(d_model)
         self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
@@ -201,6 +250,7 @@ class LIONLinearAttentionEncoder(nn.Module):
                 use_multidil_sym=use_multidil_sym,
                 multidil_kernel=multidil_kernel,
                 multidil_dilations=multidil_dilations,
+                decay_mode=decay_mode,
             )
             for _ in range(n_layers)
         ])

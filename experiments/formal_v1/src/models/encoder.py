@@ -71,16 +71,23 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             use_lucid=(backbone in _la_lucid_backbones),
         )
 
-    # ── LA LION family (LION-LIT bidirectional) ───────────────────────────
-    # `linear_attn_lion`                                — vanilla LION-LIT LA
-    # `linear_attn_lion_convshift_multidil_symmetric_v2` — + multidil_v2 pre-mix
-    # See linear_attn_lion.py.  Maps Katharopoulos LA → LION-LIT (no decay)
-    # per Afzal et al. 2025 Table 1; the unified lion_attention kernel with
-    # w=0 implements the bidirectional balanced form.
+    # ── LA LION family (LION-LIT and LION-S bidirectional) ───────────────
+    # `linear_attn_lion`                                — LION-LIT vanilla
+    # `linear_attn_lion_convshift_multidil_symmetric_v2` — LION-LIT + multidil_v2
+    # `linear_attn_lion_s`                              — LION-S vanilla
+    #     (per-head selective σ-decay; control test for whether "no decay"
+    #      is the cause of LION-LIT underperforming causal LA on CTC ASR.
+    #      Mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1.)
+    # See linear_attn_lion.py.
     _la_lion_multidil_backbones = {
         "linear_attn_lion_convshift_multidil_symmetric_v2",
     }
-    if backbone == "linear_attn_lion" or backbone in _la_lion_multidil_backbones:
+    _la_lion_s_backbones = {"linear_attn_lion_s"}
+    if (
+        backbone == "linear_attn_lion"
+        or backbone in _la_lion_multidil_backbones
+        or backbone in _la_lion_s_backbones
+    ):
         from src.models.linear_attn_lion import LIONLinearAttentionEncoder
         return LIONLinearAttentionEncoder(
             d_model=cfg.d_model,
@@ -89,6 +96,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             ffn_dim=cfg.ffn_dim,
             dropout=cfg.dropout,
             use_multidil_sym=(backbone in _la_lion_multidil_backbones),
+            decay_mode=("s" if backbone in _la_lion_s_backbones else "lit"),
         )
 
     # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
