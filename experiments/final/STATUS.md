@@ -129,7 +129,7 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 |---|:---:|:---:|:---:|
 | RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ❌ engineering blocker |
 | Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ❌ engineering blocker |
-| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | 🟡 training (GPU 0) | ❌ engineering blocker |
+| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ❌ engineering blocker |
 | LA LION (LION-S, control) | 🟡 training (GPU 1) | — | — |
 
 **LION-S as a control** — LION-LIT vanilla landed dev ~0.30 / test ~0.30, well below causal LA (test 0.19).  Hypothesis: bidirectional content-similarity attention without decay smears across all positions on CTC ASR.  LA LION-S adds per-head selective σ-decay (mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1) as a falsification test for the "no decay is the missing piece" reading.
