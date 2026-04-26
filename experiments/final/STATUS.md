@@ -142,18 +142,20 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 - LA LION uses `linear_attn_lion.LIONLinearAttentionEncoder` (new) — **LION-LIT** (no decay, λ=1) per Afzal et al. 2025 Table 1's natural mapping for Katharopoulos LA.
   - Bit-exact verified: `lion_parallel_attention(phi_q, phi_k, v, w=0)` = bidirectional `phi(Q) phi(K)^T V`.
 
-### LION singles (9 cells: 3 archs × {vanilla, multidil_v2, rse_strong_viscosity})
+### LION singles (9 cells: 3 archs × {vanilla, multidil_v2, rse_depth_viscosity})
 
-| Architecture | vanilla | + multidil_v2 | + rse_strong_viscosity |
+| Architecture | vanilla | + multidil_v2 | + rse_depth_viscosity |
 |---|:---:|:---:|:---:|
-| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ❌ engineering blocker |
-| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ❌ engineering blocker |
-| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ❌ engineering blocker |
+| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | 🟡 in flight (GPU 3) |
+| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ⚪ engineering done, queued |
+| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ⚪ engineering done, queued |
 | LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | — | — |
 
 **LION-S as a control** — LION-LIT vanilla landed dev ~0.30 / test ~0.30, well below causal LA (test 0.19).  Hypothesis: bidirectional content-similarity attention without decay smears across all positions on CTC ASR.  LA LION-S adds per-head selective σ-decay (mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1) as a falsification test for the "no decay is the missing piece" reading.
 
-**LUCID LION cells** (3 cells, would complete the §4 5-cell shape per arch) — explicitly deferred per agent instruction (LUCID is special; start with single convshift and rse first).
+**Decision update (2026-04-26)** — RSE-LION variant switched from `rse_strong_viscosity` (Master_Plan §3) to `rse_depth_viscosity`.  Rationale: 7M-causal probe #1 (`7m_rwkv6_causal_rse_depth_viscosity_seed42`, test 0.0989, Δ −0.0017) showed depth-graded θ clip outperforms uniform π/2 on RWKV-6 causal at 50 ep.  Depth schedule (L0–L1: π/8, L2–L3: π/4, L4–L5: π/2) carried over to LION.  Master_Plan §3 stays untouched per its locked status; this decision is recorded here in STATUS.md only.
+
+**LUCID LION cells** (3 cells, complete the §4 5-cell shape per arch) — **unblocked 2026-04-26**, all three running at 50 ep.  Backbones: `lion_lucid_chunked` (RWKV-6, existing kernel + chunked LUCID), `mamba2_lion_lucid_c` (new — added LUCID-c to `ssd_scan_lion`), `linear_attn_lion_lucid` (new — added LUCID branch to `LIONLinearAttentionLayer` LION-LIT).
 
 **Backbone identifier (codebase) ↔ cell mapping**:
 
@@ -161,16 +163,32 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 |---|---|
 | `7m_rwkv6_lion_vanilla_seed42` | `lion` |
 | `7m_rwkv6_lion_multidil_v2_seed42` | `lion_convshift_multidil_symmetric_v2` |
+| `7m_rwkv6_lion_lucid_chunked_seed42` | `lion_lucid_chunked` |
+| `7m_rwkv6_lion_rse_depth_viscosity_seed42` | `rwkv6_lion_rse_depth_viscosity` |
 | `7m_mamba2_lion_vanilla_seed42` | `mamba2_lion` |
 | `7m_mamba2_lion_multidil_v2_seed42` | `mamba2_lion_convshift_multidil_symmetric_v2` |
+| `7m_mamba2_lion_lucid_c_seed42` | `mamba2_lion_lucid_c` |
+| `7m_mamba2_lion_rse_depth_viscosity_seed42` | `mamba2_lion_rse_depth_viscosity` |
 | `7m_linear_attn_lion_vanilla_seed42` | `linear_attn_lion` |
 | `7m_linear_attn_lion_multidil_v2_seed42` | `linear_attn_lion_convshift_multidil_symmetric_v2` |
+| `7m_linear_attn_lion_lucid_seed42` | `linear_attn_lion_lucid` |
+| `7m_linear_attn_lion_rse_depth_viscosity_seed42` | `linear_attn_lion_rse_depth_viscosity` |
 
-**RSE LION cells** are blocked on extending `rwkv6_time_mix.py` (assert at L381),
-`mamba2_rse.py` (mode hardcoded to "recurrent"), and `linear_attn_rse.py`
-(no LION dispatch) to support a complex-valued `lion_complex_attention`
-kernel.  Scope decision deferred until vanilla + multidil_v2 LION cells
-land (per agent instruction, plan B).
+**RSE LION engineering (2026-04-26, unblocked)**:
+- RWKV-6: lifted the `assert mode == "recurrent"` guard on RSE in
+  `rwkv6_time_mix.py`; added `_forward_lion_rse` dispatch + a new
+  `lion_complex_attention` kernel in `lion_attention.py` with
+  Hermitian-symmetric backward (forward `exp(cs[i] − cs[j])`, backward
+  `exp(conj(cs_b[j] − cs_b[i]))`).
+- Mamba-2: added `mode="lion"` to `Mamba2RSEBlock` plus an
+  `_rse_scan_lion` (bidirectional T×T complex SSD attention) and
+  per-layer override plumbing through `Mamba2RSEEncoder`.
+- LA: added `mode="lion"` + `forward_parallel_lion` to
+  `CausalLinearAttentionRSELayer`, threaded through
+  `CausalLinearAttentionRSEEncoder` with per-layer overrides.
+- All three use gradient checkpointing on the bidirectional scan to
+  keep peak memory bounded; pair-block (Bk) chunking caps the
+  intermediate `(B, H, T, T, Bk_chunk)` tensor.
 
 ---
 
@@ -453,3 +471,29 @@ Per `Master_Plan.md §19`:
   via mask), half forced-complex with init θ ∈ [-π/4, π/4] (4×
   larger than standard π/16). Smoke-tested. Watcher armed; will
   launch on second free GPU after probe #1.
+- **2026-04-26 15:16 UTC** — Engineering: wired LUCID into all 3 LION
+  encoders (commit `a716827`).  Added `mamba2_lion_lucid_c` (chunked
+  C-correlation LUCID inside `ssd_scan_lion`) and `linear_attn_lion_lucid`
+  (LION-LIT + paper-faithful `lion_attention_with_lucid` kernel).
+  RWKV-6 LION × LUCID was already wired; added smoke + launch.
+  Launched all 3 cells at 50 ep / seed 42 across GPUs 0/1/2 via
+  `scripts/launch_7m_50ep_lion_lucid.sh`.  Initial epochs healthy:
+  RWKV-6 ep3 dev CER 0.2989 (peak 4 GB), Mamba-2 ep2 dev CER 0.2962
+  (peak 2.5 GB), LA ep4 in progress.
+- **2026-04-26 15:30 UTC** — Decision (logged here, Master_Plan stays
+  locked): RSE-LION variant switched from `rse_strong_viscosity` to
+  `rse_depth_viscosity`.  Justification: RWKV-6 causal probe #1
+  (`7m_rwkv6_causal_rse_depth_viscosity_seed42`, test 0.0989, Δ −0.0017
+  vs strong) showed depth-graded θ clip does at least as well as
+  uniform π/2 on RWKV-6 causal at 50 ep; carrying the depth schedule
+  into LION extends that result.
+- **2026-04-26 15:32 UTC** — Engineering: wired LION × RSE-depth-viscosity
+  for all three architectures (commits `0b27c33`, `33e9925`).  New
+  `lion_complex_attention` kernel in `lion_attention.py` (Hermitian-
+  symmetric bidirectional complex attention; gradient-checkpointed,
+  pair-block chunked); lifted RWKV-6 mode-recurrent assert; added
+  `mode="lion"` paths and per-layer overrides to `Mamba2RSEBlock` /
+  `CausalLinearAttentionRSELayer` and their encoders.  Smoke-tested
+  at T=500/B=4 — RWKV-6 peak 9.86 GB, Mamba-2 19.31 GB, LA 9.44 GB.
+  Launched RWKV-6 LION × RSE-depth-viscosity on GPU 3; Mamba-2 / LA
+  queued for whichever LUCID-LION cell finishes first.
