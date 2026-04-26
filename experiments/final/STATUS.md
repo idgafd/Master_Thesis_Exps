@@ -82,9 +82,9 @@ variants land in subsequent batches once their prerequisites are met.
 
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ✅ 0.1007 `lucid_chunked` (rescued) | ⚪ |
-| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ⚪ |
-| Linear Attention causal | ✅ 0.1879 | ✅ 0.1409 | ✅ 0.1714 `lucid` | ⚪ |
+| RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ✅ 0.1007 `lucid_chunked` (rescued) | ✅ 0.1006 |
+| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | 🟡 ep~30 |
+| Linear Attention causal | ✅ 0.1879 | ✅ 0.1409 | ✅ 0.1714 `lucid` | ✅ 0.1198 |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
 Master_Plan §13, where:
@@ -384,3 +384,27 @@ Per `Master_Plan.md §19`:
   lucid_chunked on RWKV-6, lucid_c on Mamba-2) still holds, but
   the magnitudes shifted with the longer schedule. Worth a
   writeup paragraph.
+- **2026-04-26 01:22 UTC** — `7m_linear_attn_causal_rse_strong_viscosity_seed42`
+  landed. Best dev 0.1213 @ ep50 (still improving), **test CER 0.1198**
+  (6.37M params, +113k vs LA vanilla). **Δ −0.0681 vs LA vanilla** —
+  **biggest single-mechanism gain in the matrix**, BREAK-band as
+  predicted (30-ep had Δ −0.078; "RSE was LA's BREAK"). ~3h wall
+  on GPU 2.
+- **2026-04-26 01:23 UTC** — `7m_rwkv6_causal_rse_strong_viscosity_seed42`
+  landed. Best dev 0.1008 @ ep49, **test CER 0.1006** (7.85M params,
+  +112k vs vanilla). Δ −0.0043 vs RWKV-6 vanilla — small but the
+  mechanism is engaged: per-layer θ_base mean ≈ 0.13 rad, peaks
+  ≈ 0.5 rad (~30% of π/2 budget); LoRA W1/W2 moved from zero-init
+  (mean ≈ 0.02), viscosity η moved (mean ≈ 0.05) — engaged-helpful
+  but small. Reading: WKV's per-channel data-dep decay subsumes
+  RSE's exponential-decay piece; only the complex-pole oscillation
+  is novel, and ASR's binding axis-1 deficit on RWKV-6 is local
+  mixing (multidil_v2 Δ −0.026), not damped oscillation. ~3h25m
+  wall on GPU 0.
+- **2026-04-26 01:23 UTC** — RSE_visc cross-arch transfer pattern
+  matches Mechanisms_Overview prediction cleanly: LA Δ −0.0681
+  (BREAK, no native decay) ≫ RWKV-6 Δ −0.0043 (WKV absorbs decay
+  piece) ≫ Mamba-2 (heading for NULL, Δt absorbs both). Three
+  RSE compositions (la_rse × multidil on GPU 2, la_lucid × multidil
+  on GPU 0, mamba2_lucid_c × multidil on GPU 3 once rwkv6_p7 done)
+  now in flight via the WATCH-A/B/C chain.
