@@ -83,7 +83,7 @@ variants land in subsequent batches once their prerequisites are met.
 | Architecture | vanilla | + multidil_v2 | + LUCID | + rse_strong_viscosity |
 |---|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1049 | ✅ 0.0788 | ✅ 0.1007 `lucid_chunked` (rescued) | ✅ 0.1006 |
-| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | 🟡 ep~30 |
+| Mamba-2 causal | ✅ 0.1036 | ✅ 0.0825 | ✅ 0.0958 `lucid_c` | ✅ 0.1038 (NULL) |
 | Linear Attention causal | ✅ 0.1879 | ✅ 0.1409 | ✅ 0.1714 `lucid` | ✅ 0.1198 |
 
 **Output dirs**: `outputs/7m_<arch>_causal_<cellname>_seed42/` per
