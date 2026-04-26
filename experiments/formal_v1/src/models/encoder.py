@@ -128,6 +128,31 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             use_multidil_sym=(backbone == "linear_attn_rse_strong_viscosity_convshift_multidil_symmetric_v2"),
         )
 
+    # Final-stage — LA LION × RSE-depth-viscosity.  Bidirectional T×T
+    # complex attention on the LA recurrence.  Depth-graded θ clip
+    # mirrors the RWKV-6 / Mamba-2 LION-RSE schedule.
+    if backbone == "linear_attn_lion_rse_depth_viscosity":
+        import math as _math
+        from src.models.linear_attn_rse import CausalLinearAttentionRSEEncoder
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+        ]
+        return CausalLinearAttentionRSEEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            n_heads=cfg.n_heads,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+            rse_viscosity=True,
+            mode="lion",
+            rse_per_layer_overrides=rse_per_layer_overrides,
+        )
+
     if backbone == "mamba":
         from src.models.mamba_encoder import MambaEncoder
         return MambaEncoder(
@@ -272,6 +297,37 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             ngroups=cfg.mamba2_ngroups,
             chunk_size=cfg.mamba2_chunk_size,
             rse_viscosity=True,
+        )
+
+    # Final-stage — Mamba-2 LION × RSE-depth-viscosity.  Bidirectional T×T
+    # complex attention with the same Hermitian-symmetric form used by the
+    # RWKV-6 LION × RSE path (see ``lion_complex_attention`` semantics).
+    # Depth-graded θ clip: π/8 (L0–L1) → π/4 (L2–L3) → π/2 (L4–L5).
+    if backbone == "mamba2_lion_rse_depth_viscosity":
+        import math as _math
+        from src.models.mamba2_rse import Mamba2RSEEncoder
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 8, "theta_init_scale": _math.pi / 32, "theta_lora_dim": 16},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 4, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 32},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+            {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
+        ]
+        return Mamba2RSEEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers,
+            dropout=cfg.dropout,
+            ffn_dim=cfg.ffn_dim,
+            d_state=cfg.mamba2_d_state,
+            d_conv=cfg.mamba_d_conv,
+            headdim=cfg.mamba2_headdim,
+            expand=cfg.mamba_expand,
+            ngroups=cfg.mamba2_ngroups,
+            chunk_size=cfg.mamba2_chunk_size,
+            rse_viscosity=True,
+            mode="lion",
+            rse_per_layer_overrides=rse_per_layer_overrides,
         )
 
     # All RWKV-6 variants (rwkv6, lion, and all mechanism combinations)

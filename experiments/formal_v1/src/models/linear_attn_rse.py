@@ -65,6 +65,7 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
         rse_lambda_init_range: Tuple[float, float] = (0.5, 6.0),
         rse_chunk_size: int = 64,
         use_multidil_sym: bool = False,
+        mode: str = "recurrent",
     ) -> None:
         super().__init__(
             d_model=d_model,
@@ -78,10 +79,16 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
             raise ValueError(
                 f"RSE requires even head_dim for 2x2 blocks; got {self.head_dim}"
             )
+        if mode not in ("recurrent", "lion"):
+            raise ValueError(
+                f"CausalLinearAttentionRSELayer supports mode='recurrent' or "
+                f"'lion'; got {mode!r}"
+            )
         self.n_blocks = self.head_dim // 2
         self.theta_clip = rse_theta_clip
         self.rse_viscosity = rse_viscosity
         self.chunk_size = rse_chunk_size
+        self.mode = mode
 
         # ── Per-(head, block) base rotation angle + LoRA ──────────────────
         theta_init = torch.empty(n_heads, self.n_blocks).uniform_(
@@ -249,6 +256,126 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
             "scan; forward_recurrent is not ported to the RSE path."
         )
 
+    # ----------------------------------------------------------------------
+    # LION bidirectional RSE scan
+    # ----------------------------------------------------------------------
+
+    def forward_parallel_lion(
+        self,
+        x: torch.Tensor,
+        key_padding_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        """LION bidirectional RSE on the LA recurrence — no carry-state.
+
+        Same complex per-step dynamics as ``forward_parallel`` but the
+        within-T attention is built as the Hermitian-symmetric LION matrix
+        (forward exp(cs[t] - cs[s]); backward exp(conj(cs_b[s] - cs_b[t]))).
+
+        Returns the post-residual + post-FFN output (matches the
+        ``forward_parallel`` interface).
+        """
+        B, T, D = x.shape
+        H, K = self.n_heads, self.head_dim
+        Bk = self.n_blocks
+
+        residual = x
+        x_n = self.norm1(x)
+        if self.premix is not None:
+            x_n = self.premix(x_n)
+
+        q = self.q_proj(x_n).view(B, T, H, K).transpose(1, 2)
+        k = self.k_proj(x_n).view(B, T, H, K).transpose(1, 2)
+        v = self.v_proj(x_n).view(B, T, H, K).transpose(1, 2)
+        phi_k = phi_elu1(k)
+
+        if key_padding_mask is not None:
+            keep = (~key_padding_mask).to(phi_k.dtype).view(B, 1, T, 1)
+            phi_k = phi_k * keep
+            v = v * keep
+
+        q_pairs = q.float().view(B, H, T, Bk, 2)
+        k_pairs = phi_k.float().view(B, H, T, Bk, 2)
+        q_c = torch.complex(q_pairs[..., 0], q_pairs[..., 1])
+        k_c = torch.complex(k_pairs[..., 0], k_pairs[..., 1])
+        v_c = v.float().to(torch.complex64)
+
+        theta = self._compute_theta(x_n)                                              # (B, H, T, Bk)
+        lambda_base_hb = self.lambda_base.view(1, H, 1, Bk).float()
+        lambda_eff = lambda_base_hb.expand(B, H, T, Bk)
+        if self.rse_viscosity:
+            lambda_eff = lambda_eff + (
+                self.viscosity_eta.view(1, H, 1, Bk).float() * theta.float() ** 2
+            )
+        log_z = torch.complex(-lambda_eff, theta.float())                             # (B, H, T, Bk)
+
+        cs = log_z.cumsum(dim=2)                                                      # (B, H, T, Bk)
+        cs_b = cs - log_z
+
+        mid = T // 2
+        shift_f_re = cs[:, :, mid:mid + 1, :].real
+        shift_b_re = cs_b[:, :, mid:mid + 1, :].real
+        cs_s = torch.complex(cs.real - shift_f_re, cs.imag)
+        cs_bs = torch.complex(cs_b.real - shift_b_re, cs_b.imag)
+
+        fwd_mask = torch.tril(torch.ones(T, T, dtype=torch.bool, device=x.device))
+        bwd_mask = ~fwd_mask
+        fwd_mask_b = fwd_mask.view(1, 1, T, T, 1)
+        bwd_mask_b = bwd_mask.view(1, 1, T, T, 1)
+
+        out = torch.zeros(B, H, T, K, dtype=torch.float32, device=x.device)
+
+        pair_chunk = 8
+        for b0 in range(0, Bk, pair_chunk):
+            b1 = min(b0 + pair_chunk, Bk)
+            cs_s_c = cs_s[..., b0:b1]
+            cs_bs_c = cs_bs[..., b0:b1]
+            k_c_c = k_c[..., b0:b1]
+            q_c_c = q_c[..., b0:b1]
+
+            diff_f = cs_s_c.unsqueeze(3) - cs_s_c.unsqueeze(2)                        # (B, H, T, T, p)
+            diff_b = cs_bs_c.unsqueeze(2) - cs_bs_c.unsqueeze(3)                      # diff_b[t,s] = cs_bs[s] - cs_bs[t]
+            diff_b_conj = torch.complex(diff_b.real, -diff_b.imag)
+
+            real_f = diff_f.real.clamp(-60.0, 60.0)
+            real_b = diff_b_conj.real.clamp(-60.0, 60.0)
+            A_fwd = torch.exp(torch.complex(real_f, diff_f.imag))
+            A_bwd = torch.exp(torch.complex(real_b, diff_b_conj.imag))
+            A = torch.where(fwd_mask_b, A_fwd, torch.zeros_like(A_fwd)) \
+                + torch.where(bwd_mask_b, A_bwd, torch.zeros_like(A_bwd))             # (B, H, T, T, p)
+
+            scaled_k = A * k_c_c.unsqueeze(2)                                         # (B, H, T, T, p)
+            S = torch.einsum("bhtsk,bhsv->bhtkv", scaled_k, v_c)                      # (B, H, T, p, K)
+            y_chunk = torch.einsum("bhtk,bhtkv->bhtv", q_c_c.conj(), S).real          # (B, H, T, K)
+            out = out + y_chunk
+
+        attn_out = out.transpose(1, 2).reshape(B, T, D)
+        attn_out = self.dropout(self.o_proj(attn_out))
+        x_out = residual + attn_out
+        x_out = x_out + self.ffn(self.norm2(x_out))
+        return x_out
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        key_padding_mask: Optional[torch.Tensor] = None,
+        state: Optional[dict] = None,
+    ) -> Tuple[torch.Tensor, Optional[dict]]:
+        if self.mode == "recurrent":
+            return self.forward_parallel(
+                x, key_padding_mask=key_padding_mask, state=state,
+            )
+        # mode == "lion"
+        if self.training:
+            from torch.utils.checkpoint import checkpoint
+            x_out = checkpoint(
+                self.forward_parallel_lion,
+                x, key_padding_mask,
+                use_reentrant=False,
+            )
+        else:
+            x_out = self.forward_parallel_lion(x, key_padding_mask=key_padding_mask)
+        return x_out, None
+
 
 class CausalLinearAttentionRSEEncoder(nn.Module):
     """Encoder stack using RSE layers; matches the signature of the other
@@ -269,28 +396,35 @@ class CausalLinearAttentionRSEEncoder(nn.Module):
         rse_viscosity: bool = True,
         rse_lambda_init_range: Tuple[float, float] = (0.5, 6.0),
         use_multidil_sym: bool = False,
+        mode: str = "recurrent",
+        rse_per_layer_overrides: Optional[list] = None,
     ) -> None:
         super().__init__()
         self.d_model = d_model
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
+        self.supports_carry_state = (mode == "recurrent")
 
         self.ln0 = nn.LayerNorm(d_model)
         self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
 
-        self.layers = nn.ModuleList([
-            CausalLinearAttentionRSELayer(
+        self.layers = nn.ModuleList()
+        for i in range(n_layers):
+            override = (
+                rse_per_layer_overrides[i] if rse_per_layer_overrides is not None
+                else {}
+            )
+            self.layers.append(CausalLinearAttentionRSELayer(
                 d_model, n_heads, ffn_dim, dropout,
-                rse_theta_init_scale=rse_theta_init_scale,
-                rse_theta_clip=rse_theta_clip,
-                rse_theta_lora_dim=rse_theta_lora_dim,
+                rse_theta_init_scale=override.get("theta_init_scale", rse_theta_init_scale),
+                rse_theta_clip=override.get("theta_clip", rse_theta_clip),
+                rse_theta_lora_dim=override.get("theta_lora_dim", rse_theta_lora_dim),
                 rse_viscosity=rse_viscosity,
                 rse_lambda_init_range=rse_lambda_init_range,
                 use_multidil_sym=use_multidil_sym,
-            )
-            for _ in range(n_layers)
-        ])
+                mode=mode,
+            ))
 
     def init_state(self, batch_size: int, device: torch.device) -> dict:
         K = self.head_dim

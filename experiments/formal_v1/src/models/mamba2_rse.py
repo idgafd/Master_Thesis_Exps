@@ -72,13 +72,18 @@ class Mamba2RSEBlock(nn.Module):
         rse_theta_lora_dim: int = 48,
         rse_viscosity: bool = True,
         A_init_range: Tuple[float, float] = (1.0, 16.0),
+        mode: str = "recurrent",
     ):
         super().__init__()
         if d_state % 2 != 0:
             raise ValueError(
                 f"RSE requires even d_state for 2x2 blocks; got {d_state}"
             )
-        self.mode = "recurrent"
+        if mode not in ("recurrent", "lion"):
+            raise ValueError(
+                f"Mamba2RSEBlock supports mode='recurrent' or 'lion'; got {mode!r}"
+            )
+        self.mode = mode
         self.chunk_size = chunk_size
 
         self.d_model = d_model
@@ -291,6 +296,89 @@ class Mamba2RSEBlock(nn.Module):
         return y_out, state
 
     # ------------------------------------------------------------------
+    # LION bidirectional RSE scan
+    # ------------------------------------------------------------------
+
+    def _rse_scan_lion(
+        self,
+        x_heads: torch.Tensor,    # (B, L, H, P)
+        dt: torch.Tensor,         # (B, L, H)
+        B_c: torch.Tensor,        # (B, L, H, Bk) complex
+        C_c: torch.Tensor,        # (B, L, H, Bk) complex
+        theta: torch.Tensor,      # (B, L, H, Bk) real (clipped)
+    ) -> torch.Tensor:
+        """Bidirectional LION-style RSE scan for Mamba-2.
+
+        Same per-step complex dynamics as ``_rse_scan`` (log_z = dt · A_cont,
+        viscosity-coupled λ_eff), but the within-T attention is built as the
+        Hermitian-symmetric LION matrix:
+
+            A_fwd[t, s, h, b] = exp(cs[t, h, b] - cs[s, h, b])              for t ≥ s
+            A_bwd[t, s, h, b] = exp(conj(cs_b[s, h, b] - cs_b[t, h, b]))    for t < s
+
+        Output ``y[t, h, p] = Re(Σ_s Σ_b A[t, s, h, b] · B_c[s, h, b]
+                                   · x_disc[s, h, p] · C_c[t, h, b])``.
+
+        Memory bounded by chunking over the pair-block index Bk.
+        """
+        Bsz, L, H, P = x_heads.shape
+        Bk = self.n_blocks
+        device = x_heads.device
+
+        lambda_base = self.lambda_base.view(1, 1, H, Bk).float()
+        if self.rse_viscosity:
+            lambda_eff = lambda_base + (
+                self.viscosity_eta.view(1, 1, H, Bk).float() * theta.float() ** 2
+            )
+        else:
+            lambda_eff = lambda_base.expand(Bsz, L, H, Bk)
+        A_cont_c = torch.complex(-lambda_eff.float(), theta.float())            # (B, L, H, Bk)
+        log_z = A_cont_c * dt.float().unsqueeze(-1)                             # (B, L, H, Bk)
+        x_disc = (x_heads.float() * dt.float().unsqueeze(-1)).to(torch.complex64)  # (B, L, H, P)
+
+        cs = log_z.cumsum(dim=1)                                                # (B, L, H, Bk)
+        cs_b = cs - log_z
+
+        mid = L // 2
+        shift_f_re = cs[:, mid:mid + 1].real
+        shift_b_re = cs_b[:, mid:mid + 1].real
+        cs_s = torch.complex(cs.real - shift_f_re, cs.imag)
+        cs_bs = torch.complex(cs_b.real - shift_b_re, cs_b.imag)
+
+        fwd_mask = torch.tril(torch.ones(L, L, dtype=torch.bool, device=device))
+        bwd_mask = ~fwd_mask
+        fwd_mask_b = fwd_mask.view(1, L, L, 1, 1)
+        bwd_mask_b = bwd_mask.view(1, L, L, 1, 1)
+
+        y = x_heads.new_zeros(Bsz, L, H, P)
+
+        pair_chunk = 8  # match RWKV-6 LION × RSE (caps the (L, L, p) tensor size)
+        for b0 in range(0, Bk, pair_chunk):
+            b1 = min(b0 + pair_chunk, Bk)
+            cs_s_c = cs_s[..., b0:b1]                                            # (B, L, H, p)
+            cs_bs_c = cs_bs[..., b0:b1]
+            B_cc = B_c[..., b0:b1]                                               # (B, L, H, p)
+            C_cc = C_c[..., b0:b1]
+
+            diff_f = cs_s_c.unsqueeze(2) - cs_s_c.unsqueeze(1)                   # (B, L, L, H, p)
+            diff_b = cs_bs_c.unsqueeze(1) - cs_bs_c.unsqueeze(2)                 # diff_b[t, s] = cs_bs[s] − cs_bs[t]
+            diff_b_conj = torch.complex(diff_b.real, -diff_b.imag)
+
+            real_f = diff_f.real.clamp(-60.0, 60.0)
+            real_b = diff_b_conj.real.clamp(-60.0, 60.0)
+            A_fwd = torch.exp(torch.complex(real_f, diff_f.imag))
+            A_bwd = torch.exp(torch.complex(real_b, diff_b_conj.imag))
+            A = torch.where(fwd_mask_b, A_fwd, torch.zeros_like(A_fwd)) \
+                + torch.where(bwd_mask_b, A_bwd, torch.zeros_like(A_bwd))        # (B, L, L, H, p)
+
+            scaled_B = A * B_cc.unsqueeze(2)                                     # (B, L, L, H, p)
+            S = torch.einsum("btshk,bshp->bthpk", scaled_B, x_disc)              # (B, L, H, P, p)
+            y_chunk = torch.einsum("bthk,bthpk->bthp", C_cc, S).real             # (B, L, H, P)
+            y = y + y_chunk
+
+        return y
+
+    # ------------------------------------------------------------------
     # Forward
     # ------------------------------------------------------------------
 
@@ -358,10 +446,24 @@ class Mamba2RSEBlock(nn.Module):
         theta = self._compute_theta(x)                             # (B, L, H, Bk)
 
         ssm_state = state.get("ssm") if state is not None else None
-        y_heads, new_ssm = self._rse_scan(
-            x_heads=x_heads, dt=dt, B_c=B_c, C_c=C_c,
-            theta=theta, ssm_state=ssm_state,
-        )
+        if self.mode == "recurrent":
+            y_heads, new_ssm = self._rse_scan(
+                x_heads=x_heads, dt=dt, B_c=B_c, C_c=C_c,
+                theta=theta, ssm_state=ssm_state,
+            )
+        else:  # mode == "lion"
+            # Bidirectional T×T complex attention.  No carry-state — LION
+            # mode is bidirectional and sees the whole sequence.
+            from torch.utils.checkpoint import checkpoint
+            if self.training:
+                y_heads = checkpoint(
+                    self._rse_scan_lion,
+                    x_heads, dt, B_c, C_c, theta,
+                    use_reentrant=False,
+                )
+            else:
+                y_heads = self._rse_scan_lion(x_heads, dt, B_c, C_c, theta)
+            new_ssm = None
 
         # D skip (per-head scalar, real).
         y_heads = y_heads + self.D.view(1, 1, self.nheads, 1) * x_heads
@@ -392,6 +494,10 @@ class Mamba2RSEEncoderLayer(nn.Module):
         layer_id: int = 0,
         dtype: torch.dtype = torch.float32,
         rse_viscosity: bool = True,
+        mode: str = "recurrent",
+        rse_theta_init_scale: float = math.pi / 16,
+        rse_theta_clip: float = math.pi / 2,
+        rse_theta_lora_dim: int = 48,
     ):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_model, dtype=dtype)
@@ -403,6 +509,10 @@ class Mamba2RSEEncoderLayer(nn.Module):
             headdim=headdim, expand=expand, ngroups=ngroups,
             chunk_size=chunk_size, dtype=dtype,
             rse_viscosity=rse_viscosity,
+            rse_theta_init_scale=rse_theta_init_scale,
+            rse_theta_clip=rse_theta_clip,
+            rse_theta_lora_dim=rse_theta_lora_dim,
+            mode=mode,
         )
 
         self.ffn = nn.Sequential(
@@ -445,21 +555,31 @@ class Mamba2RSEEncoder(nn.Module):
         chunk_size: int = 64,
         dtype: torch.dtype = torch.float32,
         rse_viscosity: bool = True,
+        mode: str = "recurrent",
+        rse_per_layer_overrides: Optional[list] = None,
     ):
         super().__init__()
         self.d_model = d_model
         self.n_layers = n_layers
+        self.supports_carry_state = (mode == "recurrent")
 
         self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
-        self.layers = nn.ModuleList([
-            Mamba2RSEEncoderLayer(
+        self.layers = nn.ModuleList()
+        for i in range(n_layers):
+            override = (
+                rse_per_layer_overrides[i] if rse_per_layer_overrides is not None
+                else {}
+            )
+            self.layers.append(Mamba2RSEEncoderLayer(
                 d_model=d_model, ffn_dim=ffn_dim, d_state=d_state,
                 d_conv=d_conv, headdim=headdim, expand=expand, ngroups=ngroups,
                 chunk_size=chunk_size, dropout=dropout, layer_id=i, dtype=dtype,
                 rse_viscosity=rse_viscosity,
-            )
-            for i in range(n_layers)
-        ])
+                mode=mode,
+                rse_theta_init_scale=override.get("theta_init_scale", math.pi / 16),
+                rse_theta_clip=override.get("theta_clip", math.pi / 2),
+                rse_theta_lora_dim=override.get("theta_lora_dim", 48),
+            ))
 
     def init_state(self, batch_size: int, device: torch.device) -> dict:
         return {
