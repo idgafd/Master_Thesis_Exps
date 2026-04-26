@@ -119,13 +119,14 @@ Master_Plan §13, where:
 |---|---|---|
 | RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | 🟡 `rwkv6_rse_depth_viscosity` (probe #1, queued); 🟡 `rwkv6_rse_split_strong_viscosity` (probe #2, queued) |
 | Mamba-2 causal | ✅ `mamba2_lucid_c × multidil_v2` **0.0795** | — |
-| Linear Attention causal | 🟡 `linear_attn_rse × multidil_v2` (§5-aligned, on GPU 2); 🟡 `linear_attn_lucid × multidil_v2` (extends 30-ep precedent, on GPU 0) | — |
+| Linear Attention causal | 🟡 `linear_attn_rse × multidil_v2` (§5-aligned, on GPU 2); ✅ `linear_attn_lucid × multidil_v2` **0.1410** (extends 30-ep precedent) | — |
 
-**Composition saturation finding (refined)**: composition Δ over the strongest single mechanism is **architecture-specific** at 50 ep:
-- **RWKV-6 P7 (LUCID × multidil_v2)**: Δ +0.0003 vs multidil-alone — tied within noise. Composition gain that existed at 30 ep (Δ −0.008) **disappears** at the matched-budget schedule.
-- **Mamba-2 LUCID-c × multidil_v2**: Δ −0.0030 vs multidil-alone — small but real composition gain preserved.
+**Composition saturation finding (refined again with LA composition in)**: composition Δ over the strongest single mechanism is **architecture-specific** at 50 ep:
+- **RWKV-6 P7 (LUCID × multidil_v2)**: Δ +0.0003 vs multidil-alone — saturated.
+- **LA `lucid × multidil_v2`** (extends 30-ep precedent): Δ +0.0001 vs multidil-alone — saturated.
+- **Mamba-2 `lucid_c × multidil_v2`**: Δ −0.0030 vs multidil-alone — small composition gain preserved.
 
-Reading: on RWKV-6, multidil + extra training absorbs all of LUCID's contribution; on Mamba-2, LUCID-c retains a small additive piece on top of multidil. The §14 P8 saturation extension is RWKV-6-specific, not universal.
+Reading: on RWKV-6 and LA, multidil_v2 + extra training absorbs all of LUCID's contribution at the matched-budget schedule; on Mamba-2, LUCID-c retains a small additive piece on top of multidil. **Composition saturation is the rule on the diagonal-decay families (RWKV-6 native, LA RSE-induced); Mamba-2's selective Δt is the exception.** Possible reading: on architectures where the decay structure is already heavily content-conditional (Mamba-2), the LUCID decorrelator finds different gradient that doesn't overlap with multidil's local-mixing axis. Worth a writeup paragraph.
 
 ---
 
