@@ -30,6 +30,14 @@ outputs/*/checkpoints/**
 outputs/*/checkpoint_ep*.pt
 outputs/*/last_model.pt
 
+# 14M / 30M best_model.pt exceeds GitHub's 100MB hard limit (e.g.,
+# 14M RWKV-6 best_model.pt is ~163 MB). Kept local; reproducibility
+# at 14M+ relies on history.csv + results.json + config.yaml +
+# git_sha.txt and a clean retrain from the matching commit. Final
+# 7M cells fit under the limit and continue to commit best_model.pt.
+outputs/14m_*/best_model.pt
+outputs/30m_*/best_model.pt
+
 # Launch-script logs (master + per-run) duplicate train.log content
 # and grow without bound — keep local.
 outputs/_50ep_singles_launch_logs/

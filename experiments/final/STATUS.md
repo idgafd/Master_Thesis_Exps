@@ -176,16 +176,16 @@ land (per agent instruction, plan B).
 
 ## LibriSpeech base matrix — 14M (30 cells)
 
-All 30 cells pending. Same matrix shape as 7M.
-
 | Architecture × mode | vanilla | multidil_v2 | LUCID | rse_strong_visc | composition |
 |---|:---:|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
+| RWKV-6 causal | ✅ 0.1103 (scout) | 🟡 (scout, ep ~?) | ⚪ | ⚪ | ⚪ |
 | Mamba-2 causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | LA causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | RWKV-6 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | Mamba-2 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | LA LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
+
+**14M scout finding (RWKV-6 vanilla)**: 14M vanilla at 0.1103 test is **worse** than 7M vanilla (0.1049, Δ +0.0054). Negative scaling at the matched 50-ep budget with the n_layers-doubling 14M config. Likely the LR/warmup schedule isn't tuned for depth scaling, or 50 ep is undertrained at 14M. **Per Master_Plan §8 the 30M conditional trigger should NOT fire** until the 14M config is brought to a regime where vanilla scales positively (longer warmup, lower peak LR, or d_model widening instead of depth doubling).
 
 Engineering prerequisite: 14M configs across the three architectures.
 

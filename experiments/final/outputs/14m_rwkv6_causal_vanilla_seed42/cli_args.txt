@@ -1,0 +1,1 @@
+--config configs/14m.yaml --backbone rwkv6 --epochs 50 --seed 42 --gpu 1 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/14m_rwkv6_causal_vanilla_seed42
