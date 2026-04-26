@@ -312,6 +312,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_p2rse_depth":  "recurrent",     # P²-RSE + depth-graded budget (π/8 → π/4 → π/2)
         # Phase 3 — Viscosity coupling (Rayleigh dissipation, soft self-regulating clip)
         "rwkv6_rse_strong_viscosity": "recurrent",   # Stage-4 strong budget + λ_eff = λ + η·θ²
+        "rwkv6_rse_split_strong_viscosity": "recurrent",   # Channel-split RSE: half real-only, half forced-complex with high init θ
         "rwkv6_rse_depth_viscosity":  "recurrent",   # Stage-4 depth-graded budget + viscosity
         # Diagnostic control for Phase 2b: shared-λ P²-RSE + strong + viscosity
         # (the composition that Phase 2b added indep-λ on top of — never tested
@@ -659,6 +660,25 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Phase-3 (rse_strong_viscosity), and Stage-7A (rse_dphi_viscosity).
         rse_per_layer_overrides = [
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 48}
+        ] * cfg.n_layers
+    elif backbone == "rwkv6_rse_split_strong_viscosity":
+        # Channel-split RSE — RWKV-6 RSE probe #2.
+        # Half the blocks per head are real-only (theta=0 forever, plain
+        # exponential decay), half are forced-complex with 4× larger init
+        # theta range (π/4 vs the standard π/16). Tests whether reserving
+        # dedicated complex channels with strong forcing extracts oscillation
+        # contribution that uniform RSE leaves on the table because WKV's
+        # data-dependent decay absorbs the standard low-init RSE.
+        # Note: NOT zero-regression at init by design (the high-init
+        # theta on the complex half makes the recurrence rotational from
+        # step 1). The base baseline for attribution is rse_strong_viscosity
+        # (uniform π/2 clip, π/16 init).
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 2,
+             "theta_init_scale": _math.pi / 16,
+             "theta_lora_dim": 48,
+             "split_real_frac": 0.5,
+             "split_complex_init_scale": _math.pi / 4}
         ] * cfg.n_layers
 
     from src.models.rwkv6_encoder import RWKV6Encoder

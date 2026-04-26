@@ -37,6 +37,8 @@ class RWKV6Block(nn.Module):
         rse_theta_init_scale: float = None,
         rse_theta_clip: float = None,
         rse_theta_lora_dim: int = None,
+        rse_split_real_frac: float = 0.0,
+        rse_split_complex_init_scale: float = None,
         p2rse: bool = False,
         p2rse_mixer: str = "linear",
         rse_viscosity: bool = False,
@@ -94,6 +96,10 @@ class RWKV6Block(nn.Module):
             rse_kwargs["readphase_clip"] = readphase_clip
         if nonnormal_rho_kappa is not None:
             rse_kwargs["nonnormal_rho_kappa"] = nonnormal_rho_kappa
+        if rse_split_real_frac > 0:
+            rse_kwargs["rse_split_real_frac"] = rse_split_real_frac
+        if rse_split_complex_init_scale is not None:
+            rse_kwargs["rse_split_complex_init_scale"] = rse_split_complex_init_scale
         self.att = RWKV6TimeMix(
             hidden_size=hidden_size,
             n_head=n_head,

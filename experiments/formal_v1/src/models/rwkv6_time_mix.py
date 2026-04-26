@@ -131,6 +131,18 @@ class RWKV6TimeMix(nn.Module):
         # LoRA dim for the θ projection (default 32 matches Stage 3 RSE).
         rse_theta_lora_dim: int = 32,
         rse_n_scales: int = 1,
+        # ── Channel-split RSE (RWKV-6 RSE probe #2) ──────────────────────
+        # If rse_split_real_frac > 0, the first floor(n_blocks * frac) blocks
+        # per head become "real-only" — θ is masked to 0 forever (zero rotation,
+        # plain real exponential decay) — and the remaining blocks are the
+        # "complex" half, initialised with the larger rse_split_complex_init_scale
+        # to force engagement at start. Hypothesis: WKV's per-channel
+        # data-dependent decay absorbs the standard low-θ-init RSE; reserving
+        # dedicated complex channels with high init θ extracts the oscillation
+        # contribution that uniform RSE leaves on the table.
+        # frac=0 ⇒ no split, identical to standard RSE init (zero-regression).
+        rse_split_real_frac: float = 0.0,
+        rse_split_complex_init_scale: float = math.pi / 16,
         # ── Stage 5 P²-RSE: paired-pole RSE ──────────────────────────────
         # Two complex poles per block with shared λ, independent θ, and a
         # data-dependent real mixer β. Phase-complementary init: θ^(2) = -θ^(1).
@@ -720,9 +732,28 @@ class RWKV6TimeMix(nn.Module):
         # adjacent pairs); theta is a new data-dependent angle via LoRA.
         if self.use_rse:
             n_blocks = head_size // 2
-            theta_init = torch.empty(n_head, n_blocks, dtype=dtype).uniform_(
-                -rse_theta_init_scale, rse_theta_init_scale
-            )
+            n_real_blocks = int(n_blocks * rse_split_real_frac)
+            if n_real_blocks > 0 and n_real_blocks < n_blocks:
+                # Split init: first n_real_blocks per head are real-only
+                # (theta init = 0, masked to 0 forever); remaining blocks are
+                # the forced-complex half initialised with the larger
+                # rse_split_complex_init_scale.
+                theta_init = torch.zeros(n_head, n_blocks, dtype=dtype)
+                theta_init[:, n_real_blocks:].uniform_(
+                    -rse_split_complex_init_scale, rse_split_complex_init_scale
+                )
+                mask = torch.zeros(n_head, n_blocks, dtype=dtype)
+                mask[:, n_real_blocks:] = 1.0
+                self.register_buffer(
+                    "rse_theta_block_mask",
+                    mask.reshape(1, 1, n_head * n_blocks),
+                    persistent=False,
+                )
+            else:
+                # Standard RSE init (no split).
+                theta_init = torch.empty(n_head, n_blocks, dtype=dtype).uniform_(
+                    -rse_theta_init_scale, rse_theta_init_scale
+                )
             theta_init_reshaped = theta_init.reshape(1, 1, n_head * n_blocks)
             self.time_theta = nn.Parameter(theta_init_reshaped.clone())
             D_THETA_DIM = rse_theta_lora_dim
@@ -968,6 +999,11 @@ class RWKV6TimeMix(nn.Module):
             # is informationally analogous to decay — both modulate the transition).
             theta_lora = torch.tanh(xw @ self.time_theta_w1) @ self.time_theta_w2
             theta = self.rse_theta_clip * torch.tanh(self.time_theta + theta_lora)
+            # Channel-split RSE: zero out theta on the real-only block half
+            # so those blocks have pure real-decay dynamics (no rotation, no
+            # eta·theta² viscosity contribution either since theta=0).
+            if hasattr(self, "rse_theta_block_mask"):
+                theta = theta * self.rse_theta_block_mask.to(theta.dtype)
             theta = theta.to(r.dtype)
 
             # Stage 8 T2 — non-normal RSE ρ, ψ data-dependent projections.
