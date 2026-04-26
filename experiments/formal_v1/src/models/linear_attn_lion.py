@@ -55,8 +55,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import math
+
 from src.models.components import SinusoidalPE
-from src.models.lion_attention import lion_parallel_attention
+from src.models.lion_attention import (
+    lion_attention_with_lucid,
+    lion_parallel_attention,
+)
 from src.models.mechanisms.conv_shift import MultiDilationDWConvShift
 
 
@@ -94,6 +99,8 @@ class LIONLinearAttentionLayer(nn.Module):
         multidil_dilations: tuple = (1, 2, 4, 8),
         eps: float = 1e-6,
         decay_mode: str = "lit",
+        use_lucid: bool = False,
+        lucid_chunk_size: Optional[int] = None,
     ) -> None:
         super().__init__()
         if d_model % n_heads != 0:
@@ -102,10 +109,24 @@ class LIONLinearAttentionLayer(nn.Module):
             )
         if decay_mode not in {"lit", "s"}:
             raise ValueError(f"decay_mode must be 'lit' or 's', got {decay_mode!r}")
+        if use_lucid and decay_mode != "lit":
+            raise ValueError(
+                "LUCID + LION-S is not supported (LION-S is a control variant; "
+                "the locked LA LION mode is LION-LIT)."
+            )
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
         self.eps = eps
         self.decay_mode = decay_mode
+        self.use_lucid = use_lucid
+        self.lucid_chunk_size = lucid_chunk_size
+
+        if use_lucid:
+            # Init so softplus(param) = 1.0 — paper-faithful unit scaling
+            # (matches RWKV-6 LION × LUCID and Mamba-2 LUCID-c init).
+            self.lucid_temperature = nn.Parameter(
+                torch.full((n_heads,), math.log(math.e - 1))
+            )
 
         self.q_proj = nn.Linear(d_model, d_model)
         self.k_proj = nn.Linear(d_model, d_model)
@@ -179,9 +200,22 @@ class LIONLinearAttentionLayer(nn.Module):
             # bidirectional phi(Q) @ phi(K)^T @ V with the diagonal
             # correction baked in by the tril/triu split.
             w = torch.zeros_like(phi_q)
-            attn_out = lion_parallel_attention(phi_q, phi_k, v, w)  # (B, H, T, K)
+            if self.use_lucid:
+                # P^{-1} preconditioning on V using phi_k as key source,
+                # then bidirectional attention.  P has unit diagonal at any
+                # tau; init tau s.t. softplus(tau)=1 matches the paper.
+                temp = F.softplus(self.lucid_temperature)
+                attn_out = lion_attention_with_lucid(
+                    phi_q, phi_k, v, w, temp,
+                    chunk_size=self.lucid_chunk_size,
+                )
+            else:
+                attn_out = lion_parallel_attention(phi_q, phi_k, v, w)  # (B, H, T, K)
 
             # SCALE: row-sum factorises as phi(Q)[t] · sum_j phi(K)[j].
+            # The denominator is the row-sum of A (independent of LUCID's
+            # value preconditioner), so the same divisor applies whether
+            # LUCID is on or off.
             phi_k_sum = phi_k.float().sum(dim=2, keepdim=True)  # (B, H, 1, K)
             denom = (phi_q.float() * phi_k_sum).sum(dim=-1, keepdim=True) + self.eps
             attn_out = attn_out / denom
@@ -233,6 +267,8 @@ class LIONLinearAttentionEncoder(nn.Module):
         multidil_kernel: int = 3,
         multidil_dilations: tuple = (1, 2, 4, 8),
         decay_mode: str = "lit",
+        use_lucid: bool = False,
+        lucid_chunk_size: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -251,6 +287,8 @@ class LIONLinearAttentionEncoder(nn.Module):
                 multidil_kernel=multidil_kernel,
                 multidil_dilations=multidil_dilations,
                 decay_mode=decay_mode,
+                use_lucid=use_lucid,
+                lucid_chunk_size=lucid_chunk_size,
             )
             for _ in range(n_layers)
         ])

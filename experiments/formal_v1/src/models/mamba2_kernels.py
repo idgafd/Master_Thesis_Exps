@@ -343,6 +343,50 @@ def _apply_lucid_mamba2_chunked(
     return X_precond.permute(0, 1, 3, 2, 4).contiguous()
 
 
+def _apply_lucid_lion_chunked(
+    V: torch.Tensor,            # (B, H, L, P) — values to precondition
+    key: torch.Tensor,          # (B, H, L, N) — B or C as the key source
+    lucid_temp: torch.Tensor,   # (H,) — per-head softplus'd temperature
+    chunk_size: int,
+) -> torch.Tensor:
+    """LUCID preconditioner for the LION (full-T) Mamba-2 path.
+
+    Operates on the (B, H, L, ·) layout used inside ``ssd_scan_lion``.
+    The L dimension is split into windows of ``chunk_size``; each window
+    gets its own ``T_c × T_c`` solve, mirroring the chunked LUCID applied
+    in the causal SSD path.  The trailing partial window is handled with
+    a smaller solve so we do not need to pad / unpad along T.
+
+    The preconditioner has unit diagonal at any τ (the ``-√N`` offset
+    enforces it), so the diagonal entries of ``P`` are 1 by construction
+    even before the ``εI`` regulariser is added.
+    """
+    Bsz, H, L, P = V.shape
+    N = key.shape[-1]
+    sqrt_d = N ** 0.5
+    tau = lucid_temp.view(1, H, 1, 1).to(key.dtype)
+
+    out = V.new_empty(V.shape)
+    pos = 0
+    while pos < L:
+        end = min(pos + chunk_size, L)
+        Tc = end - pos
+        k_chunk = key[:, :, pos:end, :]                                    # (B, H, Tc, N)
+        v_chunk = V[:, :, pos:end, :]                                      # (B, H, Tc, P)
+
+        k_rn = sqrt_d * F.normalize(k_chunk, dim=-1)                       # (B, H, Tc, N)
+        gram = torch.matmul(k_rn, k_rn.transpose(-2, -1))                  # (B, H, Tc, Tc)
+        scaled = (tau * (gram / sqrt_d - sqrt_d)).clamp(-30, 30)
+        Pm = torch.exp(scaled)
+        eye = torch.eye(Tc, device=Pm.device, dtype=Pm.dtype)
+        Pm = Pm + 1e-4 * eye
+
+        out[:, :, pos:end, :] = torch.linalg.solve(Pm, v_chunk)
+        pos = end
+
+    return out
+
+
 # ---------------------------------------------------------------------------
 # 1. Causal SSD scan (Dao & Gu 2024, Listing 1)
 # ---------------------------------------------------------------------------
@@ -678,6 +722,10 @@ def ssd_scan_lion(
     A: torch.Tensor,
     B: torch.Tensor,
     C: torch.Tensor,
+    *,
+    lucid_temp: Optional[torch.Tensor] = None,
+    lucid_key_source: str = "B",
+    lucid_chunk_size: int = 64,
 ) -> torch.Tensor:
     """LION bidirectional full-attention scan for Mamba-2.
 
@@ -693,6 +741,14 @@ def ssd_scan_lion(
         Y     = (A_fwd + A_bwd) @ (dt · X)
 
     Forward pass includes the diagonal; backward is strictly-upper.
+
+    LUCID extension: when ``lucid_temp`` is provided, the values V = dt · X
+    are preconditioned per chunk (windows of ``lucid_chunk_size`` along T)
+    via ``Ṽ = solve(P, V)`` where ``P = exp(τ · (G/√N − √N))`` is built
+    from the chosen key source (B by default, or C for the LUCID-c
+    variant — query-analog).  This mirrors the chunked LUCID used in the
+    causal SSD path (see ``_apply_lucid_mamba2_chunked``) and is faithful
+    to the LION × LUCID composition for RWKV-6 in ``lion_attention.py``.
 
     Returns Y: (B, L, H, P).  No state (bidirectional attention sees the whole
     sequence; carry-state is not meaningful).
@@ -734,6 +790,25 @@ def ssd_scan_lion(
 
     # Values: V = dt * X  (discretised).
     V = dt_h.unsqueeze(-1) * X_h                               # (B, H, L, P)
+
+    # LUCID: precondition V per chunk along T.  The preconditioner is
+    # built from the chosen key source (B for key-analog, the default;
+    # C for the query-analog variant — `lucid_c`).  Solve P · Ṽ = V per
+    # chunk per head, then attend bidirectionally on Ṽ.  The
+    # preconditioner does not change A's row-sum, so no SCALE-style
+    # renormalisation is needed (Mamba-2's selective Δt provides the
+    # natural magnitude bound).
+    if lucid_temp is not None:
+        if lucid_key_source == "B":
+            key_h = B_h
+        elif lucid_key_source == "C":
+            key_h = C_h
+        else:
+            raise ValueError(
+                f"lucid_key_source must be 'B' or 'C', got {lucid_key_source!r}"
+            )
+        V = _apply_lucid_lion_chunked(V, key_h, lucid_temp, lucid_chunk_size)
+
     Y = (A_fwd + A_bwd) @ V                                    # (B, H, L, P)
     return Y.transpose(1, 2).to(X.dtype)                       # (B, L, H, P)
 

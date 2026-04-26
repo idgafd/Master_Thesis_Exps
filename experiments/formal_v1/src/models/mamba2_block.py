@@ -337,10 +337,22 @@ class Mamba2Block(nn.Module):
                 "lucid_decay_aware=True requires use_lucid=True"
             )
         if use_lucid:
-            if mode != "recurrent":
+            if mode not in ("recurrent", "lion"):
+                # `lion_chunk` re-uses the causal SSD scan (forward + flipped),
+                # so LUCID would be applied twice (once per direction) with
+                # inconsistent semantics.  Restrict LUCID to the canonical
+                # recurrent SSD form and to full-T LION (precondition once,
+                # then bidirectional T×T attention).
                 raise ValueError(
-                    f"LUCID is only defined on the recurrent SSD dual form; "
-                    f"got mode={mode!r}. LION modes don't apply."
+                    f"LUCID is only supported on mode='recurrent' or "
+                    f"mode='lion'; got mode={mode!r}."
+                )
+            if lucid_decay_aware and mode != "recurrent":
+                # D-LUCID's decay-distance penalty is defined against the
+                # causal cumulative-sum cs; it has no clean meaning under
+                # bidirectional LION attention.
+                raise ValueError(
+                    "lucid_decay_aware=True requires mode='recurrent'"
                 )
             if lucid_key_source not in ("B", "C"):
                 raise ValueError(
@@ -610,7 +622,12 @@ class Mamba2Block(nn.Module):
                     householder_alpha=householder_alpha,
                 )
         elif self.mode == "lion":
-            y_heads = ssd_scan_lion(x_heads, dt, A_cont, B_h, C_h)
+            y_heads = ssd_scan_lion(
+                x_heads, dt, A_cont, B_h, C_h,
+                lucid_temp=lucid_temp,
+                lucid_key_source=self.lucid_key_source,
+                lucid_chunk_size=self.chunk_size,
+            )
             new_ssm = None
         else:  # "lion_chunk"
             y_heads = ssd_scan_lion_chunk(

@@ -83,12 +83,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "linear_attn_lion_convshift_multidil_symmetric_v2",
     }
     _la_lion_s_backbones = {"linear_attn_lion_s"}
+    # LUCID on LA LION (LION-LIT + within-T preconditioner; chunk_size=64).
+    _la_lion_lucid_backbones = {"linear_attn_lion_lucid"}
     if (
         backbone == "linear_attn_lion"
         or backbone in _la_lion_multidil_backbones
         or backbone in _la_lion_s_backbones
+        or backbone in _la_lion_lucid_backbones
     ):
         from src.models.linear_attn_lion import LIONLinearAttentionEncoder
+        use_lucid = backbone in _la_lion_lucid_backbones
         return LIONLinearAttentionEncoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
@@ -97,6 +101,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             dropout=cfg.dropout,
             use_multidil_sym=(backbone in _la_lion_multidil_backbones),
             decay_mode=("s" if backbone in _la_lion_s_backbones else "lit"),
+            use_lucid=use_lucid,
+            lucid_chunk_size=64 if use_lucid else None,
         )
 
     # Stage 11.2b — Linear Attention + block-complex RSE transition + viscosity.
@@ -193,6 +199,11 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "mamba2_lucid_convshift_multidil_symmetric_v2":   ("recurrent", True,  False, True,  "B", False, False, None, False),
         # C-side variant — query-analog correlation.
         "mamba2_lucid_c":                                 ("recurrent", False, False, True,  "C", False, False, None, False),
+        # LION × LUCID-c — Mamba-2 LION with C-correlation LUCID pre-
+        # conditioning applied per chunk (chunk_size=64) on V before the
+        # bidirectional T×T attention.  See `_apply_lucid_lion_chunked` in
+        # mamba2_kernels.py.
+        "mamba2_lion_lucid_c":                            ("lion",      False, False, True,  "C", False, False, None, False),
         # Mamba-2 composition per Master_Plan §3+§5: lucid_c × multidil_v2
         # (C-correlation LUCID with the symmetric multi-dilation pre-mix).
         # B-correlation sibling above is `mamba2_lucid_convshift_multidil_symmetric_v2`.
