@@ -1,0 +1,1 @@
+--backbone linear_attn_lion_lucid --epochs 50 --seed 42 --gpu 2 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/7m_linear_attn_lion_lucid_seed42

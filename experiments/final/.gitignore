@@ -43,6 +43,8 @@ outputs/30m_*/best_model.pt
 outputs/_50ep_singles_launch_logs/
 outputs/_50ep_lion_vanilla_launch_logs/
 outputs/_50ep_lion_multidil_v2_launch_logs/
+outputs/_50ep_lion_lucid_launch_logs/
+outputs/_50ep_lion_rse_depth_viscosity_launch_logs/
 
 # Pre-fix runs of buggy implementations — kept locally for diagnosis
 # (e.g. magnitude-of-bug evidence) but not committed as canonical results.
