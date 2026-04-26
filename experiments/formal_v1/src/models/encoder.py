@@ -326,6 +326,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_rse_split_strong_viscosity": "recurrent",   # Channel-split RSE: half real-only, half forced-complex with high init θ
         "rwkv6_rse_trwg_strong_viscosity": "recurrent",   # RSE+visc + Temporal-Redundancy Write Gate (per-head v_t / v_{t-1} cos-sim threshold)
         "rwkv6_rse_depth_viscosity":  "recurrent",   # Stage-4 depth-graded budget + viscosity
+        "rwkv6_lion_rse_depth_viscosity":  "lion",   # LION × RSE-depth-viscosity (final-stage RSE-LION)
         # Diagnostic control for Phase 2b: shared-λ P²-RSE + strong + viscosity
         # (the composition that Phase 2b added indep-λ on top of — never tested
         # alone before, needed to attribute Phase 2b's regression).
@@ -653,7 +654,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # data-dependent rotation contributions; uniform per-layer budget under-
     # serves L4–L5. Override schedule applies only when backbone name asks.
     rse_per_layer_overrides = None
-    if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity", "rwkv6_p2rse_indeplam_depth_viscosity", "rwkv6_p2rse_indeplam_extkv_depth_viscosity"):
+    if backbone in ("rwkv6_rse_depth", "rwkv6_p2rse_depth", "rwkv6_rse_depth_viscosity", "rwkv6_lion_rse_depth_viscosity", "rwkv6_p2rse_indeplam_depth_viscosity", "rwkv6_p2rse_indeplam_extkv_depth_viscosity"):
         # Depth-graded rotation budget L0..L5.  Shared between single-pole
         # (Stage-4), paired-pole (Stage-5 Phase-2), and viscosity-coupled
         # (Stage-5 Phase-3) variants.  The viscosity refinement applies a

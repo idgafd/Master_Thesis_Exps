@@ -18,6 +18,7 @@ from src.models.lion_attention import (
     lion_parallel_attention,
     lion_attention_with_delta,
     lion_attention_with_lucid,
+    lion_complex_attention,
 )
 
 
@@ -416,7 +417,9 @@ class RWKV6TimeMix(nn.Module):
 
         if self.use_rse:
             assert head_size % 2 == 0, "RSE requires even head_size (2x2 blocks)"
-            assert mode == "recurrent", "RSE currently supports only mode='recurrent'"
+            assert mode in ("recurrent", "lion"), (
+                f"RSE currently supports mode='recurrent' or 'lion'; got {mode!r}"
+            )
             assert rse_n_scales >= 1
 
         if self.use_p2rse:
@@ -1271,6 +1274,23 @@ class RWKV6TimeMix(nn.Module):
                     r_h, k_h, v_h, w_h_eff, theta_h, rho_h, psi_h, u_bonus,
                     state=state, apply_bonus=not self.drop_u,
                 )
+            elif self.mode == "lion":
+                # LION × RSE — bidirectional T×T attention with the
+                # block-complex SO(2)×R+ transition.  Restricted scope:
+                # rse + optional viscosity + optional depth-graded θ clip
+                # (per-layer overrides).  phi / nonnormal_rse / multi-rate
+                # / p2rse intentionally not composed here (recurrent-only).
+                if phi_h is not None:
+                    raise NotImplementedError(
+                        "use_data_dep_readphase is not composed with "
+                        "mode='lion' (Stage-7A is recurrent-only)."
+                    )
+                if self.rse_n_scales != 1:
+                    raise NotImplementedError(
+                        "rse_n_scales > 1 is not composed with mode='lion'."
+                    )
+                y = self._forward_lion_rse(r_h, k_h, v_h, w_h, theta_h)
+                new_state = None
             elif self.rse_n_scales == 1:
                 y, new_state = self._forward_recurrent_rse(
                     r_h, k_h, v_h, w_h, theta_h, state, phi=phi_h
@@ -1357,6 +1377,51 @@ class RWKV6TimeMix(nn.Module):
             )
 
         return lion_parallel_attention(r, k, v, w)
+
+    def _forward_lion_rse(
+        self,
+        r: torch.Tensor,      # (B, H, T, K)
+        k: torch.Tensor,
+        v: torch.Tensor,
+        w: torch.Tensor,      # (B, H, T, K) — log-decay (≤ 0), per-channel
+        theta: torch.Tensor,  # (B, H, T, Bk) — rotation angle per 2x2 block
+    ) -> torch.Tensor:
+        """LION bidirectional attention with block-complex RSE transition.
+
+        Mirrors the magnitude / phase decomposition of the causal RSE
+        scan in ``_forward_recurrent_rse``: per-pair log-decay is the
+        channel-pair mean of the per-channel ``w``; the rotation angle
+        ``theta`` is supplied externally (already θ_clip · tanh(...) at
+        the caller).
+
+        When ``self.use_viscosity`` is true the Rayleigh damping
+        ``λ_eff = λ + η · θ²`` is folded into the log-decay before the
+        complex cumsum (same recipe as the recurrent path).
+        """
+        B, H, T, K = r.shape
+        Bk = K // 2
+
+        log_decay_block = w.view(B, H, T, Bk, 2).mean(dim=-1).float()       # (B, H, T, Bk)
+
+        if self.use_viscosity:
+            theta_sq = theta.float() ** 2                                    # (B, H, T, Bk)
+            log_decay_block = log_decay_block - self.viscosity_eta.view(1, H, 1, Bk).float() * theta_sq
+
+        # Gradient-checkpoint the full bidirectional complex-attention call
+        # so that the (B, H, T, T, Bk) intermediates are recomputed during
+        # backward instead of stored.  At T = 500 this trims peak memory
+        # by roughly 3× (54 GB → ~18 GB at B = 4) and keeps batch sizes
+        # consistent with the rest of the 50-ep matrix.
+        if self.training:
+            from torch.utils.checkpoint import checkpoint
+            y = checkpoint(
+                lion_complex_attention,
+                r, k, v, log_decay_block, theta.float(),
+                use_reentrant=False,
+            )
+        else:
+            y = lion_complex_attention(r, k, v, log_decay_block, theta.float())
+        return y.to(r.dtype)
 
     def _forward_recurrent(
         self,
