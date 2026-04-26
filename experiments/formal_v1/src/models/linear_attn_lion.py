@@ -109,11 +109,6 @@ class LIONLinearAttentionLayer(nn.Module):
             )
         if decay_mode not in {"lit", "s"}:
             raise ValueError(f"decay_mode must be 'lit' or 's', got {decay_mode!r}")
-        if use_lucid and decay_mode != "lit":
-            raise ValueError(
-                "LUCID + LION-S is not supported (LION-S is a control variant; "
-                "the locked LA LION mode is LION-LIT)."
-            )
         self.n_heads = n_heads
         self.head_dim = d_model // n_heads
         self.eps = eps
@@ -235,7 +230,19 @@ class LIONLinearAttentionLayer(nn.Module):
             ones_v = torch.ones(B, H, T, K, dtype=v.dtype, device=v.device)
             if key_padding_mask is not None:
                 ones_v = ones_v * keep
-            attn_num = lion_parallel_attention(phi_q, phi_k, v, w)
+            if self.use_lucid:
+                # LION-S × LUCID: precondition V via the unit-diagonal
+                # preconditioner before the bidirectional attention.
+                # SCALE denominator stays unconditioned on LUCID — it is
+                # the row-sum of A and depends only on (phi_q, phi_k, w),
+                # not on the value tensor.
+                temp = F.softplus(self.lucid_temperature)
+                attn_num = lion_attention_with_lucid(
+                    phi_q, phi_k, v, w, temp,
+                    chunk_size=self.lucid_chunk_size,
+                )
+            else:
+                attn_num = lion_parallel_attention(phi_q, phi_k, v, w)
             attn_den = lion_parallel_attention(phi_q, phi_k, ones_v, w)
             denom = attn_den[..., :1].clamp(min=self.eps)  # (B, H, T, 1)
             attn_out = attn_num / denom

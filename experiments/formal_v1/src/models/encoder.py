@@ -82,9 +82,14 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     _la_lion_multidil_backbones = {
         "linear_attn_lion_convshift_multidil_symmetric_v2",
     }
-    _la_lion_s_backbones = {"linear_attn_lion_s"}
-    # LUCID on LA LION (LION-LIT + within-T preconditioner; chunk_size=64).
-    _la_lion_lucid_backbones = {"linear_attn_lion_lucid"}
+    _la_lion_s_backbones = {"linear_attn_lion_s", "linear_attn_lion_s_lucid"}
+    # LUCID on LA LION.  LION-LIT × LUCID and LION-S × LUCID are both
+    # available; the LION-S variant gives LUCID a decay-bounded value
+    # distribution to decorrelate against (the LION-LIT row-sums are
+    # unbounded which makes the unit-diagonal preconditioner less useful
+    # — empirically LION-LIT × LUCID plateaus *worse* than LION-LIT
+    # vanilla, while the LION-S variant is the cleaner composition test).
+    _la_lion_lucid_backbones = {"linear_attn_lion_lucid", "linear_attn_lion_s_lucid"}
     if (
         backbone == "linear_attn_lion"
         or backbone in _la_lion_multidil_backbones
