@@ -118,10 +118,14 @@ Master_Plan §13, where:
 | Architecture | composition (§5) | extra |
 |---|---|---|
 | RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | 🟡 `rwkv6_rse_depth_viscosity` (probe #1, queued); 🟡 `rwkv6_rse_split_strong_viscosity` (probe #2, queued) |
-| Mamba-2 causal | 🟡 `mamba2_lucid_c × multidil_v2` (running on GPU 3) | — |
+| Mamba-2 causal | ✅ `mamba2_lucid_c × multidil_v2` **0.0795** | — |
 | Linear Attention causal | 🟡 `linear_attn_rse × multidil_v2` (§5-aligned, on GPU 2); 🟡 `linear_attn_lucid × multidil_v2` (extends 30-ep precedent, on GPU 0) | — |
 
-**Composition saturation finding**: at 50 ep RWKV-6 P7 (0.0785) is essentially **tied** with multidil_v2 alone (0.0788). The 30-ep P7 ceiling (0.0921 vs multidil-alone 0.1000, Δ −0.008) was a schedule artifact; with the matched 50-ep budget, multidil_v2 + extra training time absorbs everything LUCID was adding. Extends the Master_Plan §14 P8 saturation observation from 3-mechanism to 2-mechanism.
+**Composition saturation finding (refined)**: composition Δ over the strongest single mechanism is **architecture-specific** at 50 ep:
+- **RWKV-6 P7 (LUCID × multidil_v2)**: Δ +0.0003 vs multidil-alone — tied within noise. Composition gain that existed at 30 ep (Δ −0.008) **disappears** at the matched-budget schedule.
+- **Mamba-2 LUCID-c × multidil_v2**: Δ −0.0030 vs multidil-alone — small but real composition gain preserved.
+
+Reading: on RWKV-6, multidil + extra training absorbs all of LUCID's contribution; on Mamba-2, LUCID-c retains a small additive piece on top of multidil. The §14 P8 saturation extension is RWKV-6-specific, not universal.
 
 ---
 
