@@ -39,6 +39,8 @@ class RWKV6Block(nn.Module):
         rse_theta_lora_dim: int = None,
         rse_split_real_frac: float = 0.0,
         rse_split_complex_init_scale: float = None,
+        use_trwg: bool = False,
+        trwg_threshold_init: float = 0.5,
         p2rse: bool = False,
         p2rse_mixer: str = "linear",
         rse_viscosity: bool = False,
@@ -100,6 +102,9 @@ class RWKV6Block(nn.Module):
             rse_kwargs["rse_split_real_frac"] = rse_split_real_frac
         if rse_split_complex_init_scale is not None:
             rse_kwargs["rse_split_complex_init_scale"] = rse_split_complex_init_scale
+        if use_trwg:
+            rse_kwargs["use_trwg"] = True
+            rse_kwargs["trwg_threshold_init"] = trwg_threshold_init
         self.att = RWKV6TimeMix(
             hidden_size=hidden_size,
             n_head=n_head,

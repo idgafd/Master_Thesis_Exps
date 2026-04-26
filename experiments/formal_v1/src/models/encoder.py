@@ -313,6 +313,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Phase 3 — Viscosity coupling (Rayleigh dissipation, soft self-regulating clip)
         "rwkv6_rse_strong_viscosity": "recurrent",   # Stage-4 strong budget + λ_eff = λ + η·θ²
         "rwkv6_rse_split_strong_viscosity": "recurrent",   # Channel-split RSE: half real-only, half forced-complex with high init θ
+        "rwkv6_rse_trwg_strong_viscosity": "recurrent",   # RSE+visc + Temporal-Redundancy Write Gate (per-head v_t / v_{t-1} cos-sim threshold)
         "rwkv6_rse_depth_viscosity":  "recurrent",   # Stage-4 depth-graded budget + viscosity
         # Diagnostic control for Phase 2b: shared-λ P²-RSE + strong + viscosity
         # (the composition that Phase 2b added indep-λ on top of — never tested
@@ -660,6 +661,24 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # Phase-3 (rse_strong_viscosity), and Stage-7A (rse_dphi_viscosity).
         rse_per_layer_overrides = [
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 16, "theta_lora_dim": 48}
+        ] * cfg.n_layers
+    elif backbone == "rwkv6_rse_trwg_strong_viscosity":
+        # Temporal-Redundancy Write Gate (TRWG) on top of RSE+viscosity.
+        # Per-head cos-sim of v_t vs v_{t-1} drives a learned ReLU-threshold
+        # gate that dampens writes when local input redundancy exceeds τ_h.
+        # γ_h init = 0  ⇒  α ≡ 1  ⇒  bit-exact reduction at step 0.
+        # Hypothesis: WKV state has bounded rank; sustained vowels saturate
+        # capacity with redundant rank-1 writes. Gate frees capacity for
+        # informative transitions. Distinct from Mamba-2 selective Δt
+        # (per-channel data-dep on x_t alone, no temporal differential),
+        # delta-rule (writes residual not gates magnitude), and LUCID
+        # (V-decorrelation against K-Gram, not cos-sim of v vs v_prev).
+        rse_per_layer_overrides = [
+            {"theta_clip": _math.pi / 2,
+             "theta_init_scale": _math.pi / 16,
+             "theta_lora_dim": 48,
+             "use_trwg": True,
+             "trwg_threshold_init": 0.5}
         ] * cfg.n_layers
     elif backbone == "rwkv6_rse_split_strong_viscosity":
         # Channel-split RSE — RWKV-6 RSE probe #2.

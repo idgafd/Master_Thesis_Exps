@@ -146,6 +146,8 @@ class RWKV6Encoder(nn.Module):
                     rse_theta_lora_dim=per_layer.get("theta_lora_dim"),
                     rse_split_real_frac=per_layer.get("split_real_frac", 0.0),
                     rse_split_complex_init_scale=per_layer.get("split_complex_init_scale"),
+                    use_trwg=per_layer.get("use_trwg", False),
+                    trwg_threshold_init=per_layer.get("trwg_threshold_init", 0.5),
                     p2rse=p2rse,
                     p2rse_mixer=p2rse_mixer,
                     rse_viscosity=rse_viscosity,

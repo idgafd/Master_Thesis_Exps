@@ -143,6 +143,23 @@ class RWKV6TimeMix(nn.Module):
         # frac=0 ⇒ no split, identical to standard RSE init (zero-regression).
         rse_split_real_frac: float = 0.0,
         rse_split_complex_init_scale: float = math.pi / 16,
+        # ── Temporal-Redundancy Write Gate (TRWG) ─────────────────────────
+        # Modulates the write magnitude per (token, head) by local input
+        # redundancy. For each token t we compute the per-head cosine
+        # similarity of v_t against v_{t-1}, and apply a learned ReLU-threshold
+        # gate to dampen writes when redundancy exceeds a per-head threshold:
+        #     redundancy_th = cos_sim(v_t,h, v_{t-1},h) ∈ [-1, 1]
+        #     α_th          = clamp(1 - γ_h · ReLU(redundancy_th - τ_h), 0, 1)
+        #     v_t_h         = α_th · v_t_h
+        # γ_h init = 0  ⇒  α ≡ 1  ⇒  bit-exact reduction to the baseline.
+        # Hypothesis: WKV state has bounded rank; sustained vowels accumulate
+        # rank-1 writes of similar (k, v), saturating capacity. The gate
+        # suppresses redundant accumulation so capacity is reserved for
+        # informative transition events. Distinct from Mamba-2 selective
+        # Δt (per-channel data-dep on x_t alone, no temporal differential)
+        # and from delta-rule (writes residual not gates magnitude).
+        use_trwg: bool = False,
+        trwg_threshold_init: float = 0.5,
         # ── Stage 5 P²-RSE: paired-pole RSE ──────────────────────────────
         # Two complex poles per block with shared λ, independent θ, and a
         # data-dependent real mixer β. Phase-complementary init: θ^(2) = -θ^(1).
@@ -355,6 +372,15 @@ class RWKV6TimeMix(nn.Module):
         self.use_p2rse = p2rse
         self.p2rse_mixer = p2rse_mixer
         self.use_viscosity = rse_viscosity
+        self.use_trwg = use_trwg
+        if use_trwg:
+            # Per-head learnable threshold τ_h and gain γ_h for the
+            # Temporal-Redundancy Write Gate. γ_h init = 0  ⇒  α ≡ 1
+            # ⇒  bit-exact reduction to the baseline at step 0.
+            self.trwg_threshold = nn.Parameter(
+                torch.full((n_head,), trwg_threshold_init, dtype=dtype)
+            )
+            self.trwg_gamma = nn.Parameter(torch.zeros(n_head, dtype=dtype))
         self.p2rse_indep_lambda = p2rse_indep_lambda
         self.p2rse_indep_kv = p2rse_indep_kv
         self.p2rse_kv_lora_dim = p2rse_kv_lora_dim
@@ -976,6 +1002,30 @@ class RWKV6TimeMix(nn.Module):
         k = self.key(xk)
         v = self.value(xv)
         g = F.silu(self.gate(xg))
+
+        if self.use_trwg:
+            # Temporal-Redundancy Write Gate: per-head cosine similarity
+            # of v_t against v_{t-1} measures local redundancy; ReLU-threshold
+            # gate dampens writes when redundancy exceeds learned per-head τ_h.
+            # γ_h init = 0  ⇒  α ≡ 1  ⇒  bit-exact identity write at step 0.
+            v_per_head = v.view(B, T, self.n_head, -1)            # (B, T, H, K)
+            v_prev = torch.cat(
+                [torch.zeros_like(v_per_head[:, :1]), v_per_head[:, :-1]],
+                dim=1,
+            )                                                      # (B, T, H, K)
+            # cos_sim in fp32 for numerical stability
+            v_fp = v_per_head.float()
+            vp_fp = v_prev.float()
+            dot = (v_fp * vp_fp).sum(dim=-1)                       # (B, T, H)
+            n_v = v_fp.norm(dim=-1)                                # (B, T, H)
+            n_p = vp_fp.norm(dim=-1)                               # (B, T, H)
+            cos_sim = dot / (n_v * n_p + 1e-6)                     # (B, T, H)
+            tau = self.trwg_threshold.view(1, 1, -1).float()       # (1, 1, H)
+            gamma = self.trwg_gamma.view(1, 1, -1).float()         # (1, 1, H)
+            alpha = torch.clamp(
+                1.0 - gamma * F.relu(cos_sim - tau), min=0.0, max=1.0
+            )                                                      # (B, T, H)
+            v = (v_per_head * alpha.unsqueeze(-1).to(v.dtype)).view(B, T, -1)
 
         # Stage 10.6 PoM value-lift: v̂ = v + Σ_p γ_p ⊙ W_up(h(W_h x)^⊙p).
         # γ=0 at init ⇒ v̂ = v bit-exact.  Applied before the WKV scan so
