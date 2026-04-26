@@ -117,7 +117,7 @@ Master_Plan §13, where:
 
 | Architecture | composition (§5) | extra |
 |---|---|---|
-| RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | ✅ probe #1 `rwkv6_rse_depth_viscosity` **0.0989** (Δ −0.0017 vs uniform-strong); 🚫 probe #2 split RSE killed; 🟡 probe #3 TRWG (`rwkv6_rse_trwg_strong_viscosity`, on GPU 0) |
+| RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | ✅ probe #1 depth_viscosity **0.0989** (Δ −0.0017); 🚫 probe #2 split RSE killed; ✅ probe #3 TRWG **0.1034** (engaged-null, Δ +0.0028) |
 | Mamba-2 causal | ✅ `mamba2_lucid_c × multidil_v2` **0.0795** | — |
 | Linear Attention causal | ✅ `linear_attn_rse × multidil_v2` **0.0999** (§5-aligned, BIG composition gain Δ −0.041 vs multidil-alone); ✅ `linear_attn_lucid × multidil_v2` **0.1410** (extends 30-ep precedent) | — |
 
