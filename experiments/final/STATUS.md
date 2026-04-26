@@ -178,14 +178,24 @@ land (per agent instruction, plan B).
 
 | Architecture × mode | vanilla | multidil_v2 | LUCID | rse_strong_visc | composition |
 |---|:---:|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1103 (scout) | 🟡 (scout, ep ~?) | ⚪ | ⚪ | ⚪ |
+| RWKV-6 causal | ✅ 0.1103 (scout, NEG scaling) | ✅ **0.0751** (scout, NEW CEILING) | ⚪ | ⚪ | ⚪ |
 | Mamba-2 causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | LA causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | RWKV-6 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | Mamba-2 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | LA LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 
-**14M scout finding (RWKV-6 vanilla)**: 14M vanilla at 0.1103 test is **worse** than 7M vanilla (0.1049, Δ +0.0054). Negative scaling at the matched 50-ep budget with the n_layers-doubling 14M config. Likely the LR/warmup schedule isn't tuned for depth scaling, or 50 ep is undertrained at 14M. **Per Master_Plan §8 the 30M conditional trigger should NOT fire** until the 14M config is brought to a regime where vanilla scales positively (longer warmup, lower peak LR, or d_model widening instead of depth doubling).
+**14M scout findings (RWKV-6 only)** — both cells in:
+
+| | 7M (test) | 14M (test) | Δ across scale |
+|---|---:|---:|---:|
+| RWKV-6 vanilla | 0.1049 | 0.1103 | +0.0054 (regression) |
+| RWKV-6 multidil_v2 | 0.0788 | **0.0751** | **−0.0037 (improvement, new ceiling)** |
+| Mechanism Δ multidil vs vanilla | −0.0261 | **−0.0352** | mechanism Δ grew with capacity |
+
+**Master_Plan §8 30M conditional trigger evaluation**: §8 fires on either (a) ranking shift among single mechanisms 7M→14M, OR (b) mechanism gains grow with capacity. Condition (b) is **satisfied** for RWKV-6: multidil mechanism Δ went from −0.0261 (7M) to −0.0352 (14M). Condition (a) needs more cells; ranking has multidil > vanilla at both scales (no shift), but the magnitude of the gap grew. **Trigger fires for RWKV-6 best mechanism (multidil_v2) at 30M** — but not unilaterally launched in this session (out of scope).
+
+The vanilla regression alongside multidil improvement is a useful signal: vanilla at 14M is likely undertrained at the matched 50-ep budget, while multidil_v2's input-side relief makes the longer effective receptive field productive even with the budget unchanged. The mechanism is doing real work, not just compensating for under-training.
 
 Engineering prerequisite: 14M configs across the three architectures.
 
