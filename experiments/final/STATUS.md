@@ -108,10 +108,20 @@ Master_Plan §13, where:
 | `7m_linear_attn_causal_lucid_seed42` | `linear_attn_lucid` |
 | `7m_linear_attn_causal_rse_strong_viscosity_seed42` | `linear_attn_rse_strong_viscosity` |
 
-**Subsequent batches in this 50-ep cycle** (out of scope for current launch — listed for awareness only):
-- 7M causal compositions (3 cells, cell 5 per §4 / §5)
+**Subsequent batches in this 50-ep cycle**:
+- 7M causal compositions (now in flight — see new table below)
 - 7M LION non-vanilla / RSE (composition cells; tracked below)
 - 14M (30 cells, gated on 14M-config engineering)
+
+### Causal compositions + RWKV-6 RSE probes
+
+| Architecture | composition (§5) | extra |
+|---|---|---|
+| RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | 🟡 `rwkv6_rse_depth_viscosity` (probe #1, queued); 🟡 `rwkv6_rse_split_strong_viscosity` (probe #2, queued) |
+| Mamba-2 causal | 🟡 `mamba2_lucid_c × multidil_v2` (running on GPU 3) | — |
+| Linear Attention causal | 🟡 `linear_attn_rse × multidil_v2` (§5-aligned, on GPU 2); 🟡 `linear_attn_lucid × multidil_v2` (extends 30-ep precedent, on GPU 0) | — |
+
+**Composition saturation finding**: at 50 ep RWKV-6 P7 (0.0785) is essentially **tied** with multidil_v2 alone (0.0788). The 30-ep P7 ceiling (0.0921 vs multidil-alone 0.1000, Δ −0.008) was a schedule artifact; with the matched 50-ep budget, multidil_v2 + extra training time absorbs everything LUCID was adding. Extends the Master_Plan §14 P8 saturation observation from 3-mechanism to 2-mechanism.
 
 ---
 
@@ -408,3 +418,19 @@ Per `Master_Plan.md §19`:
   RSE compositions (la_rse × multidil on GPU 2, la_lucid × multidil
   on GPU 0, mamba2_lucid_c × multidil on GPU 3 once rwkv6_p7 done)
   now in flight via the WATCH-A/B/C chain.
+- **2026-04-26 01:38 UTC** — `7m_rwkv6_causal_p7_seed42` landed.
+  Best dev 0.0787 @ ep50, **test CER 0.0785** (7.76M params).
+  **Tied with multidil_v2 alone** (0.0788) within noise — composition
+  gain that existed at 30 ep (P7 0.0921 vs multidil-alone 0.1000,
+  Δ −0.008) **disappeared at 50 ep**. Reading: 30-ep P7 ceiling was
+  a schedule artifact; matched 50-ep budget has multidil_v2 + extra
+  training time absorb everything LUCID adds on top. Extends
+  Master_Plan §14 P8 saturation argument from 3-mechanism to
+  2-mechanism — composition Δ over the strongest single mechanism
+  is small or zero at the matched budget on RWKV-6.
+- **2026-04-26 01:38 UTC** — Engineering: registered
+  `rwkv6_rse_split_strong_viscosity` (commit 0bb0954) for RWKV-6
+  RSE probe #2: half blocks per head real-only (θ frozen at 0
+  via mask), half forced-complex with init θ ∈ [-π/4, π/4] (4×
+  larger than standard π/16). Smoke-tested. Watcher armed; will
+  launch on second free GPU after probe #1.
