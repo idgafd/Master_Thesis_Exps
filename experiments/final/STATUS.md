@@ -129,7 +129,7 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 |---|:---:|:---:|:---:|
 | RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ❌ engineering blocker |
 | Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ❌ engineering blocker |
-| LA LION (LION-LIT) | 🟡 training (GPU 1, post-SCALE-fix rerun) | 🟡 training (GPU 0) | ❌ engineering blocker |
+| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | 🟡 training (GPU 0) | ❌ engineering blocker |
 
 **LUCID LION cells** (3 cells, would complete the §4 5-cell shape per arch) — explicitly deferred per agent instruction (LUCID is special; start with single convshift and rse first).
 
