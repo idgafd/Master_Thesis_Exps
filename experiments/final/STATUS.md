@@ -119,14 +119,18 @@ Master_Plan §13, where:
 |---|---|---|
 | RWKV-6 causal | ✅ P7 (LUCID × multidil_v2) **0.0785** | 🟡 `rwkv6_rse_depth_viscosity` (probe #1, queued); 🟡 `rwkv6_rse_split_strong_viscosity` (probe #2, queued) |
 | Mamba-2 causal | ✅ `mamba2_lucid_c × multidil_v2` **0.0795** | — |
-| Linear Attention causal | 🟡 `linear_attn_rse × multidil_v2` (§5-aligned, on GPU 2); ✅ `linear_attn_lucid × multidil_v2` **0.1410** (extends 30-ep precedent) | — |
+| Linear Attention causal | ✅ `linear_attn_rse × multidil_v2` **0.0999** (§5-aligned, BIG composition gain Δ −0.041 vs multidil-alone); ✅ `linear_attn_lucid × multidil_v2` **0.1410** (extends 30-ep precedent) | — |
 
-**Composition saturation finding (refined again with LA composition in)**: composition Δ over the strongest single mechanism is **architecture-specific** at 50 ep:
-- **RWKV-6 P7 (LUCID × multidil_v2)**: Δ +0.0003 vs multidil-alone — saturated.
-- **LA `lucid × multidil_v2`** (extends 30-ep precedent): Δ +0.0001 vs multidil-alone — saturated.
-- **Mamba-2 `lucid_c × multidil_v2`**: Δ −0.0030 vs multidil-alone — small composition gain preserved.
+**Composition Δ over the strongest single mechanism at 50 ep — full picture**:
 
-Reading: on RWKV-6 and LA, multidil_v2 + extra training absorbs all of LUCID's contribution at the matched-budget schedule; on Mamba-2, LUCID-c retains a small additive piece on top of multidil. **Composition saturation is the rule on the diagonal-decay families (RWKV-6 native, LA RSE-induced); Mamba-2's selective Δt is the exception.** Possible reading: on architectures where the decay structure is already heavily content-conditional (Mamba-2), the LUCID decorrelator finds different gradient that doesn't overlap with multidil's local-mixing axis. Worth a writeup paragraph.
+| Composition | Δ vs multidil-alone | Reading |
+|---|---:|---|
+| RWKV-6 P7 (LUCID × multidil) | +0.0003 | saturated |
+| LA LUCID × multidil | +0.0001 | saturated |
+| Mamba-2 LUCID-c × multidil | −0.0030 | small gain |
+| **LA RSE × multidil (§5-aligned)** | **−0.0410** | **BIG composition gain** |
+
+**Reading**: LUCID-based compositions saturate to multidil-alone on diagonal-decay families (RWKV-6 native WKV, LA when LUCID provides decay-like decorrelation); Mamba-2's selective Δt leaves a small composition gap. The big surprise is **LA RSE × multidil**: RSE was LA's BREAK band single mechanism (Δ −0.068 vs vanilla); composing with multidil compounds for Δ −0.041 OVER multidil-alone. The two mechanisms target different deficits on LA (RSE: no native decay; multidil: no native local mixing) and **stack non-overlappingly**. This is the only composition that vindicates the §5 pre-registered choice in full — RSE × multidil_v2 was the right call for LA, not LUCID × multidil. Worth a writeup paragraph.
 
 ---
 
