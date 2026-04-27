@@ -146,9 +146,9 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 
 | Architecture | vanilla | + multidil_v2 | + rse_depth_viscosity |
 |---|:---:|:---:|:---:|
-| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | 🟡 in flight (GPU 3, ep22 dev 0.0980) |
-| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | 🟡 in flight (GPU 1, ep8 dev 0.1574) |
-| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | 🟡 in flight (GPU 2, ep15 dev 0.1561) |
+| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ✅ (see RSE-LION block below) |
+| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ⛔ NULL-REPRODUCED at ep10, killed |
+| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ✅ **0.1042 dev / 0.10418 test — BREAK Δ −0.191 vs LIT vanilla** |
 | LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | ✅ 0.1160 dev / 0.1154 test | (bonus run; see LION-S follow-ups below) |
 
 **LION-S as a control** — LION-LIT vanilla landed dev ~0.30 / test ~0.30, well below causal LA (test 0.19).  Hypothesis: bidirectional content-similarity attention without decay smears across all positions on CTC ASR.  LA LION-S adds per-head selective σ-decay (mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1) as a falsification test for the "no decay is the missing piece" reading.
@@ -577,3 +577,14 @@ Per `Master_Plan.md §19`:
   `best_model.pt`, irrespective of scale.  Per-epoch checkpoint
   snapshots and `last_model.pt` continue to stay local per the
   existing §13 convention.
+- **2026-04-27 23:31 UTC** — `7m_linear_attn_lion_rse_depth_viscosity_seed42`
+  landed: best dev **0.1042**, **test 0.10418**.  **BREAK** Δ −0.191
+  vs LA LION-LIT vanilla 0.2951.  Also surpasses every LION-S cell
+  (best LION-S = LUCID × multidil_v2 0.1129).  Reading: RSE on LA in
+  the bidirectional LION mode reproduces the BREAK signature observed
+  in causal LA (where RSE was the −0.068 BREAK).  The complex-pole
+  block-SO(2) transition is the single most productive mechanism on
+  LA across both modes; on LION specifically, RSE alone (no σ-decay,
+  no input-side mechanism) outperforms the §5 LION-S × LUCID × multidil
+  composition by Δ −0.0087.  Commit `6963bd0` (LFS warning at 80 MB
+  is non-fatal).
