@@ -32,9 +32,10 @@ from torch.utils.data import DataLoader
 
 from src.config import load_config
 from src.data.vocab import CharVocab
-from src.data.dataset import ASRDataset, DurationBatchSampler, collate_fn
+from src.data.dataset import ASRDataset, DurationBatchSampler, collate_fn, compute_mel
 from src.data.augment import SpecAugment
-from src.data.librispeech import load_librispeech
+from src.data import load_dataset_split
+from src.data.common_voice import TRAIN_MANIFEST_NAME
 from src.models.asr_model import ASRModel
 from src.training.train import train_one_epoch
 from src.training.evaluate import evaluate, evaluate_chunked
@@ -50,6 +51,41 @@ from src.training.run_plots import render_run_plots
 from src.utils.misc import seed_everything, count_parameters, format_param_count
 
 logger = logging.getLogger(__name__)
+
+
+@torch.no_grad()
+def _compute_wer_by_speaker(model, entries, vocab, cfg, device) -> dict:
+    """Per-speaker WER on the test split — used by Common Voice runs only.
+
+    Single-utterance forward passes so we can keep `client_id` alongside
+    each (hyp, ref) pair without changing the dataset/dataloader contract.
+    Cost: ~10–20× the batched eval; acceptable for a once-per-run summary.
+    """
+    from src.training.decode import greedy_ctc_decode
+    from jiwer import wer as compute_wer
+
+    model.eval()
+    by_speaker: dict[str, dict] = {}
+    for e in entries:
+        client_id = e.get("client_id", "<unknown>")
+        mel = compute_mel(e["audio_array"], e["sample_rate"], cfg).unsqueeze(0).to(device)
+        mel_lengths = torch.tensor([mel.shape[2]], device=device)
+        log_probs, output_lengths, _ = model(mel, mel_lengths)
+        output_lengths = torch.clamp(output_lengths, max=log_probs.size(1))
+        hyp = greedy_ctc_decode(log_probs.cpu(), output_lengths.cpu(), vocab)[0]
+        ref = e["text"]
+        d = by_speaker.setdefault(client_id, {"refs": [], "hyps": []})
+        d["refs"].append(ref if ref.strip() else "<empty>")
+        d["hyps"].append(hyp if hyp.strip() else "<empty>")
+
+    out: dict[str, dict] = {}
+    for client_id, d in by_speaker.items():
+        try:
+            w = float(compute_wer(d["refs"], d["hyps"]))
+        except Exception:
+            w = None
+        out[client_id] = {"wer": w, "n_utterances": len(d["refs"])}
+    return out
 
 
 def _setup_logging(run_dir: Path) -> None:
@@ -98,6 +134,10 @@ def main():
                         help="GPU device index (default: auto)")
     parser.add_argument("--resume", action="store_true",
                         help="Resume from last_model.pt if present in output_dir")
+    parser.add_argument("--dataset", default=None,
+                        choices=["librispeech_clean", "librispeech_other",
+                                 "common_voice_en_100h"],
+                        help="Dataset selector. Overrides cfg.dataset from YAML.")
     args = parser.parse_args()
 
     overrides = {"backbone": args.backbone}
@@ -109,6 +149,8 @@ def main():
         overrides["num_epochs"] = args.epochs
     if args.compile:
         overrides["compile_encoder"] = True
+    if args.dataset:
+        overrides["dataset"] = args.dataset
 
     cfg = load_config(args.config, overrides)
     if not args.output_dir:
@@ -141,9 +183,9 @@ def main():
 
     # ── Data ───────────────────────────────────────────────────────────────
     vocab = CharVocab.build_english()
-    train_entries = load_librispeech("train", cfg.data_cache_dir, cfg.min_audio_sec, cfg.max_audio_sec)
-    dev_entries = load_librispeech("dev", cfg.data_cache_dir, cfg.min_audio_sec, cfg.max_audio_sec)
-    test_entries = load_librispeech("test", cfg.data_cache_dir, cfg.min_audio_sec, cfg.max_audio_sec)
+    train_entries = load_dataset_split(cfg, "train")
+    dev_entries = load_dataset_split(cfg, "dev")
+    test_entries = load_dataset_split(cfg, "test")
 
     train_ds = ASRDataset(train_entries, vocab, cfg)
     dev_ds = ASRDataset(dev_entries, vocab, cfg)
@@ -327,7 +369,36 @@ def main():
         "gpu_name": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
         "config_snapshot": asdict(cfg),
         "cli_args": sys.argv[1:],
+        "dataset": cfg.dataset,
     }
+
+    # CV-specific provenance + per-speaker WER (option A: kept inside results.json
+    # rather than spinning up a §13-style eval_full.json — see CV pilot decision).
+    if cfg.dataset == "common_voice_en_100h":
+        from src.data.common_voice import CV_25_RELEASE_DIR
+        manifest_path = Path(cfg.data_cache_dir) / TRAIN_MANIFEST_NAME
+        stats_path = Path(cfg.data_cache_dir) / "filter_stats.json"
+        cv_meta = {
+            "dataset_version": "common_voice_en_25.0",
+            "release_dir": CV_25_RELEASE_DIR,
+        }
+        if stats_path.exists():
+            with open(stats_path) as f:
+                stats = json.load(f)
+            cv_meta["dataset_subset_sha256"] = stats.get("manifest_sha256")
+            cv_meta["filter_stats"] = stats
+        if manifest_path.exists():
+            cv_meta["manifest_path"] = str(manifest_path)
+        final_results["cv_meta"] = cv_meta
+
+        logger.info("Computing wer_by_speaker on CV test split (single-utterance pass)...")
+        final_results["wer_by_speaker"] = _compute_wer_by_speaker(
+            model, test_entries, vocab, cfg, device,
+        )
+        logger.info(
+            f"  wer_by_speaker covers {len(final_results['wer_by_speaker'])} client_ids"
+        )
+
     with open(run_dir / "results.json", "w") as f:
         json.dump(final_results, f, indent=2)
 

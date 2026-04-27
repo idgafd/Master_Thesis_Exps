@@ -9,7 +9,13 @@ import yaml
 @dataclass
 class ExperimentConfig:
     # ── Data ─────────────────────────────────────────────────────────────
-    dataset: str = "librispeech_clean"  # librispeech_clean | librispeech_other
+    # Allowed values:
+    #   "librispeech_clean"     — train.100/dev/test on HuggingFace openslr
+    #   "librispeech_other"     — kept for completeness; not used in final stage
+    #   "common_voice_en_100h"  — Common Voice EN 25.0, deterministic 100h subset
+    #                              constructed by scripts/build_cv_manifest.py
+    dataset: str = "librispeech_clean"
+    cv_version: Optional[str] = None  # resolved at runtime when dataset == common_voice_*; recorded in results.json
     max_audio_sec: float = 20.0
     min_audio_sec: float = 0.5
     sample_rate: int = 16000

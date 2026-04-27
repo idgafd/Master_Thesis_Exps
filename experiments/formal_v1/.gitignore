@@ -6,6 +6,20 @@ __pycache__/
 # Data cache (large, regenerable)
 data/librispeech/
 
+# Common Voice raw tar extraction (~85 GB) — large, regenerable from MDC
+# tar via scripts/build_cv_manifest.py. The manifest CSV + filter_stats.json
+# at data/common_voice/*.csv and data/common_voice/*.json ARE committed —
+# they are the deterministic, auditable artifacts that define the 100h subset.
+data/common_voice/raw/
+data/common_voice/clips/
+# The downloaded tar itself is also large (~88 GB); regenerable from MDC
+# given the API key and the dataset slug recorded in filter_stats.json.
+data/common_voice/*.tar.gz
+data/common_voice/*.tar
+# Speaker-overlap diagnosis is only present when §2.3 fails — its absence
+# is the canonical signal that the splits are clean. Don't commit it.
+data/common_voice/speaker_overlap_diagnosis.txt
+
 # Binary model weights — regenerable from git_sha + config
 *.pt
 *.bin

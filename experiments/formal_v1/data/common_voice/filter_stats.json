@@ -1,0 +1,24 @@
+{
+  "dataset_version": "common_voice_en_25.0",
+  "release_dir": "cv-corpus-25.0-2026-03-09",
+  "locale": "en",
+  "target_hours": 100.0,
+  "selected_clips": 64198,
+  "selected_hours": 100.00046805555601,
+  "input_train_rows": 1147465,
+  "kept_after_filter": 979042,
+  "rejected_counts": {
+    "missing_duration": 0,
+    "duration_lt_1s": 2,
+    "low_up_votes": 0,
+    "any_down_votes": 168421,
+    "non_int_votes": 0,
+    "empty_sentence_raw": 0,
+    "empty_sentence_after_norm": 0
+  },
+  "character_coverage_post_normalisation": 0.96792939460883,
+  "manifest_filename": "100h_train_manifest_seed42.csv",
+  "manifest_sha256": "23f70d1c07f1351168743bbc2247ea27bf332d73738500823e910b4a5c36c01b",
+  "hash_salt": "seed42:",
+  "constructed_at_iso": "2026-04-27T15:59:57Z"
+}
