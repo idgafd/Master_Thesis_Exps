@@ -1,0 +1,2 @@
+experiments/final/outputs/30m_*/best_model.pt filter=lfs diff=lfs merge=lfs -text
+experiments/final/outputs/14m_*/best_model.pt filter=lfs diff=lfs merge=lfs -text
