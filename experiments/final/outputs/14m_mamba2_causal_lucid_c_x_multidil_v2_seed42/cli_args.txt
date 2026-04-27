@@ -1,0 +1,1 @@
+--config configs/14m.yaml --backbone mamba2_lucid_c_convshift_multidil_symmetric_v2 --epochs 50 --seed 42 --gpu 0 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/14m_mamba2_causal_lucid_c_x_multidil_v2_seed42
