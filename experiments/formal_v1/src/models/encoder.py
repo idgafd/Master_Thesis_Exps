@@ -147,7 +147,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Final-stage — LA LION × RSE-depth-viscosity.  Bidirectional T×T
     # complex attention on the LA recurrence.  Depth-graded θ clip
     # mirrors the RWKV-6 / Mamba-2 LION-RSE schedule.
-    if backbone == "linear_attn_lion_rse_depth_viscosity":
+    if backbone in ("linear_attn_lion_rse_depth_viscosity",
+                    "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2"):
         import math as _math
         from src.models.linear_attn_rse import CausalLinearAttentionRSEEncoder
         rse_per_layer_overrides = [
@@ -158,6 +159,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
+        use_multidil_sym = backbone == "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2"
         return CausalLinearAttentionRSEEncoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
@@ -166,6 +168,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             dropout=cfg.dropout,
             rse_viscosity=True,
             mode="lion",
+            use_multidil_sym=use_multidil_sym,
             rse_per_layer_overrides=rse_per_layer_overrides,
         )
 
@@ -245,6 +248,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         # bidirectional T×T attention.  See `_apply_lucid_lion_chunked` in
         # mamba2_kernels.py.
         "mamba2_lion_lucid_c":                            ("lion",      False, False, True,  "C", False, False, None, False),
+        # Mamba-2 LION P7-style composition (LUCID-c × multidil_v2 in LION mode).
+        "mamba2_lion_lucid_c_convshift_multidil_symmetric_v2": ("lion", True,  False, True,  "C", False, False, None, False),
         # Mamba-2 composition per Master_Plan §3+§5: lucid_c × multidil_v2
         # (C-correlation LUCID with the symmetric multi-dilation pre-mix).
         # B-correlation sibling above is `mamba2_lucid_convshift_multidil_symmetric_v2`.
