@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone rwkv6_delta --seq-len 1024 --n-kv-pairs 256 --seed 42 --batch-size 16 --output-dir outputs/cohort_stage12_focused/rwkv6_delta_T1024_seed42

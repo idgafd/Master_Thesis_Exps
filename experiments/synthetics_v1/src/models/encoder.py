@@ -29,6 +29,11 @@ SUPPORTED_BACKBONES = {
     "rwkv6",
     "rwkv6_lucid",
     "rwkv6_delta",
+    # Stage 12 — Decay-Coupled Delta (per-head learnable γ_t = α_t^{p_h}
+    # weighting on the rank-1 erase direction).  See
+    # formal_v1/STAGE12_DECAY_COUPLED_DELTA.md §4.2 for the MQAR cohort spec.
+    # `rwkv6_delta` above is the negative control on the same path.
+    "rwkv6_decay_coupled_delta",
     "mamba",
     "mamba2",
 }
@@ -99,6 +104,10 @@ def build_encoder(cfg: SyntheticsConfig) -> nn.Module:
     # follow formal_v1's substring convention.
     delta_rule = "delta" in backbone
     lucid = "lucid" in backbone
+    # Stage 12 — Decay-Coupled Delta (per-head learnable γ = α^{p_h} on the
+    # rank-1 erase direction). Substring "decay_coupled" → flag.  Implies
+    # delta_rule + a0=-8 warmstart inside RWKV6TimeMix.
+    use_decay_coupled_delta = "decay_coupled" in backbone
 
     from src.models.rwkv6_encoder import RWKV6Encoder
     return RWKV6Encoder(
@@ -116,6 +125,8 @@ def build_encoder(cfg: SyntheticsConfig) -> nn.Module:
         # destroys the randomly-initialised wkv_state before useful
         # associations form — see mechanisms/delta_rule.py:36-46 comment.
         delta_warmstart=delta_rule,
+        use_decay_coupled_delta=use_decay_coupled_delta,
+        decay_coupled_delta_p_init=1.0,
         lucid=lucid,
         lucid_chunk_size=None,
         lucid_self_reg=False,

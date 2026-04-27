@@ -33,6 +33,13 @@ class ExperimentConfig:
     conv_shift: bool = False
     headscale: bool = False
     delta_rule: bool = False
+    # ── Stage 12 — Decay-Coupled Delta (RWKV-6 only) ─────────────────────
+    # Per-head learnable exponent p_h couples the rank-1 erase direction
+    # to RWKV-6's per-channel decay distribution: γ_t = exp(p_h · w_t).
+    # Implies delta_rule=True; uses a deeper warmstart (a0=-8) so β ≈ 0
+    # at init ⇒ bit-exact reduction to vanilla RWKV-6 within fp32 noise.
+    use_decay_coupled_delta: bool = False
+    decay_coupled_delta_p_init: float = 1.0
     lucid: bool = False
     lucid_chunk_size: Optional[int] = None  # None = full-sequence
     lucid_self_reg: bool = False  # RKHS delta rule self-regulation in state

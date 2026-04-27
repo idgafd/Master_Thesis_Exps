@@ -1,0 +1,13 @@
+2026-04-26 23:53:41,747 INFO src.training.train backbone=rwkv6_delta params=10M seq_len=64 K=16 Q=16 batch=64
+2026-04-26 23:54:38,236 INFO src.training.train step=100 epoch=1 loss=9.0890 grad=0.682 lr=3.00e-05
+2026-04-26 23:55:32,697 INFO src.training.train step=200 epoch=1 loss=8.7533 grad=0.567 lr=6.00e-05
+2026-04-26 23:56:27,158 INFO src.training.train step=300 epoch=1 loss=8.4310 grad=0.532 lr=9.00e-05
+2026-04-26 23:57:21,620 INFO src.training.train step=400 epoch=1 loss=8.3725 grad=0.532 lr=1.20e-04
+2026-04-26 23:58:16,081 INFO src.training.train step=500 epoch=1 loss=8.3572 grad=0.529 lr=1.50e-04
+2026-04-26 23:59:10,541 INFO src.training.train step=600 epoch=1 loss=8.3622 grad=0.517 lr=1.80e-04
+2026-04-27 00:00:05,003 INFO src.training.train step=700 epoch=1 loss=8.3655 grad=0.510 lr=2.10e-04
+2026-04-27 00:00:59,464 INFO src.training.train step=800 epoch=2 loss=8.3728 grad=0.505 lr=2.40e-04
+2026-04-27 00:01:53,924 INFO src.training.train step=900 epoch=2 loss=8.3571 grad=0.490 lr=2.70e-04
+2026-04-27 00:02:48,447 INFO src.training.train step=1000 epoch=2 loss=8.3407 grad=0.493 lr=3.00e-04
+2026-04-27 00:02:55,329 INFO src.training.train EVAL step=1000 loss=8.3485 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-27 00:03:49,789 INFO src.training.train step=1100 epoch=2 loss=8.3575 grad=0.477 lr=3.00e-04

@@ -1,0 +1,35 @@
+# Stage 12 — Decay-Coupled Delta MQAR cohort.
+#
+# Pre-registered in formal_v1/STAGE12_DECAY_COUPLED_DELTA.md §4.2 / §5.2:
+#   length_sweep: T ∈ {64, 256, 1024}
+#   backbones:    rwkv6 (vanilla), rwkv6_delta (NEGATIVE CONTROL),
+#                 rwkv6_decay_coupled_delta (probe)
+#
+# Optional: rwkv6_lucid (per §4.2 "if available") — included to match the
+# existing cohort_reduced.yaml shape.  rwkv6_delta as negative control is
+# the load-bearing addition: without it, a positive result from
+# rwkv6_decay_coupled_delta is not attributable to the *coupling*, only
+# to "having delta at all."
+#
+# Each (backbone, T, K=T/4) cell trains for max_steps from configs/default.yaml.
+# Seed locked to 42 per pre-registration discipline.
+#
+# Output:  outputs/cohort_stage12/<backbone>_T<seq_len>_seed42/
+
+base_config: configs/default.yaml
+seed: 42
+output_root: outputs/cohort_stage12
+
+# ── Length × n_kv_pairs schedule ──────────────────────────────────────
+# K = T / 4 by literature convention (Zoology / RWKV-7 §7.3 ratio).
+length_sweep:
+  - { seq_len: 64,   n_kv_pairs: 16 }
+  - { seq_len: 256,  n_kv_pairs: 64 }
+  - { seq_len: 1024, n_kv_pairs: 256 }
+
+# ── Backbones (pre-registered cohort) ─────────────────────────────────
+backbones:
+  - rwkv6                        # vanilla RWKV-6 baseline
+  - rwkv6_lucid                  # extant infrastructure cohort-mate
+  - rwkv6_delta                  # NEGATIVE CONTROL (standard delta T1)
+  - rwkv6_decay_coupled_delta    # Stage 12 probe (per-head γ = α^{p_h})

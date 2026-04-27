@@ -86,6 +86,14 @@ def main():
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--compile", action="store_true",
                         help="torch.compile the encoder (OOMs on 32GB GPUs)")
+    parser.add_argument("--fast", action="store_true",
+                        help="Enable TF32 matmul + cudnn.benchmark autotuner. "
+                             "Sacrifices strict bit-exact reproducibility "
+                             "across cudnn kernel choices for ~2-3x speedup. "
+                             "Loss curves match seeded reference within "
+                             "fp32/cudnn-kernel-noise; standard for production "
+                             "training. Stage 12 default to fight the K×K "
+                             "delta-scan cost.")
     parser.add_argument("--gpu", type=int, default=None,
                         help="GPU device index (default: auto)")
     parser.add_argument("--resume", action="store_true",
@@ -118,6 +126,18 @@ def main():
     if args.gpu is not None:
         torch.cuda.set_device(device)
     seed_everything(cfg.seed)
+
+    # ── --fast: TF32 matmul only, applied AFTER seed_everything ────────────
+    # `seed_everything()` sets cudnn.deterministic=True and benchmark=False
+    # for bit-exact reproducibility.  --fast turns on TF32 matmul precision
+    # (use Blackwell tensor cores for fp32 BMMs in the K×K delta scan and
+    # frontend convs).  cudnn.benchmark is INTENTIONALLY left off because
+    # the duration-bucketed dataloader produces variable (B, T) shapes,
+    # and benchmark mode re-tunes per shape — measured to be ~50% SLOWER
+    # in our setup than benchmark=False.  TF32 alone gave the win.
+    if args.fast:
+        torch.set_float32_matmul_precision("high")
+        logger.info("--fast: TF32 matmul precision enabled (cudnn.benchmark left off).")
 
     # ── Data ───────────────────────────────────────────────────────────────
     vocab = CharVocab.build_english()

@@ -7,6 +7,8 @@ On recurrent RWKV-6: full state update with erasure.
 Reference: RWKV-7 (Peng et al.), adapted for RWKV-6 architecture.
 """
 
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,6 +24,7 @@ class DeltaRuleParams(nn.Module):
         head_size: int,
         d_lora: int = 64,
         warmstart: bool = False,
+        a0_init: Optional[float] = None,
         dtype: torch.dtype = torch.float32,
     ):
         super().__init__()
@@ -43,7 +46,20 @@ class DeltaRuleParams(nn.Module):
         # so the delta branch is ~off initially and SGD grows the LoRA
         # contribution if useful.  Preserves zero-regression-at-init in
         # spirit (β ε-small) while allowing SGD to activate the mechanism.
-        a0_init = -5.0 if warmstart else 1.0
+        # `a0_init` (when not None) overrides both defaults — used by Stage
+        # 12 decay-coupled delta with a0_init=-8 (β ≈ 6.7e-4 at init,
+        # indistinguishable from vanilla within fp32 noise per spec §2.4).
+        # Env-var override (RWKV6_DELTA_A0_INIT) takes top precedence —
+        # used by MQAR runs to dial in a meaningful β at init while
+        # still sharing the rest of the delta-rule machinery.  Set to e.g.
+        # 0.0 → β_init ≈ 1.0; combined with gate=0.1 (RWKV6_DELTA_GATE_INIT)
+        # gives β_eff ≈ 0.1 — engaged, far below the destructive 1.76.
+        import os as _os
+        _env_a0 = _os.environ.get("RWKV6_DELTA_A0_INIT")
+        if _env_a0 is not None:
+            a0_init = float(_env_a0)
+        elif a0_init is None:
+            a0_init = -5.0 if warmstart else 1.0
         self.a0 = nn.Parameter(torch.full((1, 1, hidden_size), a0_init, dtype=dtype))
         self.a1 = nn.Parameter(torch.zeros(hidden_size, d_lora, dtype=dtype))
         self.a2 = nn.Parameter(

@@ -53,6 +53,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--n-kv-pairs", type=int)
     p.add_argument("--seed", type=int)
     p.add_argument("--max-steps", type=int)
+    p.add_argument("--batch-size", type=int,
+                   help="Override cfg.batch_size (e.g. drop from 64 to 16 "
+                        "for the K×K delta scan at long T to avoid OOM).")
     p.add_argument("--output-dir", required=True)
     p.add_argument("--device", default=None,
                    help="cuda | cpu (default: cuda if available)")
@@ -78,6 +81,8 @@ def main() -> None:
         overrides["seed"] = args.seed
     if args.max_steps is not None:
         overrides["max_steps"] = args.max_steps
+    if args.batch_size is not None:
+        overrides["batch_size"] = args.batch_size
 
     if args.device is not None:
         overrides["device"] = args.device

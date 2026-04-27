@@ -1,0 +1,28 @@
+# Stage 12 — Decay-Coupled Delta MQAR cohort (FOCUSED variant).
+#
+# Trimmed from cohort_stage12.yaml at the user's request: run ONLY the
+# direct delta-vs-decay-coupled comparison.
+#
+# Backbones:
+#   - rwkv6_delta                  (T1 reference / negative control)
+#   - rwkv6_decay_coupled_delta    (Stage 12 probe)
+#
+# Skipped vs the pre-registered cohort_stage12.yaml:
+#   - rwkv6 (vanilla baseline)     — convenient anchor, not load-bearing
+#   - rwkv6_lucid                  — extant cohort-mate, not load-bearing
+#
+# Lengths T ∈ {64, 256, 1024} per spec §4.2.  Output:
+#   outputs/cohort_stage12_focused/<backbone>_T<seq_len>_seed42/
+
+base_config: configs/default.yaml
+seed: 42
+output_root: outputs/cohort_stage12_focused
+
+length_sweep:
+  - { seq_len: 64,   n_kv_pairs: 16 }
+  - { seq_len: 256,  n_kv_pairs: 64 }
+  - { seq_len: 1024, n_kv_pairs: 256 }
+
+backbones:
+  - rwkv6_delta                  # T1 reference / negative control
+  - rwkv6_decay_coupled_delta    # Stage 12 probe

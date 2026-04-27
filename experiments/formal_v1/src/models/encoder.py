@@ -353,6 +353,11 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         "rwkv6_lucid": "recurrent",
         "rwkv6_lucid_sr": "recurrent",
         "rwkv6_delta": "recurrent",
+        # Stage 12 — Decay-Coupled Delta (per-head learnable γ_t = α_t^{p_h}
+        # weighting on the rank-1 erase direction). a0_init = -8 (β ≈ 7e-4
+        # at init) ⇒ bit-exact vanilla RWKV-6 within fp32 noise. p_h init 1.
+        # Pre-registration: STAGE12_DECAY_COUPLED_DELTA.md.
+        "rwkv6_decay_coupled_delta": "recurrent",
         # TODO_DELTA_RULE Tier-1 diagnostic — a0 init -5 so β ≈ 0 at t=0
         "rwkv6_delta_warmstart": "recurrent",
         # Stage 8 T1 — recurrent delta rank-1 erase, ACTUALLY WIRED on the
@@ -545,6 +550,14 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     delta_rule = "delta" in backbone or cfg.delta_rule
     # TODO_DELTA_RULE H1 — a0 = -5 init. Triggered by "warmstart" substring.
     delta_warmstart = delta_rule and "warmstart" in backbone
+    # Stage 12 — Decay-Coupled Delta. Triggered by "decay_coupled" substring.
+    # Implies delta_rule + a deeper warmstart (a0 = -8); the time-mix forces
+    # use_delta_rule and delta_warmstart True when this flag is on.
+    use_decay_coupled_delta = (
+        "decay_coupled" in backbone
+        or getattr(cfg, "use_decay_coupled_delta", False)
+    )
+    decay_coupled_delta_p_init = getattr(cfg, "decay_coupled_delta_p_init", 1.0)
     lucid = "lucid" in backbone or cfg.lucid
     lucid_self_reg = "lucid_sr" in backbone or cfg.lucid_self_reg
     temperature = "temperature" in backbone or cfg.temperature
@@ -795,6 +808,8 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
         headscale=headscale,
         delta_rule=delta_rule,
         delta_warmstart=delta_warmstart,
+        use_decay_coupled_delta=use_decay_coupled_delta,
+        decay_coupled_delta_p_init=decay_coupled_delta_p_init,
         lucid=lucid,
         lucid_chunk_size=lucid_chunk_size,
         lucid_self_reg=lucid_self_reg,

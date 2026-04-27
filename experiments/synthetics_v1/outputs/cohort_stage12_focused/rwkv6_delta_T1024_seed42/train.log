@@ -1,0 +1,2 @@
+2026-04-26 20:25:34,778 INFO src.training.train backbone=rwkv6_delta params=10M seq_len=1024 K=256 Q=256 batch=16
+2026-04-26 20:31:30,540 INFO src.training.train step=100 epoch=1 loss=9.1013 grad=0.376 lr=3.00e-05
