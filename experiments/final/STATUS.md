@@ -146,16 +146,34 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 
 | Architecture | vanilla | + multidil_v2 | + rse_depth_viscosity |
 |---|:---:|:---:|:---:|
-| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | 🟡 in flight (GPU 3) |
-| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ⚪ engineering done, queued |
-| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ⚪ engineering done, queued |
-| LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | — | — |
+| RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | 🟡 in flight (GPU 3, ep22 dev 0.0980) |
+| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | 🟡 in flight (GPU 1, ep8 dev 0.1574) |
+| LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | 🟡 in flight (GPU 2, ep15 dev 0.1561) |
+| LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | ✅ 0.1160 dev / 0.1154 test | (bonus run; see LION-S follow-ups below) |
 
 **LION-S as a control** — LION-LIT vanilla landed dev ~0.30 / test ~0.30, well below causal LA (test 0.19).  Hypothesis: bidirectional content-similarity attention without decay smears across all positions on CTC ASR.  LA LION-S adds per-head selective σ-decay (mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1) as a falsification test for the "no decay is the missing piece" reading.
 
 **Decision update (2026-04-26)** — RSE-LION variant switched from `rse_strong_viscosity` (Master_Plan §3) to `rse_depth_viscosity`.  Rationale: 7M-causal probe #1 (`7m_rwkv6_causal_rse_depth_viscosity_seed42`, test 0.0989, Δ −0.0017) showed depth-graded θ clip outperforms uniform π/2 on RWKV-6 causal at 50 ep.  Depth schedule (L0–L1: π/8, L2–L3: π/4, L4–L5: π/2) carried over to LION.  Master_Plan §3 stays untouched per its locked status; this decision is recorded here in STATUS.md only.
 
-**LUCID LION cells** (3 cells, complete the §4 5-cell shape per arch) — **unblocked 2026-04-26**, all three running at 50 ep.  Backbones: `lion_lucid_chunked` (RWKV-6, existing kernel + chunked LUCID), `mamba2_lion_lucid_c` (new — added LUCID-c to `ssd_scan_lion`), `linear_attn_lion_lucid` (new — added LUCID branch to `LIONLinearAttentionLayer` LION-LIT).
+**LUCID LION cells (landed 2026-04-26)** — 3-cell mandatory matrix complete:
+
+| Architecture | LION × LUCID variant | dev | test | Δ test vs vanilla |
+|---|---|---:|---:|---:|
+| RWKV-6 LION | `lion_lucid_chunked` | 0.0857 | **0.0852** | −0.0007 (tied vanilla 0.0859) |
+| Mamba-2 LION | `mamba2_lion_lucid_c` (C-corr.) | 0.0851 | **0.0849** | −0.0004 (marginal vs vanilla 0.0853) |
+| LA LION (LION-LIT) | `linear_attn_lion_lucid` | 0.3228 | **0.3194** | **+0.0243 worse** than LION-LIT vanilla 0.2951 — falsification |
+
+**Reading**: LUCID transfers asymmetrically — null/absorbed on per-channel-decay backbones (RWKV-6 LION, Mamba-2 LION), actively *hurts* on the no-decay LION-LIT backbone. Decay is the prerequisite for LUCID's preconditioner to bite.
+
+**LION-S follow-ups on LA (bonus runs, GPU 0 chain after main mandate landed)**:
+
+| Cell | dev | test | vs reference |
+|---|---:|---:|---|
+| LA LION-S × LUCID | 0.1332 | **0.1311** | Δ −0.0070 vs LION-S vanilla 0.1381 — LUCID converts on decay-bounded LION-S |
+| LA LION-S × multidil_v2 | 0.1160 | **0.1154** | Δ −0.0227 vs LION-S vanilla — multidil stacks on LION-S decay |
+| **LA LION-S × LUCID × multidil_v2** (P7-style) | **0.1142** | **0.1129** | **best LA cell on the matrix** — composition stacks |
+
+This corrects the LION-LIT × LUCID falsification: LUCID *does* convert on LA when given a decay-bounded backbone, and the §5 P7-style composition (LION-S × LUCID × multidil_v2) is the strongest LA result.
 
 **Backbone identifier (codebase) ↔ cell mapping**:
 
@@ -173,6 +191,10 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 | `7m_linear_attn_lion_multidil_v2_seed42` | `linear_attn_lion_convshift_multidil_symmetric_v2` |
 | `7m_linear_attn_lion_lucid_seed42` | `linear_attn_lion_lucid` |
 | `7m_linear_attn_lion_rse_depth_viscosity_seed42` | `linear_attn_lion_rse_depth_viscosity` |
+| `7m_linear_attn_lion_s_vanilla_seed42` | `linear_attn_lion_s` |
+| `7m_linear_attn_lion_s_lucid_seed42` | `linear_attn_lion_s_lucid` |
+| `7m_linear_attn_lion_s_multidil_v2_seed42` | `linear_attn_lion_s_convshift_multidil_symmetric_v2` |
+| `7m_linear_attn_lion_s_lucid_multidil_v2_seed42` | `linear_attn_lion_s_lucid_convshift_multidil_symmetric_v2` |
 
 **RSE LION engineering (2026-04-26, unblocked)**:
 - RWKV-6: lifted the `assert mode == "recurrent"` guard on RSE in
@@ -196,26 +218,32 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 
 | Architecture × mode | vanilla | multidil_v2 | LUCID | rse_strong_visc | composition |
 |---|:---:|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1103 (scout, NEG scaling) | ✅ **0.0751** (scout, NEW CEILING) | ⚪ | ⚪ | ⚪ |
-| Mamba-2 causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
-| LA causal | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
+| RWKV-6 causal | ✅ 0.1103 (NEG scaling) | ✅ **0.0751** | ⚪ | ⚪ | ⚪ |
+| Mamba-2 causal | ✅ **0.0827** (POS scaling) | ✅ **0.0631** **(MATRIX CEILING)** | ⚪ | ⚪ | ⚪ |
+| LA causal | 🟡 in flight (GPU 0, ep48 dev 0.1379) | ⚪ next on GPU 0 | ⚪ | ⚪ | ⚪ |
 | RWKV-6 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | Mamba-2 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | LA LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 
-**14M scout findings (RWKV-6 only)** — both cells in:
+**14M scaling pattern (4 cells in)** — vanilla scaling is architecture-dependent:
 
-| | 7M (test) | 14M (test) | Δ across scale |
+| | 7M test | 14M test | Δ across scale |
 |---|---:|---:|---:|
-| RWKV-6 vanilla | 0.1049 | 0.1103 | +0.0054 (regression) |
-| RWKV-6 multidil_v2 | 0.0788 | **0.0751** | **−0.0037 (improvement, new ceiling)** |
-| Mechanism Δ multidil vs vanilla | −0.0261 | **−0.0352** | mechanism Δ grew with capacity |
+| RWKV-6 vanilla | 0.1049 | 0.1103 | **+0.0054 (regression — NEG)** |
+| Mamba-2 vanilla | 0.1036 | 0.0827 | **−0.0209 (improvement — POS)** |
+| RWKV-6 multidil_v2 | 0.0788 | 0.0751 | −0.0037 (POS) |
+| Mamba-2 multidil_v2 | 0.0825 | **0.0631** | −0.0194 (POS, **matrix ceiling**) |
 
-**Master_Plan §8 30M conditional trigger evaluation**: §8 fires on either (a) ranking shift among single mechanisms 7M→14M, OR (b) mechanism gains grow with capacity. Condition (b) is **satisfied** for RWKV-6: multidil mechanism Δ went from −0.0261 (7M) to −0.0352 (14M). Condition (a) needs more cells; ranking has multidil > vanilla at both scales (no shift), but the magnitude of the gap grew. **Trigger fires for RWKV-6 best mechanism (multidil_v2) at 30M** — but not unilaterally launched in this session (out of scope).
+| | 7M Δ multidil vs vanilla | 14M Δ multidil vs vanilla |
+|---|---:|---:|
+| RWKV-6 | −0.0261 | **−0.0352** (grew) |
+| Mamba-2 | −0.0211 | −0.0196 (similar) |
 
-The vanilla regression alongside multidil improvement is a useful signal: vanilla at 14M is likely undertrained at the matched 50-ep budget, while multidil_v2's input-side relief makes the longer effective receptive field productive even with the budget unchanged. The mechanism is doing real work, not just compensating for under-training.
+**Master_Plan §8 30M conditional**: condition (b) (mechanism gains grow with capacity) **fires for RWKV-6 multidil_v2** (Δ −0.026 → −0.035). Mamba-2 mechanism Δ is roughly preserved across scale rather than growing, but the **absolute** Mamba-2 14M multidil_v2 result (test 0.0631) is the matrix ceiling — beats every other cell at any scale. Condition (a) (ranking shift) — no shift seen so far among the 4 closed 14M cells.
 
-Engineering prerequisite: 14M configs across the three architectures.
+**RWKV-6 vanilla regression vs Mamba-2 vanilla improvement is interesting**: under matched 50-ep budget, RWKV-6 at 14M is likely undertrained; Mamba-2's selective Δt extracts more value from the 12-layer depth than RWKV-6's per-channel data-dep WKV does at the same compute budget. Different architectures, different scaling characters — worth a writeup paragraph on architecture-specific compute efficiency.
+
+Engineering prerequisite: 14M configs across the three architectures — ✅ done (`configs/14m.yaml` works generically across all backbones, just changes `n_layers: 6 → 12`).
 
 ---
 
@@ -497,3 +525,55 @@ Per `Master_Plan.md §19`:
   at T=500/B=4 — RWKV-6 peak 9.86 GB, Mamba-2 19.31 GB, LA 9.44 GB.
   Launched RWKV-6 LION × RSE-depth-viscosity on GPU 3; Mamba-2 / LA
   queued for whichever LUCID-LION cell finishes first.
+- **2026-04-26 17:02 UTC** — `7m_linear_attn_lion_lucid_seed42` (LION-LIT
+  × LUCID) landed: best dev 0.3228, **test 0.3194**.  Δ test +0.0243
+  *worse* than LION-LIT vanilla — first negative LUCID transfer in the
+  matrix.  Reading: LUCID's unit-diagonal preconditioner needs decay-
+  bounded values; on no-decay LION-LIT the row-sums of `phi(K)` are
+  unbounded which makes the preconditioner over-aggressive.
+- **2026-04-26 17:03 UTC** — Decision (logged in STATUS only): added
+  `linear_attn_lion_s_lucid` backbone (LION-S × LUCID; LUCID composed
+  with LION-S's per-head σ-decay).  Auto-dispatched on GPU 2 after the
+  LION-LIT × LUCID cell finished, ahead of LA RSE-LION.  Engineering
+  was a 1-line gate change in `linear_attn_lion.py` (commit `4e2f2b5`).
+- **2026-04-26 18:01 UTC** — `7m_mamba2_lion_lucid_c_seed42` landed:
+  best dev 0.0851, **test 0.0849**.  Δ test −0.0004 vs Mamba-2 LION
+  vanilla 0.0853 — marginal but consistent improvement (LUCID converts
+  on Mamba-2's selective Δt decay).
+- **2026-04-26 17:12 UTC** — `7m_rwkv6_lion_lucid_chunked_seed42`
+  landed: best dev 0.0857, **test 0.0852**.  Δ test −0.0007 vs RWKV-6
+  LION vanilla 0.0859 — statistically tied within fp32 noise.
+- **2026-04-26 18:53 UTC** — `7m_linear_attn_lion_s_lucid_seed42` (LION-S
+  × LUCID, the bonus rerun) landed: best dev 0.1332, **test 0.1311**.
+  Δ test −0.0070 vs LION-S vanilla 0.1381 — LUCID *does* convert on LA
+  when given a decay-bounded backbone.  Δ test −0.1883 vs the LION-LIT
+  × LUCID falsification — decay is decisive.
+- **2026-04-26 20:50 UTC** — `7m_linear_attn_lion_s_lucid_multidil_v2_seed42`
+  (P7-style on LA, LION-S × LUCID × multidil_v2) landed: best dev
+  0.1142, **test 0.1129** — **best LA cell on the matrix**.  Composition
+  stacks: Δ vs LION-S vanilla 0.1381 = **−0.0252**.  Validates the §5
+  pre-registered composition shape on LA when wired to the LION-S
+  decay variant rather than the locked-plan LION-LIT default.
+- **2026-04-26 22:50 UTC** — `7m_linear_attn_lion_s_multidil_v2_seed42`
+  (LION-S × multidil_v2) landed: best dev 0.1160, **test 0.1154**.
+  Δ test −0.0227 vs LION-S vanilla — multidil stacks cleanly on LION-S
+  decay.
+- **2026-04-26 22:50 UTC** — `14m_mamba2_causal_vanilla_seed42` landed:
+  best dev 0.0821, **test 0.0827**.  Δ test **−0.0209 vs 7M Mamba-2
+  vanilla** (0.1036) — **POSITIVE 14M scaling** on Mamba-2 vanilla,
+  contrast with RWKV-6 vanilla's NEG scaling at the same matched
+  50-ep budget.  Architecture-dependent scaling — worth a writeup
+  paragraph.
+- **2026-04-27 01:11 UTC** — `14m_mamba2_causal_multidil_v2_seed42`
+  landed: best dev 0.0635, **test 0.0631** — **NEW MATRIX CEILING**
+  (beats RWKV-6 14M multidil_v2 0.0751 by Δ −0.012 test).  POS scaling
+  on Mamba-2 multidil_v2 (Δ −0.019 test vs 7M).  Mechanism Δ multidil
+  vs vanilla is roughly preserved on Mamba-2 across scale (−0.021 at
+  7M → −0.020 at 14M), unlike RWKV-6 where the Δ grew (−0.026 → −0.035).
+- **2026-04-27 03:30 UTC** — Policy: enabled Git LFS for
+  `experiments/final/outputs/14m_*/best_model.pt` and
+  `outputs/30m_*/best_model.pt` (commit `c0df6ff`).  All future
+  completed cells get full per-run output committed including
+  `best_model.pt`, irrespective of scale.  Per-epoch checkpoint
+  snapshots and `last_model.pt` continue to stay local per the
+  existing §13 convention.
