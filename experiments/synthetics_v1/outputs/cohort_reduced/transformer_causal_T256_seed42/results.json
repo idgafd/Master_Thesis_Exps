@@ -1,0 +1,19 @@
+{
+  "backbone": "transformer_causal",
+  "seq_len": 256,
+  "n_kv_pairs": 64,
+  "n_queries": 64,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 12000,
+  "epochs_taken": 16,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9913333333333333,
+  "best_per_query_acc": 0.9998645833333333,
+  "best_step": 12000,
+  "final_per_seq_acc": 0.9913333333333333,
+  "final_per_query_acc": 0.9998645833333333,
+  "final_loss": 0.0011680776420980692,
+  "wall_sec": 648.2909977436066,
+  "seed": 42
+}
