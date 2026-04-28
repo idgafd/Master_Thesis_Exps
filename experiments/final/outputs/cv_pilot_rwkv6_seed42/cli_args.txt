@@ -1,0 +1,1 @@
+--config configs/cv_pilot.yaml --backbone rwkv6 --dataset common_voice_en_100h --output-dir ../final/outputs/cv_pilot_rwkv6_seed42 --gpu 0 --fast

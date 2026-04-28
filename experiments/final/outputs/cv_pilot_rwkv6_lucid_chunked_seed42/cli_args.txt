@@ -1,0 +1,1 @@
+--config configs/cv_pilot.yaml --backbone rwkv6_lucid --dataset common_voice_en_100h --output-dir ../final/outputs/cv_pilot_rwkv6_lucid_chunked_seed42 --gpu 2 --fast
