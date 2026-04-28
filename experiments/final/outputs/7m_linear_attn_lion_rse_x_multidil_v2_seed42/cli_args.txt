@@ -1,0 +1,1 @@
+--backbone linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2 --epochs 50 --seed 42 --gpu 3 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/7m_linear_attn_lion_rse_x_multidil_v2_seed42
