@@ -184,6 +184,34 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             expand=cfg.mamba_expand,
         )
 
+    # Bi-WKV / Vim-style bidirectional (per-layer fwd + bwd causal scans, averaged).
+    # Different from LION (parallel matrix form): two sequential RNN passes per
+    # layer with no correction term.  Param budget calibrated to ~7M at d_model=256
+    # by halving n_layers (each Bi-WKV layer = 2 causal blocks).
+    if backbone == "rwkv6_biwkv":
+        from src.models.biwkv_encoders import BiWKVRWKV6Encoder
+        return BiWKVRWKV6Encoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers // 2,
+            dropout=cfg.dropout,
+            head_size=cfg.head_size,
+        )
+
+    if backbone == "mamba2_bidir_vim":
+        from src.models.biwkv_encoders import BidirVimMamba2Encoder
+        return BidirVimMamba2Encoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers // 2,
+            dropout=cfg.dropout,
+            ffn_dim=cfg.ffn_dim,
+            d_state=cfg.mamba2_d_state,
+            d_conv=cfg.mamba_d_conv,
+            headdim=cfg.mamba2_headdim,
+            expand=cfg.mamba_expand,
+            ngroups=cfg.mamba2_ngroups,
+            chunk_size=cfg.mamba2_chunk_size,
+        )
+
     if backbone == "mamba_cuda":
         from src.models.mamba_cuda_encoder import MambaCudaEncoder
         return MambaCudaEncoder(
