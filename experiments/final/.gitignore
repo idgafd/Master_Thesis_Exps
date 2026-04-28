@@ -51,3 +51,8 @@ outputs/_stage12_launch_logs/
 # The canonical run-dir name (without the _PRE_*_FIX suffix) holds the
 # fixed result.
 outputs/*_PRE_*_FIX_*/
+
+# Halted-by-matched-epoch-criterion runs (§4.4) and OOM aborts — also
+# debug artifacts only, not canonical results.
+outputs/*_HALTED_*/
+outputs/*_OOM_FAIL_*/

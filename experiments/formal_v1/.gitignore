@@ -19,6 +19,11 @@ data/common_voice/*.tar
 # Speaker-overlap diagnosis is only present when §2.3 fails — its absence
 # is the canonical signal that the splits are clean. Don't commit it.
 data/common_voice/speaker_overlap_diagnosis.txt
+# Pre-decoded shared audio cache (~35 GB) — regenerable from clips via
+# scripts/cache_cv_audio.py. Index file is tiny but tied to the .f32, so
+# we ignore both as a pair.
+data/common_voice/audio_cache_seed42.f32
+data/common_voice/audio_cache_seed42.idx.json
 
 # Binary model weights — regenerable from git_sha + config
 *.pt

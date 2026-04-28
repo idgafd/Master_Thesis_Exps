@@ -28,10 +28,11 @@ Each returned entry has keys:
 from __future__ import annotations
 
 import csv
+import json
 import logging
 import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -49,6 +50,14 @@ CV_25_RELEASE_DIR = "cv-corpus-25.0-2026-03-09"
 CV_LOCALE = "en"
 
 TRAIN_MANIFEST_NAME = "100h_train_manifest_seed42.csv"
+
+# Pre-decoded shared audio cache (built once by scripts/cache_cv_audio.py).
+# When this exists, the loader memory-maps it instead of re-decoding mp3
+# in every process — letting the 4 parallel pilots share the OS page cache
+# (one ~35 GB physical allocation instead of 4 × 30 GB) and skip the
+# minutes-long upfront decode each.
+AUDIO_CACHE_F32 = "audio_cache_seed42.f32"
+AUDIO_CACHE_IDX = "audio_cache_seed42.idx.json"
 
 
 def cv_normalize_sentence(s: str) -> str:
@@ -122,6 +131,42 @@ def _load_audio(clip_path: Path) -> Optional[np.ndarray]:
     return _resample_to_16k(wav.float(), sr)
 
 
+def _open_audio_cache(cache_dir: Path) -> Optional[Tuple[np.memmap, Dict[str, List[int]]]]:
+    """If a pre-decoded audio cache exists at `<cache_dir>/audio_cache_seed42.*`,
+    open it for memory-mapped read access and return (mmap_array, index_dict).
+    `index_dict[clip_filename]` is `[offset_samples, n_samples]`.
+
+    Returns `None` when the cache is missing — the caller falls back to
+    per-clip mp3 decoding via `_load_audio`.
+    """
+    f32 = cache_dir / AUDIO_CACHE_F32
+    idx_path = cache_dir / AUDIO_CACHE_IDX
+    if not (f32.exists() and idx_path.exists()):
+        return None
+    with open(idx_path, encoding="utf-8") as f:
+        idx = json.load(f)
+    arr = np.memmap(f32, dtype=np.float32, mode="r")
+    return arr, idx
+
+
+def _audio_from_cache(
+    cache_arr: np.memmap,
+    idx: Dict[str, List[int]],
+    clip: str,
+) -> Optional[np.ndarray]:
+    """Return a memory-mapped slice for `clip`, or None if not in the cache.
+
+    The returned array is a read-only view into the mmap; downstream
+    `torch.from_numpy` works fine on it. Total RAM cost across all 4
+    parallel pilots is one shared 35 GB page-cache allocation, not 4×30 GB.
+    """
+    entry = idx.get(clip)
+    if entry is None:
+        return None
+    offset, n = int(entry[0]), int(entry[1])
+    return cache_arr[offset:offset + n]
+
+
 def _passes_quality_filter(row: Dict[str, str], duration_sec: Optional[float]) -> bool:
     """§2.4 quality filter on a single TSV row.
 
@@ -149,8 +194,9 @@ def _load_split_from_tsv(
     min_audio_sec: float,
     max_audio_sec: float,
     split_label: str,
+    cache: Optional[Tuple[np.memmap, Dict[str, List[int]]]] = None,
 ) -> List[dict]:
-    """Filter a TSV split, normalise sentences, decode audio."""
+    """Filter a TSV split, normalise sentences, attach audio (cache or decode)."""
     rows = _read_tsv_rows(cv_root / tsv_name)
     clips_dir = cv_root / "clips"
     entries: List[dict] = []
@@ -171,7 +217,10 @@ def _load_split_from_tsv(
         if dur < min_audio_sec or dur > max_audio_sec:
             skipped_band += 1
             continue
-        arr = _load_audio(clips_dir / clip)
+        if cache is not None:
+            arr = _audio_from_cache(cache[0], cache[1], clip)
+        else:
+            arr = _load_audio(clips_dir / clip)
         if arr is None:
             skipped_decode += 1
             continue
@@ -214,6 +263,13 @@ def load_common_voice(
     durations = _read_clip_durations(cv_root)
     clips_dir = cv_root / "clips"
 
+    cache = _open_audio_cache(cache_root)
+    if cache is not None:
+        logger.info(
+            f"using shared audio cache at {cache_root / AUDIO_CACHE_F32} "
+            f"({cache[0].nbytes / 1e9:.1f} GB mmap; {len(cache[1])} clips indexed)"
+        )
+
     if split == "train":
         manifest_path = cache_root / TRAIN_MANIFEST_NAME
         if not manifest_path.exists():
@@ -233,7 +289,10 @@ def load_common_voice(
             if dur < min_audio_sec or dur > max_audio_sec:
                 skipped_band += 1
                 continue
-            arr = _load_audio(clips_dir / clip)
+            if cache is not None:
+                arr = _audio_from_cache(cache[0], cache[1], clip)
+            else:
+                arr = _load_audio(clips_dir / clip)
             if arr is None:
                 skipped_decode += 1
                 continue
@@ -253,10 +312,12 @@ def load_common_voice(
 
     if split == "dev":
         return _load_split_from_tsv(
-            cv_root, "dev.tsv", durations, min_audio_sec, max_audio_sec, "dev"
+            cv_root, "dev.tsv", durations, min_audio_sec, max_audio_sec, "dev",
+            cache=cache,
         )
     if split == "test":
         return _load_split_from_tsv(
-            cv_root, "test.tsv", durations, min_audio_sec, max_audio_sec, "test"
+            cv_root, "test.tsv", durations, min_audio_sec, max_audio_sec, "test",
+            cache=cache,
         )
     raise ValueError(f"unknown split: {split!r}")
