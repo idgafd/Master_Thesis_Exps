@@ -59,6 +59,11 @@ link "src/models/p2rse_indep_lambda.py"
 link "src/models/rse_scan_fast.py"
 link "src/models/components.py"   # SinusoidalPE — used by transformer*
 link "src/models/mechanisms"
+# LA family + Mamba-2 RSE — needed for the §3 single-mechanism MQAR cohort.
+link "src/models/linear_attn_causal.py"
+link "src/models/linear_attn_lion.py"
+link "src/models/linear_attn_rse.py"
+link "src/models/mamba2_rse.py"
 
 echo "Done."
 echo

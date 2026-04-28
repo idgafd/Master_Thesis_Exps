@@ -219,7 +219,7 @@ This corrects the LION-LIT × LUCID falsification: LUCID *does* convert on LA wh
 | Architecture × mode | vanilla | multidil_v2 | LUCID | rse_strong_visc | composition |
 |---|:---:|:---:|:---:|:---:|:---:|
 | RWKV-6 causal | ✅ 0.1103 (NEG scaling) | ✅ **0.0751** | ✅ 0.1051 | ✅ **0.1077** | ✅ P7 **0.0746** |
-| Mamba-2 causal | ✅ **0.0827** (POS scaling) | ✅ **0.0631** **(MATRIX CEILING)** | ✅ 0.0728 | 🟡 in flight (GPU 0, ep11 dev 0.1288) | ✅ LUCID×md **0.0618** |
+| Mamba-2 causal | ✅ **0.0827** (POS scaling) | ✅ **0.0631** **(MATRIX CEILING)** | ✅ 0.0728 | ✅ **0.0825** (NULL Δ +0.000) | ✅ LUCID×md **0.0618** |
 | LA causal | ✅ 0.1359 | ✅ 0.0969 | ✅ 0.1300 | ✅ 0.0947 | ✅ RSE×md **0.0786** |
 | RWKV-6 LION | ⛔ dropped per scope | ⛔ dropped | ⛔ dropped | ⛔ dropped | ⛔ dropped |
 | Mamba-2 LION | ⛔ dropped per scope | ⛔ dropped | ⛔ dropped | ⛔ dropped | ⛔ dropped |
@@ -583,6 +583,14 @@ Per `Master_Plan.md §19`:
   (Δ −0.0044) and multidil solo 0.0833 (Δ −0.0028).  Composition stacks
   cleanly on Mamba-2 LION.  Chunked eval: 0.149/0.110/0.099 at 2/5/10s
   reset.
+- **2026-04-28 13:33 UTC** — `14m_mamba2_causal_rse_strong_viscosity_seed42`
+  landed: best dev **0.0833**, **test 0.0825**.  Δ test +0.0002 vs 14M
+  Mamba-2 vanilla 0.0827 — NULL/marginal at 14M (matches the 7M
+  Mamba-2 × RSE-strong NULL at 0.1038 vs vanilla 0.1036).  Confirms
+  RSE is architecturally selective: BREAK on LA across both modes
+  (causal Δ −0.068; LION Δ −0.191), NULL on Mamba-2 across both scales.
+  14M Mamba-2 × RSE-depth-viscosity queued on GPU 0 to test the
+  depth-graded θ schedule (the variant that delivered the LION result).
 - **2026-04-28 03:59 UTC** — `14m_rwkv6_causal_rse_strong_viscosity_seed42`
   landed: best dev **0.1058**, **test 0.1077**.  Δ test −0.0026 vs 14M
   RWKV-6 vanilla 0.1103 — marginal RSE engagement at 14M, mirrors the
