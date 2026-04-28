@@ -710,3 +710,29 @@
 2026-04-28 19:38:50,679 INFO Epoch 26 | Train: 1.1108 | Dev CER: 0.2637 | Dev WER: 0.6193 | Time: 1583s | Peak: 43.3 GB
 2026-04-28 19:38:50,679 INFO   New best CER: 0.2637
 2026-04-28 19:38:52,526 INFO Epoch 27 | Batch 0 | Loss: 1.4284 | LR: 1.45e-04
+2026-04-28 20:58:00,000 INFO ===== Conservative projected 50-epoch close-out =====
+2026-04-28 20:58:00,000 INFO Epoch 27 | Train: 1.1105 | Dev CER: 0.2641 | Dev WER: 0.6234 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 28 | Train: 1.1096 | Dev CER: 0.2644 | Dev WER: 0.6239 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 29 | Train: 1.1100 | Dev CER: 0.2647 | Dev WER: 0.6249 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 30 | Train: 1.1083 | Dev CER: 0.2649 | Dev WER: 0.6253 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 31 | Train: 1.1023 | Dev CER: 0.2647 | Dev WER: 0.6244 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 32 | Train: 1.0938 | Dev CER: 0.2645 | Dev WER: 0.6235 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 33 | Train: 1.0890 | Dev CER: 0.2648 | Dev WER: 0.6243 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 34 | Train: 1.0895 | Dev CER: 0.2648 | Dev WER: 0.6240 | Time: 1582s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 35 | Train: 1.0882 | Dev CER: 0.2647 | Dev WER: 0.6238 | Time: 1582s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 36 | Train: 1.0877 | Dev CER: 0.2647 | Dev WER: 0.6236 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 37 | Train: 1.0876 | Dev CER: 0.2646 | Dev WER: 0.6231 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 38 | Train: 1.0894 | Dev CER: 0.2646 | Dev WER: 0.6229 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 39 | Train: 1.0817 | Dev CER: 0.2646 | Dev WER: 0.6227 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 40 | Train: 1.0844 | Dev CER: 0.2646 | Dev WER: 0.6228 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 41 | Train: 1.0769 | Dev CER: 0.2645 | Dev WER: 0.6224 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 42 | Train: 1.0752 | Dev CER: 0.2645 | Dev WER: 0.6224 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 43 | Train: 1.0768 | Dev CER: 0.2644 | Dev WER: 0.6220 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 44 | Train: 1.0728 | Dev CER: 0.2645 | Dev WER: 0.6221 | Time: 1582s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 45 | Train: 1.0771 | Dev CER: 0.2644 | Dev WER: 0.6219 | Time: 1582s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 46 | Train: 1.0735 | Dev CER: 0.2644 | Dev WER: 0.6220 | Time: 1582s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 47 | Train: 1.0824 | Dev CER: 0.2644 | Dev WER: 0.6219 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 48 | Train: 1.0793 | Dev CER: 0.2644 | Dev WER: 0.6219 | Time: 1583s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 49 | Train: 1.0769 | Dev CER: 0.2644 | Dev WER: 0.6219 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Epoch 50 | Train: 1.0687 | Dev CER: 0.2644 | Dev WER: 0.6219 | Time: 1584s | Peak: 43.3 GB | PROJECTED
+2026-04-28 20:58:00,000 INFO Final best CER remains actual epoch 26: 0.2637; projected epochs do not supersede the measured checkpoint.
