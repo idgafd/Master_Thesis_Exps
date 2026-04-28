@@ -1,0 +1,976 @@
+── Phase: T=64 (K=16) ─────────────────────────────────────────
+SKIP (already done): outputs/cohort_reduced/transformer_causal_T64_seed42
+SKIP (already done): outputs/cohort_reduced/rwkv6_T64_seed42
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=rwkv6_convshift_multidil_symmetric_v2  T=64  K=16  seed=42
+out=outputs/cohort_reduced/rwkv6_convshift_multidil_symmetric_v2_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 08:26:17,312 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='rwkv6_convshift_multidil_symmetric_v2', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/rwkv6_convshift_multidil_symmetric_v2_T64_seed42')
+2026-04-28 08:26:17,727 INFO src.training.train backbone=rwkv6_convshift_multidil_symmetric_v2 params=10M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 08:26:22,296 INFO src.training.train step=100 epoch=1 loss=9.0724 grad=0.701 lr=3.00e-05
+2026-04-28 08:26:25,667 INFO src.training.train step=200 epoch=1 loss=8.7323 grad=0.569 lr=6.00e-05
+2026-04-28 08:26:29,168 INFO src.training.train step=300 epoch=1 loss=8.4341 grad=0.535 lr=9.00e-05
+2026-04-28 08:26:32,687 INFO src.training.train step=400 epoch=1 loss=8.3667 grad=0.528 lr=1.20e-04
+2026-04-28 08:26:36,157 INFO src.training.train step=500 epoch=1 loss=8.3530 grad=0.529 lr=1.50e-04
+2026-04-28 08:26:39,502 INFO src.training.train step=600 epoch=1 loss=8.3482 grad=0.516 lr=1.80e-04
+2026-04-28 08:26:42,957 INFO src.training.train step=700 epoch=1 loss=8.3596 grad=0.511 lr=2.10e-04
+2026-04-28 08:26:46,378 INFO src.training.train step=800 epoch=2 loss=8.3746 grad=0.505 lr=2.40e-04
+2026-04-28 08:26:49,215 INFO src.training.train step=900 epoch=2 loss=8.3571 grad=0.493 lr=2.70e-04
+2026-04-28 08:26:51,928 INFO src.training.train step=1000 epoch=2 loss=8.3468 grad=0.492 lr=3.00e-04
+2026-04-28 08:26:52,391 INFO src.training.train EVAL step=1000 loss=8.3493 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:26:55,532 INFO src.training.train step=1100 epoch=2 loss=8.3423 grad=0.474 lr=3.00e-04
+2026-04-28 08:26:58,753 INFO src.training.train step=1200 epoch=2 loss=8.3604 grad=0.462 lr=3.00e-04
+2026-04-28 08:27:02,021 INFO src.training.train step=1300 epoch=2 loss=8.3509 grad=0.451 lr=3.00e-04
+2026-04-28 08:27:05,470 INFO src.training.train step=1400 epoch=2 loss=8.3521 grad=0.435 lr=3.00e-04
+2026-04-28 08:27:08,852 INFO src.training.train step=1500 epoch=2 loss=8.3412 grad=0.434 lr=3.00e-04
+2026-04-28 08:27:12,300 INFO src.training.train step=1600 epoch=3 loss=8.3318 grad=0.412 lr=3.00e-04
+2026-04-28 08:27:15,664 INFO src.training.train step=1700 epoch=3 loss=8.3313 grad=0.409 lr=3.00e-04
+2026-04-28 08:27:18,985 INFO src.training.train step=1800 epoch=3 loss=8.2428 grad=0.542 lr=2.99e-04
+2026-04-28 08:27:22,378 INFO src.training.train step=1900 epoch=3 loss=7.8704 grad=1.344 lr=2.99e-04
+2026-04-28 08:27:25,855 INFO src.training.train step=2000 epoch=3 loss=7.4023 grad=0.819 lr=2.99e-04
+2026-04-28 08:27:26,320 INFO src.training.train EVAL step=2000 loss=7.0815 per_query_acc=0.0121 per_seq_acc=0.0000
+2026-04-28 08:27:29,764 INFO src.training.train step=2100 epoch=3 loss=6.8709 grad=2.960 lr=2.99e-04
+2026-04-28 08:27:33,162 INFO src.training.train step=2200 epoch=3 loss=6.3074 grad=1.026 lr=2.99e-04
+2026-04-28 08:27:36,491 INFO src.training.train step=2300 epoch=3 loss=5.7681 grad=1.784 lr=2.99e-04
+2026-04-28 08:27:39,893 INFO src.training.train step=2400 epoch=4 loss=5.2240 grad=1.721 lr=2.98e-04
+2026-04-28 08:27:43,308 INFO src.training.train step=2500 epoch=4 loss=4.7071 grad=1.267 lr=2.98e-04
+2026-04-28 08:27:46,632 INFO src.training.train step=2600 epoch=4 loss=4.1276 grad=1.378 lr=2.98e-04
+2026-04-28 08:27:50,032 INFO src.training.train step=2700 epoch=4 loss=3.6014 grad=1.340 lr=2.97e-04
+2026-04-28 08:27:53,509 INFO src.training.train step=2800 epoch=4 loss=3.1391 grad=1.486 lr=2.97e-04
+2026-04-28 08:27:56,759 INFO src.training.train step=2900 epoch=4 loss=2.5722 grad=1.720 lr=2.97e-04
+2026-04-28 08:28:00,058 INFO src.training.train step=3000 epoch=4 loss=2.1581 grad=1.467 lr=2.97e-04
+2026-04-28 08:28:00,499 INFO src.training.train EVAL step=3000 loss=1.1324 per_query_acc=0.9871 per_seq_acc=0.8113
+2026-04-28 08:28:03,866 INFO src.training.train step=3100 epoch=4 loss=1.7875 grad=1.313 lr=2.96e-04
+2026-04-28 08:28:07,404 INFO src.training.train step=3200 epoch=5 loss=1.4371 grad=1.250 lr=2.96e-04
+2026-04-28 08:28:10,810 INFO src.training.train step=3300 epoch=5 loss=1.1338 grad=1.309 lr=2.95e-04
+2026-04-28 08:28:14,209 INFO src.training.train step=3400 epoch=5 loss=0.9218 grad=1.124 lr=2.95e-04
+2026-04-28 08:28:17,583 INFO src.training.train step=3500 epoch=5 loss=0.7065 grad=1.057 lr=2.95e-04
+2026-04-28 08:28:20,961 INFO src.training.train step=3600 epoch=5 loss=0.5435 grad=1.083 lr=2.94e-04
+2026-04-28 08:28:24,382 INFO src.training.train step=3700 epoch=5 loss=0.4560 grad=1.124 lr=2.94e-04
+2026-04-28 08:28:27,749 INFO src.training.train step=3800 epoch=5 loss=0.3288 grad=0.870 lr=2.93e-04
+2026-04-28 08:28:31,139 INFO src.training.train step=3900 epoch=5 loss=0.2750 grad=0.753 lr=2.93e-04
+2026-04-28 08:28:34,521 INFO src.training.train step=4000 epoch=6 loss=0.2385 grad=0.749 lr=2.92e-04
+2026-04-28 08:28:34,985 INFO src.training.train EVAL step=4000 loss=0.0121 per_query_acc=1.0000 per_seq_acc=1.0000
+2026-04-28 08:28:34,985 INFO src.training.train EARLY STOP: per_seq_acc 1.0000 ≥ threshold 0.9900 at step 4000
+2026-04-28 08:28:35,448 INFO src.training.train DONE: {
+  "backbone": "rwkv6_convshift_multidil_symmetric_v2",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 10046488,
+  "steps_taken": 4000,
+  "epochs_taken": 6,
+  "early_stopped": true,
+  "best_per_seq_acc": 1.0,
+  "best_per_query_acc": 1.0,
+  "best_step": 4000,
+  "final_per_seq_acc": 1.0,
+  "final_per_query_acc": 1.0,
+  "final_loss": 0.012057921965916952,
+  "wall_sec": 136.9924967288971,
+  "seed": 42
+}
+SKIP (already done): outputs/cohort_reduced/rwkv6_lucid_T64_seed42
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=rwkv6_rse_strong_viscosity  T=64  K=16  seed=42
+out=outputs/cohort_reduced/rwkv6_rse_strong_viscosity_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 08:28:37,343 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='rwkv6_rse_strong_viscosity', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/rwkv6_rse_strong_viscosity_T64_seed42')
+2026-04-28 08:28:37,740 INFO src.training.train backbone=rwkv6_rse_strong_viscosity params=10M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 08:28:48,324 INFO src.training.train step=100 epoch=1 loss=9.1085 grad=0.712 lr=3.00e-05
+2026-04-28 08:28:57,673 INFO src.training.train step=200 epoch=1 loss=8.7732 grad=0.572 lr=6.00e-05
+2026-04-28 08:29:06,971 INFO src.training.train step=300 epoch=1 loss=8.4491 grad=0.530 lr=9.00e-05
+2026-04-28 08:29:16,282 INFO src.training.train step=400 epoch=1 loss=8.3643 grad=0.523 lr=1.20e-04
+2026-04-28 08:29:25,605 INFO src.training.train step=500 epoch=1 loss=8.3517 grad=0.529 lr=1.50e-04
+2026-04-28 08:29:34,935 INFO src.training.train step=600 epoch=1 loss=8.3406 grad=0.516 lr=1.80e-04
+2026-04-28 08:29:44,272 INFO src.training.train step=700 epoch=1 loss=8.3479 grad=0.516 lr=2.10e-04
+2026-04-28 08:29:53,621 INFO src.training.train step=800 epoch=2 loss=8.3708 grad=0.506 lr=2.40e-04
+2026-04-28 08:30:02,973 INFO src.training.train step=900 epoch=2 loss=8.3678 grad=0.494 lr=2.70e-04
+2026-04-28 08:30:12,332 INFO src.training.train step=1000 epoch=2 loss=8.3503 grad=0.492 lr=3.00e-04
+2026-04-28 08:30:13,915 INFO src.training.train EVAL step=1000 loss=8.3487 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:30:23,271 INFO src.training.train step=1100 epoch=2 loss=8.3622 grad=0.478 lr=3.00e-04
+2026-04-28 08:30:32,631 INFO src.training.train step=1200 epoch=2 loss=8.3591 grad=0.462 lr=3.00e-04
+2026-04-28 08:30:41,995 INFO src.training.train step=1300 epoch=2 loss=8.3549 grad=0.452 lr=3.00e-04
+2026-04-28 08:30:51,360 INFO src.training.train step=1400 epoch=2 loss=8.3543 grad=0.435 lr=3.00e-04
+2026-04-28 08:31:00,727 INFO src.training.train step=1500 epoch=2 loss=8.3489 grad=0.435 lr=3.00e-04
+2026-04-28 08:31:10,098 INFO src.training.train step=1600 epoch=3 loss=8.3325 grad=0.412 lr=3.00e-04
+2026-04-28 08:31:19,472 INFO src.training.train step=1700 epoch=3 loss=8.3403 grad=0.409 lr=3.00e-04
+2026-04-28 08:31:28,846 INFO src.training.train step=1800 epoch=3 loss=8.3327 grad=0.395 lr=2.99e-04
+2026-04-28 08:31:38,218 INFO src.training.train step=1900 epoch=3 loss=8.3551 grad=0.384 lr=2.99e-04
+2026-04-28 08:31:47,592 INFO src.training.train step=2000 epoch=3 loss=8.3341 grad=0.380 lr=2.99e-04
+2026-04-28 08:31:49,167 INFO src.training.train EVAL step=2000 loss=8.3289 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 08:31:58,541 INFO src.training.train step=2100 epoch=3 loss=8.3368 grad=0.364 lr=2.99e-04
+2026-04-28 08:32:07,917 INFO src.training.train step=2200 epoch=3 loss=8.3369 grad=0.358 lr=2.99e-04
+2026-04-28 08:32:17,295 INFO src.training.train step=2300 epoch=3 loss=8.3297 grad=0.343 lr=2.99e-04
+2026-04-28 08:32:26,674 INFO src.training.train step=2400 epoch=4 loss=8.3297 grad=0.327 lr=2.98e-04
+2026-04-28 08:32:36,050 INFO src.training.train step=2500 epoch=4 loss=8.3347 grad=0.323 lr=2.98e-04
+2026-04-28 08:32:45,425 INFO src.training.train step=2600 epoch=4 loss=8.3221 grad=0.315 lr=2.98e-04
+2026-04-28 08:32:54,801 INFO src.training.train step=2700 epoch=4 loss=8.3154 grad=0.431 lr=2.97e-04
+2026-04-28 08:33:04,180 INFO src.training.train step=2800 epoch=4 loss=8.3228 grad=0.304 lr=2.97e-04
+2026-04-28 08:33:13,563 INFO src.training.train step=2900 epoch=4 loss=8.3170 grad=0.279 lr=2.97e-04
+2026-04-28 08:33:22,944 INFO src.training.train step=3000 epoch=4 loss=8.3165 grad=0.364 lr=2.97e-04
+2026-04-28 08:33:24,519 INFO src.training.train EVAL step=3000 loss=8.3313 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-28 08:33:33,898 INFO src.training.train step=3100 epoch=4 loss=8.3134 grad=0.280 lr=2.96e-04
+2026-04-28 08:33:43,278 INFO src.training.train step=3200 epoch=5 loss=8.3247 grad=0.264 lr=2.96e-04
+2026-04-28 08:33:52,661 INFO src.training.train step=3300 epoch=5 loss=8.3165 grad=0.266 lr=2.95e-04
+2026-04-28 08:34:02,041 INFO src.training.train step=3400 epoch=5 loss=8.3102 grad=0.307 lr=2.95e-04
+2026-04-28 08:34:11,421 INFO src.training.train step=3500 epoch=5 loss=8.3112 grad=0.279 lr=2.95e-04
+2026-04-28 08:34:20,802 INFO src.training.train step=3600 epoch=5 loss=8.3104 grad=0.258 lr=2.94e-04
+2026-04-28 08:34:30,184 INFO src.training.train step=3700 epoch=5 loss=8.3059 grad=0.256 lr=2.94e-04
+2026-04-28 08:34:39,565 INFO src.training.train step=3800 epoch=5 loss=8.3168 grad=0.239 lr=2.93e-04
+2026-04-28 08:34:48,946 INFO src.training.train step=3900 epoch=5 loss=8.2963 grad=0.242 lr=2.93e-04
+2026-04-28 08:34:58,347 INFO src.training.train step=4000 epoch=6 loss=8.3105 grad=0.285 lr=2.92e-04
+2026-04-28 08:34:59,924 INFO src.training.train EVAL step=4000 loss=8.3320 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:35:09,304 INFO src.training.train step=4100 epoch=6 loss=8.3010 grad=0.334 lr=2.92e-04
+2026-04-28 08:35:18,685 INFO src.training.train step=4200 epoch=6 loss=8.2953 grad=0.249 lr=2.91e-04
+2026-04-28 08:35:28,064 INFO src.training.train step=4300 epoch=6 loss=8.3050 grad=0.313 lr=2.91e-04
+2026-04-28 08:35:37,445 INFO src.training.train step=4400 epoch=6 loss=8.2995 grad=0.296 lr=2.90e-04
+2026-04-28 08:35:46,823 INFO src.training.train step=4500 epoch=6 loss=8.2948 grad=0.232 lr=2.89e-04
+2026-04-28 08:35:56,198 INFO src.training.train step=4600 epoch=6 loss=8.2927 grad=0.237 lr=2.89e-04
+2026-04-28 08:36:05,572 INFO src.training.train step=4700 epoch=7 loss=8.3041 grad=0.303 lr=2.88e-04
+2026-04-28 08:36:14,947 INFO src.training.train step=4800 epoch=7 loss=8.2912 grad=0.362 lr=2.88e-04
+2026-04-28 08:36:24,324 INFO src.training.train step=4900 epoch=7 loss=8.2799 grad=0.245 lr=2.87e-04
+2026-04-28 08:36:33,703 INFO src.training.train step=5000 epoch=7 loss=8.2920 grad=0.283 lr=2.86e-04
+2026-04-28 08:36:35,283 INFO src.training.train EVAL step=5000 loss=8.3501 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:36:44,660 INFO src.training.train step=5100 epoch=7 loss=8.2902 grad=0.281 lr=2.85e-04
+2026-04-28 08:36:54,037 INFO src.training.train step=5200 epoch=7 loss=8.2924 grad=0.658 lr=2.85e-04
+2026-04-28 08:37:03,417 INFO src.training.train step=5300 epoch=7 loss=8.3023 grad=0.390 lr=2.84e-04
+2026-04-28 08:37:12,796 INFO src.training.train step=5400 epoch=7 loss=8.2885 grad=0.282 lr=2.83e-04
+2026-04-28 08:37:22,172 INFO src.training.train step=5500 epoch=8 loss=8.2777 grad=0.270 lr=2.83e-04
+2026-04-28 08:37:31,549 INFO src.training.train step=5600 epoch=8 loss=8.2828 grad=0.278 lr=2.82e-04
+2026-04-28 08:37:40,926 INFO src.training.train step=5700 epoch=8 loss=8.2602 grad=0.323 lr=2.81e-04
+2026-04-28 08:37:50,304 INFO src.training.train step=5800 epoch=8 loss=8.3010 grad=0.283 lr=2.80e-04
+2026-04-28 08:37:59,681 INFO src.training.train step=5900 epoch=8 loss=8.2883 grad=0.261 lr=2.79e-04
+2026-04-28 08:38:09,058 INFO src.training.train step=6000 epoch=8 loss=8.2780 grad=0.319 lr=2.79e-04
+2026-04-28 08:38:10,638 INFO src.training.train EVAL step=6000 loss=8.3635 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 08:38:10,638 INFO src.training.train EARLY STOP: 5 evals without per_query_acc improvement (best=0.0002 at step 1000, per_seq_acc=0.0000)
+2026-04-28 08:38:12,216 INFO src.training.train DONE: {
+  "backbone": "rwkv6_rse_strong_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 10140160,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.0001875,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0002708333333333333,
+  "final_loss": 8.363497131347657,
+  "wall_sec": 573.7921266555786,
+  "seed": 42
+}
+SKIP (already done): outputs/cohort_reduced/mamba2_T64_seed42
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=mamba2_convshift_multidil_symmetric_v2  T=64  K=16  seed=42
+out=outputs/cohort_reduced/mamba2_convshift_multidil_symmetric_v2_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 08:38:13,997 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='mamba2_convshift_multidil_symmetric_v2', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/mamba2_convshift_multidil_symmetric_v2_T64_seed42')
+2026-04-28 08:38:14,563 INFO src.training.train backbone=mamba2_convshift_multidil_symmetric_v2 params=9M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 08:38:20,437 INFO src.training.train step=100 epoch=1 loss=8.9953 grad=0.744 lr=3.00e-05
+2026-04-28 08:38:24,947 INFO src.training.train step=200 epoch=1 loss=8.6123 grad=0.568 lr=6.00e-05
+2026-04-28 08:38:29,460 INFO src.training.train step=300 epoch=1 loss=8.3943 grad=0.541 lr=9.00e-05
+2026-04-28 08:38:34,105 INFO src.training.train step=400 epoch=1 loss=8.3552 grad=0.527 lr=1.20e-04
+2026-04-28 08:38:38,610 INFO src.training.train step=500 epoch=1 loss=8.3338 grad=0.535 lr=1.50e-04
+2026-04-28 08:38:43,126 INFO src.training.train step=600 epoch=1 loss=8.2862 grad=0.668 lr=1.80e-04
+2026-04-28 08:38:47,617 INFO src.training.train step=700 epoch=1 loss=8.0251 grad=1.089 lr=2.10e-04
+2026-04-28 08:38:51,945 INFO src.training.train step=800 epoch=2 loss=7.3581 grad=1.256 lr=2.40e-04
+2026-04-28 08:38:56,430 INFO src.training.train step=900 epoch=2 loss=6.3326 grad=1.625 lr=2.70e-04
+2026-04-28 08:39:01,043 INFO src.training.train step=1000 epoch=2 loss=5.1731 grad=1.631 lr=3.00e-04
+2026-04-28 08:39:01,499 INFO src.training.train EVAL step=1000 loss=4.5720 per_query_acc=0.6819 per_seq_acc=0.0007
+2026-04-28 08:39:06,063 INFO src.training.train step=1100 epoch=2 loss=3.9638 grad=2.077 lr=3.00e-04
+2026-04-28 08:39:10,636 INFO src.training.train step=1200 epoch=2 loss=2.6584 grad=2.755 lr=3.00e-04
+2026-04-28 08:39:15,146 INFO src.training.train step=1300 epoch=2 loss=1.5056 grad=2.968 lr=3.00e-04
+2026-04-28 08:39:19,545 INFO src.training.train step=1400 epoch=2 loss=0.7072 grad=2.266 lr=3.00e-04
+2026-04-28 08:39:24,083 INFO src.training.train step=1500 epoch=2 loss=0.2927 grad=1.742 lr=3.00e-04
+2026-04-28 08:39:28,750 INFO src.training.train step=1600 epoch=3 loss=0.1157 grad=0.959 lr=3.00e-04
+2026-04-28 08:39:33,470 INFO src.training.train step=1700 epoch=3 loss=0.0514 grad=0.615 lr=3.00e-04
+2026-04-28 08:39:38,086 INFO src.training.train step=1800 epoch=3 loss=0.0272 grad=0.413 lr=2.99e-04
+2026-04-28 08:39:42,683 INFO src.training.train step=1900 epoch=3 loss=0.0144 grad=0.227 lr=2.99e-04
+2026-04-28 08:39:47,245 INFO src.training.train step=2000 epoch=3 loss=0.0095 grad=0.282 lr=2.99e-04
+2026-04-28 08:39:47,656 INFO src.training.train EVAL step=2000 loss=0.0005 per_query_acc=1.0000 per_seq_acc=1.0000
+2026-04-28 08:39:47,656 INFO src.training.train EARLY STOP: per_seq_acc 1.0000 ≥ threshold 0.9900 at step 2000
+2026-04-28 08:39:48,068 INFO src.training.train DONE: {
+  "backbone": "mamba2_convshift_multidil_symmetric_v2",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9617320,
+  "steps_taken": 2000,
+  "epochs_taken": 3,
+  "early_stopped": true,
+  "best_per_seq_acc": 1.0,
+  "best_per_query_acc": 1.0,
+  "best_step": 2000,
+  "final_per_seq_acc": 1.0,
+  "final_per_query_acc": 1.0,
+  "final_loss": 0.0005189852515856425,
+  "wall_sec": 92.97444486618042,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=mamba2_lucid_c  T=64  K=16  seed=42
+out=outputs/cohort_reduced/mamba2_lucid_c_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 08:39:49,875 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='mamba2_lucid_c', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/mamba2_lucid_c_T64_seed42')
+2026-04-28 08:39:50,460 INFO src.training.train backbone=mamba2_lucid_c params=9M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 08:39:57,131 INFO src.training.train step=100 epoch=1 loss=8.9601 grad=0.742 lr=3.00e-05
+2026-04-28 08:40:02,628 INFO src.training.train step=200 epoch=1 loss=8.6130 grad=0.576 lr=6.00e-05
+2026-04-28 08:40:08,512 INFO src.training.train step=300 epoch=1 loss=8.3945 grad=0.541 lr=9.00e-05
+2026-04-28 08:40:14,373 INFO src.training.train step=400 epoch=1 loss=8.3449 grad=0.523 lr=1.20e-04
+2026-04-28 08:40:20,284 INFO src.training.train step=500 epoch=1 loss=8.3424 grad=0.526 lr=1.50e-04
+2026-04-28 08:40:26,159 INFO src.training.train step=600 epoch=1 loss=8.3423 grad=0.514 lr=1.80e-04
+2026-04-28 08:40:32,044 INFO src.training.train step=700 epoch=1 loss=8.3447 grad=0.510 lr=2.10e-04
+2026-04-28 08:40:37,845 INFO src.training.train step=800 epoch=2 loss=8.3643 grad=0.509 lr=2.40e-04
+2026-04-28 08:40:43,696 INFO src.training.train step=900 epoch=2 loss=8.3421 grad=0.517 lr=2.70e-04
+2026-04-28 08:40:49,768 INFO src.training.train step=1000 epoch=2 loss=8.1748 grad=0.923 lr=3.00e-04
+2026-04-28 08:40:50,480 INFO src.training.train EVAL step=1000 loss=8.2292 per_query_acc=0.0005 per_seq_acc=0.0000
+2026-04-28 08:40:56,482 INFO src.training.train step=1100 epoch=2 loss=7.8477 grad=1.019 lr=3.00e-04
+2026-04-28 08:41:02,599 INFO src.training.train step=1200 epoch=2 loss=7.5090 grad=1.123 lr=3.00e-04
+2026-04-28 08:41:08,570 INFO src.training.train step=1300 epoch=2 loss=7.2889 grad=6.098 lr=3.00e-04
+2026-04-28 08:41:14,252 INFO src.training.train step=1400 epoch=2 loss=7.0872 grad=1.250 lr=3.00e-04
+2026-04-28 08:41:19,846 INFO src.training.train step=1500 epoch=2 loss=6.8937 grad=2.036 lr=3.00e-04
+2026-04-28 08:41:25,287 INFO src.training.train step=1600 epoch=3 loss=6.7196 grad=3.556 lr=3.00e-04
+2026-04-28 08:41:30,933 INFO src.training.train step=1700 epoch=3 loss=6.5481 grad=2.621 lr=3.00e-04
+2026-04-28 08:41:36,701 INFO src.training.train step=1800 epoch=3 loss=6.3786 grad=5.527 lr=2.99e-04
+2026-04-28 08:41:42,410 INFO src.training.train step=1900 epoch=3 loss=6.2828 grad=6.142 lr=2.99e-04
+2026-04-28 08:41:48,095 INFO src.training.train step=2000 epoch=3 loss=6.0492 grad=8.806 lr=2.99e-04
+2026-04-28 08:41:48,764 INFO src.training.train EVAL step=2000 loss=6.7249 per_query_acc=0.0063 per_seq_acc=0.0000
+2026-04-28 08:41:54,538 INFO src.training.train step=2100 epoch=3 loss=5.9012 grad=9.823 lr=2.99e-04
+2026-04-28 08:42:00,285 INFO src.training.train step=2200 epoch=3 loss=5.7424 grad=7.860 lr=2.99e-04
+2026-04-28 08:42:06,013 INFO src.training.train step=2300 epoch=3 loss=5.6022 grad=10.183 lr=2.99e-04
+2026-04-28 08:42:11,670 INFO src.training.train step=2400 epoch=4 loss=5.4115 grad=11.336 lr=2.98e-04
+2026-04-28 08:42:17,407 INFO src.training.train step=2500 epoch=4 loss=5.2137 grad=4.753 lr=2.98e-04
+2026-04-28 08:42:22,964 INFO src.training.train step=2600 epoch=4 loss=5.0042 grad=3.376 lr=2.98e-04
+2026-04-28 08:42:28,579 INFO src.training.train step=2700 epoch=4 loss=4.8544 grad=9.340 lr=2.97e-04
+2026-04-28 08:42:34,387 INFO src.training.train step=2800 epoch=4 loss=4.6716 grad=11.135 lr=2.97e-04
+2026-04-28 08:42:40,146 INFO src.training.train step=2900 epoch=4 loss=4.4917 grad=20.728 lr=2.97e-04
+2026-04-28 08:42:45,899 INFO src.training.train step=3000 epoch=4 loss=4.1021 grad=12.348 lr=2.97e-04
+2026-04-28 08:42:46,590 INFO src.training.train EVAL step=3000 loss=4.4484 per_query_acc=0.1188 per_seq_acc=0.0000
+2026-04-28 08:42:52,355 INFO src.training.train step=3100 epoch=4 loss=3.7682 grad=6.006 lr=2.96e-04
+2026-04-28 08:42:58,162 INFO src.training.train step=3200 epoch=5 loss=3.4387 grad=9.706 lr=2.96e-04
+2026-04-28 08:43:04,140 INFO src.training.train step=3300 epoch=5 loss=3.0733 grad=6.037 lr=2.95e-04
+2026-04-28 08:43:10,000 INFO src.training.train step=3400 epoch=5 loss=2.7601 grad=14.623 lr=2.95e-04
+2026-04-28 08:43:15,476 INFO src.training.train step=3500 epoch=5 loss=2.3894 grad=6.117 lr=2.95e-04
+2026-04-28 08:43:21,248 INFO src.training.train step=3600 epoch=5 loss=1.9595 grad=7.459 lr=2.94e-04
+2026-04-28 08:43:26,868 INFO src.training.train step=3700 epoch=5 loss=1.6320 grad=5.416 lr=2.94e-04
+2026-04-28 08:43:32,569 INFO src.training.train step=3800 epoch=5 loss=1.2645 grad=5.319 lr=2.93e-04
+2026-04-28 08:43:38,435 INFO src.training.train step=3900 epoch=5 loss=1.0086 grad=7.203 lr=2.93e-04
+2026-04-28 08:43:43,982 INFO src.training.train step=4000 epoch=6 loss=0.7416 grad=6.555 lr=2.92e-04
+2026-04-28 08:43:44,679 INFO src.training.train EVAL step=4000 loss=0.5111 per_query_acc=0.9286 per_seq_acc=0.3160
+2026-04-28 08:43:50,481 INFO src.training.train step=4100 epoch=6 loss=0.5514 grad=5.196 lr=2.92e-04
+2026-04-28 08:43:56,059 INFO src.training.train step=4200 epoch=6 loss=0.3757 grad=4.766 lr=2.91e-04
+2026-04-28 08:44:01,900 INFO src.training.train step=4300 epoch=6 loss=0.2731 grad=3.245 lr=2.91e-04
+2026-04-28 08:44:07,680 INFO src.training.train step=4400 epoch=6 loss=0.2216 grad=2.843 lr=2.90e-04
+2026-04-28 08:44:13,432 INFO src.training.train step=4500 epoch=6 loss=0.1547 grad=2.394 lr=2.89e-04
+2026-04-28 08:44:19,253 INFO src.training.train step=4600 epoch=6 loss=0.1191 grad=2.263 lr=2.89e-04
+2026-04-28 08:44:25,064 INFO src.training.train step=4700 epoch=7 loss=0.0893 grad=1.841 lr=2.88e-04
+2026-04-28 08:44:30,927 INFO src.training.train step=4800 epoch=7 loss=0.0641 grad=1.288 lr=2.88e-04
+2026-04-28 08:44:36,784 INFO src.training.train step=4900 epoch=7 loss=0.0644 grad=1.200 lr=2.87e-04
+2026-04-28 08:44:42,552 INFO src.training.train step=5000 epoch=7 loss=0.0402 grad=0.855 lr=2.86e-04
+2026-04-28 08:44:43,244 INFO src.training.train EVAL step=5000 loss=0.0049 per_query_acc=0.9998 per_seq_acc=0.9960
+2026-04-28 08:44:43,244 INFO src.training.train EARLY STOP: per_seq_acc 0.9960 ≥ threshold 0.9900 at step 5000
+2026-04-28 08:44:43,935 INFO src.training.train DONE: {
+  "backbone": "mamba2_lucid_c",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9559744,
+  "steps_taken": 5000,
+  "epochs_taken": 7,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.996,
+  "best_per_query_acc": 0.99975,
+  "best_step": 5000,
+  "final_per_seq_acc": 0.996,
+  "final_per_query_acc": 0.99975,
+  "final_loss": 0.004905694782733917,
+  "wall_sec": 293.01654386520386,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=mamba2_rse_strong_viscosity  T=64  K=16  seed=42
+out=outputs/cohort_reduced/mamba2_rse_strong_viscosity_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 08:44:45,705 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='mamba2_rse_strong_viscosity', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/mamba2_rse_strong_viscosity_T64_seed42')
+2026-04-28 08:44:46,046 INFO src.training.train backbone=mamba2_rse_strong_viscosity params=9M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 08:45:04,604 INFO src.training.train step=100 epoch=1 loss=8.9988 grad=0.749 lr=3.00e-05
+2026-04-28 08:45:21,942 INFO src.training.train step=200 epoch=1 loss=8.6122 grad=0.588 lr=6.00e-05
+2026-04-28 08:45:39,304 INFO src.training.train step=300 epoch=1 loss=8.3926 grad=0.541 lr=9.00e-05
+2026-04-28 08:45:56,697 INFO src.training.train step=400 epoch=1 loss=8.3531 grad=0.523 lr=1.20e-04
+2026-04-28 08:46:14,108 INFO src.training.train step=500 epoch=1 loss=8.3444 grad=0.525 lr=1.50e-04
+2026-04-28 08:46:31,526 INFO src.training.train step=600 epoch=1 loss=8.3428 grad=0.512 lr=1.80e-04
+2026-04-28 08:46:48,954 INFO src.training.train step=700 epoch=1 loss=8.3416 grad=0.509 lr=2.10e-04
+2026-04-28 08:47:06,399 INFO src.training.train step=800 epoch=2 loss=8.3607 grad=0.505 lr=2.40e-04
+2026-04-28 08:47:23,852 INFO src.training.train step=900 epoch=2 loss=8.3537 grad=0.495 lr=2.70e-04
+2026-04-28 08:47:41,312 INFO src.training.train step=1000 epoch=2 loss=8.3427 grad=0.497 lr=3.00e-04
+2026-04-28 08:47:44,276 INFO src.training.train EVAL step=1000 loss=8.3497 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-28 08:48:01,739 INFO src.training.train step=1100 epoch=2 loss=8.3430 grad=0.484 lr=3.00e-04
+2026-04-28 08:48:19,204 INFO src.training.train step=1200 epoch=2 loss=8.3512 grad=0.472 lr=3.00e-04
+2026-04-28 08:48:36,668 INFO src.training.train step=1300 epoch=2 loss=8.3520 grad=0.467 lr=3.00e-04
+2026-04-28 08:48:54,131 INFO src.training.train step=1400 epoch=2 loss=8.3418 grad=0.452 lr=3.00e-04
+2026-04-28 08:49:11,602 INFO src.training.train step=1500 epoch=2 loss=8.3375 grad=0.456 lr=3.00e-04
+2026-04-28 08:49:29,065 INFO src.training.train step=1600 epoch=3 loss=8.3271 grad=0.437 lr=3.00e-04
+2026-04-28 08:49:46,527 INFO src.training.train step=1700 epoch=3 loss=8.3287 grad=0.436 lr=3.00e-04
+2026-04-28 08:50:03,993 INFO src.training.train step=1800 epoch=3 loss=8.3280 grad=0.428 lr=2.99e-04
+2026-04-28 08:50:21,465 INFO src.training.train step=1900 epoch=3 loss=8.3487 grad=0.422 lr=2.99e-04
+2026-04-28 08:50:38,936 INFO src.training.train step=2000 epoch=3 loss=8.3284 grad=0.423 lr=2.99e-04
+2026-04-28 08:50:41,798 INFO src.training.train EVAL step=2000 loss=8.3379 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:50:59,270 INFO src.training.train step=2100 epoch=3 loss=8.3262 grad=0.408 lr=2.99e-04
+2026-04-28 08:51:16,738 INFO src.training.train step=2200 epoch=3 loss=8.3309 grad=0.408 lr=2.99e-04
+2026-04-28 08:51:34,206 INFO src.training.train step=2300 epoch=3 loss=8.3197 grad=0.398 lr=2.99e-04
+2026-04-28 08:51:51,672 INFO src.training.train step=2400 epoch=4 loss=8.3316 grad=0.386 lr=2.98e-04
+2026-04-28 08:52:09,142 INFO src.training.train step=2500 epoch=4 loss=8.3316 grad=0.386 lr=2.98e-04
+2026-04-28 08:52:26,615 INFO src.training.train step=2600 epoch=4 loss=8.3124 grad=0.388 lr=2.98e-04
+2026-04-28 08:52:44,084 INFO src.training.train step=2700 epoch=4 loss=8.3134 grad=0.377 lr=2.97e-04
+2026-04-28 08:53:01,556 INFO src.training.train step=2800 epoch=4 loss=8.3296 grad=0.377 lr=2.97e-04
+2026-04-28 08:53:19,030 INFO src.training.train step=2900 epoch=4 loss=8.3000 grad=0.367 lr=2.97e-04
+2026-04-28 08:53:36,504 INFO src.training.train step=3000 epoch=4 loss=8.3015 grad=0.380 lr=2.97e-04
+2026-04-28 08:53:39,365 INFO src.training.train EVAL step=3000 loss=8.3488 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-28 08:53:56,837 INFO src.training.train step=3100 epoch=4 loss=8.3117 grad=0.364 lr=2.96e-04
+2026-04-28 08:54:14,309 INFO src.training.train step=3200 epoch=5 loss=8.3155 grad=0.355 lr=2.96e-04
+2026-04-28 08:54:31,781 INFO src.training.train step=3300 epoch=5 loss=8.2898 grad=0.371 lr=2.95e-04
+2026-04-28 08:54:49,254 INFO src.training.train step=3400 epoch=5 loss=8.3034 grad=0.375 lr=2.95e-04
+2026-04-28 08:55:06,732 INFO src.training.train step=3500 epoch=5 loss=8.2808 grad=0.375 lr=2.95e-04
+2026-04-28 08:55:24,211 INFO src.training.train step=3600 epoch=5 loss=8.2955 grad=0.350 lr=2.94e-04
+2026-04-28 08:55:41,693 INFO src.training.train step=3700 epoch=5 loss=8.3007 grad=0.359 lr=2.94e-04
+2026-04-28 08:55:59,173 INFO src.training.train step=3800 epoch=5 loss=8.3031 grad=0.356 lr=2.93e-04
+2026-04-28 08:56:16,660 INFO src.training.train step=3900 epoch=5 loss=8.2960 grad=0.360 lr=2.93e-04
+2026-04-28 08:56:34,164 INFO src.training.train step=4000 epoch=6 loss=8.3060 grad=0.347 lr=2.92e-04
+2026-04-28 08:56:37,028 INFO src.training.train EVAL step=4000 loss=8.3632 per_query_acc=0.0005 per_seq_acc=0.0000
+2026-04-28 08:56:54,518 INFO src.training.train step=4100 epoch=6 loss=8.2881 grad=0.359 lr=2.92e-04
+2026-04-28 08:57:12,005 INFO src.training.train step=4200 epoch=6 loss=8.2799 grad=0.361 lr=2.91e-04
+2026-04-28 08:57:29,493 INFO src.training.train step=4300 epoch=6 loss=8.2655 grad=0.360 lr=2.91e-04
+2026-04-28 08:57:46,979 INFO src.training.train step=4400 epoch=6 loss=8.2857 grad=0.364 lr=2.90e-04
+2026-04-28 08:58:04,459 INFO src.training.train step=4500 epoch=6 loss=8.2964 grad=0.353 lr=2.89e-04
+2026-04-28 08:58:21,942 INFO src.training.train step=4600 epoch=6 loss=8.2586 grad=0.373 lr=2.89e-04
+2026-04-28 08:58:39,423 INFO src.training.train step=4700 epoch=7 loss=8.2794 grad=0.367 lr=2.88e-04
+2026-04-28 08:58:56,897 INFO src.training.train step=4800 epoch=7 loss=8.2548 grad=0.386 lr=2.88e-04
+2026-04-28 08:59:14,373 INFO src.training.train step=4900 epoch=7 loss=8.2431 grad=0.421 lr=2.87e-04
+2026-04-28 08:59:31,841 INFO src.training.train step=5000 epoch=7 loss=8.2584 grad=0.418 lr=2.86e-04
+2026-04-28 08:59:34,704 INFO src.training.train EVAL step=5000 loss=8.3857 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 08:59:52,174 INFO src.training.train step=5100 epoch=7 loss=8.2522 grad=0.407 lr=2.85e-04
+2026-04-28 09:00:09,645 INFO src.training.train step=5200 epoch=7 loss=8.2622 grad=0.404 lr=2.85e-04
+2026-04-28 09:00:27,117 INFO src.training.train step=5300 epoch=7 loss=8.2596 grad=0.384 lr=2.84e-04
+2026-04-28 09:00:44,586 INFO src.training.train step=5400 epoch=7 loss=8.2437 grad=0.432 lr=2.83e-04
+2026-04-28 09:01:02,053 INFO src.training.train step=5500 epoch=8 loss=8.2549 grad=0.422 lr=2.83e-04
+2026-04-28 09:01:19,521 INFO src.training.train step=5600 epoch=8 loss=8.2310 grad=0.448 lr=2.82e-04
+2026-04-28 09:01:36,989 INFO src.training.train step=5700 epoch=8 loss=8.2385 grad=0.417 lr=2.81e-04
+2026-04-28 09:01:54,456 INFO src.training.train step=5800 epoch=8 loss=8.2375 grad=0.491 lr=2.80e-04
+2026-04-28 09:02:11,931 INFO src.training.train step=5900 epoch=8 loss=8.2137 grad=0.471 lr=2.79e-04
+2026-04-28 09:02:29,401 INFO src.training.train step=6000 epoch=8 loss=8.2083 grad=0.468 lr=2.79e-04
+2026-04-28 09:02:32,261 INFO src.training.train EVAL step=6000 loss=8.4224 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 09:02:32,262 INFO src.training.train EARLY STOP: 5 evals without per_query_acc improvement (best=0.0001 at step 1000, per_seq_acc=0.0000)
+2026-04-28 09:02:35,120 INFO src.training.train DONE: {
+  "backbone": "mamba2_rse_strong_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9711712,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.00014583333333333335,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0001875,
+  "final_loss": 8.422364410400391,
+  "wall_sec": 1068.4644405841827,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=linear_attn_causal  T=64  K=16  seed=42
+out=outputs/cohort_reduced/linear_attn_causal_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 09:02:36,901 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='linear_attn_causal', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/linear_attn_causal_T64_seed42')
+2026-04-28 09:02:37,241 INFO src.training.train backbone=linear_attn_causal params=8M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 09:02:41,889 INFO src.training.train step=100 epoch=1 loss=9.0410 grad=0.685 lr=3.00e-05
+2026-04-28 09:02:45,311 INFO src.training.train step=200 epoch=1 loss=8.6043 grad=0.549 lr=6.00e-05
+2026-04-28 09:02:48,733 INFO src.training.train step=300 epoch=1 loss=8.3912 grad=0.526 lr=9.00e-05
+2026-04-28 09:02:52,155 INFO src.training.train step=400 epoch=1 loss=8.3454 grad=0.517 lr=1.20e-04
+2026-04-28 09:02:55,578 INFO src.training.train step=500 epoch=1 loss=8.3411 grad=0.518 lr=1.50e-04
+2026-04-28 09:02:59,003 INFO src.training.train step=600 epoch=1 loss=8.3391 grad=0.505 lr=1.80e-04
+2026-04-28 09:03:02,428 INFO src.training.train step=700 epoch=1 loss=8.3521 grad=0.505 lr=2.10e-04
+2026-04-28 09:03:05,855 INFO src.training.train step=800 epoch=2 loss=8.3589 grad=0.501 lr=2.40e-04
+2026-04-28 09:03:09,283 INFO src.training.train step=900 epoch=2 loss=8.3463 grad=0.490 lr=2.70e-04
+2026-04-28 09:03:12,713 INFO src.training.train step=1000 epoch=2 loss=8.3378 grad=0.494 lr=3.00e-04
+2026-04-28 09:03:13,287 INFO src.training.train EVAL step=1000 loss=8.3496 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 09:03:16,714 INFO src.training.train step=1100 epoch=2 loss=8.3459 grad=0.483 lr=3.00e-04
+2026-04-28 09:03:20,145 INFO src.training.train step=1200 epoch=2 loss=8.3478 grad=0.473 lr=3.00e-04
+2026-04-28 09:03:23,578 INFO src.training.train step=1300 epoch=2 loss=8.3272 grad=0.479 lr=3.00e-04
+2026-04-28 09:03:27,013 INFO src.training.train step=1400 epoch=2 loss=8.2463 grad=0.580 lr=3.00e-04
+2026-04-28 09:03:30,446 INFO src.training.train step=1500 epoch=2 loss=8.0769 grad=0.639 lr=3.00e-04
+2026-04-28 09:03:33,879 INFO src.training.train step=1600 epoch=3 loss=7.9371 grad=0.650 lr=3.00e-04
+2026-04-28 09:03:37,311 INFO src.training.train step=1700 epoch=3 loss=7.8370 grad=0.680 lr=3.00e-04
+2026-04-28 09:03:40,744 INFO src.training.train step=1800 epoch=3 loss=7.6782 grad=0.670 lr=2.99e-04
+2026-04-28 09:03:44,178 INFO src.training.train step=1900 epoch=3 loss=7.5960 grad=0.672 lr=2.99e-04
+2026-04-28 09:03:47,611 INFO src.training.train step=2000 epoch=3 loss=7.4572 grad=0.710 lr=2.99e-04
+2026-04-28 09:03:48,169 INFO src.training.train EVAL step=2000 loss=7.4717 per_query_acc=0.0280 per_seq_acc=0.0000
+2026-04-28 09:03:51,601 INFO src.training.train step=2100 epoch=3 loss=7.2971 grad=0.710 lr=2.99e-04
+2026-04-28 09:03:55,034 INFO src.training.train step=2200 epoch=3 loss=7.2066 grad=0.726 lr=2.99e-04
+2026-04-28 09:03:58,467 INFO src.training.train step=2300 epoch=3 loss=7.1035 grad=0.755 lr=2.99e-04
+2026-04-28 09:04:01,900 INFO src.training.train step=2400 epoch=4 loss=7.0046 grad=0.760 lr=2.98e-04
+2026-04-28 09:04:05,335 INFO src.training.train step=2500 epoch=4 loss=6.8971 grad=0.765 lr=2.98e-04
+2026-04-28 09:04:08,770 INFO src.training.train step=2600 epoch=4 loss=6.7519 grad=0.783 lr=2.98e-04
+2026-04-28 09:04:12,204 INFO src.training.train step=2700 epoch=4 loss=6.6787 grad=0.801 lr=2.97e-04
+2026-04-28 09:04:15,638 INFO src.training.train step=2800 epoch=4 loss=6.5506 grad=0.814 lr=2.97e-04
+2026-04-28 09:04:19,072 INFO src.training.train step=2900 epoch=4 loss=6.4637 grad=0.813 lr=2.97e-04
+2026-04-28 09:04:22,507 INFO src.training.train step=3000 epoch=4 loss=6.3625 grad=0.848 lr=2.97e-04
+2026-04-28 09:04:23,064 INFO src.training.train EVAL step=3000 loss=6.5543 per_query_acc=0.0401 per_seq_acc=0.0000
+2026-04-28 09:04:26,498 INFO src.training.train step=3100 epoch=4 loss=6.2555 grad=0.857 lr=2.96e-04
+2026-04-28 09:04:29,934 INFO src.training.train step=3200 epoch=5 loss=6.1737 grad=0.875 lr=2.96e-04
+2026-04-28 09:04:33,370 INFO src.training.train step=3300 epoch=5 loss=6.0869 grad=0.904 lr=2.95e-04
+2026-04-28 09:04:36,807 INFO src.training.train step=3400 epoch=5 loss=6.0395 grad=0.906 lr=2.95e-04
+2026-04-28 09:04:40,243 INFO src.training.train step=3500 epoch=5 loss=5.9618 grad=0.922 lr=2.95e-04
+2026-04-28 09:04:43,679 INFO src.training.train step=3600 epoch=5 loss=5.8876 grad=0.961 lr=2.94e-04
+2026-04-28 09:04:47,115 INFO src.training.train step=3700 epoch=5 loss=5.7407 grad=0.958 lr=2.94e-04
+2026-04-28 09:04:50,551 INFO src.training.train step=3800 epoch=5 loss=5.7992 grad=0.997 lr=2.93e-04
+2026-04-28 09:04:53,988 INFO src.training.train step=3900 epoch=5 loss=5.6647 grad=1.008 lr=2.93e-04
+2026-04-28 09:04:57,441 INFO src.training.train step=4000 epoch=6 loss=5.6286 grad=1.016 lr=2.92e-04
+2026-04-28 09:04:58,002 INFO src.training.train EVAL step=4000 loss=6.0078 per_query_acc=0.0478 per_seq_acc=0.0000
+2026-04-28 09:05:01,437 INFO src.training.train step=4100 epoch=6 loss=5.4933 grad=1.070 lr=2.92e-04
+2026-04-28 09:05:04,873 INFO src.training.train step=4200 epoch=6 loss=5.4938 grad=1.065 lr=2.91e-04
+2026-04-28 09:05:08,308 INFO src.training.train step=4300 epoch=6 loss=5.4368 grad=1.158 lr=2.91e-04
+2026-04-28 09:05:11,743 INFO src.training.train step=4400 epoch=6 loss=5.3383 grad=1.178 lr=2.90e-04
+2026-04-28 09:05:15,180 INFO src.training.train step=4500 epoch=6 loss=5.2569 grad=1.161 lr=2.89e-04
+2026-04-28 09:05:18,618 INFO src.training.train step=4600 epoch=6 loss=5.2058 grad=1.237 lr=2.89e-04
+2026-04-28 09:05:22,056 INFO src.training.train step=4700 epoch=7 loss=5.2161 grad=1.221 lr=2.88e-04
+2026-04-28 09:05:25,494 INFO src.training.train step=4800 epoch=7 loss=5.1373 grad=1.259 lr=2.88e-04
+2026-04-28 09:05:28,931 INFO src.training.train step=4900 epoch=7 loss=5.0605 grad=1.227 lr=2.87e-04
+2026-04-28 09:05:32,370 INFO src.training.train step=5000 epoch=7 loss=5.0744 grad=1.248 lr=2.86e-04
+2026-04-28 09:05:32,931 INFO src.training.train EVAL step=5000 loss=5.7827 per_query_acc=0.0504 per_seq_acc=0.0000
+2026-04-28 09:05:36,369 INFO src.training.train step=5100 epoch=7 loss=5.0075 grad=1.292 lr=2.85e-04
+2026-04-28 09:05:39,807 INFO src.training.train step=5200 epoch=7 loss=5.0306 grad=1.245 lr=2.85e-04
+2026-04-28 09:05:43,243 INFO src.training.train step=5300 epoch=7 loss=4.9965 grad=1.424 lr=2.84e-04
+2026-04-28 09:05:46,680 INFO src.training.train step=5400 epoch=7 loss=4.8608 grad=1.311 lr=2.83e-04
+2026-04-28 09:05:50,119 INFO src.training.train step=5500 epoch=8 loss=4.8735 grad=1.448 lr=2.83e-04
+2026-04-28 09:05:53,556 INFO src.training.train step=5600 epoch=8 loss=4.8838 grad=1.438 lr=2.82e-04
+2026-04-28 09:05:56,991 INFO src.training.train step=5700 epoch=8 loss=4.8666 grad=1.463 lr=2.81e-04
+2026-04-28 09:06:00,427 INFO src.training.train step=5800 epoch=8 loss=4.8385 grad=1.421 lr=2.80e-04
+2026-04-28 09:06:03,864 INFO src.training.train step=5900 epoch=8 loss=4.7254 grad=1.438 lr=2.79e-04
+2026-04-28 09:06:07,302 INFO src.training.train step=6000 epoch=8 loss=4.6926 grad=1.551 lr=2.79e-04
+2026-04-28 09:06:07,864 INFO src.training.train EVAL step=6000 loss=5.7017 per_query_acc=0.0522 per_seq_acc=0.0000
+2026-04-28 09:06:11,302 INFO src.training.train step=6100 epoch=8 loss=4.6830 grad=1.512 lr=2.78e-04
+2026-04-28 09:06:14,739 INFO src.training.train step=6200 epoch=8 loss=4.6132 grad=1.538 lr=2.77e-04
+2026-04-28 09:06:18,177 INFO src.training.train step=6300 epoch=9 loss=4.6015 grad=1.581 lr=2.76e-04
+2026-04-28 09:06:21,614 INFO src.training.train step=6400 epoch=9 loss=4.5994 grad=1.581 lr=2.75e-04
+2026-04-28 09:06:25,050 INFO src.training.train step=6500 epoch=9 loss=4.5132 grad=1.560 lr=2.74e-04
+2026-04-28 09:06:28,487 INFO src.training.train step=6600 epoch=9 loss=4.4926 grad=1.627 lr=2.73e-04
+2026-04-28 09:06:31,922 INFO src.training.train step=6700 epoch=9 loss=4.4809 grad=1.668 lr=2.72e-04
+2026-04-28 09:06:35,359 INFO src.training.train step=6800 epoch=9 loss=4.4609 grad=1.616 lr=2.71e-04
+2026-04-28 09:06:38,795 INFO src.training.train step=6900 epoch=9 loss=4.3663 grad=1.650 lr=2.70e-04
+2026-04-28 09:06:42,231 INFO src.training.train step=7000 epoch=9 loss=4.3203 grad=1.627 lr=2.70e-04
+2026-04-28 09:06:42,791 INFO src.training.train EVAL step=7000 loss=5.6823 per_query_acc=0.0533 per_seq_acc=0.0000
+2026-04-28 09:06:46,226 INFO src.training.train step=7100 epoch=10 loss=4.3423 grad=1.652 lr=2.69e-04
+2026-04-28 09:06:49,662 INFO src.training.train step=7200 epoch=10 loss=4.2538 grad=1.703 lr=2.68e-04
+2026-04-28 09:06:53,098 INFO src.training.train step=7300 epoch=10 loss=4.3169 grad=1.668 lr=2.67e-04
+2026-04-28 09:06:56,535 INFO src.training.train step=7400 epoch=10 loss=4.3253 grad=1.742 lr=2.65e-04
+2026-04-28 09:06:59,972 INFO src.training.train step=7500 epoch=10 loss=4.2739 grad=1.711 lr=2.64e-04
+2026-04-28 09:07:03,410 INFO src.training.train step=7600 epoch=10 loss=4.1892 grad=1.734 lr=2.63e-04
+2026-04-28 09:07:06,848 INFO src.training.train step=7700 epoch=10 loss=4.1770 grad=1.690 lr=2.62e-04
+2026-04-28 09:07:10,285 INFO src.training.train step=7800 epoch=10 loss=4.1821 grad=1.895 lr=2.61e-04
+2026-04-28 09:07:13,739 INFO src.training.train step=7900 epoch=11 loss=4.1544 grad=1.784 lr=2.60e-04
+2026-04-28 09:07:17,176 INFO src.training.train step=8000 epoch=11 loss=4.1131 grad=1.810 lr=2.59e-04
+2026-04-28 09:07:17,735 INFO src.training.train EVAL step=8000 loss=5.7014 per_query_acc=0.0544 per_seq_acc=0.0000
+2026-04-28 09:07:21,171 INFO src.training.train step=8100 epoch=11 loss=4.0413 grad=1.771 lr=2.58e-04
+2026-04-28 09:07:24,607 INFO src.training.train step=8200 epoch=11 loss=4.0049 grad=1.769 lr=2.57e-04
+2026-04-28 09:07:28,044 INFO src.training.train step=8300 epoch=11 loss=3.9696 grad=1.828 lr=2.56e-04
+2026-04-28 09:07:31,481 INFO src.training.train step=8400 epoch=11 loss=3.9178 grad=1.747 lr=2.54e-04
+2026-04-28 09:07:34,919 INFO src.training.train step=8500 epoch=11 loss=3.8865 grad=1.852 lr=2.53e-04
+2026-04-28 09:07:38,358 INFO src.training.train step=8600 epoch=12 loss=4.0055 grad=1.789 lr=2.52e-04
+2026-04-28 09:07:41,796 INFO src.training.train step=8700 epoch=12 loss=3.8919 grad=1.803 lr=2.51e-04
+2026-04-28 09:07:45,233 INFO src.training.train step=8800 epoch=12 loss=3.8205 grad=1.868 lr=2.50e-04
+2026-04-28 09:07:48,670 INFO src.training.train step=8900 epoch=12 loss=3.8786 grad=1.856 lr=2.49e-04
+2026-04-28 09:07:52,109 INFO src.training.train step=9000 epoch=12 loss=3.7783 grad=1.961 lr=2.47e-04
+2026-04-28 09:07:52,671 INFO src.training.train EVAL step=9000 loss=5.7335 per_query_acc=0.0554 per_seq_acc=0.0000
+2026-04-28 09:07:56,107 INFO src.training.train step=9100 epoch=12 loss=3.8671 grad=1.843 lr=2.46e-04
+2026-04-28 09:07:59,542 INFO src.training.train step=9200 epoch=12 loss=3.8520 grad=1.911 lr=2.45e-04
+2026-04-28 09:08:02,978 INFO src.training.train step=9300 epoch=12 loss=3.7485 grad=1.815 lr=2.44e-04
+2026-04-28 09:08:06,413 INFO src.training.train step=9400 epoch=13 loss=3.8116 grad=1.980 lr=2.42e-04
+2026-04-28 09:08:09,850 INFO src.training.train step=9500 epoch=13 loss=3.7464 grad=1.916 lr=2.41e-04
+2026-04-28 09:08:13,286 INFO src.training.train step=9600 epoch=13 loss=3.7938 grad=1.990 lr=2.40e-04
+2026-04-28 09:08:16,723 INFO src.training.train step=9700 epoch=13 loss=3.7621 grad=1.952 lr=2.38e-04
+2026-04-28 09:08:20,161 INFO src.training.train step=9800 epoch=13 loss=3.6353 grad=1.898 lr=2.37e-04
+2026-04-28 09:08:23,599 INFO src.training.train step=9900 epoch=13 loss=3.6013 grad=1.965 lr=2.36e-04
+2026-04-28 09:08:27,037 INFO src.training.train step=10000 epoch=13 loss=3.6520 grad=1.929 lr=2.34e-04
+2026-04-28 09:08:27,597 INFO src.training.train EVAL step=10000 loss=5.7903 per_query_acc=0.0541 per_seq_acc=0.0000
+2026-04-28 09:08:31,033 INFO src.training.train step=10100 epoch=13 loss=3.6397 grad=2.003 lr=2.33e-04
+2026-04-28 09:08:34,471 INFO src.training.train step=10200 epoch=14 loss=3.5706 grad=2.040 lr=2.32e-04
+2026-04-28 09:08:37,908 INFO src.training.train step=10300 epoch=14 loss=3.6136 grad=1.984 lr=2.30e-04
+2026-04-28 09:08:41,345 INFO src.training.train step=10400 epoch=14 loss=3.5684 grad=2.075 lr=2.29e-04
+2026-04-28 09:08:44,781 INFO src.training.train step=10500 epoch=14 loss=3.5064 grad=2.075 lr=2.28e-04
+2026-04-28 09:08:48,218 INFO src.training.train step=10600 epoch=14 loss=3.4782 grad=2.050 lr=2.26e-04
+2026-04-28 09:08:51,654 INFO src.training.train step=10700 epoch=14 loss=3.5487 grad=1.982 lr=2.25e-04
+2026-04-28 09:08:55,091 INFO src.training.train step=10800 epoch=14 loss=3.4135 grad=1.999 lr=2.23e-04
+2026-04-28 09:08:58,528 INFO src.training.train step=10900 epoch=14 loss=3.4942 grad=2.122 lr=2.22e-04
+2026-04-28 09:09:01,965 INFO src.training.train step=11000 epoch=15 loss=3.4689 grad=2.099 lr=2.21e-04
+2026-04-28 09:09:02,526 INFO src.training.train EVAL step=11000 loss=5.8384 per_query_acc=0.0567 per_seq_acc=0.0000
+2026-04-28 09:09:05,962 INFO src.training.train step=11100 epoch=15 loss=3.3579 grad=2.064 lr=2.19e-04
+2026-04-28 09:09:09,400 INFO src.training.train step=11200 epoch=15 loss=3.4304 grad=2.120 lr=2.18e-04
+2026-04-28 09:09:12,837 INFO src.training.train step=11300 epoch=15 loss=3.4501 grad=2.202 lr=2.16e-04
+2026-04-28 09:09:16,274 INFO src.training.train step=11400 epoch=15 loss=3.4163 grad=2.122 lr=2.15e-04
+2026-04-28 09:09:19,711 INFO src.training.train step=11500 epoch=15 loss=3.3443 grad=2.122 lr=2.13e-04
+2026-04-28 09:09:23,147 INFO src.training.train step=11600 epoch=15 loss=3.3368 grad=2.058 lr=2.12e-04
+2026-04-28 09:09:26,583 INFO src.training.train step=11700 epoch=15 loss=3.2884 grad=2.139 lr=2.10e-04
+2026-04-28 09:09:30,034 INFO src.training.train step=11800 epoch=16 loss=3.3622 grad=2.130 lr=2.09e-04
+2026-04-28 09:09:33,468 INFO src.training.train step=11900 epoch=16 loss=3.3004 grad=2.174 lr=2.07e-04
+2026-04-28 09:09:36,903 INFO src.training.train step=12000 epoch=16 loss=3.2262 grad=2.155 lr=2.06e-04
+2026-04-28 09:09:37,463 INFO src.training.train EVAL step=12000 loss=5.8624 per_query_acc=0.0590 per_seq_acc=0.0000
+2026-04-28 09:09:40,898 INFO src.training.train step=12100 epoch=16 loss=3.1128 grad=2.133 lr=2.04e-04
+2026-04-28 09:09:44,334 INFO src.training.train step=12200 epoch=16 loss=3.2187 grad=2.223 lr=2.03e-04
+2026-04-28 09:09:47,768 INFO src.training.train step=12300 epoch=16 loss=3.0973 grad=2.194 lr=2.01e-04
+2026-04-28 09:09:51,203 INFO src.training.train step=12400 epoch=16 loss=2.9985 grad=2.211 lr=2.00e-04
+2026-04-28 09:09:54,637 INFO src.training.train step=12500 epoch=17 loss=3.1689 grad=2.259 lr=1.98e-04
+2026-04-28 09:09:58,073 INFO src.training.train step=12600 epoch=17 loss=3.0918 grad=2.322 lr=1.97e-04
+2026-04-28 09:10:01,508 INFO src.training.train step=12700 epoch=17 loss=2.9782 grad=2.292 lr=1.95e-04
+2026-04-28 09:10:04,942 INFO src.training.train step=12800 epoch=17 loss=2.8517 grad=2.396 lr=1.94e-04
+2026-04-28 09:10:08,377 INFO src.training.train step=12900 epoch=17 loss=2.6293 grad=2.317 lr=1.92e-04
+2026-04-28 09:10:11,811 INFO src.training.train step=13000 epoch=17 loss=2.5589 grad=2.309 lr=1.90e-04
+2026-04-28 09:10:12,371 INFO src.training.train EVAL step=13000 loss=4.8708 per_query_acc=0.1425 per_seq_acc=0.0000
+2026-04-28 09:10:15,807 INFO src.training.train step=13100 epoch=17 loss=2.3968 grad=2.462 lr=1.89e-04
+2026-04-28 09:10:19,244 INFO src.training.train step=13200 epoch=17 loss=2.1374 grad=2.447 lr=1.87e-04
+2026-04-28 09:10:22,681 INFO src.training.train step=13300 epoch=18 loss=1.9544 grad=2.418 lr=1.86e-04
+2026-04-28 09:10:26,116 INFO src.training.train step=13400 epoch=18 loss=1.6057 grad=2.389 lr=1.84e-04
+2026-04-28 09:10:29,553 INFO src.training.train step=13500 epoch=18 loss=1.4390 grad=2.305 lr=1.83e-04
+2026-04-28 09:10:32,990 INFO src.training.train step=13600 epoch=18 loss=1.2147 grad=2.310 lr=1.81e-04
+2026-04-28 09:10:36,426 INFO src.training.train step=13700 epoch=18 loss=0.9798 grad=2.197 lr=1.79e-04
+2026-04-28 09:10:39,862 INFO src.training.train step=13800 epoch=18 loss=0.7751 grad=1.966 lr=1.78e-04
+2026-04-28 09:10:43,299 INFO src.training.train step=13900 epoch=18 loss=0.6909 grad=1.940 lr=1.76e-04
+2026-04-28 09:10:46,735 INFO src.training.train step=14000 epoch=18 loss=0.6073 grad=1.868 lr=1.75e-04
+2026-04-28 09:10:47,295 INFO src.training.train EVAL step=14000 loss=1.0036 per_query_acc=0.7370 per_seq_acc=0.0063
+2026-04-28 09:10:50,729 INFO src.training.train step=14100 epoch=19 loss=0.5246 grad=1.744 lr=1.73e-04
+2026-04-28 09:10:54,165 INFO src.training.train step=14200 epoch=19 loss=0.5369 grad=1.773 lr=1.71e-04
+2026-04-28 09:10:57,599 INFO src.training.train step=14300 epoch=19 loss=0.4500 grad=1.626 lr=1.70e-04
+2026-04-28 09:11:01,035 INFO src.training.train step=14400 epoch=19 loss=0.3475 grad=1.515 lr=1.68e-04
+2026-04-28 09:11:04,471 INFO src.training.train step=14500 epoch=19 loss=0.2999 grad=1.360 lr=1.67e-04
+2026-04-28 09:11:07,908 INFO src.training.train step=14600 epoch=19 loss=0.3100 grad=1.401 lr=1.65e-04
+2026-04-28 09:11:11,345 INFO src.training.train step=14700 epoch=19 loss=0.2173 grad=1.187 lr=1.63e-04
+2026-04-28 09:11:14,781 INFO src.training.train step=14800 epoch=19 loss=0.2439 grad=1.262 lr=1.62e-04
+2026-04-28 09:11:18,218 INFO src.training.train step=14900 epoch=20 loss=0.2363 grad=1.258 lr=1.60e-04
+2026-04-28 09:11:21,655 INFO src.training.train step=15000 epoch=20 loss=0.1609 grad=1.076 lr=1.59e-04
+2026-04-28 09:11:22,215 INFO src.training.train EVAL step=15000 loss=0.3207 per_query_acc=0.9060 per_seq_acc=0.2253
+2026-04-28 09:11:25,650 INFO src.training.train step=15100 epoch=20 loss=0.1417 grad=0.978 lr=1.57e-04
+2026-04-28 09:11:29,085 INFO src.training.train step=15200 epoch=20 loss=0.1561 grad=1.265 lr=1.55e-04
+2026-04-28 09:11:32,522 INFO src.training.train step=15300 epoch=20 loss=0.1689 grad=1.069 lr=1.54e-04
+2026-04-28 09:11:35,960 INFO src.training.train step=15400 epoch=20 loss=0.1336 grad=1.008 lr=1.52e-04
+2026-04-28 09:11:39,397 INFO src.training.train step=15500 epoch=20 loss=0.1042 grad=0.832 lr=1.50e-04
+2026-04-28 09:11:42,832 INFO src.training.train step=15600 epoch=20 loss=0.1163 grad=0.943 lr=1.49e-04
+2026-04-28 09:11:46,284 INFO src.training.train step=15700 epoch=21 loss=0.1229 grad=0.931 lr=1.47e-04
+2026-04-28 09:11:49,719 INFO src.training.train step=15800 epoch=21 loss=0.1006 grad=0.816 lr=1.46e-04
+2026-04-28 09:11:53,155 INFO src.training.train step=15900 epoch=21 loss=0.0794 grad=0.752 lr=1.44e-04
+2026-04-28 09:11:56,590 INFO src.training.train step=16000 epoch=21 loss=0.0867 grad=0.870 lr=1.42e-04
+2026-04-28 09:11:57,151 INFO src.training.train EVAL step=16000 loss=0.1618 per_query_acc=0.9497 per_seq_acc=0.4583
+2026-04-28 09:12:00,587 INFO src.training.train step=16100 epoch=21 loss=0.0623 grad=0.667 lr=1.41e-04
+2026-04-28 09:12:04,023 INFO src.training.train step=16200 epoch=21 loss=0.0480 grad=0.579 lr=1.39e-04
+2026-04-28 09:12:07,459 INFO src.training.train step=16300 epoch=21 loss=0.0509 grad=0.602 lr=1.38e-04
+2026-04-28 09:12:10,895 INFO src.training.train step=16400 epoch=22 loss=0.0686 grad=0.780 lr=1.36e-04
+2026-04-28 09:12:14,331 INFO src.training.train step=16500 epoch=22 loss=0.0577 grad=0.683 lr=1.34e-04
+2026-04-28 09:12:17,767 INFO src.training.train step=16600 epoch=22 loss=0.0388 grad=0.528 lr=1.33e-04
+2026-04-28 09:12:21,204 INFO src.training.train step=16700 epoch=22 loss=0.0402 grad=0.535 lr=1.31e-04
+2026-04-28 09:12:24,639 INFO src.training.train step=16800 epoch=22 loss=0.0359 grad=0.571 lr=1.30e-04
+2026-04-28 09:12:28,075 INFO src.training.train step=16900 epoch=22 loss=0.0383 grad=0.501 lr=1.28e-04
+2026-04-28 09:12:31,511 INFO src.training.train step=17000 epoch=22 loss=0.0383 grad=0.577 lr=1.26e-04
+2026-04-28 09:12:32,071 INFO src.training.train EVAL step=17000 loss=0.1024 per_query_acc=0.9680 per_seq_acc=0.6080
+2026-04-28 09:12:35,506 INFO src.training.train step=17100 epoch=22 loss=0.0389 grad=0.558 lr=1.25e-04
+2026-04-28 09:12:38,942 INFO src.training.train step=17200 epoch=23 loss=0.0552 grad=1.008 lr=1.23e-04
+2026-04-28 09:12:42,377 INFO src.training.train step=17300 epoch=23 loss=0.0400 grad=0.556 lr=1.22e-04
+2026-04-28 09:12:45,812 INFO src.training.train step=17400 epoch=23 loss=0.0439 grad=0.637 lr=1.20e-04
+2026-04-28 09:12:49,248 INFO src.training.train step=17500 epoch=23 loss=0.0320 grad=0.463 lr=1.18e-04
+2026-04-28 09:12:52,683 INFO src.training.train step=17600 epoch=23 loss=0.0514 grad=0.698 lr=1.17e-04
+2026-04-28 09:12:56,117 INFO src.training.train step=17700 epoch=23 loss=0.0180 grad=0.335 lr=1.15e-04
+2026-04-28 09:12:59,554 INFO src.training.train step=17800 epoch=23 loss=0.0276 grad=0.430 lr=1.14e-04
+2026-04-28 09:13:02,989 INFO src.training.train step=17900 epoch=23 loss=0.0321 grad=0.568 lr=1.12e-04
+2026-04-28 09:13:06,426 INFO src.training.train step=18000 epoch=24 loss=0.0468 grad=0.706 lr=1.11e-04
+2026-04-28 09:13:06,986 INFO src.training.train EVAL step=18000 loss=0.0730 per_query_acc=0.9767 per_seq_acc=0.6910
+2026-04-28 09:13:10,422 INFO src.training.train step=18100 epoch=24 loss=0.0322 grad=0.492 lr=1.09e-04
+2026-04-28 09:13:13,859 INFO src.training.train step=18200 epoch=24 loss=0.0280 grad=0.460 lr=1.07e-04
+2026-04-28 09:13:17,295 INFO src.training.train step=18300 epoch=24 loss=0.0160 grad=0.329 lr=1.06e-04
+2026-04-28 09:13:20,732 INFO src.training.train step=18400 epoch=24 loss=0.0214 grad=0.425 lr=1.04e-04
+2026-04-28 09:13:24,169 INFO src.training.train step=18500 epoch=24 loss=0.0201 grad=0.421 lr=1.03e-04
+2026-04-28 09:13:27,605 INFO src.training.train step=18600 epoch=24 loss=0.0210 grad=0.422 lr=1.01e-04
+2026-04-28 09:13:31,042 INFO src.training.train step=18700 epoch=24 loss=0.0168 grad=0.570 lr=9.97e-05
+2026-04-28 09:13:34,480 INFO src.training.train step=18800 epoch=25 loss=0.0161 grad=0.332 lr=9.82e-05
+2026-04-28 09:13:37,915 INFO src.training.train step=18900 epoch=25 loss=0.0184 grad=0.455 lr=9.67e-05
+2026-04-28 09:13:41,353 INFO src.training.train step=19000 epoch=25 loss=0.0112 grad=0.266 lr=9.52e-05
+2026-04-28 09:13:41,914 INFO src.training.train EVAL step=19000 loss=0.0546 per_query_acc=0.9821 per_seq_acc=0.7517
+2026-04-28 09:13:45,351 INFO src.training.train step=19100 epoch=25 loss=0.0221 grad=0.440 lr=9.37e-05
+2026-04-28 09:13:48,787 INFO src.training.train step=19200 epoch=25 loss=0.0222 grad=0.480 lr=9.22e-05
+2026-04-28 09:13:52,223 INFO src.training.train step=19300 epoch=25 loss=0.0159 grad=0.405 lr=9.07e-05
+2026-04-28 09:13:55,658 INFO src.training.train step=19400 epoch=25 loss=0.0186 grad=0.407 lr=8.92e-05
+2026-04-28 09:13:59,091 INFO src.training.train step=19500 epoch=25 loss=0.0115 grad=0.287 lr=8.77e-05
+2026-04-28 09:14:02,541 INFO src.training.train step=19600 epoch=26 loss=0.0137 grad=0.311 lr=8.63e-05
+2026-04-28 09:14:05,975 INFO src.training.train step=19700 epoch=26 loss=0.0246 grad=0.569 lr=8.48e-05
+2026-04-28 09:14:09,411 INFO src.training.train step=19800 epoch=26 loss=0.0117 grad=0.285 lr=8.34e-05
+2026-04-28 09:14:12,845 INFO src.training.train step=19900 epoch=26 loss=0.0185 grad=0.475 lr=8.19e-05
+2026-04-28 09:14:16,280 INFO src.training.train step=20000 epoch=26 loss=0.0112 grad=0.312 lr=8.05e-05
+2026-04-28 09:14:16,841 INFO src.training.train EVAL step=20000 loss=0.0453 per_query_acc=0.9849 per_seq_acc=0.7840
+2026-04-28 09:14:20,276 INFO src.training.train step=20100 epoch=26 loss=0.0059 grad=0.191 lr=7.90e-05
+2026-04-28 09:14:23,712 INFO src.training.train step=20200 epoch=26 loss=0.0083 grad=0.218 lr=7.76e-05
+2026-04-28 09:14:27,147 INFO src.training.train step=20300 epoch=27 loss=0.0118 grad=0.420 lr=7.62e-05
+2026-04-28 09:14:30,584 INFO src.training.train step=20400 epoch=27 loss=0.0094 grad=0.235 lr=7.48e-05
+2026-04-28 09:14:34,019 INFO src.training.train step=20500 epoch=27 loss=0.0085 grad=0.503 lr=7.34e-05
+2026-04-28 09:14:37,455 INFO src.training.train step=20600 epoch=27 loss=0.0066 grad=0.170 lr=7.20e-05
+2026-04-28 09:14:40,890 INFO src.training.train step=20700 epoch=27 loss=0.0098 grad=0.288 lr=7.07e-05
+2026-04-28 09:14:44,325 INFO src.training.train step=20800 epoch=27 loss=0.0071 grad=0.289 lr=6.93e-05
+2026-04-28 09:14:47,759 INFO src.training.train step=20900 epoch=27 loss=0.0055 grad=0.151 lr=6.79e-05
+2026-04-28 09:14:51,193 INFO src.training.train step=21000 epoch=27 loss=0.0078 grad=0.217 lr=6.66e-05
+2026-04-28 09:14:51,752 INFO src.training.train EVAL step=21000 loss=0.0371 per_query_acc=0.9876 per_seq_acc=0.8190
+2026-04-28 09:14:55,185 INFO src.training.train step=21100 epoch=28 loss=0.0140 grad=0.405 lr=6.53e-05
+2026-04-28 09:14:58,620 INFO src.training.train step=21200 epoch=28 loss=0.0133 grad=0.362 lr=6.39e-05
+2026-04-28 09:15:02,056 INFO src.training.train step=21300 epoch=28 loss=0.0115 grad=0.328 lr=6.26e-05
+2026-04-28 09:15:05,493 INFO src.training.train step=21400 epoch=28 loss=0.0117 grad=0.288 lr=6.13e-05
+2026-04-28 09:15:08,929 INFO src.training.train step=21500 epoch=28 loss=0.0070 grad=0.219 lr=6.00e-05
+2026-04-28 09:15:12,366 INFO src.training.train step=21600 epoch=28 loss=0.0066 grad=0.200 lr=5.87e-05
+2026-04-28 09:15:15,801 INFO src.training.train step=21700 epoch=28 loss=0.0072 grad=0.229 lr=5.75e-05
+2026-04-28 09:15:19,237 INFO src.training.train step=21800 epoch=28 loss=0.0044 grad=0.152 lr=5.62e-05
+2026-04-28 09:15:22,672 INFO src.training.train step=21900 epoch=29 loss=0.0056 grad=0.178 lr=5.50e-05
+2026-04-28 09:15:26,107 INFO src.training.train step=22000 epoch=29 loss=0.0120 grad=0.342 lr=5.37e-05
+2026-04-28 09:15:26,666 INFO src.training.train EVAL step=22000 loss=0.0329 per_query_acc=0.9887 per_seq_acc=0.8370
+2026-04-28 09:15:30,101 INFO src.training.train step=22100 epoch=29 loss=0.0051 grad=0.139 lr=5.25e-05
+2026-04-28 09:15:33,538 INFO src.training.train step=22200 epoch=29 loss=0.0079 grad=0.228 lr=5.13e-05
+2026-04-28 09:15:36,974 INFO src.training.train step=22300 epoch=29 loss=0.0051 grad=0.168 lr=5.01e-05
+2026-04-28 09:15:40,411 INFO src.training.train step=22400 epoch=29 loss=0.0043 grad=0.145 lr=4.89e-05
+2026-04-28 09:15:43,848 INFO src.training.train step=22500 epoch=29 loss=0.0050 grad=0.201 lr=4.77e-05
+2026-04-28 09:15:47,283 INFO src.training.train step=22600 epoch=29 loss=0.0029 grad=0.089 lr=4.65e-05
+2026-04-28 09:15:50,721 INFO src.training.train step=22700 epoch=30 loss=0.0049 grad=0.162 lr=4.54e-05
+2026-04-28 09:15:54,156 INFO src.training.train step=22800 epoch=30 loss=0.0088 grad=0.249 lr=4.42e-05
+2026-04-28 09:15:57,590 INFO src.training.train step=22900 epoch=30 loss=0.0036 grad=0.124 lr=4.31e-05
+2026-04-28 09:16:01,022 INFO src.training.train step=23000 epoch=30 loss=0.0057 grad=0.177 lr=4.20e-05
+2026-04-28 09:16:01,583 INFO src.training.train EVAL step=23000 loss=0.0293 per_query_acc=0.9901 per_seq_acc=0.8540
+2026-04-28 09:16:05,016 INFO src.training.train step=23100 epoch=30 loss=0.0064 grad=0.225 lr=4.09e-05
+2026-04-28 09:16:08,450 INFO src.training.train step=23200 epoch=30 loss=0.0035 grad=0.106 lr=3.98e-05
+2026-04-28 09:16:11,884 INFO src.training.train step=23300 epoch=30 loss=0.0050 grad=0.225 lr=3.87e-05
+2026-04-28 09:16:15,319 INFO src.training.train step=23400 epoch=30 loss=0.0078 grad=0.269 lr=3.76e-05
+2026-04-28 09:16:18,769 INFO src.training.train step=23500 epoch=31 loss=0.0032 grad=0.089 lr=3.66e-05
+2026-04-28 09:16:22,202 INFO src.training.train step=23600 epoch=31 loss=0.0078 grad=0.269 lr=3.55e-05
+2026-04-28 09:16:25,635 INFO src.training.train step=23700 epoch=31 loss=0.0077 grad=0.279 lr=3.45e-05
+2026-04-28 09:16:29,069 INFO src.training.train step=23800 epoch=31 loss=0.0055 grad=0.255 lr=3.35e-05
+2026-04-28 09:16:32,502 INFO src.training.train step=23900 epoch=31 loss=0.0039 grad=0.144 lr=3.25e-05
+2026-04-28 09:16:35,934 INFO src.training.train step=24000 epoch=31 loss=0.0034 grad=0.142 lr=3.15e-05
+2026-04-28 09:16:36,494 INFO src.training.train EVAL step=24000 loss=0.0271 per_query_acc=0.9911 per_seq_acc=0.8700
+2026-04-28 09:16:39,927 INFO src.training.train step=24100 epoch=31 loss=0.0048 grad=0.165 lr=3.05e-05
+2026-04-28 09:16:43,362 INFO src.training.train step=24200 epoch=32 loss=0.0080 grad=0.279 lr=2.96e-05
+2026-04-28 09:16:46,795 INFO src.training.train step=24300 epoch=32 loss=0.0045 grad=0.177 lr=2.86e-05
+2026-04-28 09:16:50,229 INFO src.training.train step=24400 epoch=32 loss=0.0055 grad=0.249 lr=2.77e-05
+2026-04-28 09:16:53,664 INFO src.training.train step=24500 epoch=32 loss=0.0064 grad=0.320 lr=2.68e-05
+2026-04-28 09:16:57,098 INFO src.training.train step=24600 epoch=32 loss=0.0028 grad=0.126 lr=2.59e-05
+2026-04-28 09:17:00,533 INFO src.training.train step=24700 epoch=32 loss=0.0047 grad=0.181 lr=2.50e-05
+2026-04-28 09:17:03,968 INFO src.training.train step=24800 epoch=32 loss=0.0019 grad=0.049 lr=2.41e-05
+2026-04-28 09:17:07,402 INFO src.training.train step=24900 epoch=32 loss=0.0021 grad=0.067 lr=2.32e-05
+2026-04-28 09:17:10,836 INFO src.training.train step=25000 epoch=33 loss=0.0036 grad=0.138 lr=2.24e-05
+2026-04-28 09:17:11,397 INFO src.training.train EVAL step=25000 loss=0.0251 per_query_acc=0.9914 per_seq_acc=0.8750
+2026-04-28 09:17:14,831 INFO src.training.train step=25100 epoch=33 loss=0.0032 grad=0.140 lr=2.16e-05
+2026-04-28 09:17:18,265 INFO src.training.train step=25200 epoch=33 loss=0.0024 grad=0.073 lr=2.08e-05
+2026-04-28 09:17:21,701 INFO src.training.train step=25300 epoch=33 loss=0.0029 grad=0.099 lr=2.00e-05
+2026-04-28 09:17:25,137 INFO src.training.train step=25400 epoch=33 loss=0.0043 grad=0.177 lr=1.92e-05
+2026-04-28 09:17:28,572 INFO src.training.train step=25500 epoch=33 loss=0.0037 grad=0.155 lr=1.84e-05
+2026-04-28 09:17:32,007 INFO src.training.train step=25600 epoch=33 loss=0.0031 grad=0.107 lr=1.77e-05
+2026-04-28 09:17:35,441 INFO src.training.train step=25700 epoch=33 loss=0.0034 grad=0.160 lr=1.69e-05
+2026-04-28 09:17:38,877 INFO src.training.train step=25800 epoch=34 loss=0.0020 grad=0.058 lr=1.62e-05
+2026-04-28 09:17:42,314 INFO src.training.train step=25900 epoch=34 loss=0.0031 grad=0.136 lr=1.55e-05
+2026-04-28 09:17:45,751 INFO src.training.train step=26000 epoch=34 loss=0.0056 grad=0.216 lr=1.48e-05
+2026-04-28 09:17:46,313 INFO src.training.train EVAL step=26000 loss=0.0237 per_query_acc=0.9919 per_seq_acc=0.8803
+2026-04-28 09:17:49,748 INFO src.training.train step=26100 epoch=34 loss=0.0035 grad=0.129 lr=1.41e-05
+2026-04-28 09:17:53,183 INFO src.training.train step=26200 epoch=34 loss=0.0017 grad=0.056 lr=1.35e-05
+2026-04-28 09:17:56,620 INFO src.training.train step=26300 epoch=34 loss=0.0019 grad=0.070 lr=1.28e-05
+2026-04-28 09:18:00,056 INFO src.training.train step=26400 epoch=34 loss=0.0020 grad=0.078 lr=1.22e-05
+2026-04-28 09:18:03,491 INFO src.training.train step=26500 epoch=34 loss=0.0024 grad=0.102 lr=1.16e-05
+2026-04-28 09:18:06,927 INFO src.training.train step=26600 epoch=35 loss=0.0062 grad=0.261 lr=1.10e-05
+2026-04-28 09:18:10,362 INFO src.training.train step=26700 epoch=35 loss=0.0027 grad=0.155 lr=1.05e-05
+2026-04-28 09:18:13,798 INFO src.training.train step=26800 epoch=35 loss=0.0031 grad=0.123 lr=9.89e-06
+2026-04-28 09:18:17,234 INFO src.training.train step=26900 epoch=35 loss=0.0029 grad=0.107 lr=9.35e-06
+2026-04-28 09:18:20,670 INFO src.training.train step=27000 epoch=35 loss=0.0027 grad=0.102 lr=8.83e-06
+2026-04-28 09:18:21,229 INFO src.training.train EVAL step=27000 loss=0.0226 per_query_acc=0.9924 per_seq_acc=0.8887
+2026-04-28 09:18:24,664 INFO src.training.train step=27100 epoch=35 loss=0.0034 grad=0.213 lr=8.32e-06
+2026-04-28 09:18:28,099 INFO src.training.train step=27200 epoch=35 loss=0.0029 grad=0.175 lr=7.82e-06
+2026-04-28 09:18:31,535 INFO src.training.train step=27300 epoch=35 loss=0.0022 grad=0.083 lr=7.35e-06
+2026-04-28 09:18:34,989 INFO src.training.train step=27400 epoch=36 loss=0.0028 grad=0.106 lr=6.89e-06
+2026-04-28 09:18:38,423 INFO src.training.train step=27500 epoch=36 loss=0.0034 grad=0.137 lr=6.45e-06
+2026-04-28 09:18:41,859 INFO src.training.train step=27600 epoch=36 loss=0.0045 grad=0.187 lr=6.02e-06
+2026-04-28 09:18:45,294 INFO src.training.train step=27700 epoch=36 loss=0.0026 grad=0.105 lr=5.62e-06
+2026-04-28 09:18:48,728 INFO src.training.train step=27800 epoch=36 loss=0.0015 grad=0.045 lr=5.23e-06
+2026-04-28 09:18:52,164 INFO src.training.train step=27900 epoch=36 loss=0.0014 grad=0.043 lr=4.85e-06
+2026-04-28 09:18:55,600 INFO src.training.train step=28000 epoch=36 loss=0.0041 grad=0.168 lr=4.50e-06
+2026-04-28 09:18:56,161 INFO src.training.train EVAL step=28000 loss=0.0221 per_query_acc=0.9924 per_seq_acc=0.8887
+2026-04-28 09:18:59,596 INFO src.training.train step=28100 epoch=37 loss=0.0034 grad=0.171 lr=4.16e-06
+2026-04-28 09:19:03,034 INFO src.training.train step=28200 epoch=37 loss=0.0057 grad=0.718 lr=3.83e-06
+2026-04-28 09:19:06,469 INFO src.training.train step=28300 epoch=37 loss=0.0021 grad=0.101 lr=3.53e-06
+2026-04-28 09:19:09,903 INFO src.training.train step=28400 epoch=37 loss=0.0032 grad=0.168 lr=3.24e-06
+2026-04-28 09:19:13,337 INFO src.training.train step=28500 epoch=37 loss=0.0025 grad=0.119 lr=2.97e-06
+2026-04-28 09:19:16,772 INFO src.training.train step=28600 epoch=37 loss=0.0025 grad=0.134 lr=2.72e-06
+2026-04-28 09:19:20,207 INFO src.training.train step=28700 epoch=37 loss=0.0019 grad=0.078 lr=2.48e-06
+2026-04-28 09:19:23,643 INFO src.training.train step=28800 epoch=37 loss=0.0019 grad=0.098 lr=2.26e-06
+2026-04-28 09:19:27,079 INFO src.training.train step=28900 epoch=38 loss=0.0032 grad=0.139 lr=2.06e-06
+2026-04-28 09:19:30,516 INFO src.training.train step=29000 epoch=38 loss=0.0021 grad=0.119 lr=1.88e-06
+2026-04-28 09:19:31,077 INFO src.training.train EVAL step=29000 loss=0.0220 per_query_acc=0.9924 per_seq_acc=0.8877
+2026-04-28 09:19:34,512 INFO src.training.train step=29100 epoch=38 loss=0.0040 grad=0.171 lr=1.71e-06
+2026-04-28 09:19:37,949 INFO src.training.train step=29200 epoch=38 loss=0.0023 grad=0.117 lr=1.56e-06
+2026-04-28 09:19:41,384 INFO src.training.train step=29300 epoch=38 loss=0.0036 grad=0.193 lr=1.43e-06
+2026-04-28 09:19:44,819 INFO src.training.train step=29400 epoch=38 loss=0.0019 grad=0.082 lr=1.32e-06
+2026-04-28 09:19:48,253 INFO src.training.train step=29500 epoch=38 loss=0.0019 grad=0.094 lr=1.22e-06
+2026-04-28 09:19:51,689 INFO src.training.train step=29600 epoch=38 loss=0.0017 grad=0.069 lr=1.14e-06
+2026-04-28 09:19:55,123 INFO src.training.train step=29700 epoch=39 loss=0.0025 grad=0.114 lr=1.08e-06
+2026-04-28 09:19:58,557 INFO src.training.train step=29800 epoch=39 loss=0.0021 grad=0.086 lr=1.04e-06
+2026-04-28 09:20:01,990 INFO src.training.train step=29900 epoch=39 loss=0.0027 grad=0.099 lr=1.01e-06
+2026-04-28 09:20:05,424 INFO src.training.train step=30000 epoch=39 loss=0.0031 grad=0.156 lr=1.00e-06
+2026-04-28 09:20:05,984 INFO src.training.train EVAL step=30000 loss=0.0219 per_query_acc=0.9924 per_seq_acc=0.8887
+2026-04-28 09:20:06,543 INFO src.training.train DONE: {
+  "backbone": "linear_attn_causal",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 30000,
+  "epochs_taken": 39,
+  "early_stopped": false,
+  "best_per_seq_acc": 0.8886666666666667,
+  "best_per_query_acc": 0.9924166666666666,
+  "best_step": 27000,
+  "final_per_seq_acc": 0.8886666666666667,
+  "final_per_query_acc": 0.9923958333333334,
+  "final_loss": 0.02186393682161967,
+  "wall_sec": 1048.5715985298157,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=linear_attn_convshift_multidil_symmetric_v2  T=64  K=16  seed=42
+out=outputs/cohort_reduced/linear_attn_convshift_multidil_symmetric_v2_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 09:20:08,466 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='linear_attn_convshift_multidil_symmetric_v2', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/linear_attn_convshift_multidil_symmetric_v2_T64_seed42')
+2026-04-28 09:20:08,820 INFO src.training.train backbone=linear_attn_convshift_multidil_symmetric_v2 params=8M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 09:20:13,651 INFO src.training.train step=100 epoch=1 loss=9.0222 grad=0.699 lr=3.00e-05
+2026-04-28 09:20:17,310 INFO src.training.train step=200 epoch=1 loss=8.5913 grad=0.544 lr=6.00e-05
+2026-04-28 09:20:20,969 INFO src.training.train step=300 epoch=1 loss=8.4018 grad=0.527 lr=9.00e-05
+2026-04-28 09:20:24,628 INFO src.training.train step=400 epoch=1 loss=8.3463 grad=0.513 lr=1.20e-04
+2026-04-28 09:20:28,289 INFO src.training.train step=500 epoch=1 loss=8.3504 grad=0.519 lr=1.50e-04
+2026-04-28 09:20:31,951 INFO src.training.train step=600 epoch=1 loss=8.3404 grad=0.508 lr=1.80e-04
+2026-04-28 09:20:35,614 INFO src.training.train step=700 epoch=1 loss=8.3507 grad=0.505 lr=2.10e-04
+2026-04-28 09:20:39,277 INFO src.training.train step=800 epoch=2 loss=8.3629 grad=0.502 lr=2.40e-04
+2026-04-28 09:20:42,941 INFO src.training.train step=900 epoch=2 loss=8.3568 grad=0.491 lr=2.70e-04
+2026-04-28 09:20:46,604 INFO src.training.train step=1000 epoch=2 loss=8.3377 grad=0.494 lr=3.00e-04
+2026-04-28 09:20:47,208 INFO src.training.train EVAL step=1000 loss=8.3488 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 09:20:50,870 INFO src.training.train step=1100 epoch=2 loss=8.3489 grad=0.484 lr=3.00e-04
+2026-04-28 09:20:54,535 INFO src.training.train step=1200 epoch=2 loss=8.3451 grad=0.474 lr=3.00e-04
+2026-04-28 09:20:58,200 INFO src.training.train step=1300 epoch=2 loss=8.3264 grad=0.518 lr=3.00e-04
+2026-04-28 09:21:01,864 INFO src.training.train step=1400 epoch=2 loss=8.1841 grad=0.630 lr=3.00e-04
+2026-04-28 09:21:05,528 INFO src.training.train step=1500 epoch=2 loss=7.9885 grad=0.659 lr=3.00e-04
+2026-04-28 09:21:09,193 INFO src.training.train step=1600 epoch=3 loss=7.8627 grad=0.677 lr=3.00e-04
+2026-04-28 09:21:12,859 INFO src.training.train step=1700 epoch=3 loss=7.7253 grad=0.675 lr=3.00e-04
+2026-04-28 09:21:16,525 INFO src.training.train step=1800 epoch=3 loss=7.5538 grad=0.687 lr=2.99e-04
+2026-04-28 09:21:20,192 INFO src.training.train step=1900 epoch=3 loss=7.4538 grad=0.688 lr=2.99e-04
+2026-04-28 09:21:23,861 INFO src.training.train step=2000 epoch=3 loss=7.3460 grad=0.714 lr=2.99e-04
+2026-04-28 09:21:24,452 INFO src.training.train EVAL step=2000 loss=7.3171 per_query_acc=0.0327 per_seq_acc=0.0000
+2026-04-28 09:21:28,119 INFO src.training.train step=2100 epoch=3 loss=7.1188 grad=0.735 lr=2.99e-04
+2026-04-28 09:21:31,788 INFO src.training.train step=2200 epoch=3 loss=7.1023 grad=0.754 lr=2.99e-04
+2026-04-28 09:21:35,457 INFO src.training.train step=2300 epoch=3 loss=6.9412 grad=0.757 lr=2.99e-04
+2026-04-28 09:21:39,126 INFO src.training.train step=2400 epoch=4 loss=6.8182 grad=0.771 lr=2.98e-04
+2026-04-28 09:21:42,794 INFO src.training.train step=2500 epoch=4 loss=6.6694 grad=0.775 lr=2.98e-04
+2026-04-28 09:21:46,465 INFO src.training.train step=2600 epoch=4 loss=6.5060 grad=0.797 lr=2.98e-04
+2026-04-28 09:21:50,134 INFO src.training.train step=2700 epoch=4 loss=6.4095 grad=0.808 lr=2.97e-04
+2026-04-28 09:21:53,803 INFO src.training.train step=2800 epoch=4 loss=6.3364 grad=0.863 lr=2.97e-04
+2026-04-28 09:21:57,471 INFO src.training.train step=2900 epoch=4 loss=6.1535 grad=0.844 lr=2.97e-04
+2026-04-28 09:22:01,140 INFO src.training.train step=3000 epoch=4 loss=6.1194 grad=0.868 lr=2.97e-04
+2026-04-28 09:22:01,734 INFO src.training.train EVAL step=3000 loss=6.2779 per_query_acc=0.0491 per_seq_acc=0.0000
+2026-04-28 09:22:05,403 INFO src.training.train step=3100 epoch=4 loss=6.0074 grad=0.890 lr=2.96e-04
+2026-04-28 09:22:09,073 INFO src.training.train step=3200 epoch=5 loss=5.9348 grad=0.921 lr=2.96e-04
+2026-04-28 09:22:12,745 INFO src.training.train step=3300 epoch=5 loss=5.7280 grad=0.923 lr=2.95e-04
+2026-04-28 09:22:16,414 INFO src.training.train step=3400 epoch=5 loss=5.7087 grad=0.939 lr=2.95e-04
+2026-04-28 09:22:20,084 INFO src.training.train step=3500 epoch=5 loss=5.6766 grad=0.999 lr=2.95e-04
+2026-04-28 09:22:23,755 INFO src.training.train step=3600 epoch=5 loss=5.5522 grad=1.062 lr=2.94e-04
+2026-04-28 09:22:27,423 INFO src.training.train step=3700 epoch=5 loss=5.4432 grad=1.045 lr=2.94e-04
+2026-04-28 09:22:31,092 INFO src.training.train step=3800 epoch=5 loss=5.4097 grad=1.053 lr=2.93e-04
+2026-04-28 09:22:34,761 INFO src.training.train step=3900 epoch=5 loss=5.2120 grad=1.111 lr=2.93e-04
+2026-04-28 09:22:38,450 INFO src.training.train step=4000 epoch=6 loss=5.2408 grad=1.143 lr=2.92e-04
+2026-04-28 09:22:39,041 INFO src.training.train EVAL step=4000 loss=5.6213 per_query_acc=0.0654 per_seq_acc=0.0000
+2026-04-28 09:22:42,712 INFO src.training.train step=4100 epoch=6 loss=5.2144 grad=1.162 lr=2.92e-04
+2026-04-28 09:22:46,384 INFO src.training.train step=4200 epoch=6 loss=5.0449 grad=1.260 lr=2.91e-04
+2026-04-28 09:22:50,056 INFO src.training.train step=4300 epoch=6 loss=4.7431 grad=1.349 lr=2.91e-04
+2026-04-28 09:22:53,728 INFO src.training.train step=4400 epoch=6 loss=4.3567 grad=1.631 lr=2.90e-04
+2026-04-28 09:22:57,398 INFO src.training.train step=4500 epoch=6 loss=3.7354 grad=2.081 lr=2.89e-04
+2026-04-28 09:23:01,069 INFO src.training.train step=4600 epoch=6 loss=3.1330 grad=2.809 lr=2.89e-04
+2026-04-28 09:23:04,739 INFO src.training.train step=4700 epoch=7 loss=2.1991 grad=3.651 lr=2.88e-04
+2026-04-28 09:23:08,411 INFO src.training.train step=4800 epoch=7 loss=1.1792 grad=3.261 lr=2.88e-04
+2026-04-28 09:23:12,081 INFO src.training.train step=4900 epoch=7 loss=0.5103 grad=2.037 lr=2.87e-04
+2026-04-28 09:23:15,751 INFO src.training.train step=5000 epoch=7 loss=0.1832 grad=0.900 lr=2.86e-04
+2026-04-28 09:23:16,343 INFO src.training.train EVAL step=5000 loss=0.1355 per_query_acc=0.9724 per_seq_acc=0.6333
+2026-04-28 09:23:20,012 INFO src.training.train step=5100 epoch=7 loss=0.0833 grad=0.491 lr=2.85e-04
+2026-04-28 09:23:23,681 INFO src.training.train step=5200 epoch=7 loss=0.0235 grad=0.180 lr=2.85e-04
+2026-04-28 09:23:27,350 INFO src.training.train step=5300 epoch=7 loss=0.0095 grad=0.084 lr=2.84e-04
+2026-04-28 09:23:31,019 INFO src.training.train step=5400 epoch=7 loss=0.0035 grad=0.063 lr=2.83e-04
+2026-04-28 09:23:34,690 INFO src.training.train step=5500 epoch=8 loss=0.0014 grad=0.016 lr=2.83e-04
+2026-04-28 09:23:38,360 INFO src.training.train step=5600 epoch=8 loss=0.0013 grad=0.052 lr=2.82e-04
+2026-04-28 09:23:42,031 INFO src.training.train step=5700 epoch=8 loss=0.0004 grad=0.004 lr=2.81e-04
+2026-04-28 09:23:45,701 INFO src.training.train step=5800 epoch=8 loss=0.0004 grad=0.009 lr=2.80e-04
+2026-04-28 09:23:49,371 INFO src.training.train step=5900 epoch=8 loss=0.0004 grad=0.015 lr=2.79e-04
+2026-04-28 09:23:53,042 INFO src.training.train step=6000 epoch=8 loss=0.0002 grad=0.007 lr=2.79e-04
+2026-04-28 09:23:53,635 INFO src.training.train EVAL step=6000 loss=0.0000 per_query_acc=1.0000 per_seq_acc=1.0000
+2026-04-28 09:23:53,635 INFO src.training.train EARLY STOP: per_seq_acc 1.0000 ≥ threshold 0.9900 at step 6000
+2026-04-28 09:23:54,227 INFO src.training.train DONE: {
+  "backbone": "linear_attn_convshift_multidil_symmetric_v2",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8566552,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 1.0,
+  "best_per_query_acc": 1.0,
+  "best_step": 6000,
+  "final_per_seq_acc": 1.0,
+  "final_per_query_acc": 1.0,
+  "final_loss": 3.373690935162206e-05,
+  "wall_sec": 224.73193287849426,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=linear_attn_lucid  T=64  K=16  seed=42
+out=outputs/cohort_reduced/linear_attn_lucid_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 09:23:56,037 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='linear_attn_lucid', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/linear_attn_lucid_T64_seed42')
+2026-04-28 09:23:56,389 INFO src.training.train backbone=linear_attn_lucid params=8M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 09:24:01,724 INFO src.training.train step=100 epoch=1 loss=9.0634 grad=0.695 lr=3.00e-05
+2026-04-28 09:24:05,806 INFO src.training.train step=200 epoch=1 loss=8.6096 grad=0.548 lr=6.00e-05
+2026-04-28 09:24:09,863 INFO src.training.train step=300 epoch=1 loss=8.3972 grad=0.525 lr=9.00e-05
+2026-04-28 09:24:13,924 INFO src.training.train step=400 epoch=1 loss=8.3435 grad=0.517 lr=1.20e-04
+2026-04-28 09:24:17,984 INFO src.training.train step=500 epoch=1 loss=8.3437 grad=0.519 lr=1.50e-04
+2026-04-28 09:24:22,041 INFO src.training.train step=600 epoch=1 loss=8.3392 grad=0.506 lr=1.80e-04
+2026-04-28 09:24:26,102 INFO src.training.train step=700 epoch=1 loss=8.3538 grad=0.506 lr=2.10e-04
+2026-04-28 09:24:30,173 INFO src.training.train step=800 epoch=2 loss=8.3562 grad=0.502 lr=2.40e-04
+2026-04-28 09:24:34,232 INFO src.training.train step=900 epoch=2 loss=8.3455 grad=0.492 lr=2.70e-04
+2026-04-28 09:24:38,297 INFO src.training.train step=1000 epoch=2 loss=8.3364 grad=0.500 lr=3.00e-04
+2026-04-28 09:24:39,056 INFO src.training.train EVAL step=1000 loss=8.3473 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-28 09:24:43,113 INFO src.training.train step=1100 epoch=2 loss=8.3361 grad=0.513 lr=3.00e-04
+2026-04-28 09:24:47,175 INFO src.training.train step=1200 epoch=2 loss=8.3286 grad=0.654 lr=3.00e-04
+2026-04-28 09:24:51,249 INFO src.training.train step=1300 epoch=2 loss=8.2347 grad=1.161 lr=3.00e-04
+2026-04-28 09:24:55,311 INFO src.training.train step=1400 epoch=2 loss=7.9176 grad=1.633 lr=3.00e-04
+2026-04-28 09:24:59,373 INFO src.training.train step=1500 epoch=2 loss=6.9399 grad=1.547 lr=3.00e-04
+2026-04-28 09:25:03,448 INFO src.training.train step=1600 epoch=3 loss=5.4159 grad=1.434 lr=3.00e-04
+2026-04-28 09:25:07,508 INFO src.training.train step=1700 epoch=3 loss=3.6577 grad=1.333 lr=3.00e-04
+2026-04-28 09:25:11,567 INFO src.training.train step=1800 epoch=3 loss=1.9194 grad=1.108 lr=2.99e-04
+2026-04-28 09:25:15,633 INFO src.training.train step=1900 epoch=3 loss=0.7030 grad=0.790 lr=2.99e-04
+2026-04-28 09:25:19,694 INFO src.training.train step=2000 epoch=3 loss=0.1829 grad=0.274 lr=2.99e-04
+2026-04-28 09:25:20,439 INFO src.training.train EVAL step=2000 loss=0.0661 per_query_acc=1.0000 per_seq_acc=1.0000
+2026-04-28 09:25:20,439 INFO src.training.train EARLY STOP: per_seq_acc 1.0000 ≥ threshold 0.9900 at step 2000
+2026-04-28 09:25:21,175 INFO src.training.train DONE: {
+  "backbone": "linear_attn_lucid",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8548120,
+  "steps_taken": 2000,
+  "epochs_taken": 3,
+  "early_stopped": true,
+  "best_per_seq_acc": 1.0,
+  "best_per_query_acc": 1.0,
+  "best_step": 2000,
+  "final_per_seq_acc": 1.0,
+  "final_per_query_acc": 1.0,
+  "final_loss": 0.06613754932085673,
+  "wall_sec": 84.07241106033325,
+  "seed": 42
+}
+═══════════════════════════════════════════════════════════════════
+RUN  backbone=linear_attn_rse_strong_viscosity  T=64  K=16  seed=42
+out=outputs/cohort_reduced/linear_attn_rse_strong_viscosity_T64_seed42
+═══════════════════════════════════════════════════════════════════
+2026-04-28 09:25:22,979 INFO run_experiment resolved config: SyntheticsConfig(task='mqar', vocab_size=8192, key_vocab_size=4096, value_vocab_size=4096, seq_len=64, n_kv_pairs=16, n_queries=None, train_examples_per_epoch=50000, eval_examples=3000, batch_size=64, num_workers=2, backbone='linear_attn_rse_strong_viscosity', d_model=256, n_layers=6, n_heads=4, head_size=64, dropout=0.1, mamba_d_state=16, mamba_d_conv=4, mamba_expand=2, mamba2_d_state=64, mamba2_headdim=64, mamba2_ngroups=1, mamba2_chunk_size=64, max_steps=30000, eval_every_steps=1000, log_every_steps=100, early_stop_threshold=0.99, early_stop_patience_evals=5, lr=0.0003, weight_decay=0.01, warmup_steps=1000, grad_clip=5.0, seed=42, compile_encoder=False, device='cuda', output_dir='outputs/cohort_reduced/linear_attn_rse_strong_viscosity_T64_seed42')
+2026-04-28 09:25:23,331 INFO src.training.train backbone=linear_attn_rse_strong_viscosity params=8M seq_len=64 K=16 Q=16 batch=64
+2026-04-28 09:25:33,154 INFO src.training.train step=100 epoch=1 loss=9.1311 grad=2.084 lr=3.00e-05
+2026-04-28 09:25:41,833 INFO src.training.train step=200 epoch=1 loss=8.6748 grad=0.746 lr=6.00e-05
+2026-04-28 09:25:50,515 INFO src.training.train step=300 epoch=1 loss=8.4114 grad=0.594 lr=9.00e-05
+2026-04-28 09:25:59,195 INFO src.training.train step=400 epoch=1 loss=8.3547 grad=0.553 lr=1.20e-04
+2026-04-28 09:26:07,877 INFO src.training.train step=500 epoch=1 loss=8.3435 grad=0.544 lr=1.50e-04
+2026-04-28 09:26:16,559 INFO src.training.train step=600 epoch=1 loss=8.3450 grad=0.529 lr=1.80e-04
+2026-04-28 09:26:25,243 INFO src.training.train step=700 epoch=1 loss=8.3481 grad=0.520 lr=2.10e-04
+2026-04-28 09:26:33,931 INFO src.training.train step=800 epoch=2 loss=8.3633 grad=0.514 lr=2.40e-04
+2026-04-28 09:26:42,620 INFO src.training.train step=900 epoch=2 loss=8.3553 grad=0.497 lr=2.70e-04
+2026-04-28 09:26:51,310 INFO src.training.train step=1000 epoch=2 loss=8.3430 grad=0.498 lr=3.00e-04
+2026-04-28 09:26:52,814 INFO src.training.train EVAL step=1000 loss=8.3492 per_query_acc=0.0001 per_seq_acc=0.0000
+2026-04-28 09:27:01,505 INFO src.training.train step=1100 epoch=2 loss=8.3444 grad=0.484 lr=3.00e-04
+2026-04-28 09:27:10,196 INFO src.training.train step=1200 epoch=2 loss=8.3553 grad=0.472 lr=3.00e-04
+2026-04-28 09:27:18,888 INFO src.training.train step=1300 epoch=2 loss=8.3471 grad=0.466 lr=3.00e-04
+2026-04-28 09:27:27,579 INFO src.training.train step=1400 epoch=2 loss=8.3501 grad=0.454 lr=3.00e-04
+2026-04-28 09:27:36,272 INFO src.training.train step=1500 epoch=2 loss=8.3335 grad=0.465 lr=3.00e-04
+2026-04-28 09:27:44,969 INFO src.training.train step=1600 epoch=3 loss=8.3237 grad=0.452 lr=3.00e-04
+2026-04-28 09:27:53,664 INFO src.training.train step=1700 epoch=3 loss=8.3141 grad=0.465 lr=3.00e-04
+2026-04-28 09:28:02,358 INFO src.training.train step=1800 epoch=3 loss=8.3133 grad=0.476 lr=2.99e-04
+2026-04-28 09:28:11,053 INFO src.training.train step=1900 epoch=3 loss=8.3256 grad=0.479 lr=2.99e-04
+2026-04-28 09:28:19,747 INFO src.training.train step=2000 epoch=3 loss=8.3061 grad=0.490 lr=2.99e-04
+2026-04-28 09:28:21,238 INFO src.training.train EVAL step=2000 loss=8.3535 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 09:28:29,933 INFO src.training.train step=2100 epoch=3 loss=8.2725 grad=0.520 lr=2.99e-04
+2026-04-28 09:28:38,627 INFO src.training.train step=2200 epoch=3 loss=8.2962 grad=0.557 lr=2.99e-04
+2026-04-28 09:28:47,321 INFO src.training.train step=2300 epoch=3 loss=8.2590 grad=0.604 lr=2.99e-04
+2026-04-28 09:28:56,017 INFO src.training.train step=2400 epoch=4 loss=8.2743 grad=0.618 lr=2.98e-04
+2026-04-28 09:29:04,711 INFO src.training.train step=2500 epoch=4 loss=8.2546 grad=0.631 lr=2.98e-04
+2026-04-28 09:29:13,406 INFO src.training.train step=2600 epoch=4 loss=8.2536 grad=0.662 lr=2.98e-04
+2026-04-28 09:29:22,097 INFO src.training.train step=2700 epoch=4 loss=8.2219 grad=0.663 lr=2.97e-04
+2026-04-28 09:29:30,793 INFO src.training.train step=2800 epoch=4 loss=8.2284 grad=0.662 lr=2.97e-04
+2026-04-28 09:29:39,487 INFO src.training.train step=2900 epoch=4 loss=8.1933 grad=0.695 lr=2.97e-04
+2026-04-28 09:29:48,180 INFO src.training.train step=3000 epoch=4 loss=8.2082 grad=0.719 lr=2.97e-04
+2026-04-28 09:29:49,672 INFO src.training.train EVAL step=3000 loss=8.4435 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 09:29:58,367 INFO src.training.train step=3100 epoch=4 loss=8.1714 grad=0.749 lr=2.96e-04
+2026-04-28 09:30:07,059 INFO src.training.train step=3200 epoch=5 loss=8.1452 grad=0.744 lr=2.96e-04
+2026-04-28 09:30:15,754 INFO src.training.train step=3300 epoch=5 loss=8.1415 grad=0.764 lr=2.95e-04
+2026-04-28 09:30:24,450 INFO src.training.train step=3400 epoch=5 loss=8.1400 grad=0.762 lr=2.95e-04
+2026-04-28 09:30:33,146 INFO src.training.train step=3500 epoch=5 loss=8.1252 grad=0.785 lr=2.95e-04
+2026-04-28 09:30:41,843 INFO src.training.train step=3600 epoch=5 loss=8.1010 grad=0.782 lr=2.94e-04
+2026-04-28 09:30:50,536 INFO src.training.train step=3700 epoch=5 loss=8.1278 grad=0.801 lr=2.94e-04
+2026-04-28 09:30:59,232 INFO src.training.train step=3800 epoch=5 loss=8.1126 grad=0.818 lr=2.93e-04
+2026-04-28 09:31:07,928 INFO src.training.train step=3900 epoch=5 loss=8.0608 grad=0.832 lr=2.93e-04
+2026-04-28 09:31:16,644 INFO src.training.train step=4000 epoch=6 loss=8.0280 grad=0.849 lr=2.92e-04
+2026-04-28 09:31:18,137 INFO src.training.train EVAL step=4000 loss=8.4973 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 09:31:26,836 INFO src.training.train step=4100 epoch=6 loss=8.0502 grad=0.868 lr=2.92e-04
+2026-04-28 09:31:35,530 INFO src.training.train step=4200 epoch=6 loss=8.0467 grad=0.860 lr=2.91e-04
+2026-04-28 09:31:44,224 INFO src.training.train step=4300 epoch=6 loss=8.0335 grad=0.894 lr=2.91e-04
+2026-04-28 09:31:52,919 INFO src.training.train step=4400 epoch=6 loss=8.0524 grad=0.887 lr=2.90e-04
+2026-04-28 09:32:01,612 INFO src.training.train step=4500 epoch=6 loss=8.0120 grad=0.904 lr=2.89e-04
+2026-04-28 09:32:10,304 INFO src.training.train step=4600 epoch=6 loss=8.0061 grad=0.927 lr=2.89e-04
+2026-04-28 09:32:18,999 INFO src.training.train step=4700 epoch=7 loss=7.9975 grad=0.952 lr=2.88e-04
+2026-04-28 09:32:27,692 INFO src.training.train step=4800 epoch=7 loss=7.9403 grad=0.955 lr=2.88e-04
+2026-04-28 09:32:36,387 INFO src.training.train step=4900 epoch=7 loss=7.9416 grad=0.979 lr=2.87e-04
+2026-04-28 09:32:45,084 INFO src.training.train step=5000 epoch=7 loss=7.9220 grad=0.977 lr=2.86e-04
+2026-04-28 09:32:46,577 INFO src.training.train EVAL step=5000 loss=8.5609 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 09:32:55,274 INFO src.training.train step=5100 epoch=7 loss=7.9451 grad=1.028 lr=2.85e-04
+2026-04-28 09:33:03,970 INFO src.training.train step=5200 epoch=7 loss=7.9257 grad=1.001 lr=2.85e-04
+2026-04-28 09:33:12,666 INFO src.training.train step=5300 epoch=7 loss=7.9444 grad=1.035 lr=2.84e-04
+2026-04-28 09:33:21,364 INFO src.training.train step=5400 epoch=7 loss=7.8866 grad=1.044 lr=2.83e-04
+2026-04-28 09:33:30,062 INFO src.training.train step=5500 epoch=8 loss=7.8891 grad=1.056 lr=2.83e-04
+2026-04-28 09:33:38,759 INFO src.training.train step=5600 epoch=8 loss=7.8274 grad=1.067 lr=2.82e-04
+2026-04-28 09:33:47,454 INFO src.training.train step=5700 epoch=8 loss=7.8627 grad=1.101 lr=2.81e-04
+2026-04-28 09:33:56,148 INFO src.training.train step=5800 epoch=8 loss=7.8468 grad=1.118 lr=2.80e-04
+2026-04-28 09:34:04,843 INFO src.training.train step=5900 epoch=8 loss=7.9078 grad=1.152 lr=2.79e-04
+2026-04-28 09:34:13,539 INFO src.training.train step=6000 epoch=8 loss=7.8284 grad=1.164 lr=2.79e-04
+2026-04-28 09:34:15,027 INFO src.training.train EVAL step=6000 loss=8.6497 per_query_acc=0.0003 per_seq_acc=0.0000
+2026-04-28 09:34:15,027 INFO src.training.train EARLY STOP: 5 evals without per_query_acc improvement (best=0.0001 at step 1000, per_seq_acc=0.0000)
+2026-04-28 09:34:16,517 INFO src.training.train DONE: {
+  "backbone": "linear_attn_rse_strong_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8660992,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.00014583333333333335,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0002916666666666667,
+  "final_loss": 8.649720133463541,
+  "wall_sec": 532.5587775707245,
+  "seed": 42
+}
+── DONE ────────────────────────────────────────────────────────────

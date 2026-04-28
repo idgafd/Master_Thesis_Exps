@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone linear_attn_convshift_multidil_symmetric_v2 --seq-len 256 --n-kv-pairs 64 --seed 42 --output-dir outputs/cohort_reduced/linear_attn_convshift_multidil_symmetric_v2_T256_seed42

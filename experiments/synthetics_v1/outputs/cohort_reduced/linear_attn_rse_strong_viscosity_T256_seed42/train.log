@@ -1,0 +1,5 @@
+2026-04-28 14:18:30,091 INFO src.training.train backbone=linear_attn_rse_strong_viscosity params=8M seq_len=256 K=64 Q=64 batch=64
+2026-04-28 14:19:09,715 INFO src.training.train step=100 epoch=1 loss=9.1336 grad=1.029 lr=3.00e-05
+2026-04-28 14:19:48,289 INFO src.training.train step=200 epoch=1 loss=8.5987 grad=0.338 lr=6.00e-05
+2026-04-28 14:20:26,963 INFO src.training.train step=300 epoch=1 loss=8.3724 grad=0.299 lr=9.00e-05
+2026-04-28 14:21:05,667 INFO src.training.train step=400 epoch=1 loss=8.3365 grad=0.274 lr=1.20e-04

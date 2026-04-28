@@ -1,0 +1,19 @@
+{
+  "backbone": "linear_attn_rse_strong_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 8660992,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.00014583333333333335,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0002916666666666667,
+  "final_loss": 8.649720133463541,
+  "wall_sec": 532.5587775707245,
+  "seed": 42
+}

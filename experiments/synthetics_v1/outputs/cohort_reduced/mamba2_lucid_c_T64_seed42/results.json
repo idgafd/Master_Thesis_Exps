@@ -1,0 +1,19 @@
+{
+  "backbone": "mamba2_lucid_c",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9559744,
+  "steps_taken": 5000,
+  "epochs_taken": 7,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.996,
+  "best_per_query_acc": 0.99975,
+  "best_step": 5000,
+  "final_per_seq_acc": 0.996,
+  "final_per_query_acc": 0.99975,
+  "final_loss": 0.004905694782733917,
+  "wall_sec": 293.01654386520386,
+  "seed": 42
+}

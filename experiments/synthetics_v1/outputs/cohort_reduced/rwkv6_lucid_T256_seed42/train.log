@@ -1,0 +1,54 @@
+2026-04-28 09:48:20,370 INFO src.training.train backbone=rwkv6_lucid params=10M seq_len=256 K=64 Q=64 batch=64
+2026-04-28 09:48:33,265 INFO src.training.train step=100 epoch=1 loss=9.0727 grad=0.359 lr=3.00e-05
+2026-04-28 09:48:44,793 INFO src.training.train step=200 epoch=1 loss=8.6336 grad=0.285 lr=6.00e-05
+2026-04-28 09:48:56,323 INFO src.training.train step=300 epoch=1 loss=8.3952 grad=0.271 lr=9.00e-05
+2026-04-28 09:49:07,828 INFO src.training.train step=400 epoch=1 loss=8.3519 grad=0.264 lr=1.20e-04
+2026-04-28 09:49:19,275 INFO src.training.train step=500 epoch=1 loss=8.3445 grad=0.262 lr=1.50e-04
+2026-04-28 09:49:30,729 INFO src.training.train step=600 epoch=1 loss=8.3486 grad=0.261 lr=1.80e-04
+2026-04-28 09:49:42,176 INFO src.training.train step=700 epoch=1 loss=8.3430 grad=0.258 lr=2.10e-04
+2026-04-28 09:49:53,684 INFO src.training.train step=800 epoch=2 loss=8.3487 grad=0.254 lr=2.40e-04
+2026-04-28 09:50:05,194 INFO src.training.train step=900 epoch=2 loss=8.3434 grad=0.251 lr=2.70e-04
+2026-04-28 09:50:16,685 INFO src.training.train step=1000 epoch=2 loss=8.3481 grad=0.244 lr=3.00e-04
+2026-04-28 09:50:18,979 INFO src.training.train EVAL step=1000 loss=8.3341 per_query_acc=0.0002 per_seq_acc=0.0000
+2026-04-28 09:50:30,429 INFO src.training.train step=1100 epoch=2 loss=8.3447 grad=0.236 lr=3.00e-04
+2026-04-28 09:50:41,897 INFO src.training.train step=1200 epoch=2 loss=8.3411 grad=0.235 lr=3.00e-04
+2026-04-28 09:50:53,368 INFO src.training.train step=1300 epoch=2 loss=8.3443 grad=0.226 lr=3.00e-04
+2026-04-28 09:51:04,820 INFO src.training.train step=1400 epoch=2 loss=8.3383 grad=0.218 lr=3.00e-04
+2026-04-28 09:51:16,293 INFO src.training.train step=1500 epoch=2 loss=8.3393 grad=0.215 lr=3.00e-04
+2026-04-28 09:51:27,805 INFO src.training.train step=1600 epoch=3 loss=8.2380 grad=0.478 lr=3.00e-04
+2026-04-28 09:51:39,286 INFO src.training.train step=1700 epoch=3 loss=7.4560 grad=1.648 lr=3.00e-04
+2026-04-28 09:51:50,773 INFO src.training.train step=1800 epoch=3 loss=6.4182 grad=0.897 lr=2.99e-04
+2026-04-28 09:52:02,272 INFO src.training.train step=1900 epoch=3 loss=5.3888 grad=1.251 lr=2.99e-04
+2026-04-28 09:52:13,770 INFO src.training.train step=2000 epoch=3 loss=4.4352 grad=1.338 lr=2.99e-04
+2026-04-28 09:52:16,083 INFO src.training.train EVAL step=2000 loss=3.5241 per_query_acc=0.7777 per_seq_acc=0.0000
+2026-04-28 09:52:27,596 INFO src.training.train step=2100 epoch=3 loss=3.5744 grad=1.447 lr=2.99e-04
+2026-04-28 09:52:39,073 INFO src.training.train step=2200 epoch=3 loss=2.7844 grad=1.992 lr=2.99e-04
+2026-04-28 09:52:50,544 INFO src.training.train step=2300 epoch=3 loss=2.0871 grad=1.650 lr=2.99e-04
+2026-04-28 09:53:02,036 INFO src.training.train step=2400 epoch=4 loss=1.4890 grad=1.527 lr=2.98e-04
+2026-04-28 09:53:13,552 INFO src.training.train step=2500 epoch=4 loss=1.0374 grad=1.839 lr=2.98e-04
+2026-04-28 09:53:25,060 INFO src.training.train step=2600 epoch=4 loss=0.7225 grad=1.938 lr=2.98e-04
+2026-04-28 09:53:36,558 INFO src.training.train step=2700 epoch=4 loss=0.4979 grad=1.208 lr=2.97e-04
+2026-04-28 09:53:48,142 INFO src.training.train step=2800 epoch=4 loss=0.3592 grad=1.250 lr=2.97e-04
+2026-04-28 09:53:59,642 INFO src.training.train step=2900 epoch=4 loss=0.2693 grad=0.903 lr=2.97e-04
+2026-04-28 09:54:11,172 INFO src.training.train step=3000 epoch=4 loss=0.2105 grad=0.987 lr=2.97e-04
+2026-04-28 09:54:13,488 INFO src.training.train EVAL step=3000 loss=0.0091 per_query_acc=1.0000 per_seq_acc=0.9993
+2026-04-28 09:54:13,488 INFO src.training.train EARLY STOP: per_seq_acc 0.9993 ≥ threshold 0.9900 at step 3000
+2026-04-28 09:54:15,781 INFO src.training.train DONE: {
+  "backbone": "rwkv6_lucid",
+  "seq_len": 256,
+  "n_kv_pairs": 64,
+  "n_queries": 64,
+  "vocab_size": 8192,
+  "n_parameters": 10028056,
+  "steps_taken": 3000,
+  "epochs_taken": 4,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9993333333333333,
+  "best_per_query_acc": 0.9999895833333333,
+  "best_step": 3000,
+  "final_per_seq_acc": 0.9993333333333333,
+  "final_per_query_acc": 0.9999895833333333,
+  "final_loss": 0.00913545435667038,
+  "wall_sec": 354.8025906085968,
+  "seed": 42
+}

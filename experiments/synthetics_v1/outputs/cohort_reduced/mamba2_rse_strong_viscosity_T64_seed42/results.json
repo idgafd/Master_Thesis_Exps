@@ -1,0 +1,19 @@
+{
+  "backbone": "mamba2_rse_strong_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9711712,
+  "steps_taken": 6000,
+  "epochs_taken": 8,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.00014583333333333335,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0001875,
+  "final_loss": 8.422364410400391,
+  "wall_sec": 1068.4644405841827,
+  "seed": 42
+}

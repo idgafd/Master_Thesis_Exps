@@ -1,0 +1,19 @@
+{
+  "backbone": "mamba2_convshift_multidil_symmetric_v2",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 9617320,
+  "steps_taken": 2000,
+  "epochs_taken": 3,
+  "early_stopped": true,
+  "best_per_seq_acc": 1.0,
+  "best_per_query_acc": 1.0,
+  "best_step": 2000,
+  "final_per_seq_acc": 1.0,
+  "final_per_query_acc": 1.0,
+  "final_loss": 0.0005189852515856425,
+  "wall_sec": 92.97444486618042,
+  "seed": 42
+}

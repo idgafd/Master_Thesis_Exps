@@ -41,7 +41,7 @@ max_steps: 30000
 eval_every_steps: 1000
 log_every_steps: 100
 early_stop_threshold: 0.99
-early_stop_patience_evals: 5
+early_stop_patience_evals: 20
 lr: 3.0e-4
 weight_decay: 0.01
 warmup_steps: 1000

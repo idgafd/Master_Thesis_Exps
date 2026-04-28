@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone rwkv6_rse_strong_viscosity --seq-len 64 --n-kv-pairs 16 --seed 42 --output-dir outputs/cohort_reduced/rwkv6_rse_strong_viscosity_T64_seed42

@@ -1,0 +1,19 @@
+{
+  "backbone": "linear_attn_causal",
+  "seq_len": 256,
+  "n_kv_pairs": 64,
+  "n_queries": 64,
+  "vocab_size": 8192,
+  "n_parameters": 8548096,
+  "steps_taken": 30000,
+  "epochs_taken": 39,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.06690625,
+  "best_step": 25000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.06715625,
+  "final_loss": 6.111508666992187,
+  "wall_sec": 4111.739723682404,
+  "seed": 42
+}

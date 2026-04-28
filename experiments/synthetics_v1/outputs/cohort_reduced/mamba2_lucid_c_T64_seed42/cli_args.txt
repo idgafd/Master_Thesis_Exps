@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone mamba2_lucid_c --seq-len 64 --n-kv-pairs 16 --seed 42 --output-dir outputs/cohort_reduced/mamba2_lucid_c_T64_seed42

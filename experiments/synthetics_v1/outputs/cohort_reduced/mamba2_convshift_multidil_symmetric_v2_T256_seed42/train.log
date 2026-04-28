@@ -1,0 +1,32 @@
+2026-04-28 10:45:40,821 INFO src.training.train backbone=mamba2_convshift_multidil_symmetric_v2 params=9M seq_len=256 K=64 Q=64 batch=64
+2026-04-28 10:45:53,413 INFO src.training.train step=100 epoch=1 loss=8.9310 grad=0.366 lr=3.00e-05
+2026-04-28 10:46:04,863 INFO src.training.train step=200 epoch=1 loss=8.5306 grad=0.288 lr=6.00e-05
+2026-04-28 10:46:16,318 INFO src.training.train step=300 epoch=1 loss=8.3600 grad=0.273 lr=9.00e-05
+2026-04-28 10:46:27,768 INFO src.training.train step=400 epoch=1 loss=8.3268 grad=0.270 lr=1.20e-04
+2026-04-28 10:46:39,208 INFO src.training.train step=500 epoch=1 loss=8.1932 grad=0.487 lr=1.50e-04
+2026-04-28 10:46:50,688 INFO src.training.train step=600 epoch=1 loss=7.5465 grad=0.725 lr=1.80e-04
+2026-04-28 10:47:02,150 INFO src.training.train step=700 epoch=1 loss=6.3190 grad=0.941 lr=2.10e-04
+2026-04-28 10:47:13,631 INFO src.training.train step=800 epoch=2 loss=4.8390 grad=1.151 lr=2.40e-04
+2026-04-28 10:47:25,092 INFO src.training.train step=900 epoch=2 loss=3.1623 grad=2.283 lr=2.70e-04
+2026-04-28 10:47:36,602 INFO src.training.train step=1000 epoch=2 loss=1.5508 grad=1.774 lr=3.00e-04
+2026-04-28 10:47:38,291 INFO src.training.train EVAL step=1000 loss=0.6834 per_query_acc=1.0000 per_seq_acc=0.9993
+2026-04-28 10:47:38,291 INFO src.training.train EARLY STOP: per_seq_acc 0.9993 ≥ threshold 0.9900 at step 1000
+2026-04-28 10:47:39,970 INFO src.training.train DONE: {
+  "backbone": "mamba2_convshift_multidil_symmetric_v2",
+  "seq_len": 256,
+  "n_kv_pairs": 64,
+  "n_queries": 64,
+  "vocab_size": 8192,
+  "n_parameters": 9617320,
+  "steps_taken": 1000,
+  "epochs_taken": 2,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9993333333333333,
+  "best_per_query_acc": 0.9999895833333333,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.9993333333333333,
+  "final_per_query_acc": 0.9999895833333333,
+  "final_loss": 0.6834096781412761,
+  "wall_sec": 118.65355515480042,
+  "seed": 42
+}

@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone rwkv6_lucid --seq-len 256 --n-kv-pairs 64 --seed 42 --output-dir outputs/cohort_reduced/rwkv6_lucid_T256_seed42
