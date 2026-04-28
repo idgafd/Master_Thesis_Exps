@@ -1,0 +1,1 @@
+--backbone rwkv6_biwkv --epochs 50 --seed 42 --gpu 1 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/7m_rwkv6_biwkv_seed42

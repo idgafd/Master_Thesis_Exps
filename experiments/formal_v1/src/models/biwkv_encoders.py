@@ -34,6 +34,7 @@ import torch.nn as nn
 from src.models.components import SinusoidalPE
 from src.models.rwkv6_block import RWKV6Block
 from src.models.mamba2_encoder import Mamba2EncoderLayer
+from src.models.linear_attn_causal import CausalLinearAttentionLayer
 
 
 class BiWKVRWKV6Encoder(nn.Module):
@@ -98,6 +99,65 @@ class BiWKVRWKV6Encoder(nn.Module):
     ) -> Tuple[torch.Tensor, None]:
         if state is not None:
             raise RuntimeError("BiWKVRWKV6Encoder does not support carry-state")
+        x = self.pos_enc(x)
+        B, T, _ = x.shape
+        mask_f = (
+            (torch.arange(T, device=x.device).unsqueeze(0) < lengths.unsqueeze(1))
+            .unsqueeze(-1).float()
+        )
+        for fwd_block, bwd_block in zip(self.layers_fwd, self.layers_bwd):
+            p_fwd, _ = fwd_block(x)
+            p_bwd_flipped, _ = bwd_block(x.flip(1))
+            x = 0.5 * (p_fwd + p_bwd_flipped.flip(1))
+        x = x * mask_f
+        return x, None
+
+
+class BidirVimLAEncoder(nn.Module):
+    """Vim-style bidirectional Linear Attention encoder (clean variant).
+
+    Per layer:
+      p_fwd = block_fwd(x)
+      p_bwd = flip(block_bwd(flip(x)))
+      x_next = 0.5 * (p_fwd + p_bwd)
+    """
+
+    supports_carry_state = False
+
+    def __init__(
+        self,
+        d_model: int,
+        n_layers: int,
+        n_heads: int,
+        ffn_dim: int,
+        dropout: float,
+    ):
+        super().__init__()
+        self.d_model = d_model
+        self.n_layers = n_layers
+
+        self.layers_fwd = nn.ModuleList()
+        self.layers_bwd = nn.ModuleList()
+        for _ in range(n_layers):
+            common = dict(
+                d_model=d_model,
+                n_heads=n_heads,
+                ffn_dim=ffn_dim,
+                dropout=dropout,
+            )
+            self.layers_fwd.append(CausalLinearAttentionLayer(**common))
+            self.layers_bwd.append(CausalLinearAttentionLayer(**common))
+
+        self.pos_enc = SinusoidalPE(d_model, max_len=8000, dropout=dropout)
+
+    def forward(
+        self,
+        x: torch.Tensor,
+        lengths: torch.Tensor,
+        state: Optional[list] = None,
+    ) -> Tuple[torch.Tensor, None]:
+        if state is not None:
+            raise RuntimeError("BidirVimLAEncoder does not support carry-state")
         x = self.pos_enc(x)
         B, T, _ = x.shape
         mask_f = (

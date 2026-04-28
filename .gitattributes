@@ -1,2 +1,5 @@
 experiments/final/outputs/30m_*/best_model.pt filter=lfs diff=lfs merge=lfs -text
 experiments/final/outputs/14m_*/best_model.pt filter=lfs diff=lfs merge=lfs -text
+experiments/final/outputs/7m_linear_attn_bidir_vim_seed42/best_model.pt filter=lfs diff=lfs merge=lfs -text
+experiments/final/outputs/7m_mamba2_bidir_vim_seed42/best_model.pt filter=lfs diff=lfs merge=lfs -text
+experiments/final/outputs/7m_rwkv6_biwkv_seed42/best_model.pt filter=lfs diff=lfs merge=lfs -text

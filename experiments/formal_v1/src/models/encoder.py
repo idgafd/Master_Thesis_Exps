@@ -197,6 +197,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             head_size=cfg.head_size,
         )
 
+    if backbone == "linear_attn_bidir_vim":
+        from src.models.biwkv_encoders import BidirVimLAEncoder
+        return BidirVimLAEncoder(
+            d_model=cfg.d_model,
+            n_layers=cfg.n_layers // 2,
+            n_heads=cfg.n_heads,
+            ffn_dim=cfg.ffn_dim,
+            dropout=cfg.dropout,
+        )
+
     if backbone == "mamba2_bidir_vim":
         from src.models.biwkv_encoders import BidirVimMamba2Encoder
         return BidirVimMamba2Encoder(
