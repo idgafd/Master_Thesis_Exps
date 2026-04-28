@@ -1,0 +1,19 @@
+{
+  "backbone": "rwkv6_rse_depth_viscosity",
+  "seq_len": 64,
+  "n_kv_pairs": 16,
+  "n_queries": 16,
+  "vocab_size": 8192,
+  "n_parameters": 10103296,
+  "steps_taken": 21000,
+  "epochs_taken": 27,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.0,
+  "best_per_query_acc": 0.0001875,
+  "best_step": 1000,
+  "final_per_seq_acc": 0.0,
+  "final_per_query_acc": 0.0002708333333333333,
+  "final_loss": 8.552678507486979,
+  "wall_sec": 2009.719881772995,
+  "seed": 42
+}

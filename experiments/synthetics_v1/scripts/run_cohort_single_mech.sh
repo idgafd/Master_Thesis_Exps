@@ -33,21 +33,19 @@ esac
 BACKBONES=(
     # Reference
     transformer_causal
-    # RWKV-6 family — vanilla + 3 single mechanisms (RSE = depth-graded variant)
+    # RWKV-6 family — vanilla + 2 mechanisms (RSE removed: confirmed axis-1 NULL on MQAR
+    #   at T=64 with both rse_strong and rse_depth schedules, per_seq=0.0).
     rwkv6
     rwkv6_convshift_multidil_symmetric_v2
     rwkv6_lucid
-    rwkv6_rse_depth_viscosity
-    # Mamba-2 family — vanilla + 3 single mechanisms (RSE = depth-graded variant)
+    # Mamba-2 family — vanilla + 2 mechanisms (RSE removed: same reason)
     mamba2
     mamba2_convshift_multidil_symmetric_v2
     mamba2_lucid_c
-    mamba2_rse_depth_viscosity
-    # Linear Attention family — vanilla + 3 single mechanisms (RSE = depth-graded variant)
+    # Linear Attention family — vanilla + 2 mechanisms (RSE removed: same reason)
     linear_attn_causal
     linear_attn_convshift_multidil_symmetric_v2
     linear_attn_lucid
-    linear_attn_rse_depth_viscosity
 )
 
 # Length × n_kv_pairs schedule (RWKV-7 ratio: K = T/4)
