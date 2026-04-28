@@ -1,7 +1,76 @@
 \chapter{Introduction}
 
-Тест кирилиці: ІіЇїҐґ, \textbf{ІіЇїҐґ}, \textit{ІіЇїҐґ}.
-
 \section{Motivation}
+
+The quadratic time and memory complexity of self-attention
+\cite{vaswani2017attention} has long defined the practical ceiling
+of sequence modelling. As context windows expand toward millions
+of tokens, this ceiling translates into prohibitive deployment
+costs in memory, latency, and energy. The field has consequently
+shifted toward sub-quadratic alternatives, and linear-time
+recurrent models, in particular State Space Models (SSMs) and
+the RWKV lineage, have moved from academic curiosities into a
+production substrate for frontier-scale systems
+\cite{li2025minimax01,liu2025hunyuanturbos}.
+
+This industrial adoption is evidenced by several recent
+deployments. MiniMax-01 demonstrated that linear attention can
+drive a $456$\,B-parameter mixture-of-experts model with context
+windows reaching $4$\,M tokens \cite{li2025minimax01}. Tencent's
+Hunyuan-TurboS \cite{liu2025hunyuanturbos} and NVIDIA's
+Nemotron-H family \cite{blakeman2025nemotronh} replace the
+majority of self-attention layers with Mamba blocks, reporting up
+to a threefold inference speed-up at parity. Further examples
+include AI21's Jamba \cite{lieber2024jamba}, the Zamba2 suite
+\cite{glorioso2024zamba2}, and the Evo~2 genomic foundation model,
+which uses a linear convolutional multi-hybrid to reach a $1$\,M
+nucleotide context \cite{brixi2026evo2}. Now that these models
+form a production substrate, their structural limitations
+translate directly into measurable deployment costs.
+
+Underneath this architectural variety, the models share a
+recurrent core and linear-time token mixing. They also share
+characteristic failure modes: an inability to resolve local
+structure at the correct scale, unreliable associative recall,
+and restricted recurrent dynamics. Numerous fixes have been
+proposed, including quad-directional spatial shifts in vision,
+depthwise convolutions in audio, and decorrelation steps in
+language modelling, yet they remain fragmented. Most improvements
+are evaluated in isolation and rarely cross-checked against
+different linear backbones. This thesis addresses the missing
+cross-cut by treating \textit{mechanism-prior alignment} as a
+hypothesis: the gain a mechanism delivers should be predictable
+from how much of the targeted deficit the underlying backbone
+leaves uncovered.
+
 \section{Contributions}
+
+We introduce three functional mechanisms that address documented
+expressivity deficits of linear-time recurrent models. The
+mechanisms target short-range temporal hierarchy through learned
+local context, reduce interference in associative recall via
+feature decorrelation, and expand the recurrent transition class
+by lifting the state update beyond real-diagonal constraints.
+Together they enable a controlled investigation of the
+interaction between architectural structure and computational
+capacity.
+
+To evaluate these mechanisms we employ a cross-architecture
+matrix across multiple linear-time backbones, using specialised
+probes that isolate specific failure modes at several parameter
+scales under a unified training regime. This systematic
+evaluation moves beyond aggregate benchmark numbers and observes
+the transferability of gains directly across architectural
+primitives.
+
+The resulting evidence supports the central claim of the thesis:
+mechanism gains are proportional to architectural deficits.
+Performance improvements are not arbitrary; they depend on
+whether a mechanism addresses a specific gap left uncovered by
+the base model. The claim is reinforced by both productive
+improvements and informative null results, in particular by
+cases where a mechanism is engaged but unhelpful, or absorbed by
+an existing native primitive, validating mechanism-prior
+alignment as a predictive criterion.
+
 \section{Structure Of The Thesis}
