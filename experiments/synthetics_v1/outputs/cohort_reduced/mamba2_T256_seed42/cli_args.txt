@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone mamba2 --seq-len 256 --n-kv-pairs 64 --seed 42 --output-dir outputs/cohort_reduced/mamba2_T256_seed42
