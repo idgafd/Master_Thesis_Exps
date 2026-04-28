@@ -1,0 +1,1 @@
+2026-04-28 16:17:16,506 INFO src.training.train backbone=linear_attn_rse_depth_viscosity params=8M seq_len=1024 K=256 Q=256 batch=32

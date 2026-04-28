@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone mamba2_rse_depth_viscosity --seq-len 1024 --n-kv-pairs 256 --seed 42 --output-dir outputs/cohort_reduced/mamba2_rse_depth_viscosity_T1024_seed42

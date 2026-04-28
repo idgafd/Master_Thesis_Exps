@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone transformer_causal --seq-len 1024 --n-kv-pairs 256 --seed 42 --output-dir outputs/cohort_reduced/transformer_causal_T1024_seed42

@@ -1,0 +1,19 @@
+{
+  "backbone": "rwkv6_convshift_multidil_symmetric_v2",
+  "seq_len": 1024,
+  "n_kv_pairs": 256,
+  "n_queries": 256,
+  "vocab_size": 8192,
+  "n_parameters": 10046488,
+  "steps_taken": 2000,
+  "epochs_taken": 2,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9986666666666667,
+  "best_per_query_acc": 0.9999947916666667,
+  "best_step": 2000,
+  "final_per_seq_acc": 0.9986666666666667,
+  "final_per_query_acc": 0.9999947916666667,
+  "final_loss": 0.25798353894551596,
+  "wall_sec": 524.4493191242218,
+  "seed": 42
+}

@@ -1,0 +1,5 @@
+{
+  "skipped": true,
+  "reason": "skip-listed: vanilla recurrent backbones and RSE-only variants predicted to show ~0 per_query_acc on MQAR T=1024 (no recall mechanism). Confirmed by user 2026-04-28.",
+  "backbone_class": "skip-list"
+}

@@ -1,0 +1,7 @@
+{
+  "skipped": true,
+  "reason": "skip-listed by user 2026-04-28: vanilla causal linear attention predicted to show ~0 per_query_acc on MQAR T=1024 (no recall mechanism). Confirmed empirically: ran 13800 steps at acc 0.0037 (flat-random), no grokking. Killed to free GPU.",
+  "backbone_class": "skip-list-vanilla",
+  "killed_at_step": 13800,
+  "killed_at_acc": 0.0037
+}

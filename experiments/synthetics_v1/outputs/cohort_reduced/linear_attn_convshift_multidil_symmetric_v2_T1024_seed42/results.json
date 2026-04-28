@@ -1,0 +1,19 @@
+{
+  "backbone": "linear_attn_convshift_multidil_symmetric_v2",
+  "seq_len": 1024,
+  "n_kv_pairs": 256,
+  "n_queries": 256,
+  "vocab_size": 8192,
+  "n_parameters": 8566552,
+  "steps_taken": 5000,
+  "epochs_taken": 4,
+  "early_stopped": true,
+  "best_per_seq_acc": 0.9996666666666667,
+  "best_per_query_acc": 0.9999986979166666,
+  "best_step": 5000,
+  "final_per_seq_acc": 0.9996666666666667,
+  "final_per_query_acc": 0.9999986979166666,
+  "final_loss": 0.008105742911497751,
+  "wall_sec": 2082.0901775360107,
+  "seed": 42
+}

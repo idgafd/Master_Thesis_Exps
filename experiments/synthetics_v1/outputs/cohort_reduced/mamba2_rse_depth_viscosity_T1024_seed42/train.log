@@ -1,0 +1,2 @@
+2026-04-28 15:03:12,359 INFO src.training.train backbone=mamba2_rse_depth_viscosity params=9M seq_len=1024 K=256 Q=256 batch=64
+2026-04-28 15:09:24,470 INFO src.training.train backbone=mamba2_rse_depth_viscosity params=9M seq_len=1024 K=256 Q=256 batch=64

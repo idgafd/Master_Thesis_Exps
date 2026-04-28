@@ -1,0 +1,1 @@
+scripts/run_experiment.py --config configs/default.yaml --backbone mamba2_convshift_multidil_symmetric_v2 --seq-len 1024 --n-kv-pairs 256 --seed 42 --output-dir outputs/cohort_reduced/mamba2_convshift_multidil_symmetric_v2_T1024_seed42

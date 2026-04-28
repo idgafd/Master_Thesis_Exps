@@ -1,0 +1,7 @@
+{
+  "failed": true,
+  "failure_class": "OOM",
+  "reason": "OOM at T=1024 K=256 even at batch_size=32 with PYTORCH_CUDA_ALLOC_CONF=expandable_segments. Bidirectional T×T complex-pole RSE scan on linear attention requires more than 47 GB GPU memory at this sequence length. Reported as 'OOM at this scale; not runnable on 47 GB GPU' for the §3 cohort writeup. Same pattern as mamba2_rse_depth_viscosity at T=1024 (also OOM'd in two separate b=64 attempts and an implicit b=32 attempt).",
+  "backbone_class": "OOM-at-T1024",
+  "tried_batch_sizes": [64, 32]
+}
