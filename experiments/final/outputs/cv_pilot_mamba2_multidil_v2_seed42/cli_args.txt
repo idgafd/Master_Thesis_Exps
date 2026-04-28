@@ -1,0 +1,1 @@
+--config configs/cv_pilot.yaml --backbone mamba2_convshift_multidil_symmetric_v2 --dataset common_voice_en_100h --output-dir ../final/outputs/cv_pilot_mamba2_multidil_v2_seed42 --gpu 2 --fast
