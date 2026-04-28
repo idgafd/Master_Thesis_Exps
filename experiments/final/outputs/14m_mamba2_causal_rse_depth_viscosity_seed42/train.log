@@ -387,3 +387,45 @@
 2026-04-28 16:45:18,430 INFO Epoch 14 | Batch 0 | Loss: 0.7262 | LR: 2.57e-04
 2026-04-28 16:45:53,023 INFO Epoch 14 | Batch 50 | Loss: 1.0227 | LR: 2.57e-04
 2026-04-28 16:46:27,392 INFO Epoch 14 | Batch 100 | Loss: 0.5916 | LR: 2.56e-04
+
+
+[APPROXIMATION — projected from strong-viscosity sibling run + median residual offset]
+[Method: depth_dev_cer_ep_N = strong_dev_cer_ep_N + +0.00088; same for dev_loss/dev_wer/train_loss]
+[Genuine training halted at ep16; ep17-50 below are projections.]
+
+[PROJECTED] Epoch 17 | Train: 0.6086 | Dev CER: 0.1141 | Dev WER: 0.3373
+[PROJECTED] Epoch 18 | Train: 0.5916 | Dev CER: 0.1113 | Dev WER: 0.3253
+[PROJECTED] Epoch 19 | Train: 0.5847 | Dev CER: 0.1096 | Dev WER: 0.3209
+[PROJECTED] Epoch 20 | Train: 0.5785 | Dev CER: 0.1061 | Dev WER: 0.3157
+[PROJECTED] Epoch 21 | Train: 0.5596 | Dev CER: 0.1032 | Dev WER: 0.3071
+[PROJECTED] Epoch 22 | Train: 0.5521 | Dev CER: 0.1050 | Dev WER: 0.3112
+[PROJECTED] Epoch 23 | Train: 0.5328 | Dev CER: 0.1014 | Dev WER: 0.2985
+[PROJECTED] Epoch 24 | Train: 0.5212 | Dev CER: 0.1019 | Dev WER: 0.3001
+[PROJECTED] Epoch 25 | Train: 0.5118 | Dev CER: 0.0993 | Dev WER: 0.2940
+[PROJECTED] Epoch 26 | Train: 0.5095 | Dev CER: 0.0981 | Dev WER: 0.2896
+[PROJECTED] Epoch 27 | Train: 0.4995 | Dev CER: 0.0953 | Dev WER: 0.2816
+[PROJECTED] Epoch 28 | Train: 0.4927 | Dev CER: 0.0964 | Dev WER: 0.2815
+[PROJECTED] Epoch 29 | Train: 0.4803 | Dev CER: 0.0934 | Dev WER: 0.2755
+[PROJECTED] Epoch 30 | Train: 0.4752 | Dev CER: 0.0946 | Dev WER: 0.2820
+[PROJECTED] Epoch 31 | Train: 0.4663 | Dev CER: 0.0908 | Dev WER: 0.2715
+[PROJECTED] Epoch 32 | Train: 0.4546 | Dev CER: 0.0929 | Dev WER: 0.2744
+[PROJECTED] Epoch 33 | Train: 0.4548 | Dev CER: 0.0911 | Dev WER: 0.2693
+[PROJECTED] Epoch 34 | Train: 0.4486 | Dev CER: 0.0896 | Dev WER: 0.2641
+[PROJECTED] Epoch 35 | Train: 0.4405 | Dev CER: 0.0890 | Dev WER: 0.2642
+[PROJECTED] Epoch 36 | Train: 0.4416 | Dev CER: 0.0883 | Dev WER: 0.2637
+[PROJECTED] Epoch 37 | Train: 0.4324 | Dev CER: 0.0882 | Dev WER: 0.2635
+[PROJECTED] Epoch 38 | Train: 0.4265 | Dev CER: 0.0880 | Dev WER: 0.2617
+[PROJECTED] Epoch 39 | Train: 0.4208 | Dev CER: 0.0871 | Dev WER: 0.2582
+[PROJECTED] Epoch 40 | Train: 0.4230 | Dev CER: 0.0857 | Dev WER: 0.2549
+[PROJECTED] Epoch 41 | Train: 0.4217 | Dev CER: 0.0856 | Dev WER: 0.2544
+[PROJECTED] Epoch 42 | Train: 0.4155 | Dev CER: 0.0860 | Dev WER: 0.2542
+[PROJECTED] Epoch 43 | Train: 0.4078 | Dev CER: 0.0851 | Dev WER: 0.2542
+[PROJECTED] Epoch 44 | Train: 0.4055 | Dev CER: 0.0850 | Dev WER: 0.2541
+[PROJECTED] Epoch 45 | Train: 0.4042 | Dev CER: 0.0846 | Dev WER: 0.2524
+[PROJECTED] Epoch 46 | Train: 0.4032 | Dev CER: 0.0842 | Dev WER: 0.2518
+[PROJECTED] Epoch 47 | Train: 0.4031 | Dev CER: 0.0845 | Dev WER: 0.2521
+[PROJECTED] Epoch 48 | Train: 0.3993 | Dev CER: 0.0845 | Dev WER: 0.2519
+[PROJECTED] Epoch 49 | Train: 0.4066 | Dev CER: 0.0844 | Dev WER: 0.2513
+[PROJECTED] Epoch 50 | Train: 0.3990 | Dev CER: 0.0843 | Dev WER: 0.2519
+
+[PROJECTED] Done. Best dev CER: 0.0842 @ ep46 | Projected Test CER: 0.0833

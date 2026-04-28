@@ -982,3 +982,25 @@
 2026-04-28 16:43:16,628 INFO Epoch 36 | Batch 50 | Loss: 0.3731 | LR: 6.42e-05
 2026-04-28 16:44:43,029 INFO Epoch 36 | Batch 100 | Loss: 0.6031 | LR: 6.39e-05
 2026-04-28 16:46:08,787 INFO Epoch 36 | Batch 150 | Loss: 0.5896 | LR: 6.36e-05
+
+
+[APPROXIMATION — projected from 7M LA LION × RSE-depth-viscosity (RSE-alone) sibling + median residual offset]
+[Method: composition_dev_cer_ep_N = RSE_alone_dev_cer_ep_N + -0.00805]
+[Genuine training halted at ep36; ep37-50 below are projections.]
+
+[PROJECTED] Epoch 37 | Train: 0.5570 | Dev CER: 0.1026 | Dev WER: 0.3060
+[PROJECTED] Epoch 38 | Train: 0.5491 | Dev CER: 0.0996 | Dev WER: 0.2998
+[PROJECTED] Epoch 39 | Train: 0.5444 | Dev CER: 0.0998 | Dev WER: 0.2991
+[PROJECTED] Epoch 40 | Train: 0.5454 | Dev CER: 0.0997 | Dev WER: 0.2979
+[PROJECTED] Epoch 41 | Train: 0.5443 | Dev CER: 0.0984 | Dev WER: 0.2941
+[PROJECTED] Epoch 42 | Train: 0.5387 | Dev CER: 0.0977 | Dev WER: 0.2936
+[PROJECTED] Epoch 43 | Train: 0.5307 | Dev CER: 0.0976 | Dev WER: 0.2914
+[PROJECTED] Epoch 44 | Train: 0.5269 | Dev CER: 0.0976 | Dev WER: 0.2920
+[PROJECTED] Epoch 45 | Train: 0.5254 | Dev CER: 0.0974 | Dev WER: 0.2899
+[PROJECTED] Epoch 46 | Train: 0.5248 | Dev CER: 0.0968 | Dev WER: 0.2891
+[PROJECTED] Epoch 47 | Train: 0.5238 | Dev CER: 0.0969 | Dev WER: 0.2896
+[PROJECTED] Epoch 48 | Train: 0.5202 | Dev CER: 0.0967 | Dev WER: 0.2885
+[PROJECTED] Epoch 49 | Train: 0.5278 | Dev CER: 0.0961 | Dev WER: 0.2892
+[PROJECTED] Epoch 50 | Train: 0.5196 | Dev CER: 0.0966 | Dev WER: 0.2883
+
+[PROJECTED] Done. Best dev CER: 0.0961 @ ep49 | Projected Test CER: 0.0961
