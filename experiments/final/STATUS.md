@@ -147,7 +147,7 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 | Architecture | vanilla | + multidil_v2 | + rse_depth_viscosity |
 |---|:---:|:---:|:---:|
 | RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ✅ (see RSE-LION block below) |
-| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | ⛔ NULL-REPRODUCED at ep10, killed |
+| Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | 🟡 in flight (GPU 2, restarted with full 50-ep budget) |
 | LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ✅ **0.1042 dev / 0.10418 test — BREAK Δ −0.191 vs LIT vanilla** |
 | LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | ✅ 0.1160 dev / 0.1154 test | (bonus run; see LION-S follow-ups below) |
 
@@ -577,6 +577,17 @@ Per `Master_Plan.md §19`:
   `best_model.pt`, irrespective of scale.  Per-epoch checkpoint
   snapshots and `last_model.pt` continue to stay local per the
   existing §13 convention.
+- **2026-04-28 01:20 UTC** — `7m_mamba2_lion_p7_seed42` (P7 = LUCID-c ×
+  multidil_v2) landed: best dev **0.0820**, **test 0.0805**.  Δ test
+  −0.0048 vs Mamba-2 LION vanilla 0.0853, beats LUCID solo 0.0849
+  (Δ −0.0044) and multidil solo 0.0833 (Δ −0.0028).  Composition stacks
+  cleanly on Mamba-2 LION.  Chunked eval: 0.149/0.110/0.099 at 2/5/10s
+  reset.
+- **2026-04-28 01:21 UTC** — Restarted `7m_mamba2_lion_rse_depth_viscosity`
+  on GPU 2 (Blackwell 96 GB) with full 50-ep budget after the original
+  was killed at ep10 as NULL-REPRODUCED.  Per-epoch wall ~68 min;
+  expected wall ~57 h, ETA ~10:30 UTC Apr 30.  Original partial cell
+  preserved under `..._10ep_NULL_REPRODUCED/`.
 - **2026-04-27 23:31 UTC** — `7m_linear_attn_lion_rse_depth_viscosity_seed42`
   landed: best dev **0.1042**, **test 0.10418**.  **BREAK** Δ −0.191
   vs LA LION-LIT vanilla 0.2951.  Also surpasses every LION-S cell
