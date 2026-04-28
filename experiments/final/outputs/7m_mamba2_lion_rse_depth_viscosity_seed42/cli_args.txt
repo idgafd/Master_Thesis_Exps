@@ -1,0 +1,1 @@
+--backbone mamba2_lion_rse_depth_viscosity --epochs 50 --seed 42 --gpu 2 --output-dir /home/researcher/Master_Thesis_Exps/experiments/final/outputs/7m_mamba2_lion_rse_depth_viscosity_seed42
