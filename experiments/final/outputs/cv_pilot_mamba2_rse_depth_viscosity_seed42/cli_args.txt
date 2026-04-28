@@ -1,0 +1,1 @@
+--config configs/cv_pilot.yaml --backbone mamba2_rse_depth_viscosity --dataset common_voice_en_100h --epochs 50 --output-dir ../final/outputs/cv_pilot_mamba2_rse_depth_viscosity_seed42 --gpu 2 --fast
