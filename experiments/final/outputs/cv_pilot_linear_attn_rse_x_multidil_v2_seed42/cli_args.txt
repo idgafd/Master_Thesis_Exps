@@ -1,0 +1,1 @@
+--config configs/cv_pilot.yaml --backbone linear_attn_rse_strong_viscosity_convshift_multidil_symmetric_v2 --dataset common_voice_en_100h --output-dir ../final/outputs/cv_pilot_linear_attn_rse_x_multidil_v2_seed42 --gpu 1 --fast
