@@ -218,12 +218,12 @@ This corrects the LION-LIT × LUCID falsification: LUCID *does* convert on LA wh
 
 | Architecture × mode | vanilla | multidil_v2 | LUCID | rse_strong_visc | composition |
 |---|:---:|:---:|:---:|:---:|:---:|
-| RWKV-6 causal | ✅ 0.1103 (NEG scaling) | ✅ **0.0751** | ⚪ | ⚪ | ⚪ |
-| Mamba-2 causal | ✅ **0.0827** (POS scaling) | ✅ **0.0631** **(MATRIX CEILING)** | ⚪ | ⚪ | ⚪ |
-| LA causal | 🟡 in flight (GPU 0, ep48 dev 0.1379) | ⚪ next on GPU 0 | ⚪ | ⚪ | ⚪ |
-| RWKV-6 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
-| Mamba-2 LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
-| LA LION | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
+| RWKV-6 causal | ✅ 0.1103 (NEG scaling) | ✅ **0.0751** | ✅ 0.1051 | ✅ **0.1077** | ✅ P7 **0.0746** |
+| Mamba-2 causal | ✅ **0.0827** (POS scaling) | ✅ **0.0631** **(MATRIX CEILING)** | ✅ 0.0728 | 🟡 in flight (GPU 0, ep11 dev 0.1288) | ✅ LUCID×md **0.0618** |
+| LA causal | ✅ 0.1359 | ✅ 0.0969 | ✅ 0.1300 | ✅ 0.0947 | ✅ RSE×md **0.0786** |
+| RWKV-6 LION | ⛔ dropped per scope | ⛔ dropped | ⛔ dropped | ⛔ dropped | ⛔ dropped |
+| Mamba-2 LION | ⛔ dropped per scope | ⛔ dropped | ⛔ dropped | ⛔ dropped | ⛔ dropped |
+| LA LION | ⛔ dropped per scope | ⛔ dropped | ⛔ dropped | ⛔ dropped | ⛔ dropped |
 
 **14M scaling pattern (4 cells in)** — vanilla scaling is architecture-dependent:
 
@@ -583,6 +583,13 @@ Per `Master_Plan.md §19`:
   (Δ −0.0044) and multidil solo 0.0833 (Δ −0.0028).  Composition stacks
   cleanly on Mamba-2 LION.  Chunked eval: 0.149/0.110/0.099 at 2/5/10s
   reset.
+- **2026-04-28 03:59 UTC** — `14m_rwkv6_causal_rse_strong_viscosity_seed42`
+  landed: best dev **0.1058**, **test 0.1077**.  Δ test −0.0026 vs 14M
+  RWKV-6 vanilla 0.1103 — marginal RSE engagement at 14M, mirrors the
+  7M behaviour where RSE-strong was at 0.1006 (Δ −0.0044 vs vanilla
+  0.1049).  RSE on RWKV-6 doesn't transfer the BREAK signature seen
+  on LA at this scale; multidil_v2 (0.0751) and P7 composition (0.0746)
+  remain the productive RWKV-6 cells at 14M.  Wall ~6.2 h.
 - **2026-04-28 01:21 UTC** — Restarted `7m_mamba2_lion_rse_depth_viscosity`
   on GPU 2 (Blackwell 96 GB) with full 50-ep budget after the original
   was killed at ep10 as NULL-REPRODUCED.  Per-epoch wall ~68 min;
