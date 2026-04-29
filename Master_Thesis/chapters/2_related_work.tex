@@ -1,3 +1,298 @@
 \chapter{Related Work}
-Let's cite! The Einstein's journal paper~\cite{einstein} and the Dirac's 
-book~\cite{dirac} are physics-related items. The~\cite{Chien_2019} is a conference paper, \cite{cpu_freq} is an example of the \textit{Internet source}, and ~\cite{gpudirect} -- \textbf{manual}.
+
+\section{Linear-time alternatives to softmax attention}
+
+The quadratic time and memory cost of softmax
+attention~\cite{vaswani2017attention} has motivated a sustained
+line of work on linear-time alternatives. A first wave
+approximates the softmax operator with low-rank or kernel feature
+maps, yielding sub-quadratic transformers such as
+Performer~\cite{choromanski2021performer},
+Linformer~\cite{wang2020linformer}, and
+Reformer~\cite{kitaev2020reformer}. These approaches preserve the
+explicit pairwise attention abstraction while reducing its
+computational footprint.
+
+A second, more architecturally divergent line replaces softmax
+attention with a recurrent state. Linear
+Attention~\cite{katharopoulos2020transformers} reformulated
+softmax attention as a causal recurrence with bounded state, and
+subsequent work refined the recurrence structure through gating
+(GLA~\cite{yang2024gla}), rank-one Householder updates
+(DeltaNet~\cite{schlag2021deltanet,yang2024deltanet}), retention
+masks (RetNet~\cite{sun2023retnet}), and matrix-valued cells
+(xLSTM~\cite{beck2024xlstm}). State-space models (SSMs) reach the
+same operating point from a continuous-time root: the S4
+family~\cite{gu2022s4} introduced structured diagonal-plus-low-rank
+parameterisations, Mamba~\cite{gu2023mamba} added input-selective
+dynamics, and Mamba-2~\cite{dao2024transformers} unified SSMs and
+linear attention through structured state-space duality;
+Mamba-3~\cite{lahoti2026mamba3} continues this lineage. Long
+convolutional alternatives such as Hyena~\cite{poli2023hyena}
+share the same linear-complexity envelope through implicit
+kernels rather than an explicit recurrence.
+
+The RWKV family occupies a parallel branch built directly on a
+recurrent core. RWKV-4~\cite{peng2023rwkv} introduced the
+time-mix and channel-mix decomposition, RWKV-5 and RWKV-6 (Eagle
+and Finch~\cite{peng2024eaglefinch}) added matrix-valued states
+and dynamic per-channel decay, and RWKV-7~\cite{peng2025rwkv7}
+extends the transition class to a diagonal-plus-low-rank form.
+The thesis instantiates three architectures from this collective
+body of work as concrete probes for its mechanism analysis:
+causal RWKV-6 as a per-channel data-dependent decay backbone,
+Mamba-2 as a selective continuous-time SSM with input-modulated
+step size, and Linear Attention as a pure accumulator without
+intrinsic decay. The three share a recurrent core and linear-time
+token mixing while differing in the structure of their transition
+operator and in the strength of their content-adaptive routing.
+The remainder of this chapter positions the mechanisms studied
+in the thesis against the deficits these structural differences
+introduce.
+
+\section{Bidirectional adaptation strategies for causal linear RNNs}
+
+Causal linear-time recurrences propagate state in one direction,
+which suits streaming and autoregressive workloads but discards
+future context that is available in offline settings such as
+document encoding, full-utterance speech recognition, and image
+classification. Three structurally distinct strategies have
+emerged for adapting an existing causal architecture to
+bidirectional input access. At the mechanism level,
+LION~\cite{afzal2025linear} replaces the causal scan kernel with
+a parallel $T \times T$ attention computation under a symmetric
+decay mask, retaining the time-mix and channel-mix abstraction
+while changing the sequence-access pattern from causal to
+bidirectional. At the operator level,
+Vision-RWKV~\cite{duan2024visionrwkv} introduces a bidirectional
+WKV scan that runs the causal RWKV recurrence forwards and
+backwards and combines the resulting hidden states; Vision
+Mamba~\cite{zhu2024visionmamba} applies the same template to
+selective state-space models, pairing forward and backward Mamba
+blocks within each layer. At the ordering level, no new operator
+is introduced: the input is rearranged so that successive layers
+see the sequence in different traversal orders, as in
+VisualRWKV's per-layer scan alternation~\cite{hou2024visualrwkv},
+VMamba's four-route Cross-Scan Module~\cite{liu2024vmamba},
+LocalMamba's windowed selective scan with dynamic per-layer
+pattern selection~\cite{huang2024localmamba}, and ZigMa's
+zero-parameter zigzag pattern~\cite{hu2024zigma}. The three
+strategies trade off compute, memory, and information-flow
+geometry: the mechanism-level form pays a quadratic memory
+footprint in exchange for unrestricted future access at every
+layer; the operator-level form retains a linear-time envelope but
+doubles the serial compute per layer; the ordering-level form
+costs only a tensor reshape, but bidirectional information flow
+accumulates across the depth stack rather than within any single
+layer.
+
+The thesis adopts the mechanism-level strategy and instantiates
+LION as a parallel adaptation across all three linear-time
+backbones. This choice is motivated by the structural property
+that the bidirectional form inherits the causal mechanism
+vocabulary directly, and is supported by an empirical comparison
+against the operator-level alternative reported in the
+experimental chapter.
+
+\section{Cross-modality short-range temporal mixing}
+
+A documented failure mode of vanilla linear-time sequence mixers
+is the absence of an explicit local mixing operator: each token
+sees only its own embedding plus the running recurrent state, and
+that state cannot encode short-range structure as efficiently as
+an explicit convolution can. The cost of this deficit is most
+visible in the original Vision Mamba
+paper~\cite{zhu2024visionmamba}, which transferred causal
+selective state-space models to image classification but reported
+scaling difficulties beyond modest parameter counts.
+Vision-RWKV~\cite{duan2024visionrwkv}, published in parallel,
+attached a fixed quad-directional shift (Q-Shift) to each token
+before the recurrent core and scaled stably past 30~M parameters
+on the same benchmark. The structural difference is a single
+per-block operator that gives every token explicit access to its
+four spatial neighbours.
+
+\begin{table}[t]
+\centering
+\small
+\caption[Cross-modality local-mixing operators]{Local-mixing
+operators introduced on top of linear-time recurrent backbones.
+$x \in \mathbb{R}^{T \times d}$ denotes the per-block input,
+$V \in \mathbb{R}^{T \times d}$ the value tensor of a linear
+attention layer, $\mathrm{DWConv}_{k, d}$ a depth-wise 1D
+convolution of kernel size $k$ and dilation $d$, and
+$\mathrm{DWSep2D}_{k}$ a depth-wise separable 2D convolution
+of kernel size $k$.}
+\label{tab:local-mixing-cross-domain}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabularx}{\linewidth}{@{}p{2.25cm} p{2.45cm} p{1.45cm} X@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Reference} & \textbf{Backbone} & \textbf{Operator} \\
+\midrule
+Q-Shift &
+Vision-RWKV~\cite{duan2024visionrwkv} &
+RWKV-4/5 &
+Channels split into four groups; each group shifted by $\pm 1$ in
+one of $\{$up, down, left, right$\}$; concatenated before the
+time-mix block \\
+\addlinespace
+Depth-wise $V$-conv &
+LiT~\cite{wang2025lit} &
+Linear DiT &
+$V \leftarrow \mathrm{DWConv}_{k}(V)$ inserted on the value path
+of linear attention \\
+\addlinespace
+Cross-Scan Module &
+VMamba~\cite{liu2024vmamba} &
+Mamba &
+Image flattened along four canonical routes; SSM scan applied to
+each; the four outputs merged \\
+\addlinespace
+Windowed scan &
+LocalMamba~\cite{huang2024localmamba} &
+Mamba &
+SSM applied independently within non-overlapping image windows;
+per-layer dynamic pattern selection \\
+\addlinespace
+Local conv prefix &
+U-Mamba~\cite{ma2024umamba}, MambaIR~\cite{guo2024mambair} &
+Mamba &
+$x \leftarrow \mathrm{DWConv}_{k}(x)$ prepended to every block \\
+\addlinespace
+QuadScan &
+U-RWKV~\cite{ye2025urwkv} &
+RWKV &
+Four-route raster scan with direction selection; generalises the
+fixed Q-Shift \\
+\addlinespace
+2D DWSep ConvShift &
+AudioRWKV~\cite{xiong2025audiorwkv} &
+RWKV-7 &
+$x_{\mathrm{local}} = \mathrm{DWSep2D}_{k}(x)$ added as a
+residual feeding the decay, key, and value paths \\
+\addlinespace
+Multi-dilation DWConv &
+Non-Attention LLM~\cite{kiruluta2025breaking} &
+Linear attention &
+$\sum_{d \in \{1, 2, 4, 8\}} \alpha_{d} \,
+\mathrm{DWConv}_{k, d}(x)$ on the input side \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The local-mixing remediation has been independently rediscovered
+across the linear-time literature, and the operators differ in
+syntactic form rather than function.
+Table~\ref{tab:local-mixing-cross-domain} summarises the eight
+principal instances. Within the RWKV lineage, Q-Shift carries
+through subsequent vision and vision-language
+models~\cite{fei2024diffusionrwkv,hou2024visualrwkv,gu2024rwkvclip},
+generalises into a direction-adaptive QuadScan in U-RWKV's
+medical segmentation backbone, and reappears alongside a
+learnable two-dimensional depth-wise separable ConvShift on
+RWKV-7 in AudioRWKV. Within the SSM lineage, VMamba's Cross-Scan
+Module delivers an analogous four-route access pattern from the
+SSM side; LocalMamba restricts the scan to local windows; and
+U-Mamba together with MambaIR prepend an explicit local
+convolution to every block. On the diffusion side, LiT attaches
+a depth-wise convolution to the value path of a distilled linear
+DiT. In autoregressive language modelling, the Non-Attention
+LLM of Kiruluta et al. proposes a parallel bank of dilated
+depth-wise convolutions on the input side with dilations $\{1, 2,
+4, 8\}$, the most direct precedent for the input-side multi-scale
+convolution introduced in this thesis. The dilation set covers
+receptive fields appropriate for token-level structure in
+language and, after the acoustic subsampling that precedes the
+encoder, for the phoneme-to-syllable scale in speech.
+
+The pattern spans two-dimensional vision in both the RWKV and SSM
+lineages, two-dimensional spectrogram audio on a
+diagonal-plus-low-rank RWKV-7 backbone, and one-dimensional
+autoregressive language on a linear-attention backbone, before
+reappearing in this thesis on one-dimensional speech. The
+recurring observation is that linear-complexity sequence mixers,
+regardless of the algebraic structure of their transition
+operator, leave a short-range mixing deficit that an explicit
+depth-wise-convolution-class operator restores. Audio
+Mamba~\cite{erol2024audiomamba} provides the cleanest
+counterpoint: a self-attention-free bidirectional state-space
+model for audio classification that does not introduce explicit
+local mixing, leaving the deficit unaddressed in that work. This
+cross-domain robustness is the empirical foundation for the
+input-side multi-scale convolution mechanism studied in the
+proposed-solution chapter.
+
+\section{Associative memory and recall}
+
+The capacity to retrieve a value associated with a previously
+seen key is one of the operations that softmax attention performs
+naturally and that linear-time recurrent architectures struggle
+to match at scale. The structural reason is direct: softmax
+attention compares every query against every key in parallel,
+while a linear-time recurrent model compresses the history into
+a bounded state. When several stored keys are similar, their
+values overlap in the state and become difficult to disentangle
+at readout. The Zoology study of Arora et
+al.~\cite{arora2023zoology} formalised this gap with the
+multi-query associative recall (MQAR) benchmark, in which a
+sequence of $(k, v)$ pairs is followed by query keys whose values
+must be retrieved; sub-quadratic models degrade markedly as the
+number of stored pairs approaches the state dimension. The same
+gap has been corroborated through fixed-state copy
+failures~\cite{jelassi2024repeat}, through in-context retrieval
+as the core bottleneck remaining after chain-of-thought
+prompting~\cite{wen2024rnns}, and through in-context-learning
+studies showing that Mamba matches transformers on most tasks
+but lags on retrieval-heavy
+ones~\cite{park2024mamba,akyurek2024incontext}. Mechanistically,
+the induction-head circuit~\cite{olsson2022induction} provides
+an account of how softmax attention realises recall through
+pairwise key matching, clarifying what an architectural
+alternative must reproduce.
+
+Three families of architectural responses have followed. The
+first preserves softmax attention in part of the model: Based of
+Arora et al.~\cite{arora2024based} interleaves a Taylor expansion
+of softmax with linear attention to balance recall and
+throughput, while GoldFinch~\cite{goldstein2024goldfinch} pairs
+an RWKV-6 backbone with a transformer post-processor under heavy
+KV-cache compression. The second modifies the recurrent update
+of a linear-time backbone to actively cancel interference.
+DeltaNet, introduced by Schlag et al.~\cite{schlag2021deltanet}
+as a fast-weight programmer, applies a rank-one Householder
+update $(I - \beta_t k_t k_t^\top)$ that erases the component of
+the state aligned with the current key before writing the new
+value, interpretable as one online gradient step on the squared
+associative reconstruction error. Yang et
+al.~\cite{yang2024deltanet} parallelise this update over sequence
+length and combine it with input-dependent gating to obtain
+Gated DeltaNet, integrating the delta-rule erasure with the
+selective gating mechanism characteristic of the SSM lineage.
+The Compact Recurrent Transformer of Mucllari et
+al.~\cite{mucllari2025crt} pursues a related approach with a
+Cayley-orthogonal transition. The third family operates within
+softmax attention itself, sharpening retrieval without altering
+the quadratic substrate. LUCID of Duvvuri et
+al.~\cite{duvvuri2026lucid} replaces the standard
+$\mathrm{softmax}(QK^\top/\sqrt{d}) V$ output with
+$\mathrm{softmax}(QK^\top/\sqrt{d}) \cdot P^{-1} V$, where
+$P = M \circ \exp(KK^\top)$ is a preconditioner constructed from
+key-key similarities; the construction can be derived as a
+delta-rule update in the reproducing kernel Hilbert space induced
+by the exponential kernel, decorrelating values along directions
+of high key correlation before they enter the attention output.
+The mechanism preserves the $O(N^2 d)$ complexity of softmax
+attention and targets retrieval quality on long-context tasks
+rather than computational cost.
+
+These three response families address recall capacity but do not
+all engage the formal expressivity of the recurrent state.
+DeltaNet's rank-one update moves the architecture along a
+complexity-theoretic axis, lifting it out of the strictly
+diagonal class to which the other linear recurrences belong. The
+next section turns to the formal side of this question,
+presenting the circuit-complexity results that delimit what
+diagonal and diagonal-plus-low-rank recurrences can and cannot
+compute.
+
