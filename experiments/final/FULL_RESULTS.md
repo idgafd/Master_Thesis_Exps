@@ -114,7 +114,7 @@ LION-mode 14M cells were dropped per scope (`STATUS.md` §LibriSpeech 14M). Caus
 | `14m_mamba2_causal_multidil_v2_seed42` | `mamba2_convshift_multidil_symmetric_v2` | 12.74M | 0.0635 | **0.0631** ⭐ | 0.1850 |
 | `14m_mamba2_causal_lucid_c_seed42` | `mamba2_lucid_c` | 12.62M | 0.0729 | 0.0728 | 0.2180 |
 | `14m_mamba2_causal_rse_strong_viscosity_seed42` | `mamba2_rse_strong_viscosity` | 12.93M | 0.0833 | 0.0825 | 0.2482 |
-| `14m_mamba2_causal_rse_depth_viscosity_seed42` † | `mamba2_rse_depth_viscosity` | 12.93M | 0.0842 | 0.0833 † | 0.2506 |
+| `14m_mamba2_causal_rse_depth_viscosity_seed42` | `mamba2_rse_depth_viscosity` | 12.93M | 0.0783 | 0.0781 | 0.1912 |
 | `14m_mamba2_causal_lucid_c_x_multidil_v2_seed42` | `mamba2_lucid_c_convshift_multidil_symmetric_v2` | 12.74M | 0.0627 | **0.0618** ⭐ | 0.1810 |
 | `14m_linear_attn_causal_vanilla_seed42` | `linear_attn_causal` | 10.60M | 0.1378 | 0.1359 | 0.4266 |
 | `14m_linear_attn_causal_multidil_v2_seed42` | `linear_attn_convshift_multidil_symmetric_v2` | 10.64M | 0.0975 | 0.0969 | 0.2874 |
