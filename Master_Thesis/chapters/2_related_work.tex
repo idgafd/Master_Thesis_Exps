@@ -296,3 +296,150 @@ presenting the circuit-complexity results that delimit what
 diagonal and diagonal-plus-low-rank recurrences can and cannot
 compute.
 
+  \section{State-tracking and formal expressivity bounds}
+
+  The complexity-theoretic position of attention-based and
+  recurrent sequence models has been mapped over the last several
+  years through a connected sequence of formal results. Hahn's
+  foundational analysis~\cite{hahn2020limitations} established that
+  hard-attention transformers cannot recognise PARITY or Dyck-$2$
+  in the limit, identifying the first concrete formal-language
+  boundary for the family. Merrill and
+  Sabharwal~\cite{merrill2023parallelism} sharpened this picture
+  by placing log-precision transformers strictly inside uniform
+  $\mathsf{TC}^0$, the class of constant-depth threshold circuits,
+  which implies that any inherently sequential problem outside
+  $\mathsf{TC}^0$ is unreachable for the family unless
+  $\mathsf{TC}^0 = \mathsf{P}$. The survey of Strobl et
+  al.~\cite{strobl2024formal} unifies subsequent circuit-complexity
+  and logic-based characterisations of transformer expressivity
+  into a coherent map. Together these results establish that
+  softmax attention, despite its content-dependent gating, sits
+  inside a fixed parallel-circuit class.
+
+  The same boundary applies to linear-time recurrent
+  architectures. Merrill, Petty, and
+  Sabharwal~\cite{merrill2024illusion} extend the
+  $\mathsf{TC}^0$ characterisation to state-space models including
+  Mamba, demonstrating formally that the apparent state of these
+  architectures does not enable genuine state-tracking: the
+  $S_5$ word problem and other non-Abelian permutation tasks remain
+  out of reach at any width. Sarrof, Veitsman, and
+  Hahn~\cite{sarrof2024expressive} provide a complementary
+  formal-language analysis specifically for linear and diagonal SSMs,
+  characterising which regular and counter languages each
+  parameterisation can and cannot recognise. The diagonal-plus-low-
+  rank lift introduced by DeltaNet, DeltaProduct, and
+  RWKV-7~\cite{schlag2021deltanet,yang2024deltanet,peng2025rwkv7} is
+  the principal route by which a recurrent linear-time architecture
+  crosses out of the diagonal class — the rank-one Householder
+  update enlarges the reachable transition group beyond what diagonal
+  spectra can simulate.
+
+  The three mechanisms studied in this thesis operate within the
+  diagonal-class function family across all three backbones (causal
+  RWKV-6, Mamba-2, Linear Attention) and therefore do not target
+  this complexity-theoretic axis. The formal results above function
+  as a scope clarifier rather than as theorems we attempt to violate:
+  they pre-register the prediction that no mechanism in our matrix
+  should yield a non-Abelian state-tracking gain at any scale, and
+  they motivate restricting the empirical scope of the thesis to
+  axes that the diagonal class can in principle exercise.
+  State-tracking probes such as $S_n$ permutation composition and
+  Dyck-$k$ for $k \ge 2$ are accordingly deferred to future work
+  on diagonal-plus-low-rank mechanisms.
+
+  \section{Long-range and content-adaptive mechanisms}
+
+  Two further axes appear repeatedly in the linear-time-RNN
+  literature without being central to the present thesis. The first
+  concerns long-range information flow at sequence lengths that
+  exceed the chunk-local window of standard architectures.
+  Log-Linear Attention~\cite{guo2025loglinear} introduces
+  $O(\log T)$ Fenwick-tree bucket states with per-token per-scale
+  mixers and composes with arbitrary semiseparable masks; RWKV-X of
+  Hou et al.~\cite{hou2025rwkvx} pairs chunk-level sparse retrieval
+  with a sliding window for length extrapolation to 64k tokens; and
+  the Hardware-aligned Hierarchical Sparse Attention of Hu et
+  al.~\cite{hu2025hsa} introduces chunk summaries combined with
+  top-$k$ gating. These mechanisms address regimes substantially
+  beyond the operating range of the thesis's discovery probe
+  ($T \le 500$ after acoustic subsampling), where their primitives
+  either degenerate or fail to express their intended structure;
+  they are therefore retained as part of the architectural map but
+  not exercised on the thesis's matrix.
+
+  The second axis concerns the richness of the content-adaptive
+  feature map and channel-side computation. NaLaFormer's
+  norm-aware kernel~\cite{meng2025normdirection} restores a
+  query-norm dependence in vision linear attention; the bypass
+  component of Avey~\cite{hammoud2025dont} interpolates between
+  linear-head and ReLU-squared-tail feature paths inside a
+  ChannelMix-style block; the Polynomial Mixer of Picard et
+  al.~\cite{picard2026pom} replaces attention with a
+  permutation-equivariant polynomial value lift; and the recurrent
+  softmax-attention analysis of Mongaras and
+  Larson~\cite{mongaras2025expressiveness} introduces the
+  cross-channel Kronecker $k \otimes k$ feature lift. The
+  streaming higher-order linear attention of Zhang et
+  al.~\cite{zhang2025hla} extends this polynomial value-lift
+  family to interaction orders $k \ge 3$ via prefix sufficient
+  statistics that keep training in
+  $O(Td)$ rather than the naive $O(T^k)$. These parametrisations differ in algebraic surface but share a common function class of polynomial value lifts at order $k=2$, and saturate to a narrow performance band on tasks whose
+  structural prior does not reward dense per-channel freedom. They
+  are cited here as part of the wider mechanism inventory, although
+  the present thesis does not lead on this axis.
+
+  \section{Evaluation probes and datasets}
+
+  The empirical evaluation of the thesis rests on three benchmark
+  families chosen for the structural axis each one exercises rather
+  than for aggregate-score competitiveness. The principal probe is
+  automatic speech recognition on
+  LibriSpeech~\cite{panayotov2015librispeech} clean-100, evaluated
+  with a connectionist temporal classification
+  head~\cite{graves2006ctc} and SpecAugment~\cite{park2019specaugment}
+  augmentation. The choice is deliberate: short post-subsampling
+  sequences ($T \le 500$), deterministic greedy CTC decoding, and a
+  single primary metric (character error rate) make LibriSpeech a
+  clean axis-1 instrument that exercises short-range temporal
+  structure at the phoneme-to-syllable scale. Common
+  Voice~\cite{ardila2019commonvoice} is used as a cross-distribution
+  companion: same task, same metric, but a different acoustic
+  distribution covering a wide range of speakers, accents, and
+  recording conditions, which lets the same mechanism be re-tested
+  on inputs whose prosodic and spectral statistics differ from the
+  LibriSpeech audiobook regime.
+
+  The synthetic axis-2 probe is the multi-query associative recall
+  benchmark introduced by Arora et al. as part of the Zoology
+  study~\cite{arora2023zoology}. MQAR is by construction the
+  cleanest available test of associative-memory capacity under
+  interference: the model is presented with a sequence of $(k, v)$
+  pairs followed by query keys whose values must be retrieved, and
+  the difficulty of the task scales with the relationship between
+  the number of stored pairs and the architectural state dimension.
+  Sweeping the sequence length $T \in \{64, 256, 1024\}$ produces a
+  length-stratified differential that is unobtainable on a natural
+  audio benchmark and that operates without the variance overhead of
+  autoregressive evaluation.
+
+  \section{Reference implementations}
+
+  The codebase of the thesis adapts vendor reference implementations
+  of the underlying scan kernels rather than re-implementing them
+  from scratch. The RWKV-6 time-mix and channel-mix blocks are
+  adapted from the official RWKV-block reference
+  repository~\cite{rwkv2024block}; the Mamba-2 selective
+  state-space duality kernel is adapted from the
+  \texttt{state-spaces/mamba} repository of Gu and
+  Dao~\cite{gu2024mambacode} via the \texttt{mamba-ssm} package; and
+  the linear-attention causal recurrence is adapted from the
+  reference associated with Katharopoulos et
+  al.~\cite{katharopoulos2020transformers}. In every case, the
+  modifications introduced by the proposed mechanisms are confined
+  to dedicated extension points (mechanism-injection sites in the
+  preprocessing path, the transition operator, or the chunk-local
+  preconditioner stage) and do not alter the base scan implementation,
+  preserving numerical equivalence with the reference at the
+  zero-mechanism limit.
