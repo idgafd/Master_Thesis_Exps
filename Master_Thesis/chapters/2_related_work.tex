@@ -332,7 +332,7 @@ compute.
   rank lift introduced by DeltaNet, DeltaProduct, and
   RWKV-7~\cite{schlag2021deltanet,yang2024deltanet,peng2025rwkv7} is
   the principal route by which a recurrent linear-time architecture
-  crosses out of the diagonal class — the rank-one Householder
+  crosses out of the diagonal class: the rank-one Householder
   update enlarges the reachable transition group beyond what diagonal
   spectra can simulate.
 
@@ -383,12 +383,16 @@ compute.
   cross-channel Kronecker $k \otimes k$ feature lift. The
   streaming higher-order linear attention of Zhang et
   al.~\cite{zhang2025hla} extends this polynomial value-lift
-  family to interaction orders $k \ge 3$ via prefix sufficient
-  statistics that keep training in
-  $O(Td)$ rather than the naive $O(T^k)$. These parametrisations differ in algebraic surface but share a common function class of polynomial value lifts at order $k=2$, and saturate to a narrow performance band on tasks whose
-  structural prior does not reward dense per-channel freedom. They
-  are cited here as part of the wider mechanism inventory, although
-  the present thesis does not lead on this axis.
+  family to interaction orders three and above via prefix
+  sufficient statistics that keep training linear in $T$ rather
+  than incurring the polynomial blow-up of naive higher-order
+  computation. These parametrisations differ in algebraic surface
+  but share a common function class of polynomial value lifts of
+  order at least two, and saturate to a narrow performance band on
+  tasks whose structural prior does not reward dense per-channel
+  freedom. They are cited here as part of the wider mechanism
+  inventory, although the present thesis does not lead on this
+  axis.
 
   \section{Evaluation probes and datasets}
 
