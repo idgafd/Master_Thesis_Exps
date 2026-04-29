@@ -266,11 +266,11 @@ double-exponential map:
 d_{t} = \mathrm{lora}_{d}\!\big(\mathrm{ddlerp}_{d}(x_{t}, x_{t-1})\big),
 \qquad w_{t} = \exp\!\big({-}\exp(d_{t})\big),
 \end{equation}
-where $\mathrm{ddlerp}_{\square}(a, b) = a + (b - a) \odot \mathrm{lora}_{\square}\!\big(a + (b - a) \odot \mu_{x}\big)$
+where $\mathrm{ddlerp}_{\ast}(a, b) = a + (b - a) \odot \mathrm{lora}_{\ast}\!\big(a + (b - a) \odot \mu_{x}\big)$
 is the Finch data-dependent linear-interpolation operator and
-$\mathrm{lora}_{\square}(x) = \lambda_{\square} + \tanh(x A_{\square}) B_{\square}$
-is its low-rank residual core, with $\mu_{x}$ and $\lambda_{\square}$
-trainable vectors and $A_{\square}, B_{\square}$ trainable low-rank
+$\mathrm{lora}_{\ast}(x) = \lambda_{\ast} + \tanh(x A_{\ast}) B_{\ast}$
+is its low-rank residual core, with $\mu_{x}$ and $\lambda_{\ast}$
+trainable vectors and $A_{\ast}, B_{\ast}$ trainable low-rank
 projections. The double-exponential map ensures $w_{t} \in (0, 1)^{D/h}$
 without requiring an explicit clamp.
 
@@ -528,7 +528,11 @@ shift, named Q-Shift, that splits the channel dimension into four
 groups and shifts each group by one position in one of $\{$up, down,
 left, right$\}$ before concatenation:
 \begin{equation}\label{eq:qshift-shift}
-X^{\dagger}[h, w] = \mathrm{Concat}\big(X[h{-}1,\, w,\, 0{:}C/4],\; X[h{+}1,\, w,\, C/4{:}C/2],\; X[h,\, w{-}1,\, C/2{:}3C/4],\; X[h,\, w{+}1,\, 3C/4{:}C]\big),
+\begin{split}
+X^{\dagger}[h, w] = \mathrm{Concat}\big(
+&X[h{-}1,\, w,\, 0{:}C/4],\; X[h{+}1,\, w,\, C/4{:}C/2], \\
+&X[h,\, w{-}1,\, C/2{:}3C/4],\; X[h,\, w{+}1,\, 3C/4{:}C]\big)
+\end{split}
 \end{equation}
 \begin{equation}\label{eq:qshift-mix}
 \mathrm{Q\text{-}Shift}(X) = X + (1 - \mu) \, X^{\dagger},
