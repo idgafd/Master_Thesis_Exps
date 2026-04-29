@@ -1,2 +1,682 @@
-\chapter{Proposed Solution}
-\section{Problem Formulation}
+\chapter{Proposed Solution}\label{ch:proposed}
+
+This chapter presents three mechanisms that target the structural
+deficits of the three causal linear-time backbones formalised in
+Section~\ref{sec:backbones}, together with the bidirectional
+adaptation that extends each mechanism to the LION parallel form of
+Section~\ref{sec:lion}. Section~\ref{sec:proposed:matrix} states the
+problem formulation: the experimental matrix that the chapter is
+organised around, the mechanism-prior alignment law that the matrix
+is designed to test, and the probes used to test it.
+Section~\ref{sec:proposed:msdc} introduces the Multi-Scale Depthwise
+Convolution mechanism, which addresses the short-range temporal
+hierarchy deficit identified in
+Section~\ref{sec:backbones:deficit}. Section~\ref{sec:proposed:dho}
+introduces the Damped Harmonic Oscillator mechanism, which extends
+the real-diagonal transition operator of the diagonal-class backbones
+with the block-complex transition primitive of
+Section~\ref{sec:primitives:dho}. Section~\ref{sec:proposed:cvd}
+introduces the Chunked Value Decorrelation mechanism, which targets
+the absent interference-cancellation deficit on the linear-time
+recurrent substrate. Section~\ref{sec:proposed:lion} describes the
+unified LION wrapper that maps each causal backbone to its
+bidirectional parallel form, and the decay-class correspondence that
+follows. Section~\ref{sec:proposed:probes} closes the chapter with a
+brief description of the diagnostic instrumentation used in
+Chapter~\ref{ch:experiments} to attribute mechanism behaviour at the
+parameter level.
+
+\section{Problem formulation and the experimental matrix}\label{sec:proposed:matrix}
+
+The three mechanisms introduced in the remainder of the chapter are
+not the chapter's principal artefact. The principal artefact is the
+\textit{transfer-pattern matrix} they populate. The mechanisms are
+demonstrations of a predictive law about how a mechanism's gain on a
+task relates to the structural deficit the architecture leaves
+uncovered along the axis the mechanism targets; the matrix is the
+structure on which that law becomes a falsifiable claim.
+
+The experimental matrix is the three-by-two-by-two grid defined by
+three causal backbones, two access modes, and two parameter scales.
+The backbones are RWKV-6, Mamba-2, and Linear Attention, formalised
+within the unified recurrence template of equation~(\ref{eq:unified})
+in Sections~\ref{sec:backbones:rwkv6}, \ref{sec:backbones:mamba2},
+and~\ref{sec:backbones:la} respectively. The two access modes are the
+causal mode in which each backbone propagates state in one direction,
+and the LION bidirectional mode of Section~\ref{sec:lion} in which
+the parallel form gives every position access to the entire sequence.
+The two parameter scales are seven million and fourteen million
+parameters, corresponding to a six-layer and a twelve-layer encoder
+respectively, with feature dimensions chosen so that the parameter
+count is matched to within a small margin across backbones at each
+scale. The three primary probes on which the matrix is evaluated are
+LibriSpeech~\cite{panayotov2015librispeech} for the principal axis-one
+comparison, Common Voice~\cite{ardila2019commonvoice} for
+cross-distribution validation within axis one, and the Multi-Query
+Associative Recall benchmark of~\citet{arora2023zoology} at sequence
+lengths $T \in \{64, 256, 1024\}$ for axis two. The empirical content
+of the matrix is reported in Chapter~\ref{ch:experiments}; this
+chapter states the law the matrix is built to test and defines the
+three mechanisms whose transfer it measures.
+
+The predictive law that the matrix tests is the
+\textit{mechanism-prior alignment} law: a mechanism's gain on a given
+task is proportional to the residual structural deficit the
+architecture leaves uncovered along the axis the mechanism targets.
+The law is two-sided. On the positive side, a mechanism that extends
+the function class along an axis on which the architecture leaves a
+deficit, applied to a task that exercises that axis, should yield a
+gain whose magnitude orders with the deficit size across
+architectures. On the null side, a mechanism whose target axis is
+not exercised by the task, or whose target axis the architecture's
+native primitives already cover, should yield no measured gain even
+if its parameters move under stochastic gradient descent. The matrix
+is sized to support both kinds of prediction: each row exercises a
+different combination of axis coverage and architectural primitive,
+and the column structure permits the mode-conditional decomposition
+of any observed transfer pattern.
+
+The three mechanisms introduced in the remainder of the chapter
+target three distinct axes. The Multi-Scale Depthwise Convolution
+mechanism of Section~\ref{sec:proposed:msdc} targets axis one, the
+short-range temporal hierarchy axis, on the input side of every
+backbone block, and leaves the recurrent transition unchanged. The
+Damped Harmonic Oscillator mechanism of
+Section~\ref{sec:proposed:dho} targets the damped-oscillator
+sub-structure of axis one on the transition side, replacing the
+real-diagonal transition with its block-complex closure. The Chunked
+Value Decorrelation mechanism of Section~\ref{sec:proposed:cvd}
+targets axis two, associative memory under interference, on the
+value path, applying a chunk-local key-similarity preconditioner to
+the values before they enter the recurrence. The three mechanisms
+are algebraically independent and can be composed; cells in the
+experimental matrix exercise individual mechanisms, pairwise
+compositions, and the full triple composition.
+
+\section{Multi-Scale Depthwise Convolution}\label{sec:proposed:msdc}
+
+The first proposed mechanism is the Multi-Scale Depthwise Convolution
+(MSDC). MSDC is the architecture-specific instantiation, on the
+linear-time recurrent backbones of this thesis, of the input-side
+multi-scale local-mixing pattern surveyed in
+Section~\ref{sec:primitives:msdc}. The mechanism addresses the
+short-range temporal hierarchy deficit identified in
+Section~\ref{sec:backbones:deficit} as common to all three backbones:
+none of the three has a native primitive that gives every token
+explicit access to a short-range neighbourhood at the
+phoneme-to-syllable scale that the ASR probe exercises.
+
+\subsection{Generic form}
+
+For an input sequence $x \in \mathbb{R}^{T \times D}$, MSDC applies a
+parallel bank of depthwise dilated causal convolutions and sums the
+results under per-channel learnable weights:
+\begin{equation}\label{eq:msdc-generic}
+\mathrm{MSDC}(x)[t] = \sum_{d \in \mathcal{D}} \alpha_{d} \odot \mathrm{DWConv}_{k, d}(x)[t],
+\end{equation}
+where $\mathcal{D} = \{1, 2, 4, 8\}$ is the dilation set, $k = 3$ is
+the kernel size, $\mathrm{DWConv}_{k, d}$ denotes a depthwise
+(channel-separable) one-dimensional causal convolution of kernel size
+$k$ and dilation $d$, $\alpha_{d} \in \mathbb{R}^{D}$ are per-layer
+learnable per-channel mixing weights, and $\odot$ denotes the
+elementwise product over the channel dimension. The operator is
+inserted on the input side of every backbone block: each block $f$
+becomes $f(\mathrm{MSDC}(x))$, with the convolution kernels and the
+mixing weights replicated independently per layer.
+
+\subsection{Design notes}
+
+The dilation set $\{1, 2, 4, 8\}$ at kernel size $k = 3$ produces a
+maximum past-only receptive field of $1 + (k - 1) \cdot \max \mathcal{D} = 17$
+frames at the deepest dilation. After the two-fold acoustic
+subsampling that precedes the encoder in the experimental setup, the
+range corresponds to roughly forty to one-hundred-sixty milliseconds
+in the input audio, which matches the phoneme-to-syllable scale
+relevant to character-level CTC decoding. The same dilation set was
+selected on linguistic grounds in the autoregressive language model
+of~\citet{kiruluta2025breaking} and is the most direct precedent for
+the input-side multi-dilation form used here.
+
+The depthwise structure of $\mathrm{DWConv}_{k, d}$ keeps the
+parameter footprint of the operator at one kernel slot per channel
+per dilation per layer, which is small relative to the time-mix
+block on each backbone. The mixing weights $\alpha_{d}$ for $d > 1$
+and the convolution kernels for $d > 1$ are initialised to a small
+non-zero value rather than to zero, so that the gradient with respect
+to $\alpha_{d}$ at step zero is non-degenerate. The choice follows
+from the multiplicative form of equation~(\ref{eq:msdc-generic}): a
+strict zero on either of the two factors at any single dilation
+collapses the gradient through that dilation to zero, and the
+operator silently reduces to its $d = 1$ branch.
+
+\subsection{Per-architecture deployment}
+
+The MSDC operator is architecture-agnostic on the input side, and
+the three causal backbones receive identical insertion points modulo
+the backbone's own time-mix entry interface.
+Table~\ref{tab:msdc-deployment} contrasts the vanilla causal
+recurrence of each backbone with its MSDC-augmented causal form and
+with its MSDC-augmented LION form.
+
+\begin{table}[t]
+\centering
+\small
+\caption[Per-architecture deployment of Multi-Scale Depthwise
+Convolution]{Per-architecture deployment of Multi-Scale Depthwise
+Convolution. The vanilla causal column reproduces the backbone's
+state and readout from Sections~\ref{sec:backbones:la},
+\ref{sec:backbones:rwkv6}, and~\ref{sec:backbones:mamba2}. The two
+augmented columns show the algebraic insertion point of MSDC on each
+backbone in the causal mode and in the LION bidirectional mode. The
+mechanism operates on the input side in every cell.}
+\label{tab:msdc-deployment}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{2.1cm} >{\hsize=1.15\hsize\linewidth=\hsize}X >{\hsize=0.95\hsize\linewidth=\hsize}X >{\hsize=0.90\hsize\linewidth=\hsize}X@{}}
+\toprule
+\textbf{Architecture} & \textbf{Vanilla causal form} & \textbf{+ MSDC (causal)} & \textbf{+ MSDC (LION)} \\
+\midrule
+RWKV-6 &
+$s_{t} = \mathrm{diag}(w_{t}) s_{t-1} + k_{t}^{\top} v_{t}$, see~(\ref{eq:rwkv6-state}), (\ref{eq:rwkv6-readout}) &
+$\tilde{x} = \mathrm{MSDC}(x)$; the Time-Mix block consumes $\tilde{x}$ in place of $x$ and recomputes $w_{t}, k_{t}, v_{t}$ from $\tilde{x}$ &
+LION-S parallel form on the MSDC-augmented Time-Mix; the WKV decay $w_{t}$ enters the LION mask of~(\ref{eq:lion-mask}) as the per-step factor $\lambda_{k}$ \\
+\addlinespace
+Mamba-2 &
+\shortstack[l]{$h_{t} = a_{t} h_{t-1} + B_{t} x_{t}$\\see~(\ref{eq:mamba2-ssd})} &
+$\tilde{x} = \mathrm{MSDC}(x)$; the SSD scan consumes $\tilde{x}$ in place of $x$ and recomputes $a_{t}, B_{t}, C_{t}$ from $\tilde{x}$ &
+LION-S parallel form on the MSDC-augmented SSD path; the per-token scalar $a_{t}$ enters the LION mask as the per-step factor $\lambda_{k}$ \\
+\addlinespace
+\shortstack[l]{Linear\\Attention} &
+$S_{t} = S_{t-1} + \phi(K_{t}) V_{t}^{\top}$, see~(\ref{eq:la-state}), (\ref{eq:la-output}) &
+$\tilde{x} = \mathrm{MSDC}(x)$; the kernel state-update consumes $\tilde{x}$ in place of $x$ and recomputes $\phi(K_{t}), V_{t}, \phi(Q_{t})$ from $\tilde{x}$ &
+LION-LIT parallel form on the MSDC-augmented kernel path; the controlled LION-S form of Section~\ref{sec:proposed:lion} additionally inherits a per-token sigmoid decay \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The mechanism's algebraic point of action is identical across the
+three rows: a pre-block input replacement
+$x \leftarrow \mathrm{MSDC}(x)$ that the time-mix block of RWKV-6,
+the SSD scan of Mamba-2, and the kernel state-update of Linear
+Attention all read from. The table emphasises this consistency: the
+augmented causal column differs across rows only in which
+backbone-specific projections recompute their inputs from
+$\tilde{x}$, and the augmented LION column differs across rows only
+in the decay class the parallel form inherits from the underlying
+causal backbone.
+
+MSDC is logically of the same family as the input-side multi-scale
+local-mixing pattern documented across vision, audio, and language
+settings. Multi-dilation depthwise convolutions on the language side
+appear in~\citet{kiruluta2025breaking}; depthwise two-dimensional
+separable variants appear in
+AudioRWKV~\cite{xiong2025audiorwkv}; learnable single-dilation
+depthwise convolutions on the value path of a linear attention layer
+appear in LiT~\cite{wang2025lit}; and the fixed quad-directional
+shift of Vision-RWKV~\cite{duan2024visionrwkv} is a parameter-free
+predecessor of the same family on two-dimensional vision input. The
+MSDC instantiation in this thesis combines the multi-dilation form
+of~\citet{kiruluta2025breaking} with the depthwise convolution
+structure shared across the family, and deploys it on three causal
+linear-time backbones simultaneously.
+
+\section{Damped Harmonic Oscillator}\label{sec:proposed:dho}
+
+The second proposed mechanism is the Damped Harmonic Oscillator
+(DHO). DHO is the architecture-specific instantiation of the
+block-complex transition with Rayleigh dissipation, introduced as a
+mathematical primitive in Section~\ref{sec:primitives:dho}, on the
+diagonal-class backbones whose vanilla transition is real-diagonal
+or trivial. The mechanism extends the function class of the
+recurrence's transition operator from the real-diagonal class
+$(\mathbb{R}_{+})^{K}$ to the smallest natural extension that admits
+damped oscillation, the block-diagonal class
+$SO(2)^{K/2} \times \mathbb{R}_{+}^{K/2}$. The standard reference for
+the rotation group $SO(2)$ as a matrix Lie group is
+~\citet[Chapter~1]{hall2015lie}; the standard reference for the
+Rayleigh dissipation function from analytical mechanics
+is~\citet[Sections~1.5 and~2.5]{goldstein2002classical}. The extended
+transition remains inside the diagonal SSM class characterised
+by~\citet{sarrof2024expressive}, since each two-by-two
+rotation-and-damping block diagonalises over $\mathbb{C}$ to a pair
+of conjugate eigenvalues $r e^{\pm i \theta}$ with $r = e^{-\lambda}$.
+
+\subsection{Generic form}
+
+DHO replaces the per-channel real-diagonal transition with a
+block-diagonal product of $K/2$ rotation-and-damping blocks. Within
+a single head $h$ and at step $t$, the block at index $b$ is
+\begin{equation}\label{eq:dho-generic}
+G_{t, h, b} = e^{-\lambda_{\mathrm{eff}, t, h, b}} \cdot R(\theta_{t, h, b}),
+\qquad
+\lambda_{\mathrm{eff}, t, h, b} = \lambda_{\mathrm{raw}, h, b} + \eta_{h, b} \cdot \theta_{t, h, b}^{2},
+\end{equation}
+where $R(\theta)$ is the SO(2) rotation matrix of
+equation~(\ref{eq:block-complex}), $\theta_{t, h, b} \in \mathbb{R}$
+is a data-dependent rotation angle produced from the input by a
+low-rank LoRA-style projection, $\lambda_{\mathrm{raw}, h, b} \in \mathbb{R}$
+is the per-head per-block raw damping log-rate, and
+$\eta_{h, b} \ge 0$ is a per-head per-block viscosity coefficient
+that couples the effective damping to the squared rotation angle
+through the discrete Rayleigh-dissipation form of
+equation~(\ref{eq:rayleigh}). The viscosity-coefficient parameter
+shape is identical across all three backbones: a tensor of shape
+$(n_{\mathrm{heads}}, K/2)$ per layer.
+
+The rotation angle is bounded by a depth-graded clip schedule:
+\begin{equation}\label{eq:dho-clip}
+|\theta_{t, h, b, \ell}| \le \theta_{\max}(\ell),
+\end{equation}
+where $\ell$ is the layer index of the encoder and
+$\theta_{\max}(\cdot)$ is a fixed depth-graded schedule that grows
+from a tight clip in the early layers to a wider clip in the deeper
+layers. For the six-layer encoder corresponding to the seven-million
+parameter scale, the schedule takes the values
+$(\pi/8, \pi/8, \pi/4, \pi/4, \pi/2, \pi/2)$ across layers one
+through six. For the twelve-layer encoder corresponding to the
+fourteen-million parameter scale, the schedule extends analogously,
+with the same maximum clip preserved at the deepest layers. The
+schedule is the mechanism's only canonical clip parameterisation.
+
+\subsection{Design notes}
+
+Three design choices specify the mechanism completely beyond the
+algebraic form of equation~(\ref{eq:dho-generic}). First, the
+viscosity coefficient $\eta_{h, b}$ is initialised to zero. At step
+zero of training, the Rayleigh-dissipation term contributes nothing
+to the effective damping,
+$\lambda_{\mathrm{eff}, t, h, b} = \lambda_{\mathrm{raw}, h, b}$,
+and DHO reduces exactly to the undamped block-complex transition of
+equation~(\ref{eq:block-complex}). The mechanism is therefore
+zero-regression-by-construction at initialisation: the augmented
+recurrence at step zero is structurally identical to the same
+backbone with a block-complex transition and no Rayleigh coupling,
+and the additional capacity engages only as $\eta$ moves under the
+gradient.
+
+Second, the depth-graded $\theta$-clip schedule biases the rotation
+operator toward near-identity initialisation in the shallow layers
+and admits a wider rotation budget in the deeper layers. The
+motivation is structural: shallow layers operate on input-aligned
+representations for which a tight rotation budget keeps the
+transition close to the diagonal class, while deeper layers operate
+on more abstract phase structure for which a wider rotation budget
+permits the block-complex extension to express richer dynamics.
+
+Third, the data-dependent rotation angle $\theta_{t, h, b}$ is
+produced by a low-rank LoRA-style projection of the input with a
+depth-graded rank schedule that mirrors the depth-graded
+$\theta$-clip schedule. For the six-layer encoder, the rank schedule
+is $(16, 16, 32, 32, 48, 48)$ across layers one through six. For the
+twelve-layer encoder, the schedule extends analogously. The pairing
+of the two schedules ensures that the deeper layers, which receive
+the wider rotation budget, also receive the higher-capacity LoRA
+projection that can populate the budget.
+
+\subsection{Per-architecture deployment}
+
+DHO is a transition-side mechanism: it modifies the recurrent
+operator $A_{t}$ of equation~(\ref{eq:unified}) and leaves the
+input-write and the readout untouched.
+Table~\ref{tab:dho-deployment} contrasts the vanilla transition of
+each backbone with the DHO-augmented transition in the causal mode
+and the DHO-augmented transition in the LION bidirectional mode.
+
+\begin{table}[t]
+\centering
+\small
+\caption[Per-architecture deployment of the Damped Harmonic
+Oscillator]{Per-architecture deployment of the Damped Harmonic
+Oscillator. The vanilla causal column reproduces the per-step
+transition operator of each backbone from
+Section~\ref{sec:backbones}. The augmented columns show the
+DHO-replaced transition in the causal mode and in the LION
+bidirectional mode. The block parameters $\eta_{h, b}$,
+$\lambda_{\mathrm{raw}, h, b}$, and the LoRA projection that
+produces $\theta_{t, h, b}$ are shared between the two modes per
+backbone.}
+\label{tab:dho-deployment}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{2.4cm} X X X@{}}
+\toprule
+\textbf{Architecture} & \textbf{Vanilla transition $A_{t}$} & \textbf{+ DHO (causal)} & \textbf{+ DHO (LION)} \\
+\midrule
+RWKV-6 &
+$\mathrm{diag}(w_{t}) \in (\mathbb{R}_{+})^{D/h}$, see~(\ref{eq:rwkv6-decay}) &
+block-diagonal product of $K/2$ blocks $G_{t, h, b}$ replacing pairs of real channels in $\mathrm{diag}(w_{t})$ &
+LION-S parallel form whose mask factor inherits the block-complex transition $G_{t, h, b}$ in place of $w_{t}$ \\
+\addlinespace
+Mamba-2 &
+$a_{t} I$ scalar identity, see~(\ref{eq:mamba2-ssd}) &
+block-diagonal closure of pairs of state channels around the scalar $a_{t}$, with $\theta_{t, h, b}$ providing the per-block phase that $a_{t} I$ lacks &
+LION-S parallel form whose mask factor inherits the block-complex closure of $a_{t} I$ \\
+\addlinespace
+\shortstack[l]{Linear\\Attention} &
+$I$ identity, trivial &
+block-diagonal product of $K/2$ rotation-and-damping blocks $G_{t, h, b}$ replacing the trivial transition &
+controlled LION-S parallel form whose mask factor is the block-complex transition; see Section~\ref{sec:proposed:lion} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+DHO has its greatest structural reach on the architecture whose
+vanilla transition is most degenerate: Linear Attention, where the
+identity transition admits no native attenuation and no native
+phase, so the block-complex form introduces a function-class
+capability that did not previously exist. The reach is intermediate
+on Mamba-2, where the scalar-identity transition admits attenuation
+but no phase; DHO contributes the phase. The reach is smallest on
+RWKV-6, where the per-channel data-dependent decay vector $w_{t}$
+already provides per-channel decay diversity, and DHO's contribution
+is restricted to closing pairs of channels under rotation. The
+deficit-proportional ordering of the table follows from the
+structural reading: the more degenerate the vanilla transition, the
+more residual function class the block-complex extension recovers.
+
+The block-complex transition is structurally compatible with the
+symmetric decay mask of the LION parallel form. The LION mask of
+equation~(\ref{eq:lion-mask}) factorises as a product of per-step
+decay factors $\lambda_{k}$, and the per-step factor $\lambda_{k}$
+is replaced by the block-diagonal product of $K/2$
+rotation-and-damping blocks under DHO, with no other change to the
+parallel form. The LION deployment of DHO on RWKV-6 and Mamba-2
+inherits the LION-S decay class, since both backbones have a
+data-dependent decay parameter that the LION mapping preserves. The
+LION deployment on Linear Attention uses the controlled LION-S
+configuration of Section~\ref{sec:proposed:lion}, in which a
+per-token sigmoid decay is introduced as a separate structural
+choice.
+
+\section{Chunked Value Decorrelation}\label{sec:proposed:cvd}
+
+The third proposed mechanism is the Chunked Value Decorrelation
+(CVD). CVD is a value-side preconditioning operator constructed for
+linear-time recurrent substrates. It addresses the absent
+interference-cancellation deficit identified in
+Section~\ref{sec:backbones:deficit}: when several stored keys are
+similar, their values overlap in the bounded recurrent state and
+become difficult to disentangle at readout, and none of the three
+backbones has a native primitive that performs an active cancellation
+of the correlated component before the value enters the state. The
+mechanism shares the principle of key-similarity decorrelation with
+LUCID Attention~\cite{duvvuri2026lucid} but is constructed for a
+different substrate, and the relationship between the two is one of
+shared logical motivation rather than direct adaptation.
+
+\subsection{Generic form}
+
+For each chunk of size $T_{c}$, with chunk-local keys
+$K_{c} \in \mathbb{R}^{T_{c} \times d}$ and values
+$V_{c} \in \mathbb{R}^{T_{c} \times d_{v}}$, CVD computes a
+chunk-local preconditioner from key-similarity statistics and
+applies its inverse to the values:
+\begin{equation}\label{eq:cvd-generic}
+\tilde{V}_{c} = P_{c}^{-1} V_{c},
+\qquad
+P_{c} = \exp\!\left( \tau_{h} \cdot \left[ \frac{K_{c}^{\mathrm{RN}} (K_{c}^{\mathrm{RN}})^{\top}}{\sqrt{d}} - \sqrt{d} \right] \right) + \varepsilon I,
+\end{equation}
+where $K_{c}^{\mathrm{RN}}$ denotes the row-RMS-normalised keys
+within the chunk, $\tau_{h}$ is a per-head learnable temperature
+that scales the key-similarity exponent, and $\varepsilon I$ is a
+small diagonal regulariser that preserves the well-conditioning of
+$P_{c}$ on the linear-time substrate. The preconditioner is the
+chunk-local analogue of the LUCID-faithful preconditioner of
+equation~(\ref{eq:lucid-rn}), restricted to the chunk-local
+$T_{c} \times T_{c}$ block in place of the full $T \times T$ matrix
+of equations~(\ref{eq:lucid-base}) and~(\ref{eq:lucid-output}). The
+preconditioned values $\tilde{V}_{c}$ are passed to the unmodified
+scan of the underlying backbone in place of the raw values, so the
+recurrence's transition operator and readout direction are not
+changed.
+
+The per-head temperature $\tau_{h}$ is parameterised through a
+softplus link, $\tau_{h} = \mathrm{softplus}(\tau_{\mathrm{raw}, h})$,
+to ensure positivity. The initialisation of $\tau_{\mathrm{raw}}$
+is chosen so that $\tau_{h} = 1$ at the start of training in the
+RWKV-6 deployment, in the Mamba-2 deployment, and in the LION-mode
+Linear Attention deployments; the causal Linear Attention deployment
+uses $\tau_{\mathrm{raw}} = 0$ at initialisation, which yields
+$\tau_{h} = \ln 2$. The diagonal regulariser $\varepsilon$ takes
+two values across the matrix, conditional on backbone:
+$\varepsilon = 10^{-4}$ on the Mamba-2 deployment, and
+$\varepsilon = 10^{-6}$ on the RWKV-6 and Linear Attention
+deployments. The two values reflect a single design rationale: the
+SSD chunk-local Gram matrix on Mamba-2 becomes ill-conditioned at
+trained temperatures around $\tau_{h} \approx 1.5$, and the larger
+$\varepsilon$ value stabilises the chunk-local solve at those
+temperatures, while the RWKV-6 and Linear Attention deployments
+operate at better-conditioned regimes and pair the smaller
+$\varepsilon$ value with an element-wise singular-fallback in the
+linear solve.
+
+The full $T \times T$ key-similarity matrix is never materialised.
+The preconditioner is constructed and inverted on chunk-local
+$T_{c} \times T_{c}$ blocks, which preserves the linear-time
+backbone's $O(T)$ envelope at the expense of a $T_{c}^{3}$ per-chunk
+per-head linear-system solve cost, amortised across the linear-time
+backbone's $T / T_{c}$ chunks.
+
+\subsection{Provenance: shared logic, distinct substrate}
+
+The relationship between CVD and the LUCID Attention mechanism
+of~\citet{duvvuri2026lucid} is one of shared logical motivation
+rather than direct adaptation, and the chapter states the
+distinction without hedging. LUCID is a softmax-attention mechanism
+deployed inside a quadratic-complexity Transformer. It operates on
+the full $T \times T$ softmax-attention matrix; preserves the
+$O(N^{2} d)$ complexity of standard attention; targets long-context
+retrieval as its primary task domain; constructs the preconditioner
+of equation~(\ref{eq:lucid-base}) as a fixed function of the keys
+without any learnable temperature; and combines the preconditioner
+with the standard softmax weights of equation~(\ref{eq:lucid-output})
+in front of the value path, where the softmax weights are essential
+to the derivation of the operator as a delta-rule update in the
+exponential-kernel reproducing kernel Hilbert space.
+
+CVD operates inside the recurrence of a linear-time RNN. It never
+materialises the full $T \times T$ key-similarity matrix; it uses
+chunk-local $T_{c} \times T_{c}$ systems exclusively, with $T_{c}$
+typically two orders of magnitude smaller than the full sequence
+length; it introduces a per-head learnable temperature $\tau_{h}$
+in place of LUCID's fixed $1 / \sqrt{d}$ scaling; it adds the
+diagonal regulariser $\varepsilon I$, which is absent from LUCID;
+and it feeds the preconditioned values $\tilde{V}_{c}$ into the
+backbone's unchanged scan in place of the softmax-weighted attention
+output of equation~(\ref{eq:lucid-output}). The substrate change
+from softmax attention to a linear-time recurrent state is the
+load-bearing structural difference; the per-head temperature and
+the diagonal regulariser are required for the chunk-local solve to
+remain well-conditioned on a substrate whose values do not pass
+through a softmax normalisation. The shared logical move between
+LUCID and CVD is the use of a key-similarity preconditioner to
+decorrelate values before they enter the memory operation,
+motivated by the same observation that correlated keys cause
+interference at readout in any associative-memory implementation.
+The relation to the rank-one Householder erasure of
+DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} is parallel:
+both DeltaNet and CVD remove the component of each value that
+aligns with earlier keys under the key-similarity geometry, but
+DeltaNet does so online with a single rank-one update per token,
+while CVD does so in closed form across the chunk-local block.
+
+\subsection{Per-architecture deployment}
+
+CVD has three architecture-specific deployments because the chunk
+structure of the substrate differs across backbones.
+Table~\ref{tab:cvd-deployment} contrasts the chunking pattern, the
+preconditioner source, and the location of the chunk-local solve on
+each backbone. The mechanism is value-side: in every cell, it
+modifies the values that enter the recurrence and leaves the
+recurrence's transition operator and readout direction unchanged.
+
+\begin{table}[t]
+\centering
+\small
+\caption[Per-architecture deployment of Chunked Value
+Decorrelation]{Per-architecture deployment of Chunked Value
+Decorrelation. The mechanism operates on chunk-local
+$T_{c} \times T_{c}$ blocks on every backbone. The preconditioner
+source identifies the key-side tensor that populates the chunk-local
+Gram matrix, and the solve location identifies where in the
+per-block computation the chunk-local linear system is inverted.}
+\label{tab:cvd-deployment}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{2.4cm} X X X@{}}
+\toprule
+\textbf{Architecture} & \textbf{Chunking} & \textbf{Preconditioner source} & \textbf{Solve location} \\
+\midrule
+RWKV-6 &
+within-chunk inside the chunked WKV scan; $T_{c} = 64$ &
+keys $K_{c}$ produced by the Time-Mix projection &
+once per chunk per head, before the WKV scan consumes the values \\
+\addlinespace
+Mamba-2 &
+within each chunk of the SSD dual form; $T_{c} = 64$, inherited from the SSD chunk size of~\citet{dao2024transformers} &
+the chunk-local $C_{c}$ tensor, the query analog in the SSD scalar-identity dual form &
+once per chunk per head, before the SSD scan consumes the values \\
+\addlinespace
+\shortstack[l]{Linear\\Attention} &
+within-chunk in both modes; $T_{c} = 64$ inside the LION parallel form, and $T_{c} = 64$ inside the chunked causal kernel scan &
+$\phi(K_{c})$ in the feature-mapped key sequence &
+inside the parallel attention path in the LION mode; once per chunk in the causal mode \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The Mamba-2 deployment uses the $C$-correlation analog rather than
+the more obvious $B$-correlation analog. The choice is structural:
+in the SSD scalar-identity dual form of
+equation~(\ref{eq:mamba2-ssd}), the $C$ tensor is the query analog
+and the $B$ tensor is the input-write analog, so the chunk-local
+Gram matrix $C_{c} (C_{c})^{\top}$ corresponds directly to the
+$K_{c}^{\mathrm{RN}} (K_{c}^{\mathrm{RN}})^{\top}$ Gram matrix of
+the generic form and produces a preconditioner whose interpretation
+matches the RWKV-6 and Linear Attention deployments.
+
+\section{Unified LION wrapper}\label{sec:proposed:lion}
+
+The LION framework of~\citet{afzal2025linear}, presented in
+Section~\ref{sec:lion}, supplies the bidirectional access pattern
+for the experimental matrix on each of the three causal backbones.
+This section describes the LION code path of the matrix and the
+decay-class correspondence that maps each causal backbone to its
+LION counterpart.
+
+The LION code path is realised as a shared interface convention
+rather than a single shared wrapper class. Each causal backbone in
+the matrix carries its own LION deployment, and the three
+deployments share the algebraic form of the bidirectional parallel
+attention of equations~(\ref{eq:lion-mask})
+and~(\ref{eq:lion-fullatt}) but are realised by distinct kernels
+specialised to each backbone's existing causal computation. On
+RWKV-6, the LION deployment is selected by a mode parameter on the
+existing Time-Mix block, with the LION branch dispatching into a
+parallel attention kernel that consumes the WKV decay $w_{t}$ as
+the LION mask factor. On Mamba-2, the LION deployment is selected
+by a mode parameter on the SSD block, with the LION branch
+dispatching into a parallel attention kernel that consumes the
+per-token scalar $a_{t}$ as the LION mask factor. On Linear
+Attention~\cite{katharopoulos2020transformers}, the LION deployment
+is realised by a separate encoder class with its own parallel-form
+forward path, since the underlying causal recurrence has no decay
+parameter and the LION mask must be supplied independently. The
+three deployments present a uniform algebraic interface to the rest
+of the chapter and to the experimental matrix, and the chapter
+refers to them collectively as the LION wrapper, but the
+implementation is three coupled per-backbone deployments rather than
+a single shared class.
+
+The decay-class correspondence between each causal backbone and its
+LION counterpart follows from the structure of the per-step decay
+factor $\lambda_{k}$ in the LION mask of
+equation~(\ref{eq:lion-mask}). RWKV-6 inherits LION-S, since the
+WKV decay $w_{t}$ is per-channel data-dependent through
+equation~(\ref{eq:rwkv6-decay}) and maps directly onto the LION-S
+parameterisation of $\lambda_{k}$ as a learnable per-token gate.
+Mamba-2 inherits LION-S, since the scalar $a_{t}$ is per-token
+data-dependent through the selective step size $\Delta_{t}$ of
+equation~(\ref{eq:mamba2-delta}) and maps onto the LION-S
+parameterisation as a per-token, single-channel decay. Linear
+Attention inherits LION-LIT, since the causal accumulator has
+$A_{t} = I$ and therefore no decay to inherit, which corresponds to
+the $\lambda_{k} = 1$ instantiation of the LION mask.
+
+The matrix additionally reports a controlled LION-S deployment on
+the Linear Attention backbone, in which a per-token sigmoid decay
+is introduced that is not present in the underlying causal
+backbone. The controlled deployment serves as the cleanest available
+test of the structural role of decay in the bidirectional setting:
+it isolates the contribution of the per-token decay parameter from
+every other aspect of the LION parallel form, since the Linear
+Attention backbone has no other decay-bearing primitive, and it
+allows the experimental matrix to compare LION-LIT and LION-S on
+the same kernel-attention substrate. The structural motivation for
+the controlled deployment is recalled from
+Section~\ref{sec:lion}: bounded value accumulation in the
+bidirectional setting requires either an external normalisation
+step or a decay-bearing mask, and a downstream value-decorrelation
+mechanism such as the Chunked Value Decorrelation of
+Section~\ref{sec:proposed:cvd} loses its conditioning guarantee when
+applied to a substrate whose accumulation is unbounded.
+Table~\ref{tab:lion-mapping} summarises the per-architecture mapping.
+
+\begin{table}[t]
+\centering
+\small
+\caption[LION decay-class mapping per backbone]{Decay-class
+correspondence between each causal backbone and its LION
+counterpart. The default LION class is the natural mapping per the
+LION framework of~\citet{afzal2025linear}. The controlled LION-S
+deployment on Linear Attention introduces a per-token sigmoid decay
+that is not present in the underlying causal backbone, and is the
+only entry in the controlled column.}
+\label{tab:lion-mapping}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{2.6cm} X X X@{}}
+\toprule
+\textbf{Architecture} & \textbf{Causal decay class} & \textbf{LION decay class (default)} & \textbf{LION decay class (controlled)} \\
+\midrule
+RWKV-6 & per-channel data-dependent & LION-S & not applicable \\
+\addlinespace
+Mamba-2 & scalar per-token data-dependent & LION-S & not applicable \\
+\addlinespace
+Linear Attention & none ($\lambda_{k} = 1$) & LION-LIT & LION-S \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Diagnostic instrumentation}\label{sec:proposed:probes}
+
+The empirical chapter attributes mechanism behaviour at the
+parameter level using a set of per-mechanism diagnostic probes
+whose construction is summarised here. Each probe reports a
+per-step scalar that distinguishes whether a mechanism is engaged
+under stochastic gradient descent and whether its engagement is
+helpful for the primary metric, supporting the four-cell
+engagement classifier that organises the closed-cell evidence in
+Chapter~\ref{ch:experiments}.
+
+For the Multi-Scale Depthwise Convolution mechanism, the probe
+reports the per-layer norm of the mixing weights $\alpha_{d}$ for
+$d > 1$ and the per-layer gradient signal on those weights,
+distinguishing the case in which the multi-dilation branches remain
+at their initialisation from the case in which they diverge under
+the gradient. For the Damped Harmonic Oscillator mechanism, the
+probe reports the per-head per-block trajectory of $\eta_{h, b}$
+and the rotation-angle distribution $\theta_{t, h, b}$,
+distinguishing the case in which the Rayleigh-dissipation coupling
+remains near zero from the case in which it engages. For the
+Chunked Value Decorrelation mechanism, the probe reports the
+trained per-head temperature $\tau_{h}$ and the chunk-local
+condition number of the Gram matrix that enters $P_{c}$,
+distinguishing the case in which the preconditioner is near-identity
+from the case in which it actively decorrelates. The four-cell
+engagement classifier crosses the parameter-mobility signal with
+the primary metric outcome, separating mechanisms that are engaged
+and helpful from those that are engaged without converting into
+measured gain, those that fail to engage, and the residual cell.
+The full classifier definition and its application to the
+closed-cell evidence are deferred to Chapter~\ref{ch:experiments}.
