@@ -428,22 +428,3 @@ compute.
   audio benchmark and that operates without the variance overhead of
   autoregressive evaluation.
 
-  \section{Reference implementations}
-
-  The codebase of the thesis adapts vendor reference implementations
-  of the underlying scan kernels rather than re-implementing them
-  from scratch. The RWKV-6 time-mix and channel-mix blocks are
-  adapted from the official RWKV-block reference
-  repository~\cite{rwkv2024block}; the Mamba-2 selective
-  state-space duality kernel is adapted from the
-  \texttt{state-spaces/mamba} repository of Gu and
-  Dao~\cite{gu2024mambacode} via the \texttt{mamba-ssm} package; and
-  the linear-attention causal recurrence is adapted from the
-  reference associated with Katharopoulos et
-  al.~\cite{katharopoulos2020transformers}. In every case, the
-  modifications introduced by the proposed mechanisms are confined
-  to dedicated extension points (mechanism-injection sites in the
-  preprocessing path, the transition operator, or the chunk-local
-  preconditioner stage) and do not alter the base scan implementation,
-  preserving numerical equivalence with the reference at the
-  zero-mechanism limit.

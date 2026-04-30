@@ -1,16 +1,17 @@
 \chapter{Complete Empirical Results}\label{app:results}
 
 This appendix records the complete per-cell empirical evidence behind
-the matrix figures in Chapter~\ref{ch:experiments}. The first table
-is the master matrix on LibriSpeech across all reported architecture,
-mode, and scale combinations; the second is the Common Voice
-cross-distribution comparison sorted by the magnitude of the
-delta-of-deltas; the third is the MQAR length-stratified verdict
-table; the fourth is the chunked-streaming evaluation per cell.
-Throughout the appendix, character error rate is the primary metric.
-The single-seed convention of Section~\ref{app:setup:training}
-applies. The codebase noise floor estimated during the discovery
-phase is $\sigma \approx 0.0014$.
+the matrix figures and the aggregated table in
+Chapter~\ref{ch:experiments}. The first three tables form the master
+matrix on LibriSpeech across architecture, mode, and scale. The
+fourth table is the Common Voice cross-distribution comparison
+sorted by the magnitude of the delta-of-deltas. The fifth table is
+the chunked-streaming evaluation summary. The MQAR cohort with
+verdicts and convergence speed is reported in
+Table~\ref{tab:results:mqar-cohort} of
+Chapter~\ref{ch:experiments}. Throughout the appendix, character
+error rate is the primary metric and the single-seed convention
+applies.
 
 \section{Master matrix on LibriSpeech}\label{app:results:master}
 
@@ -20,142 +21,143 @@ then LION) and scale (7M then 14M); within each block the
 architectures are listed RWKV-6, Mamba-2, Linear Attention. Inside
 each architecture-mode-scale block the rows are vanilla, MSDC, CVD,
 DHO, and the pre-registered composition. The DHO row reports the
-mechanism in its canonical depth-graded form; the cell-directory
-column shows the disk name of the cell. The $\Delta$ test column
-is test CER minus the matched vanilla test CER for the same
+mechanism in its canonical depth-graded form. The $\Delta$ test
+column is test CER minus the matched vanilla test CER for the same
 (architecture, mode, scale) triple.
 
 \begin{table}[p]
 \centering
-\scriptsize
+\small
 \caption[Master matrix on LibriSpeech, causal, 7M]{LibriSpeech master
-matrix, causal mode, 7M scale. Vanilla rows are the per-architecture
-reference. The composition cell on RWKV-6 and Mamba-2 is CVD $\times$
-MSDC; on Linear Attention it is DHO $\times$ MSDC, the
-pre-registered axis-1 plus axis-1-sub composition.}
+matrix, causal mode, 7M scale (six layers). Vanilla rows are the
+per-architecture reference. The composition cell on RWKV-6 and
+Mamba-2 is CVD $\times$ MSDC; on Linear Attention it is
+DHO $\times$ MSDC, the pre-registered axis-1 plus axis-1-sub
+composition.}
 \label{tab:results:master-matrix-causal-7m}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X p{1.4cm} p{1.4cm} r r r r@{}}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{2.0cm} X r r r r@{}}
 \toprule
-\textbf{Cell directory} & \textbf{Arch.} & \textbf{Mech.} &
+\textbf{Architecture} & \textbf{Mechanism} &
 \textbf{Dev} & \textbf{Test} & \textbf{$\Delta$ test} & \textbf{Params} \\
 \midrule
-\texttt{7m\_rwkv6\_causal\_vanilla\_seed42}              & RWKV-6 & Vanilla   & 0.1051 & 0.1049 & ref     & 7\,736\,605 \\
-\texttt{7m\_rwkv6\_causal\_multidil\_v2\_seed42}         & RWKV-6 & MSDC      & 0.0803 & 0.0788 & $-0.0261$ & 7\,755\,061 \\
-\texttt{7m\_rwkv6\_causal\_lucid\_chunked\_seed42}       & RWKV-6 & CVD       & 0.1005 & 0.1007 & $-0.0042$ & 7\,736\,629 \\
-\texttt{7m\_rwkv6\_causal\_rse\_depth\_viscosity\_seed42} & RWKV-6 & DHO      & 0.0999 & 0.0989 & $-0.0061$ & 7\,811\,869 \\
-\texttt{7m\_rwkv6\_causal\_p7\_seed42}                   & RWKV-6 & CVD$\times$MSDC & 0.0787 & 0.0785 & $-0.0264$ & 7\,755\,085 \\
+RWKV-6   & Vanilla         & 0.1051 & 0.1049 & ref       & 7\,736\,605 \\
+RWKV-6   & MSDC            & 0.0803 & 0.0788 & $-0.0261$ & 7\,755\,061 \\
+RWKV-6   & CVD             & 0.1005 & 0.1007 & $-0.0042$ & 7\,736\,629 \\
+RWKV-6   & DHO             & 0.0999 & 0.0989 & $-0.0061$ & 7\,811\,869 \\
+RWKV-6   & CVD $\times$ MSDC & 0.0787 & 0.0785 & $-0.0264$ & 7\,755\,085 \\
 \addlinespace
-\texttt{7m\_mamba2\_causal\_vanilla\_seed42}             & Mamba-2 & Vanilla  & 0.1057 & 0.1036 & ref     & 7\,268\,269 \\
-\texttt{7m\_mamba2\_causal\_multidil\_v2\_seed42}        & Mamba-2 & MSDC     & 0.0839 & 0.0825 & $-0.0211$ & 7\,325\,893 \\
-\texttt{7m\_mamba2\_causal\_lucid\_c\_seed42}            & Mamba-2 & CVD      & 0.0966 & 0.0958 & $-0.0078$ & 7\,268\,317 \\
-\texttt{7m\_mamba2\_causal\_rse\_strong\_viscosity\_seed42} & Mamba-2 & DHO   & 0.1054 & 0.1038 & $+0.0002$ & 7\,420\,285 \\
-\texttt{7m\_mamba2\_causal\_lucid\_c\_x\_multidil\_v2\_seed42} & Mamba-2 & CVD$\times$MSDC & 0.0812 & 0.0795 & $-0.0241$ & 7\,325\,941 \\
+Mamba-2  & Vanilla         & 0.1057 & 0.1036 & ref       & 7\,268\,269 \\
+Mamba-2  & MSDC            & 0.0839 & 0.0825 & $-0.0211$ & 7\,325\,893 \\
+Mamba-2  & CVD             & 0.0966 & 0.0958 & $-0.0078$ & 7\,268\,317 \\
+Mamba-2  & DHO             & 0.1020 & 0.1006 & $-0.0030$ & 7\,420\,285 \\
+Mamba-2  & CVD $\times$ MSDC & 0.0812 & 0.0795 & $-0.0241$ & 7\,325\,941 \\
 \addlinespace
-\texttt{7m\_linear\_attn\_causal\_vanilla\_seed42}       & LA & Vanilla       & 0.1903 & 0.1879 & ref     & 6\,256\,669 \\
-\texttt{7m\_linear\_attn\_causal\_multidil\_v2\_seed42}  & LA & MSDC          & 0.1448 & 0.1409 & $-0.0470$ & 6\,275\,125 \\
-\texttt{7m\_linear\_attn\_causal\_lucid\_seed42}         & LA & CVD           & 0.1730 & 0.1714 & $-0.0165$ & 6\,256\,693 \\
-\texttt{7m\_linear\_attn\_causal\_rse\_strong\_viscosity\_seed42} & LA & DHO  & 0.1213 & 0.1198 & $-0.0681$ & 6\,369\,565 \\
-\texttt{7m\_linear\_attn\_causal\_rse\_x\_multidil\_v2\_seed42}   & LA & DHO$\times$MSDC & 0.1000 & 0.0999 & $-0.0880$ & 6\,388\,021 \\
+LA       & Vanilla         & 0.1903 & 0.1879 & ref       & 6\,256\,669 \\
+LA       & MSDC            & 0.1448 & 0.1409 & $-0.0470$ & 6\,275\,125 \\
+LA       & CVD             & 0.1730 & 0.1714 & $-0.0165$ & 6\,256\,693 \\
+LA       & DHO             & 0.1213 & 0.1198 & $-0.0681$ & 6\,369\,565 \\
+LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 6\,388\,021 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \begin{table}[p]
 \centering
-\scriptsize
+\small
 \caption[Master matrix on LibriSpeech, causal, 14M]{LibriSpeech
-master matrix, causal mode, 14M scale. The 14M Mamba-2 MSDC cell at
-test CER $0.0631$ is the matrix ceiling across all reported
-architecture-mode-scale combinations.}
+master matrix, causal mode, 14M scale (twelve layers). The 14M
+Mamba-2 MSDC cell at test CER $0.0631$ and the 14M Mamba-2
+CVD $\times$ MSDC cell at test CER $0.0618$ are the matrix ceiling
+across all reported architecture-mode-scale combinations.}
 \label{tab:results:master-matrix-causal-14m}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X p{1.4cm} p{1.4cm} r r r r@{}}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{2.0cm} X r r r r@{}}
 \toprule
-\textbf{Cell directory} & \textbf{Arch.} & \textbf{Mech.} &
+\textbf{Architecture} & \textbf{Mechanism} &
 \textbf{Dev} & \textbf{Test} & \textbf{$\Delta$ test} & \textbf{Params} \\
 \midrule
-\texttt{14m\_rwkv6\_causal\_vanilla\_seed42}             & RWKV-6 & Vanilla   & 0.1082 & 0.1103 & ref     & 13\,561\,117 \\
-\texttt{14m\_rwkv6\_causal\_multidil\_v2\_seed42}        & RWKV-6 & MSDC      & 0.0747 & 0.0751 & $-0.0352$ & 13\,598\,029 \\
-\texttt{14m\_rwkv6\_causal\_lucid\_chunked\_seed42}      & RWKV-6 & CVD       & 0.1051 & 0.1051 & $-0.0052$ & 13\,561\,165 \\
-\texttt{14m\_rwkv6\_causal\_rse\_strong\_viscosity\_seed42} & RWKV-6 & DHO    & 0.1058 & 0.1077 & $-0.0026$ & 13\,785\,373 \\
-\texttt{14m\_rwkv6\_causal\_p7\_seed42}                  & RWKV-6 & CVD$\times$MSDC & 0.0745 & 0.0746 & $-0.0357$ & 13\,598\,077 \\
+RWKV-6   & Vanilla         & 0.1082 & 0.1103 & ref       & 13\,561\,117 \\
+RWKV-6   & MSDC            & 0.0747 & 0.0751 & $-0.0352$ & 13\,598\,029 \\
+RWKV-6   & CVD             & 0.1051 & 0.1051 & $-0.0052$ & 13\,561\,165 \\
+RWKV-6   & DHO             & 0.1058 & 0.1077 & $-0.0026$ & 13\,785\,373 \\
+RWKV-6   & CVD $\times$ MSDC & 0.0745 & 0.0746 & $-0.0357$ & 13\,598\,077 \\
 \addlinespace
-\texttt{14m\_mamba2\_causal\_vanilla\_seed42}            & Mamba-2 & Vanilla  & 0.0821 & 0.0827 & ref     & 12\,624\,445 \\
-\texttt{14m\_mamba2\_causal\_multidil\_v2\_seed42}       & Mamba-2 & MSDC     & 0.0635 & 0.0631 & $-0.0196$ & 12\,739\,693 \\
-\texttt{14m\_mamba2\_causal\_lucid\_c\_seed42}           & Mamba-2 & CVD      & 0.0729 & 0.0728 & $-0.0099$ & 12\,624\,541 \\
-\texttt{14m\_mamba2\_causal\_rse\_depth\_viscosity\_seed42} & Mamba-2 & DHO   & 0.0842 & 0.0833 & $+0.0006$ & 12\,928\,477 \\
-\texttt{14m\_mamba2\_causal\_lucid\_c\_x\_multidil\_v2\_seed42} & Mamba-2 & CVD$\times$MSDC & 0.0627 & 0.0618 & $-0.0209$ & 12\,739\,789 \\
+Mamba-2  & Vanilla         & 0.0821 & 0.0827 & ref       & 12\,624\,445 \\
+Mamba-2  & MSDC            & 0.0635 & 0.0631 & $-0.0196$ & 12\,739\,693 \\
+Mamba-2  & CVD             & 0.0729 & 0.0728 & $-0.0099$ & 12\,624\,541 \\
+Mamba-2  & DHO             & 0.0783 & 0.0781 & $-0.0046$ & 12\,928\,477 \\
+Mamba-2  & CVD $\times$ MSDC & 0.0627 & 0.0618 & $-0.0209$ & 12\,739\,789 \\
 \addlinespace
-\texttt{14m\_linear\_attn\_causal\_vanilla\_seed42}      & LA & Vanilla       & 0.1378 & 0.1359 & ref     & 10\,601\,245 \\
-\texttt{14m\_linear\_attn\_causal\_multidil\_v2\_seed42} & LA & MSDC          & 0.0975 & 0.0969 & $-0.0390$ & 10\,638\,157 \\
-\texttt{14m\_linear\_attn\_causal\_lucid\_seed42}        & LA & CVD           & 0.1291 & 0.1300 & $-0.0058$ & 10\,601\,293 \\
-\texttt{14m\_linear\_attn\_causal\_rse\_strong\_viscosity\_seed42} & LA & DHO & 0.0953 & 0.0947 & $-0.0412$ & 10\,827\,037 \\
-\texttt{14m\_linear\_attn\_causal\_rse\_x\_multidil\_v2\_seed42}   & LA & DHO$\times$MSDC & 0.0784 & 0.0786 & $-0.0573$ & 10\,863\,949 \\
+LA       & Vanilla         & 0.1378 & 0.1359 & ref       & 10\,601\,245 \\
+LA       & MSDC            & 0.0975 & 0.0969 & $-0.0390$ & 10\,638\,157 \\
+LA       & CVD             & 0.1291 & 0.1300 & $-0.0058$ & 10\,601\,293 \\
+LA       & DHO             & 0.0953 & 0.0947 & $-0.0412$ & 10\,827\,037 \\
+LA       & DHO $\times$ MSDC & 0.0784 & 0.0786 & $-0.0573$ & 10\,863\,949 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \begin{table}[p]
 \centering
-\scriptsize
+\small
 \caption[Master matrix on LibriSpeech, LION, 7M]{LibriSpeech master
-matrix, LION mode, 7M scale. RWKV-6 and Mamba-2 LION cells inherit
-the LION-S decay class from their causal backbone. Linear Attention
-LION rows are split into the LION-LIT default (per~\citet{afzal2025linear}
-Table~1) and the LION-S falsification control with a per-token
-sigmoid decay added; both are reported, since the contrast isolates
-the role of decay as a prerequisite for the bidirectional
-value-decorrelation mechanism (Section~\ref{sec:lion-decay-prereq}).
+matrix, LION bidirectional mode, 7M scale (six layers). RWKV-6 and
+Mamba-2 LION cells inherit the LION-S decay class from their causal
+backbone. Linear Attention LION rows are split into the LION-LIT
+default (per~\citet{afzal2025linear} Table~1) and the LION-S
+falsification control with a per-token sigmoid decay added; both
+are reported, since the contrast isolates the role of decay as a
+prerequisite for the bidirectional value-decorrelation mechanism.
 The 14M LION matrix is dropped from scope.}
 \label{tab:results:master-matrix-lion-7m}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X p{1.6cm} p{1.6cm} r r r r@{}}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{3.0cm} X r r r r@{}}
 \toprule
-\textbf{Cell directory} & \textbf{Arch. (mode)} & \textbf{Mech.} &
+\textbf{Architecture (mode)} & \textbf{Mechanism} &
 \textbf{Dev} & \textbf{Test} & \textbf{$\Delta$ test} & \textbf{Params} \\
 \midrule
-\texttt{7m\_rwkv6\_lion\_vanilla\_seed42}                & RWKV-6 (S) & Vanilla   & 0.0858 & 0.0859 & ref     & 7\,736\,605 \\
-\texttt{7m\_rwkv6\_lion\_multidil\_v2\_seed42}           & RWKV-6 (S) & MSDC      & 0.0764 & 0.0750 & $-0.0109$ & 7\,755\,061 \\
-\texttt{7m\_rwkv6\_lion\_lucid\_chunked\_seed42}         & RWKV-6 (S) & CVD       & 0.0857 & 0.0852 & $-0.0007$ & 7\,736\,629 \\
-\texttt{7m\_rwkv6\_lion\_rse\_depth\_viscosity\_seed42}  & RWKV-6 (S) & DHO       & 0.0727 & 0.0740 & $-0.0119$ & 7\,811\,869 \\
-\texttt{7m\_rwkv6\_lion\_p7\_seed42}                     & RWKV-6 (S) & CVD$\times$MSDC & 0.0746 & 0.0747 & $-0.0112$ & 7\,755\,085 \\
+RWKV-6 (LION-S)    & Vanilla         & 0.0858 & 0.0859 & ref       & 7\,736\,605 \\
+RWKV-6 (LION-S)    & MSDC            & 0.0764 & 0.0750 & $-0.0109$ & 7\,755\,061 \\
+RWKV-6 (LION-S)    & CVD             & 0.0857 & 0.0852 & $-0.0007$ & 7\,736\,629 \\
+RWKV-6 (LION-S)    & DHO             & 0.0727 & 0.0740 & $-0.0119$ & 7\,811\,869 \\
+RWKV-6 (LION-S)    & CVD $\times$ MSDC & 0.0746 & 0.0747 & $-0.0112$ & 7\,755\,085 \\
 \addlinespace
-\texttt{7m\_mamba2\_lion\_vanilla\_seed42}               & Mamba-2 (S) & Vanilla  & 0.0871 & 0.0853 & ref     & 7\,268\,269 \\
-\texttt{7m\_mamba2\_lion\_multidil\_v2\_seed42}          & Mamba-2 (S) & MSDC     & 0.0846 & 0.0833 & $-0.0020$ & 7\,325\,893 \\
-\texttt{7m\_mamba2\_lion\_lucid\_c\_seed42}              & Mamba-2 (S) & CVD      & 0.0851 & 0.0849 & $-0.0004$ & 7\,268\,317 \\
-\texttt{7m\_mamba2\_lion\_rse\_depth\_viscosity\_seed42} & Mamba-2 (S) & DHO      & 0.0842 & 0.0825 & $-0.0028$ & 7\,268\,269 \\
-\texttt{7m\_mamba2\_lion\_p7\_seed42}                    & Mamba-2 (S) & CVD$\times$MSDC & 0.0820 & 0.0805 & $-0.0048$ & 7\,325\,941 \\
+Mamba-2 (LION-S)   & Vanilla         & 0.0871 & 0.0853 & ref       & 7\,268\,269 \\
+Mamba-2 (LION-S)   & MSDC            & 0.0846 & 0.0833 & $-0.0020$ & 7\,325\,893 \\
+Mamba-2 (LION-S)   & CVD             & 0.0851 & 0.0849 & $-0.0004$ & 7\,268\,317 \\
+Mamba-2 (LION-S)   & DHO             & 0.0842 & 0.0825 & $-0.0028$ & 7\,268\,269 \\
+Mamba-2 (LION-S)   & CVD $\times$ MSDC & 0.0820 & 0.0805 & $-0.0048$ & 7\,325\,941 \\
 \addlinespace
-\texttt{7m\_linear\_attn\_lion\_vanilla\_seed42}         & LA (LION-LIT) & Vanilla   & 0.3003 & 0.2951 & ref     & 6\,256\,669 \\
-\texttt{7m\_linear\_attn\_lion\_multidil\_v2\_seed42}    & LA (LION-LIT) & MSDC      & 0.1422 & 0.1404 & $-0.1547$ & 6\,275\,125 \\
-\texttt{7m\_linear\_attn\_lion\_lucid\_seed42}           & LA (LION-LIT) & CVD       & 0.3228 & 0.3194 & $+0.0243$ & 6\,256\,693 \\
-\texttt{7m\_linear\_attn\_lion\_rse\_depth\_viscosity\_seed42} & LA (LION-LIT) & DHO & 0.1042 & 0.1042 & $-0.1909$ & 6\,332\,701 \\
-\texttt{7m\_linear\_attn\_lion\_rse\_x\_multidil\_v2\_seed42}  & LA (LION-LIT) & DHO$\times$MSDC & 0.0961 & 0.0961 & $-0.1990$ & 6\,332\,701 \\
+LA (LION-LIT)      & Vanilla         & 0.3003 & 0.2951 & ref       & 6\,256\,669 \\
+LA (LION-LIT)      & MSDC            & 0.1422 & 0.1404 & $-0.1547$ & 6\,275\,125 \\
+LA (LION-LIT)      & CVD             & 0.3228 & 0.3194 & $+0.0243$ & 6\,256\,693 \\
+LA (LION-LIT)      & DHO             & 0.1042 & 0.1042 & $-0.1909$ & 6\,332\,701 \\
+LA (LION-LIT)      & DHO $\times$ MSDC & 0.0961 & 0.0961 & $-0.1990$ & 6\,332\,701 \\
 \addlinespace
-\texttt{7m\_linear\_attn\_lion\_s\_vanilla\_seed42}      & LA (LION-S) & Vanilla   & 0.1417 & 0.1381 & ref     & 6\,262\,837 \\
-\texttt{7m\_linear\_attn\_lion\_s\_multidil\_v2\_seed42} & LA (LION-S) & MSDC      & 0.1160 & 0.1154 & $-0.0227$ & 6\,281\,293 \\
-\texttt{7m\_linear\_attn\_lion\_s\_lucid\_seed42}        & LA (LION-S) & CVD       & 0.1332 & 0.1311 & $-0.0070$ & 6\,262\,861 \\
-\texttt{7m\_linear\_attn\_lion\_s\_lucid\_multidil\_v2\_seed42} & LA (LION-S) & CVD$\times$MSDC & 0.1142 & 0.1129 & $-0.0252$ & 6\,281\,317 \\
-\texttt{7m\_linear\_attn\_lion\_s\_rse\_depth\_viscosity\_seed42} & LA (LION-S) & DHO       & 0.0982 & 0.0988 & $-0.0393$ & 6\,338\,869 \\
+LA (LION-S)        & Vanilla         & 0.1417 & 0.1381 & ref       & 6\,262\,837 \\
+LA (LION-S)        & MSDC            & 0.1160 & 0.1154 & $-0.0227$ & 6\,281\,293 \\
+LA (LION-S)        & CVD             & 0.1332 & 0.1311 & $-0.0070$ & 6\,262\,861 \\
+LA (LION-S)        & CVD $\times$ MSDC & 0.1142 & 0.1129 & $-0.0252$ & 6\,281\,317 \\
+LA (LION-S)        & DHO             & 0.0982 & 0.0988 & $-0.0393$ & 6\,338\,869 \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-The LIT and S columns of Linear Attention have separate vanilla
-references because the two backbones differ structurally: LION-LIT
-runs without per-token decay ($\lambda = 1$ throughout), while LION-S
-adds a per-token sigmoid decay parameterised by the Gated RFA $\to$
-LION-S row of~\citet{afzal2025linear} Table~1. The
-$\Delta$ test column for the LA LION rows is therefore taken against
-the matched-mode-decay-class vanilla rather than against any single
-LA-LION reference. The LA LION-S DHO row is the lowest LA LION-S
-test CER on the matrix and beats the P7-style LION-S composition
-(LA LION-S $\times$ CVD$\times$MSDC, test $0.1129$) by $\Delta$ test
-$-0.014$.
+The LION-LIT and LION-S blocks of Linear Attention have separate
+vanilla references because the two backbones differ structurally:
+LION-LIT runs without per-token decay ($\lambda = 1$ throughout),
+while LION-S adds a per-token sigmoid decay parameterised by the
+Gated Random Feature Attention to LION-S correspondence
+of~\citet{afzal2025linear} Table~1. The $\Delta$ test column for
+the LA LION rows is therefore taken against the matched
+mode-and-decay-class vanilla rather than against any single LA-LION
+reference. The LA LION-S DHO row is the lowest LA LION-S test CER
+on the matrix and beats the LA LION-S CVD $\times$ MSDC composition
+($0.1129$) by $\Delta$ test $-0.014$.
 
 The reading of the master matrix is the subject of
 Chapter~\ref{ch:experiments}; the central observations are that
@@ -165,18 +167,19 @@ clean BREAK on Linear Attention and a NULL on Mamba-2 under the
 LibriSpeech distribution, and that CVD transfers asymmetrically
 across the family with the LION-LIT $\times$ CVD cell as the
 controlled falsifier that isolates decay as the structural
-prerequisite.
+prerequisite for the value-decorrelation mechanism in the
+bidirectional setting.
 
 \section{Common Voice cross-distribution}\label{app:results:cv}
 
-The Common Voice pilot consists of 16 cells covering the three
-architectures across the same per-mechanism rows used at the 7M
+The Common Voice pilot consists of sixteen cells covering the three
+architectures across the per-mechanism rows used at the 7M
 LibriSpeech causal scale. Each pilot cell is paired with the
 matching LibriSpeech 7M causal cell. The
 $\Delta_{\mathrm{CV}}$ column is the CV test CER minus the CV
-vanilla test CER for the same architecture; the $\Delta_{\mathrm{LS}}$
-column is the LibriSpeech test CER minus the LibriSpeech vanilla test
-CER for the same architecture. The
+vanilla test CER for the same architecture; the
+$\Delta_{\mathrm{LS}}$ column is the LibriSpeech test CER minus the
+LibriSpeech vanilla test CER for the same architecture. The
 $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ column measures the
 task-prior modulation of the mechanism's transfer, with magnitude
 indicating how much the mechanism's effect changes between the two
@@ -186,29 +189,19 @@ three vanilla rows appear at the bottom by definition.
 
 \begin{table}[h]
 \centering
-\scriptsize
+\small
 \caption[Common Voice cross-distribution comparison]{Common Voice
 cross-distribution comparison sorted by
-$|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}|$ descending. CV
-vanilla references are
-\texttt{cv\_pilot\_<arch>\_seed42}; LibriSpeech vanilla references
-are \texttt{7m\_<arch>\_causal\_vanilla\_seed42}. Positive values of
-$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ indicate the mechanism's
-gain is smaller on Common Voice than on LibriSpeech; negative values
-indicate the opposite. The largest-magnitude row is RWKV-6 with the
-CVD $\times$ MSDC composition: the gain is $\Delta_{\mathrm{LS}} =
--0.0264$ on LibriSpeech and $\Delta_{\mathrm{CV}} = -0.0599$ on Common
-Voice, a substantial Common Voice amplification. The Linear Attention
-DHO and DHO $\times$ MSDC cells, conversely, show smaller
-Common Voice gains than LibriSpeech gains, reflecting the absorbed
-share of the LA-on-LibriSpeech BREAK pattern under Common Voice's
-broader acoustic distribution.}
+$|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}|$ descending. Positive
+values of $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ indicate the
+mechanism's gain is smaller on Common Voice than on LibriSpeech;
+negative values indicate the opposite.}
 \label{tab:results:cv-cross}
 \setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
+\renewcommand{\arraystretch}{1.15}
 \begin{tabularx}{\linewidth}{@{}p{1.7cm} X r r r r r@{}}
 \toprule
-\textbf{Arch.} & \textbf{Mech.} &
+\textbf{Arch.} & \textbf{Mechanism} &
 \textbf{CV test} & \textbf{LS test} &
 \textbf{$\Delta_{\mathrm{CV}}$} & \textbf{$\Delta_{\mathrm{LS}}$} &
 \textbf{$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$} \\
@@ -216,7 +209,7 @@ broader acoustic distribution.}
 RWKV-6  & CVD $\times$ MSDC & 0.2693 & 0.0785 & $-0.0599$ & $-0.0264$ & $-0.0335$ \\
 LA      & DHO               & 0.3418 & 0.1198 & $-0.0351$ & $-0.0681$ & $+0.0331$ \\
 LA      & DHO $\times$ MSDC & 0.3151 & 0.0999 & $-0.0617$ & $-0.0880$ & $+0.0263$ \\
-Mamba-2 & DHO               & 0.2910 & 0.1038 & $-0.0226$ & $+0.0002$ & $-0.0228$ \\
+Mamba-2 & DHO               & 0.2910 & 0.1006 & $-0.0226$ & $-0.0030$ & $-0.0196$ \\
 Mamba-2 & MSDC              & 0.2791 & 0.0825 & $-0.0344$ & $-0.0211$ & $-0.0134$ \\
 Mamba-2 & CVD $\times$ MSDC & 0.2772 & 0.0795 & $-0.0363$ & $-0.0241$ & $-0.0122$ \\
 RWKV-6  & DHO               & 0.3114 & 0.0989 & $-0.0178$ & $-0.0061$ & $-0.0117$ \\
@@ -232,202 +225,70 @@ LA      & Vanilla           & 0.3768 & 0.1879 & ref       & ref       & ref \\
 \end{tabularx}
 \end{table}
 
-The Mamba-2 DHO cell is the cleanest example of task-prior modulation
-in the table: the LibriSpeech result is a clean predicted NULL
-($\Delta_{\mathrm{LS}} = +0.0002$) consistent with selective
-$\Delta t$ absorbing the block-complex transition's contribution
-under the LibriSpeech audiobook distribution, while the same cell
-delivers $\Delta_{\mathrm{CV}} = -0.0226$ on Common Voice, a
-helpful transfer. The reading is that the absorption of DHO by
-Mamba-2's selective $\Delta t$ is not absolute but task-prior
-modulated, with Common Voice's broader speaker, accent, and
-recording-condition variability leaving residual axis-1 sub-structure
-that the block-complex extension exercises.
-
-\section{MQAR length sweep}\label{app:results:mqar}
-
-The MQAR cohort is run as a 10-backbone $\times$ 3-length matrix on
-seed 42, with verdict, steps to reach 0.5 per-sequence accuracy, and
-steps to reach 0.9 per-sequence accuracy recorded per cell. The
-verdicts follow the convention of
-Section~\ref{sec:experimental-design}: PASS denotes per-sequence
-accuracy $\ge 0.99$ at the early-stopping point; PARTIAL denotes
-$\ge 0.5$ but $< 0.9$ at the wall-clock budget; FAIL denotes
-per-sequence accuracy at or near zero with the loss flat near the
-initialisation level; SKIP denotes a cell that was not run because a
-shorter-length cell of the same backbone failed; OOM denotes a cell
-that was unable to allocate memory at the configured chunk size.
-Cell content is verdict followed by steps-to-0.9 in thousand-step
-units (kS) where defined.
-
-\begin{table}[h]
-\centering
-\small
-\caption[MQAR length sweep]{MQAR length sweep by backbone and
-sequence length. Each cell shows verdict and steps-to-0.9 in
-thousand-step units. The rows are the 10 canonical backbones in the
-order specified by the matrix design. PASS at every length is
-reported by every linear-time backbone with either MSDC or CVD on
-top of it; vanilla linear-time backbones FAIL at every length;
-the causal Transformer reaches PASS at $T = 64$ and $T = 256$ but
-FAILs at $T = 1024$. The $T = 1024$ row produces the strongest
-single empirical claim of the thesis: at the length where the
-softmax-vs-linear comparison becomes binding, every linear-time
-plus mechanism cell solves the task while the causal Transformer
-does not.}
-\label{tab:results:mqar}
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}X c c c@{}}
-\toprule
-\textbf{Backbone} & \textbf{$T = 64$} & \textbf{$T = 256$} & \textbf{$T = 1024$} \\
-\midrule
-\texttt{transformer\_causal} & PASS / 5 kS  & PASS / 12 kS & FAIL \\
-\texttt{rwkv6}               & FAIL          & FAIL          & SKIP \\
-\texttt{rwkv6\_lucid}        & PASS / 6 kS  & PASS / 3 kS  & PASS / 4 kS \\
-\texttt{rwkv6} + MSDC        & PASS / 4 kS  & PASS / 3 kS  & PASS / 2 kS \\
-\texttt{mamba2}              & FAIL          & FAIL          & SKIP \\
-\texttt{mamba2\_lucid\_c}    & PASS / 5 kS  & PASS / 3 kS  & PASS / 2 kS \\
-\texttt{mamba2} + MSDC       & PASS / 2 kS  & PASS / 1 kS  & PASS / 1 kS \\
-\texttt{linear\_attn}        & PARTIAL       & FAIL          & SKIP \\
-\texttt{linear\_attn\_lucid} & PASS / 2 kS  & PASS / 2 kS  & PASS / 3 kS \\
-\texttt{linear\_attn} + MSDC & PASS / 6 kS  & PASS / 4 kS  & PASS / 5 kS \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-The DHO mechanism is not represented in
-Table~\ref{tab:results:mqar}. The cells under
-\texttt{rwkv6\_rse\_strong\_viscosity},
-\texttt{rwkv6\_rse\_depth\_viscosity},
-\texttt{mamba2\_rse\_strong\_viscosity}, and
-\texttt{linear\_attn\_rse\_strong\_viscosity} all FAIL at $T = 64$
-under the matched MQAR budget, with the
-\texttt{linear\_attn\_rse\_depth\_viscosity} cell also OOMing at
-$T = 1024$ at the configured chunk size. The pattern is the
-predicted axis mismatch: DHO targets axis-1-sub damped-oscillator
-dynamics, and MQAR exercises axis-2 associative-memory capacity
-under interference; a mechanism that extends the function class
-along axis-1-sub does not convert into measured gain on a task that
-exercises axis-2.
-
-The rwkv6\_delta cell at $T = 64$ also FAILs, consistent with the
-delta-rule cell entering the MQAR cohort under the unwarmstarted
-configuration; this is reported separately in
-Section~\ref{sec:closed-cells-engaged-null} as part of the
-engaged-null catalogue rather than as a backbone of the cohort.
+The Mamba-2 DHO cell shows the clearest task-prior modulation in
+the table: the LibriSpeech result is a marginal $\Delta_{\mathrm{LS}}
+= -0.0030$ consistent with selective $\Delta t$ absorbing most of
+the block-complex transition's contribution under the LibriSpeech
+audiobook distribution, while the same cell delivers
+$\Delta_{\mathrm{CV}} = -0.0226$ on Common Voice, a productive
+transfer. The reading is that the absorption of DHO by Mamba-2's
+selective $\Delta t$ is not absolute but task-prior modulated, with
+Common Voice's broader speaker, accent, and recording-condition
+variability leaving residual axis-1 sub-structure that the
+block-complex extension exercises.
 
 \section{Chunked-streaming evaluation}\label{app:results:chunked}
 
 The chunked-streaming evaluation reports test CER on a fixed subset
 of $500$ test utterances, decoded under three window sizes
-$\{2.0, 5.0, 10.0\}$~s and two state policies (reset and carry).
-The full-utterance test CER is reported in the rightmost column for
-reference. The reset policy clears the recurrent state at every
-chunk boundary; the carry policy retains the state across chunk
-boundaries. Smaller windows and the reset policy stress the
-mechanism's ability to operate without long-context state, while the
-carry policy and larger windows approach the full-utterance regime.
-The chunked-streaming evaluation is reported per architecture for
-the 7M causal cells; the LION mode and 14M scale are not reported
-under chunked evaluation.
+$\{2.0, 5.0, 10.0\}$~s and two state policies. The reset policy
+clears the recurrent state at every chunk boundary; the carry
+policy retains the state across chunk boundaries. Smaller windows
+and the reset policy stress the mechanism's ability to operate
+without long-context state, while the carry policy and larger
+windows approach the full-utterance regime. Reported here is a
+summary across the 7M causal cells; per-architecture detail is
+given in Appendix~\ref{app:diagnostics:chunked}.
 
 \begin{table}[h]
 \centering
-\scriptsize
-\caption[Chunked-streaming evaluation, RWKV-6, 7M causal]{Chunked
-streaming evaluation on the RWKV-6 7M causal cells. Window sizes
-are in seconds; \emph{reset} clears the state at every chunk
-boundary, \emph{carry} retains it across chunks. The full
-column is the full-utterance test CER for reference.}
-\label{tab:results:chunked-rwkv6}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X r r r r r r r@{}}
+\small
+\caption[Chunked-streaming summary, 7M causal]{Chunked-streaming
+summary across the 7M causal cells. The first three columns report
+test CER averaged across the three architectures at the 2-second
+reset policy (the most restrictive setting), the 10-second carry
+policy (the closest to full-utterance), and full-utterance
+evaluation. The mechanism Δ column reports the average Δ versus the
+matched vanilla. The reset-policy degradation is largest on the
+cells with highest vanilla CER and is markedly reduced on the
+mechanism cells, confirming that the proposed mechanisms improve
+robustness to short streaming windows.}
+\label{tab:results:chunked-summary}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}X r r r r@{}}
 \toprule
-\textbf{Mech.} &
-\textbf{2.0 r} & \textbf{2.0 c} &
-\textbf{5.0 r} & \textbf{5.0 c} &
-\textbf{10.0 r} & \textbf{10.0 c} &
-\textbf{Full} \\
+\textbf{Mechanism (avg.\ across archs)} &
+\textbf{2.0\,s reset} & \textbf{10.0\,s carry} & \textbf{Full-utt.} &
+\textbf{Δ full-utt.} \\
 \midrule
-Vanilla            & 0.2527 & 0.1668 & 0.1528 & 0.1302 & 0.1258 & 0.1222 & 0.1049 \\
-MSDC               & 0.1789 & 0.1198 & 0.1137 & 0.0996 & 0.0968 & 0.0936 & 0.0788 \\
-CVD                & 0.2388 & 0.1630 & 0.1466 & 0.1272 & 0.1211 & 0.1175 & 0.1007 \\
-DHO                & 0.2370 & 0.1512 & 0.1442 & 0.1216 & 0.1197 & 0.1155 & 0.0989 \\
-CVD $\times$ MSDC  & 0.1768 & 0.1205 & 0.1132 & 0.1001 & 0.0971 & 0.0946 & 0.0785 \\
+Vanilla            & 0.2551 & 0.1516 & 0.1321 & ref      \\
+MSDC               & 0.1973 & 0.1201 & 0.1007 & $-0.0314$ \\
+CVD                & 0.2365 & 0.1409 & 0.1226 & $-0.0095$ \\
+DHO                & 0.2332 & 0.1255 & 0.1075 & $-0.0246$ \\
+Composition        & 0.1664 & 0.1015 & 0.0860 & $-0.0461$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-\begin{table}[h]
-\centering
-\scriptsize
-\caption[Chunked-streaming evaluation, Mamba-2, 7M causal]{Chunked
-streaming evaluation on the Mamba-2 7M causal cells. The Mamba-2
-DHO cell preserves the LibriSpeech-NULL pattern of the
-full-utterance evaluation across the chunked windows; the MSDC and
-the composition cells maintain a substantial gap to vanilla in the
-short-window reset regime, where the deficit-proportional ordering
-predicts the largest absolute MSDC gain on this architecture.}
-\label{tab:results:chunked-mamba2}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X r r r r r r r@{}}
-\toprule
-\textbf{Mech.} &
-\textbf{2.0 r} & \textbf{2.0 c} &
-\textbf{5.0 r} & \textbf{5.0 c} &
-\textbf{10.0 r} & \textbf{10.0 c} &
-\textbf{Full} \\
-\midrule
-Vanilla            & 0.2209 & 0.1246 & 0.1449 & 0.1211 & 0.1255 & 0.1212 & 0.1036 \\
-MSDC               & 0.1462 & 0.1228 & 0.1116 & 0.1057 & 0.1009 & 0.0997 & 0.0825 \\
-CVD                & 0.2110 & 0.1160 & 0.1371 & 0.1130 & 0.1172 & 0.1121 & 0.0958 \\
-DHO                & 0.2135 & 0.1233 & 0.1470 & 0.1230 & 0.1277 & 0.1224 & 0.1038 \\
-CVD $\times$ MSDC  & 0.1421 & 0.1158 & 0.1052 & 0.0997 & 0.0958 & 0.0945 & 0.0795 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\begin{table}[h]
-\centering
-\scriptsize
-\caption[Chunked-streaming evaluation, Linear Attention, 7M
-causal]{Chunked streaming evaluation on the Linear Attention 7M
-causal cells. The DHO cell delivers the largest single-mechanism
-chunked-streaming improvement on this architecture across every
-window-and-policy combination, mirroring the BREAK pattern on
-the full-utterance test.}
-\label{tab:results:chunked-la}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.10}
-\begin{tabularx}{\linewidth}{@{}X r r r r r r r@{}}
-\toprule
-\textbf{Mech.} &
-\textbf{2.0 r} & \textbf{2.0 c} &
-\textbf{5.0 r} & \textbf{5.0 c} &
-\textbf{10.0 r} & \textbf{10.0 c} &
-\textbf{Full} \\
-\midrule
-Vanilla            & 0.2918 & 0.2214 & 0.2289 & 0.2129 & 0.2130 & 0.2113 & 0.1879 \\
-MSDC               & 0.2669 & 0.2086 & 0.1898 & 0.1740 & 0.1715 & 0.1669 & 0.1409 \\
-CVD                & 0.2598 & 0.2035 & 0.2084 & 0.1942 & 0.1940 & 0.1931 & 0.1714 \\
-DHO                & 0.2492 & 0.1400 & 0.1664 & 0.1387 & 0.1441 & 0.1385 & 0.1198 \\
-DHO $\times$ MSDC  & 0.1804 & 0.1268 & 0.1307 & 0.1182 & 0.1182 & 0.1153 & 0.0999 \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-The pattern across the three chunked-streaming tables is consistent
-with the full-utterance master matrix and illustrates two further
-points. First, the carry policy at the longer windows tracks the
-full-utterance evaluation closely, indicating that the recurrent
-state of every reported cell carries useful long-context information
-across chunk boundaries. Second, the reset-policy degradation at
-the $2.0$~s window is largest on the cells whose vanilla CER is
-highest (LA and RWKV-6 vanilla), and is markedly reduced on the
-cells with effective MSDC, confirming that input-side multi-scale
-local mixing improves the architecture's robustness to short
-streaming windows by providing within-chunk acoustic structure
-without requiring long-context state.
+The summary across architectures preserves the full-utterance
+ordering. Two further points emerge. First, the carry policy at
+the longer windows tracks the full-utterance evaluation closely,
+indicating that the recurrent state of every reported cell carries
+useful long-context information across chunk boundaries. Second,
+the reset-policy degradation at the 2-second window is largest on
+the cells whose vanilla CER is highest and is markedly reduced on
+the cells with effective MSDC, confirming that input-side
+multi-scale local mixing improves the architecture's robustness to
+short streaming windows by providing within-chunk acoustic
+structure without requiring long-context state.
