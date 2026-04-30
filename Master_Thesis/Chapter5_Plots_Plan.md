@@ -554,3 +554,159 @@ and `results.json::params.total` for each cell.
 
 ---
 
+## 10. Master inventory of trained cells
+
+Full inventory of cells under `experiments/final/outputs/` at the
+50-epoch matched budget on seed 42. Numbers in parentheses are test
+CER on the relevant evaluation split (LibriSpeech test-clean for the
+LibriSpeech blocks, Common Voice test for the CV pilot). Source of
+truth: per-cell `results.json::test.cer`; cross-aggregated in
+`FULL_RESULTS.md` on the `main` branch.
+
+### 10.1 LibriSpeech clean-100, 7M, causal (18 cells)
+
+**RWKV-6 (7 cells):**
+- `7m_rwkv6_causal_vanilla_seed42` (0.1049)
+- `7m_rwkv6_causal_multidil_v2_seed42` (0.0788) — MSDC
+- `7m_rwkv6_causal_lucid_chunked_seed42` (0.1007) — CVD
+- `7m_rwkv6_causal_rse_strong_viscosity_seed42` (0.1006) — DHO strong-fallback
+- `7m_rwkv6_causal_rse_depth_viscosity_seed42` (0.0989) — DHO depth-graded (probe #1, canonical)
+- `7m_rwkv6_causal_rse_trwg_strong_viscosity_seed42` (0.1034) — engaged-null TRWG probe #3
+- `7m_rwkv6_causal_p7_seed42` (0.0785) — CVD × MSDC composition
+
+**Mamba-2 (5 cells):**
+- `7m_mamba2_causal_vanilla_seed42` (0.1036)
+- `7m_mamba2_causal_multidil_v2_seed42` (0.0825) — MSDC
+- `7m_mamba2_causal_lucid_c_seed42` (0.0958) — CVD
+- `7m_mamba2_causal_rse_strong_viscosity_seed42` (0.1038) — DHO
+- `7m_mamba2_causal_lucid_c_x_multidil_v2_seed42` (0.0795) — CVD × MSDC composition
+
+**Linear Attention (6 cells):**
+- `7m_linear_attn_causal_vanilla_seed42` (0.1879)
+- `7m_linear_attn_causal_multidil_v2_seed42` (0.1409) — MSDC
+- `7m_linear_attn_causal_lucid_seed42` (0.1714) — CVD
+- `7m_linear_attn_causal_rse_strong_viscosity_seed42` (0.1198) — DHO
+- `7m_linear_attn_causal_lucid_x_multidil_v2_seed42` (0.1410) — CVD × MSDC composition
+- `7m_linear_attn_causal_rse_x_multidil_v2_seed42` (0.0999) — DHO × MSDC composition (§5-aligned)
+
+### 10.2 LibriSpeech clean-100, 7M, LION (20 cells)
+
+**RWKV-6 LION-S (5 cells):**
+- `7m_rwkv6_lion_vanilla_seed42` (0.0859)
+- `7m_rwkv6_lion_multidil_v2_seed42` (0.0750) — MSDC
+- `7m_rwkv6_lion_lucid_chunked_seed42` (0.0852) — CVD
+- `7m_rwkv6_lion_rse_depth_viscosity_seed42` (0.0740) — DHO
+- `7m_rwkv6_lion_p7_seed42` (0.0747) — CVD × MSDC composition
+
+**Mamba-2 LION-S (5 cells):**
+- `7m_mamba2_lion_vanilla_seed42` (0.0853)
+- `7m_mamba2_lion_multidil_v2_seed42` (0.0833) — MSDC
+- `7m_mamba2_lion_lucid_c_seed42` (0.0849) — CVD
+- `7m_mamba2_lion_rse_depth_viscosity_seed42` (0.0825) — DHO
+- `7m_mamba2_lion_p7_seed42` (0.0805) — CVD × MSDC composition
+
+**Linear Attention LION-LIT (5 cells, no decay; default per Afzal et al. 2025 Table 1):**
+- `7m_linear_attn_lion_vanilla_seed42` (0.2951)
+- `7m_linear_attn_lion_multidil_v2_seed42` (0.1404) — MSDC
+- `7m_linear_attn_lion_lucid_seed42` (0.3194) — CVD (the only negative LION cell, decay-prerequisite falsifier)
+- `7m_linear_attn_lion_rse_depth_viscosity_seed42` (0.1042) — DHO (BREAK Δ −0.191)
+- `7m_linear_attn_lion_rse_x_multidil_v2_seed42` (0.0961) — DHO × MSDC (lowest LA test CER on the matrix)
+
+**Linear Attention LION-S (5 cells, with per-head σ-decay control):**
+- `7m_linear_attn_lion_s_vanilla_seed42` (0.1381)
+- `7m_linear_attn_lion_s_multidil_v2_seed42` (0.1154) — MSDC
+- `7m_linear_attn_lion_s_lucid_seed42` (0.1311) — CVD
+- `7m_linear_attn_lion_s_lucid_multidil_v2_seed42` (0.1129) — CVD × MSDC composition (P7-style)
+- `7m_linear_attn_lion_s_rse_depth_viscosity_seed42` (0.0988) — DHO (lowest LA LION-S test CER on the matrix)
+
+### 10.3 LibriSpeech clean-100, 14M, causal (16 cells)
+
+LION-mode 14M cells were dropped per scope.
+
+**RWKV-6 (5 cells):**
+- `14m_rwkv6_causal_vanilla_seed42` (0.1103)
+- `14m_rwkv6_causal_multidil_v2_seed42` (0.0751) — MSDC
+- `14m_rwkv6_causal_lucid_chunked_seed42` (0.1051) — CVD
+- `14m_rwkv6_causal_rse_strong_viscosity_seed42` (0.1077) — DHO
+- `14m_rwkv6_causal_p7_seed42` (0.0746) — CVD × MSDC composition
+
+**Mamba-2 (6 cells):**
+- `14m_mamba2_causal_vanilla_seed42` (0.0827)
+- `14m_mamba2_causal_multidil_v2_seed42` (0.0631) — MSDC (matrix ceiling on single mechanism)
+- `14m_mamba2_causal_lucid_c_seed42` (0.0728) — CVD
+- `14m_mamba2_causal_rse_strong_viscosity_seed42` (0.0825) — DHO strong-fallback
+- `14m_mamba2_causal_rse_depth_viscosity_seed42` (0.0833) — DHO depth-graded
+- `14m_mamba2_causal_lucid_c_x_multidil_v2_seed42` (0.0618) — CVD × MSDC composition (matrix ceiling overall)
+
+**Linear Attention (5 cells):**
+- `14m_linear_attn_causal_vanilla_seed42` (0.1359)
+- `14m_linear_attn_causal_multidil_v2_seed42` (0.0969) — MSDC
+- `14m_linear_attn_causal_lucid_seed42` (0.1300) — CVD
+- `14m_linear_attn_causal_rse_strong_viscosity_seed42` (0.0947) — DHO
+- `14m_linear_attn_causal_rse_x_multidil_v2_seed42` (0.0786) — DHO × MSDC composition
+
+### 10.4 Common Voice EN 100h, 7M, causal pilot (16 cells)
+
+**RWKV-6 (5 cells):**
+- `cv_pilot_rwkv6_seed42` (0.3291)
+- `cv_pilot_rwkv6_multidil_v2_seed42` (0.2953) — MSDC
+- `cv_pilot_rwkv6_lucid_chunked_seed42` (0.3248) — CVD
+- `cv_pilot_rwkv6_lucid_multidil_v2_seed42` (0.2693) — CVD × MSDC composition (best CV RWKV-6 cell)
+- `cv_pilot_rwkv6_rse_depth_viscosity_seed42` (0.3114) — DHO
+
+**Mamba-2 (6 cells):**
+- `cv_pilot_mamba2_seed42` (0.3136)
+- `cv_pilot_mamba2_multidil_v2_seed42` (0.2791) — MSDC
+- `cv_pilot_mamba2_lucid_c_seed42` (0.3004) — CVD
+- `cv_pilot_mamba2_lucid_c_multidil_v2_seed42` (0.2772) — CVD × MSDC composition (best CV Mamba-2 cell)
+- `cv_pilot_mamba2_rse_strong_viscosity_seed42` (0.3118) — DHO strong-fallback
+- `cv_pilot_mamba2_rse_depth_viscosity_seed42` (0.2910) — DHO depth-graded (the LibriSpeech-NULL → CV-helpful task-prior modulation)
+
+**Linear Attention (5 cells):**
+- `cv_pilot_linear_attn_seed42` (0.3768)
+- `cv_pilot_linear_attn_multidil_v2_seed42` (0.3251) — MSDC
+- `cv_pilot_linear_attn_lucid_seed42` (0.3556) — CVD
+- `cv_pilot_linear_attn_rse_strong_viscosity_seed42` (0.3418) — DHO
+- `cv_pilot_linear_attn_rse_x_multidil_v2_seed42` (0.3151) — DHO × MSDC composition (best CV LA cell)
+
+### 10.5 Operator-level bidirectional (BiWKV / VIM, 6 cells)
+
+Reference cells for the LION vs operator-level comparison of §9.2.
+Same encoder family, same 50-epoch budget, same parameter counts.
+LION 14M counterparts dropped per scope, so the 14M block is
+operator-only.
+
+**7M, 6 layers (3 cells):**
+- `7m_rwkv6_biwkv_seed42` (0.1062)
+- `7m_mamba2_bidir_vim_seed42` (0.1221)
+- `7m_linear_attn_bidir_vim_seed42` (0.1858)
+
+**14M, 12 layers (3 cells):**
+- `14m_rwkv6_biwkv_seed42` (0.0738)
+- `14m_mamba2_bidir_vim_seed42` (0.0746)
+- `14m_linear_attn_bidir_vim_seed42` (0.1207)
+
+### 10.6 Out-of-scope artefacts on disk (3 dirs)
+
+Present in `experiments/final/outputs/` for engineering audit only;
+not part of any reported chapter table.
+
+- `7m_rwkv6_biwkv_seed42_5ep` (0.2540) — 5-epoch smoke run.
+- `7m_mamba2_bidir_vim_seed42_5ep` (0.2517) — 5-epoch smoke run.
+- `rwkv6_decay_coupled_delta_seed42` — abandoned probe, no
+  `results.json` on disk.
+
+### 10.7 Headline tallies
+
+| Bucket | Cells | Notes |
+|---|---:|---|
+| LibriSpeech 7M causal | 18 | includes 1 engaged-null probe (TRWG) |
+| LibriSpeech 7M LION | 20 | LA split into LION-LIT (5) + LION-S (5) |
+| LibriSpeech 14M causal | 16 | LION 14M dropped per scope |
+| Common Voice 7M pilot | 16 | causal-only |
+| Operator-level bidirectional | 6 | reference for §9.2 |
+| Out-of-scope artefacts | 3 | smoke / abandoned |
+| **Total cells under `experiments/final/outputs/`** | **79** | |
+
+---
+
