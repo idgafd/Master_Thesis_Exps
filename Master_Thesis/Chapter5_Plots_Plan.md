@@ -405,6 +405,9 @@ plot.
 | 4 | F13 chunked streaming | Low | optional |
 | 4 | F11 training-curve grid | Low | optional |
 
+(F14 LION vs operator-level bidirectional was prototyped and dropped
+as a figure; it is reported as a table in §5 prose — see §9.2.)
+
 Recommended order of preparation:
 
 1. F1, F2, F3 first — these are pure aggregation from
@@ -465,5 +468,89 @@ three figures.
 
 ---
 
-*End Chapter 5 plots plan v1 (2026-04-29). Adjust as data
-preparation progresses.*
+## 9. Open additions before submission
+
+Two items surfaced after the F1–F13 set was built and remain TODO:
+
+### 9.1 Parameter counts must be reported somewhere
+
+Every reported cell has its trainable parameter count in
+`results.json::params.total`. Appendix~C already includes a
+`Params` column on every master-matrix row, so the absolute counts
+are present in the deliverable. Chapter~5 prose and figures
+currently elide the counts; the chapter must explicitly account for
+them at least once so the reader can verify that mechanism gains
+are not parameter-count gains in disguise. Recommended placements:
+
+- A short "parameter overhead" callout in the §5.1 / experimental-
+  setup section, citing the per-mechanism overhead range:
+  MSDC adds $\sim 0.02$M (causal) to $\sim 0.04$M (14M),
+  CVD adds $\sim 24$ params (per-head $\tau$ only),
+  DHO adds $\sim 0.08$M to $\sim 0.30$M depending on the LoRA
+  rank schedule and the depth.
+- Caption-line on F1 noting that the matrix is parameter-matched
+  within $\le 5\%$ across mechanisms at each scale, with
+  Appendix~C as the per-cell reference.
+- Per-architecture row in the §5.1 table giving vanilla and the
+  largest-mechanism cell parameter counts side by side, so the
+  ratio stays in the reader's head while reading the prose.
+
+The wording should make it clear that mechanism gains in this work
+are not bought by parameter inflation: the largest mechanism overhead
+(DHO at 14M) is $\sim 2\%$ of the backbone parameter budget.
+
+### 9.2 LION vs operator-level bidirectional comparison (table in §5 prose)
+
+`FULL_RESULTS.md` §5 already aggregates the LION vs operator-level
+(BiWKV / VIM) bidirectional comparison at 7M (3 architectures) and
+at 14M (LION 14M dropped per scope; only operator-level cells
+exist). The comparison answers a structural question that the main
+matrix does not: at matched layer count, matched parameter count,
+and matched 50-epoch budget, does the mechanism-level LION wrapper
+outperform the operator-level BiWKV / VIM alternative?
+
+**Decision (2026-04-30):** report this as a **table in §5 prose**, not
+as a figure. The F14 grouped-bar prototype was rejected because the
+shape of the data fights the layout (asymmetric bar count per
+architecture due to the LA LION-LIT vs LION-S split, plus the 14M
+operator-only block), and the structural point lands cleanly in a
+small table. F14 is dropped from the figure inventory.
+
+**Table specification.** Single table in the LION-mode subsection of
+Chapter~5 (after the LION main matrix). Two stacked sub-tables sharing
+caption and one-paragraph reading.
+
+*Sub-table 1 — 7M, 6 layers, decay-class matched.* Four rows:
+
+| Architecture | LION variant | Test CER | Operator-level | Test CER | Δ (LION − op) |
+|---|---|---:|---|---:|---:|
+| RWKV-6 (7.74M) | LION-S | 0.0859 | Bi-WKV (7.74M) | 0.1062 | $-0.020$ |
+| Mamba-2 (7.27M) | LION-S | 0.0853 | VIM (7.27M) | 0.1221 | $-0.037$ |
+| LA (6.26M) | LION-LIT | 0.2951 | VIM (6.26M) | 0.1858 | $+0.109$ |
+| LA (6.26M) | LION-S | 0.1381 | VIM (6.26M) | 0.1858 | $-0.048$ |
+
+*Sub-table 2 — 14M, 12 layers, operator-only.* Three rows:
+
+| Architecture | Operator | Test CER | Params |
+|---|---|---:|---:|
+| RWKV-6 | Bi-WKV | 0.0738 | 13.56M |
+| Mamba-2 | VIM | 0.0746 | 12.62M |
+| LA | VIM | 0.1207 | 10.60M |
+
+with a caption noting that LION 14M cells were dropped per scope, so
+the 14M comparison is operator-only.
+
+**One-paragraph reading.** On RWKV-6 and Mamba-2 (both carry native
+decay), the mechanism-level LION wrapper beats the operator-level
+alternative by Δ test CER $-0.020$ to $-0.037$. On Linear Attention,
+the natural LION mapping (LION-LIT, $\lambda = 1$) loses to VIM by
+$+0.109$, but adding decay through the LION-S control flips the
+result to $-0.048$. Decay is a structural prerequisite for the
+LION wrapper's bidirectional benefit on Linear Attention, mirroring
+the LION-LIT $\times$ CVD harmful-transfer cell of the main matrix.
+
+**Data source.** `FULL_RESULTS.md` §5 plus `results.json::test.cer`
+and `results.json::params.total` for each cell.
+
+---
+
