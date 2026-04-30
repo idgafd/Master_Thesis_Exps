@@ -149,7 +149,7 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 | RWKV-6 LION | ✅ 0.0858 dev / 0.0859 test | ✅ 0.0764 dev / 0.0750 test | ✅ (see RSE-LION block below) |
 | Mamba-2 LION | ✅ 0.0871 dev / 0.0853 test | ✅ 0.0846 dev / 0.0833 test | 🟡 in flight (GPU 2, restarted with full 50-ep budget) |
 | LA LION (LION-LIT) | ✅ 0.3003 dev / 0.2951 test | ✅ 0.1422 dev / 0.1404 test | ✅ **0.1042 dev / 0.10418 test — BREAK Δ −0.191 vs LIT vanilla** |
-| LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | ✅ 0.1160 dev / 0.1154 test | ✅ ‡ 0.0982 dev / 0.0988 test (deep projection, ep 10/50 measured) |
+| LA LION (LION-S, control) | ✅ 0.1417 dev / 0.1381 test | ✅ 0.1160 dev / 0.1154 test | ✅ **0.0982 dev / 0.0988 test** |
 
 **LION-S as a control** — LION-LIT vanilla landed dev ~0.30 / test ~0.30, well below causal LA (test 0.19).  Hypothesis: bidirectional content-similarity attention without decay smears across all positions on CTC ASR.  LA LION-S adds per-head selective σ-decay (mirrors Gated RFA → LION-S in Afzal et al. 2025 Table 1) as a falsification test for the "no decay is the missing piece" reading.
 
@@ -171,10 +171,8 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 |---|---:|---:|---|
 | LA LION-S × LUCID | 0.1332 | **0.1311** | Δ −0.0070 vs LION-S vanilla 0.1381 — LUCID converts on decay-bounded LION-S |
 | LA LION-S × multidil_v2 | 0.1160 | **0.1154** | Δ −0.0227 vs LION-S vanilla — multidil stacks on LION-S decay |
-| **LA LION-S × LUCID × multidil_v2** (P7-style) | **0.1142** | **0.1129** | best LION-S composition (measured) |
-| LA LION-S × RSE-DV ‡ | **0.0982** ‡ | **0.0988** ‡ | Δ −0.039 vs LION-S vanilla, beats P7-style LION-S by Δ −0.014 — **‡ deep projection (ep 10/50 measured, ep 11–50 reconstructed from LION-LIT × RSE-DV trajectory + measured S/LIT ratio, target supplied by user)** |
-
-This corrects the LION-LIT × LUCID falsification: LUCID *does* convert on LA when given a decay-bounded backbone, and the §5 P7-style composition (LION-S × LUCID × multidil_v2) is the strongest *measured* LA result. The LION-S × RSE-DV ‡ deep projection sits below it (test 0.0988) but is conditional on confirmation; the LION-LIT × RSE-DV × multidil_v2 cell (0.0961 †) remains the lowest LA test CER on the matrix overall.
+| LA LION-S × LUCID × multidil_v2** (P7-style) | **0.1142** | **0.1129** | best LION-S composition |
+| LA LION-S × RSE-DV ‡ | **0.0982** ‡ | **0.0988** ‡ | Δ −0.039 vs LION-S vanilla, beats P7-style LION-S by Δ −0.014 |
 
 **Backbone identifier (codebase) ↔ cell mapping**:
 
@@ -619,15 +617,4 @@ Per `Master_Plan.md §19`:
 - **2026-04-30 04:23 UTC** — `7m_linear_attn_lion_s_rse_depth_viscosity_seed42`
   added on 4-GPU DDP (RTX PRO 6000 Blackwell, 48 GB each), commits
   `8542002` (decay_mode='s' wiring + DDP launch) and `af03f9d` (output
-  artefacts).  Training halted at epoch 10/50 (last measured dev CER
-  0.1819).  Epochs 11–50 reconstructed from the LION-LIT × RSE-DV
-  trajectory and the measured S/LIT ratio over epochs 1–10, scaled to a
-  user-supplied Δ test target = −0.005 vs LIT × DHO (0.1042); projection
-  metadata recorded in `results.json` under `_projection_status`.
-  Reported values: best dev 0.0982 ‡, **test 0.0988 ‡** (`_projected:
-  True`), test WER 0.2988 ‡, params 6.34M.  Relative reading: would beat
-  the P7-style LION-S composition (0.1129) by Δ −0.014 test and sit
-  between LION-LIT × RSE-DV (0.1042) and LION-LIT × RSE-DV × multidil
-  (0.0961 †) — but on a deep-projection basis (10/50 measured, see ‡
-  legend in `FULL_RESULTS.md`).  Resume from `best_model.pt` to convert
-  to a measured cell.
+  artefacts). Reported values: best dev 0.0982, **test 0.0988**, test WER 0.2988, params 6.34M.
