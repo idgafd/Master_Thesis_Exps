@@ -274,10 +274,19 @@ def row_keys_for_panel(panel: str, present: pd.DataFrame) -> list[tuple]:
 
 def render_bars(df: pd.DataFrame, out_pdf: Path, out_png: Path) -> None:
     panels = [("causal", 7, "causal, 7M"), ("causal", 14, "causal, 14M"), ("lion", None, "LION, 7M")]
+    # Per-panel legend placement: panel 1 has empty area at upper left;
+    # panel 2 was crowded at upper right (LA DHO bars), moved to lower
+    # left; panel 3 has 4 entries placed lower left in 2 columns and
+    # smaller font to keep clear of LA LION-LIT BREAK bars.
+    panel_legend = [
+        {"loc": "lower left"},
+        {"loc": "lower left"},
+        {"loc": "lower left", "ncol": 2, "fontsize": 7.5, "framealpha": 0.92},
+    ]
     # Thesis text width is ~14 cm (PAGE_WIDTH_IN). Stack panels vertically
     # so the per-panel readability survives the column-width constraint.
     fig, axes = plt.subplots(3, 1, figsize=(PAGE_WIDTH_IN, 7.0), constrained_layout=True)
-    for ax, (panel, scale, title) in zip(axes, panels):
+    for ax_idx, (ax, (panel, scale, title)) in enumerate(zip(axes, panels)):
         clean_spines(ax)
         ax.set_axisbelow(True)
         if panel == "causal":
@@ -305,11 +314,21 @@ def render_bars(df: pd.DataFrame, out_pdf: Path, out_png: Path) -> None:
                     ys.append(best["delta"])
             xs = np.arange(n_cols) + (i - (n_rows - 1) / 2) * bar_w
             face = ARCH_COLOR[arch]
-            # LA appears twice in the LION panel: solid for LION-LIT,
-            # hatched for LION-S. Other rows are always solid.
+            # LA appears twice in the LION panel: striped for LION-LIT
+            # (the exotic no-decay control variant), solid for LION-S
+            # (the natural mapping). RWKV-6 and Mamba-2 in LION mode
+            # are solid since they are LION-S by natural mapping.
+            is_la_lion_lit = (panel == "lion" and arch == "linear_attn" and mode == "lion")
             is_la_lion_s = (panel == "lion" and arch == "linear_attn" and mode == "lion_s")
-            hatch = LION_HATCH["lion_s"] if is_la_lion_s else LION_HATCH["lion_lit"]
-            edge = "white" if is_la_lion_s else "none"
+            if is_la_lion_lit:
+                hatch = LION_HATCH["lion_lit"]
+                edge = "white"
+            elif is_la_lion_s:
+                hatch = LION_HATCH["lion_s"]
+                edge = "none"
+            else:
+                hatch = None
+                edge = "none"
             ax.bar(
                 xs, ys, width=bar_w, color=face, label=label,
                 hatch=hatch, edgecolor=edge, linewidth=0.0,
@@ -319,7 +338,7 @@ def render_bars(df: pd.DataFrame, out_pdf: Path, out_png: Path) -> None:
         ax.set_xticklabels(cols_present, rotation=20, ha="right")
         ax.set_ylabel(r"$\Delta$ test CER vs vanilla")
         ax.set_title(title)
-        ax.legend(loc="best")
+        ax.legend(**panel_legend[ax_idx])
     fig.suptitle(r"Transfer-pattern matrix: $\Delta$ test CER vs vanilla")
     fig.savefig(out_pdf)
     fig.savefig(out_png)

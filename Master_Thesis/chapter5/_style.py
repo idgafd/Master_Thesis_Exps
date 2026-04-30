@@ -30,8 +30,8 @@ DELTA_CMAP = LinearSegmentedColormap.from_list(
 
 # -- Hatch patterns for distinctions inside one architecture --
 LION_HATCH = {
-    "lion_lit": None,    # solid
-    "lion_s":   "///",   # hatched
+    "lion_lit": "///",   # striped (the no-decay control variant)
+    "lion_s":   None,    # solid
 }
 MODE_HATCH = {
     "causal":   None,
