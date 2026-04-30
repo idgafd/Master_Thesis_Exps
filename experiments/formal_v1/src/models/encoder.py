@@ -147,8 +147,19 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
     # Final-stage — LA LION × RSE-depth-viscosity.  Bidirectional T×T
     # complex attention on the LA recurrence.  Depth-graded θ clip
     # mirrors the RWKV-6 / Mamba-2 LION-RSE schedule.
-    if backbone in ("linear_attn_lion_rse_depth_viscosity",
-                    "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2"):
+    #
+    # `linear_attn_lion_rse_depth_viscosity`     — LION-LIT × RSE-DV.
+    # `linear_attn_lion_s_rse_depth_viscosity`   — LION-S × RSE-DV.
+    #     decay_mode='s' adds per-token σ-decay to the cumsum's real part
+    #     (composes mask-side σ × transition-side Rayleigh damping
+    #     multiplicatively inside the complex log-decay).
+    _la_lion_rse_depth_backbones = {
+        "linear_attn_lion_rse_depth_viscosity",
+        "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2",
+        "linear_attn_lion_s_rse_depth_viscosity",
+        "linear_attn_lion_s_rse_depth_viscosity_convshift_multidil_symmetric_v2",
+    }
+    if backbone in _la_lion_rse_depth_backbones:
         import math as _math
         from src.models.linear_attn_rse import CausalLinearAttentionRSEEncoder
         rse_per_layer_overrides = [
@@ -159,7 +170,16 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
             {"theta_clip": _math.pi / 2, "theta_init_scale": _math.pi / 8,  "theta_lora_dim": 48},
         ]
-        use_multidil_sym = backbone == "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2"
+        use_multidil_sym = backbone in (
+            "linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2",
+            "linear_attn_lion_s_rse_depth_viscosity_convshift_multidil_symmetric_v2",
+        )
+        decay_mode = (
+            "s" if backbone in (
+                "linear_attn_lion_s_rse_depth_viscosity",
+                "linear_attn_lion_s_rse_depth_viscosity_convshift_multidil_symmetric_v2",
+            ) else "lit"
+        )
         return CausalLinearAttentionRSEEncoder(
             d_model=cfg.d_model,
             n_layers=cfg.n_layers,
@@ -170,6 +190,7 @@ def build_encoder(cfg: ExperimentConfig) -> nn.Module:
             mode="lion",
             use_multidil_sym=use_multidil_sym,
             rse_per_layer_overrides=rse_per_layer_overrides,
+            decay_mode=decay_mode,
         )
 
     if backbone == "mamba":

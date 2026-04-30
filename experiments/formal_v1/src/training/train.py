@@ -26,6 +26,7 @@ def train_one_epoch(
     device: torch.device,
     metric_logger: Optional[MetricLogger] = None,
     global_step_offset: int = 0,
+    max_steps: Optional[int] = None,
 ) -> dict:
     """Run one training epoch.
 
@@ -45,6 +46,10 @@ def train_one_epoch(
     global_step = global_step_offset
 
     for batch_idx, (mels, targets, mel_lens, tgt_lens) in enumerate(dataloader):
+        if max_steps is not None and batch_idx >= max_steps:
+            # Truncate to the synced step count under DDP so all ranks
+            # finish the epoch with the same number of optimizer steps.
+            break
         mels = mels.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         mel_lens = mel_lens.to(device, non_blocking=True)

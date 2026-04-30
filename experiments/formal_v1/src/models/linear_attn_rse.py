@@ -46,6 +46,25 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
 
     Projection shapes are inherited from ``CausalLinearAttentionLayer`` —
     only the scan and the RSE parameters are new.
+
+    ``decay_mode`` (LION mode only):
+      - ``"lit"`` (default): no mask-side decay; the complex log-decay
+        ``log z = -lambda_eff + i theta`` is built only from the RSE
+        Rayleigh damping and rotation. Behaves exactly as before.
+      - ``"s"``: adds the LION-S per-token sigmoid mask decay on top
+        of the RSE transition damping. A per-layer
+        ``decay_proj = nn.Linear(d_model, n_heads)`` (weight=0,
+        bias=+5.0 ⇒ σ ≈ 0.993 at init; near-LION-LIT ⇒ near
+        zero-regression) supplies a per-(B, T, H) factor
+        ``lam = sigmoid(decay_proj(x_n))``; we add
+        ``log(lam.clamp(min=1e-8))`` to the real part of ``log_z``,
+        broadcast across the Bk pair channels of each head. The
+        rotation θ is unchanged. Composition (mask-side σ-decay ×
+        transition-side Rayleigh damping) thus happens
+        multiplicatively inside the Hermitian-symmetric complex
+        cumsum, mirroring the LION-S parameterisation in
+        ``linear_attn_lion.py`` but without a separate post-attention
+        mask multiplication.
     """
 
     # Disable the base class's _diag_hook path (uses different intermediates).
@@ -66,6 +85,7 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
         rse_chunk_size: int = 64,
         use_multidil_sym: bool = False,
         mode: str = "recurrent",
+        decay_mode: str = "lit",
     ) -> None:
         super().__init__(
             d_model=d_model,
@@ -84,11 +104,22 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
                 f"CausalLinearAttentionRSELayer supports mode='recurrent' or "
                 f"'lion'; got {mode!r}"
             )
+        if decay_mode not in ("lit", "s"):
+            raise ValueError(
+                f"decay_mode must be 'lit' or 's'; got {decay_mode!r}"
+            )
+        if decay_mode == "s" and mode != "lion":
+            raise ValueError(
+                "decay_mode='s' is only supported with mode='lion' "
+                "(LION-S × RSE composition); recurrent path inherits "
+                "the LION-LIT-equivalent decay structure from RSE."
+            )
         self.n_blocks = self.head_dim // 2
         self.theta_clip = rse_theta_clip
         self.rse_viscosity = rse_viscosity
         self.chunk_size = rse_chunk_size
         self.mode = mode
+        self.decay_mode = decay_mode
 
         # ── Per-(head, block) base rotation angle + LoRA ──────────────────
         theta_init = torch.empty(n_heads, self.n_blocks).uniform_(
@@ -120,6 +151,18 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
         # rotation and decay (Rayleigh dissipation).
         if rse_viscosity:
             self.viscosity_eta = nn.Parameter(torch.zeros(n_heads, self.n_blocks))
+
+        # ── LION-S mask-side σ-decay (decay_mode='s') ────────────────────
+        # Per-layer projection x_n -> per-head λ ∈ (0, 1).  Init weight=0,
+        # bias=+5.0 ⇒ σ ≈ 0.993 ⇒ log λ ≈ -0.007 — near-LION-LIT at step
+        # 0 (zero-regression contract preserved within fp32 noise).
+        if decay_mode == "s":
+            self.decay_proj = nn.Linear(d_model, n_heads, bias=True)
+            with torch.no_grad():
+                self.decay_proj.weight.zero_()
+                self.decay_proj.bias.fill_(5.0)
+        else:
+            self.decay_proj = None
 
     # ----------------------------------------------------------------------
     # RSE chunked scan (parallel within chunks, serial between chunks)
@@ -306,7 +349,21 @@ class CausalLinearAttentionRSELayer(CausalLinearAttentionLayer):
             lambda_eff = lambda_eff + (
                 self.viscosity_eta.view(1, H, 1, Bk).float() * theta.float() ** 2
             )
-        log_z = torch.complex(-lambda_eff, theta.float())                             # (B, H, T, Bk)
+        log_z_real = -lambda_eff
+        if self.decay_mode == "s":
+            # LION-S per-token sigmoid mask decay, per-head (broadcast across
+            # the Bk pair channels).  Composes multiplicatively with the
+            # transition-side e^{-lambda_eff} inside the cumsum: each step's
+            # log-magnitude becomes  -lambda_eff + log σ(W_λ · x + b_λ).
+            lam_s = torch.sigmoid(self.decay_proj(x_n))                               # (B, T, H)
+            log_lam_s = torch.log(lam_s.clamp(min=1e-8))                              # (B, T, H), ≤ 0
+            log_lam_s_b = (
+                log_lam_s.permute(0, 2, 1).unsqueeze(-1)                              # (B, H, T, 1)
+                .expand(B, H, T, Bk)
+                .float()
+            )
+            log_z_real = log_z_real + log_lam_s_b
+        log_z = torch.complex(log_z_real, theta.float())                              # (B, H, T, Bk)
 
         cs = log_z.cumsum(dim=2)                                                      # (B, H, T, Bk)
         cs_b = cs - log_z
@@ -398,6 +455,7 @@ class CausalLinearAttentionRSEEncoder(nn.Module):
         use_multidil_sym: bool = False,
         mode: str = "recurrent",
         rse_per_layer_overrides: Optional[list] = None,
+        decay_mode: str = "lit",
     ) -> None:
         super().__init__()
         self.d_model = d_model
@@ -424,6 +482,7 @@ class CausalLinearAttentionRSEEncoder(nn.Module):
                 rse_lambda_init_range=rse_lambda_init_range,
                 use_multidil_sym=use_multidil_sym,
                 mode=mode,
+                decay_mode=decay_mode,
             ))
 
     def init_state(self, batch_size: int, device: torch.device) -> dict:
