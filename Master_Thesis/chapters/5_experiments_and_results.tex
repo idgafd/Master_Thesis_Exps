@@ -102,7 +102,7 @@ Appendix~\ref{app:results}; the supplementary diagnostic figures
 and the operator-level bidirectional comparison live in
 Appendix~\ref{app:diagnostics}.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption[Aggregated test character error rate across the
@@ -178,9 +178,9 @@ mechanisms produce three structurally distinct signatures in
 the matrix, predicted in each case from the architecture-deficit
 map of Section~\ref{sec:backbones:deficit}.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F1_transfer_pattern_matrix.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F1_transfer_pattern_matrix.pdf}
 \caption[Transfer-pattern matrix]{Test character error rate
 $\Delta$ versus the architecture-mode-scale vanilla baseline,
 faceted by access mode and parameter scale. Rows index
@@ -216,9 +216,9 @@ architecture-deficit map of
 Section~\ref{sec:backbones:deficit} predicts absolute headroom
 rather than fractional reduction.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F2_deficit_proportional_ordering.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F2_deficit_proportional_ordering.pdf}
 \caption[Deficit-proportional ordering of MSDC]{Test $\Delta$ of
 the Multi-Scale Depthwise Convolution mechanism across the
 three causal backbones at 7M and 14M. The ordering LA $>$
@@ -275,9 +275,9 @@ section. Figure~\ref{fig:f5-cross-scale} reports the cross-scale
 persistence; Figure~\ref{fig:f7-causal-lion} reports the
 causal-versus-LION mode comparison.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F5_cross_scale_persistence.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F5_cross_scale_persistence.pdf}
 \caption[Cross-scale persistence at 7M and 14M]{Test character
 error rate at the 7M and 14M scales for every causal-mode cell
 of the matrix. Lines connect the same architecture-mechanism
@@ -303,9 +303,9 @@ The matrix ceiling at 14M is the Mamba-2 CVD~$\times$~MSDC
 composition at $0.0618$, with the Mamba-2 MSDC single-mechanism
 cell at $0.0631$ slightly above.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F7_causal_lion_mode.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F7_causal_lion_mode.pdf}
 \caption[Causal versus LION mode comparison]{Test character
 error rate per (architecture, mechanism) pair in causal mode and
 in LION bidirectional mode at 7M. Linear Attention is reported
@@ -373,9 +373,9 @@ distribution. Figure~\ref{fig:f4-libri-cv} plots
 $\Delta_{\mathrm{CV}}$ against $\Delta_{\mathrm{LS}}$ for every
 non-vanilla cell.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F4_libri_cv_scatter.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F4_libri_cv_scatter.pdf}
 \caption[LibriSpeech versus Common Voice scatter]{Test
 $\Delta_{\mathrm{CV}}$ versus $\Delta_{\mathrm{LS}}$ for every
 non-vanilla cell at the 7M causal scale. Cells on the diagonal
@@ -426,7 +426,7 @@ $K \in \{16, 64, 256\}$ across thirteen backbones; verdicts and
 convergence speed are reported in
 Table~\ref{tab:results:mqar-cohort}.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption[MQAR cohort verdicts and convergence speed]{MQAR cohort
@@ -525,9 +525,9 @@ covers a structural deficit not already addressed by the first.
 Figure~\ref{fig:f6-composition} shows the pattern across the
 matrix.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F6_composition_saturation.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F6_composition_saturation.pdf}
 \caption[Composition saturation pattern]{Vanilla, best single
 mechanism, and pre-registered composition test character error
 rate per architecture and scale on the causal matrix. Bars
@@ -569,9 +569,9 @@ underlying mechanism's structural reach.
 Figure~\ref{fig:f11-training-curves} plots dev character error
 rate against epoch for every cell of the matrix.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F11_training_curves.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F11_training_curves.pdf}
 \caption[Per-cell training curves]{Dev character error rate
 versus epoch across every cell of the matrix at 7M and 14M
 causal modes, the 7M LION mode, and the 7M Common Voice pilot.

@@ -18,9 +18,9 @@ the design notes of Section~\ref{sec:proposed:msdc}; trained values
 that diverge from initialisation indicate that the multi-dilation
 branches receive gradient and contribute to the input-side mixing.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F8_msdc_alpha_heatmaps.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F8_msdc_alpha_heatmaps.pdf}
 \caption[MSDC trained $\alpha_{d}$ heatmaps]{Per-layer trained
 $\alpha_{d}$ values across the three architectures at the 7M scale.
 Rows index encoder layers; columns index dilations
@@ -42,9 +42,9 @@ from zero indicate that the Rayleigh dissipation coupling engages.
 The rotation angle is bounded by the depth-graded clip schedule of
 Section~\ref{sec:proposed:dho}.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F9_dho_eta_theta.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F9_dho_eta_theta.pdf}
 \caption[DHO $\eta$ and $\theta$ diagnostics]{Per-layer rotation-angle
 and viscosity-coefficient diagnostics for the DHO cells in the
 matrix. The depth-graded $\theta$-clip schedule is visible in the
@@ -62,9 +62,9 @@ Section~\ref{sec:proposed:cvd}. Trained values per layer and per
 head indicate the strength of the key-similarity decorrelation in
 each head.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F10_cvd_tau_heatmaps.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F10_cvd_tau_heatmaps.pdf}
 \caption[CVD per-head $\tau_{h}$ heatmaps]{Trained $\tau_{h}$ values
 per layer and per head across the productive CVD deployments. The
 across-architecture pattern exhibits substantial between-head
@@ -80,9 +80,9 @@ provided here as a single figure; the across-architecture summary
 is reported in Table~\ref{tab:results:chunked-summary} of
 Appendix~\ref{app:results}.
 
-\begin{figure}[h]
+\begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.95\linewidth]{figures/chapter5/F13_chunked_streaming.pdf}
+\includegraphics[width=0.9\linewidth]{figures/chapter5/F13_chunked_streaming.pdf}
 \caption[Chunked-streaming evaluation per architecture]{Test CER
 under chunked-streaming evaluation at window sizes
 $\{2.0, 5.0, 10.0\}$~s and reset-or-carry state policies, broken
@@ -114,7 +114,7 @@ same six-layer encoder and the same parameter count as its causal
 counterpart, with the bidirectional mechanism replacing the causal
 scan in place rather than adding parameters.
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption[LION versus operator-level bidirectional comparison, 7M]{LION
@@ -142,7 +142,7 @@ Linear Attention & LION-S    & 0.1381 & 0.1858 (VIM)    & $-0.0477$ \\
 \end{tabularx}
 \end{table}
 
-\begin{table}[h]
+\begin{table}[!htbp]
 \centering
 \small
 \caption[Operator-level bidirectional reference at 14M]{Operator-level
