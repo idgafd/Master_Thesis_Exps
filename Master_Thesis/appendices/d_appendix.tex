@@ -1,0 +1,427 @@
+\chapter{Closed-Cell Engaged-Null Catalogue}\label{app:engaged-null}
+
+This appendix collects the seven engaged-null entries and one
+saturated cluster that comprise the closed-cell evidence referenced
+by the synthesis section of Chapter~\ref{ch:experiments}. Each entry
+is a mechanism that activated under stochastic gradient descent on
+the LibriSpeech causal RWKV-6 spine without converting into a
+measurable test CER reduction. Engagement is established via
+parameter mobility diagnostics and per-block realised statistics;
+the absence of CER reduction is the marker for axis-mismatch with
+the LibriSpeech task structural prior. The catalogue and its
+adjacent saturated cluster form the converse evidence for the
+cross-experiment invariant articulated in
+Chapter~\ref{ch:experiments}: dense per-token freedom does not
+convert into measured gain without alignment between the
+mechanism's function-class extension and the axis the task
+exercises.
+
+The empirical numbers in this appendix are taken from the
+discovery-phase per-stage records in
+\texttt{experiments/formal\_v1/} (the
+\texttt{stages\_2\_9\_summary.md},
+\texttt{STAGE10\_SUMMARY.md}, and
+\texttt{EXPRESSIVITY\_AXES.md} documents); the runs were trained at
+$7$~M parameters, $30$ epochs, on LibriSpeech clean-100, seed 42,
+with the noise floor on the discovery-phase codebase estimated at
+$\sigma \approx 0.0014$. The vanilla causal RWKV-6 reference for
+the discovery phase is dev CER $0.1258$ / test CER $0.1263$.
+
+\section{Seven engaged-null mechanisms}\label{app:engaged-null:seven}
+
+\subsection{Delta rule rank-one Householder erasure}\label{app:engaged-null:delta}
+
+The delta rule mechanism replaces the per-token recurrent update with
+a rank-one Householder erase
+$S_{t} = w_{t} \odot (I - \beta_{t} k_{t} k_{t}^{\top}) S_{t-1} +
+k_{t} v_{t}^{\top}$, with the gate $\beta_{t}$ data-dependent through
+a sigmoid head and a per-head scalar
+$g_{\delta}$~\cite{schlag2021deltanet, yang2024deltanet}. The
+mechanism targets axis 2: the rank-one erasure subtracts the state
+component aligned with the current key before writing the new value,
+reducing readout interference under associative-memory load.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Delta rule engaged-null entry]{Delta rule fact box.}
+\label{tab:engaged-null:delta}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 2 (associative memory under interference) \\
+Cell & \texttt{rwkv6\_delta\_warmstart\_fixed} \\
+Dev / Test CER & $0.1258$ / $0.1256$ \\
+$\Delta$ test vs vanilla & $-0.0007$ (within $\sigma$) \\
+Mobility evidence & Per-head $g_{\delta}$ moves from zero-init to
+$0.42$ to $0.65$ across layers; $\beta_{t}$ p95 reaches $1.48$;
+realised state-norm erasure up to $24\%$ per token at layer~5 \\
+Engaged-null reading & SGD finds and uses the delta-rule
+freedom (state is materially modified per token), but LibriSpeech
+sequences sit far below the state-saturation regime ($T \le 500$,
+$d^{2} = 4096$); the erasure decorrelates the state, but the task
+signal does not require axis-2 capacity at this scale, so the
+mechanism's modification of the state does not translate into CER
+reduction \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{NCGRU-Cayley orthogonal transition}\label{app:engaged-null:cayley}
+
+The NCGRU-Cayley mechanism replaces the diagonal transition with a
+per-token Cayley-orthogonal operator
+$(I - A_{t})(I + A_{t})^{-1}$ where $A_{t}$ is skew-symmetric and
+data-dependent~\cite{mucllari2025crt}. The mechanism targets axes
+2 and 3 simultaneously: the orthogonal transition preserves state
+norm exactly while introducing a per-token rotation freedom that, at
+sufficient depth, supports finite-automaton simulation.
+
+\begin{table}[h]
+\centering
+\small
+\caption[NCGRU-Cayley engaged-null entry]{NCGRU-Cayley fact box.}
+\label{tab:engaged-null:cayley}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 2 + 3 (state-tracking-adjacent rotation) \\
+Cell & \texttt{rwkv6\_orthogonal} \\
+Dev / Test CER (epoch 15) & $0.1518$ / not completed (regression
+trajectory) \\
+$\Delta$ test vs vanilla & $+0.0255$ at epoch~15, regression-track
+projection beyond vanilla \\
+Mobility evidence & Skew-symmetric $A_{t}$ carries non-zero norm
+across all layers; the Cayley operator is exercised but cannot be
+absorbed by the existing projections \\
+Engaged-null reading & The rotation freedom is dense per-token and
+not aligned with the LibriSpeech short-range axis-1 prior; the
+norm-preserving constraint additionally interacts adversely with
+CTC's character-window decoding at this depth \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{M$^{2}$RNN non-linear state transition}\label{app:engaged-null:m2rnn}
+
+The M$^{2}$RNN mechanism replaces the linear state update with
+$S_{t} = \tanh(S_{t-1} W + k_{t} v_{t}^{\top})$ at a single
+selected layer~\cite{mishra2026m2rnn}, with a scalar per-head forget
+gate. The mechanism targets axis 3: the non-linear state transition
+is the only member of its mechanism family in the discovery-phase
+catalogue, and crosses into the $\mathsf{NC}^{1}$ class boundary that
+diagonal SSMs cannot reach by themselves.
+
+\begin{table}[h]
+\centering
+\small
+\caption[M$^{2}$RNN engaged-null entry]{M$^{2}$RNN fact box.}
+\label{tab:engaged-null:m2rnn}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 3 (non-Abelian state-tracking) \\
+Cell & \texttt{rwkv6\_m2rnn\_sparse} (sparing-use at layer~5) \\
+Dev / Test CER & $0.1276$ / $0.1264$ \\
+$\Delta$ test vs vanilla & $+0.0001$ (tied within $\sigma$) \\
+Mobility evidence & $\tanh$ saturation rate moves above the linear
+regime at the deployed layer; the selected layer's state-norm
+distribution shifts under training \\
+Engaged-null reading & Axis-3 capacity is exercised by tasks
+involving non-Abelian state-tracking, which LibriSpeech CTC at $T
+\le 500$ does not require; the mechanism's natural test bed is
+synthetic permutation-composition or Dyck-$k$ ($k \ge 2$) tasks,
+which are deferred to future work as discussed in
+Section~\ref{sec:bounds} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Non-normal RSE polar parameterisation
+(T2)}\label{app:engaged-null:t2}
+
+The non-normal RSE mechanism extends the block-complex transition of
+Section~\ref{sec:primitives:dho} with a symmetric anisotropy factor
+$P(\rho, \psi) = R(\psi)^{\top} \mathrm{diag}(e^{\rho}, e^{-\rho})
+R(\psi)$ on each $2 \times 2$ block, where $\rho$ is per-token and
+zero-initialised. The mechanism targets axes 2 and 3 simultaneously:
+the non-normal extension introduces dense per-token transition-side
+freedom that goes strictly beyond the normal RSE family.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Non-normal RSE T2 engaged-null entry]{Non-normal RSE T2
+fact box.}
+\label{tab:engaged-null:t2}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 2 + 3 (dense per-token polar transition) \\
+Cell & \texttt{rwkv6\_nonnormal\_rse\_viscosity} \\
+Dev / Test CER & $0.1202$ / $0.1200$ \\
+$\Delta$ test vs anchor & $+0.0023$ vs the depth-graded RSE anchor
+$0.1177$ (within $\sigma$) \\
+Mobility evidence & $\rho$-LoRA Frobenius norm reaches $18$ to $30$
+per layer; realised $\rho$ concentrates at the edge layers (mean
+$|\rho| = 0.18$ at L0 and $0.11$ at L5); per-block non-normality
+score reaches $0.10$ at edge layers; cross-head bimodal
+specialisation pattern \\
+Engaged-null reading & The dense per-token polar freedom is
+substantially used by SGD (mobility is among the largest in the
+catalogue), but the LibriSpeech axis-1 task structure does not
+reward the additional non-normal directions: the mechanism shifts
+the operator family but does not align with the prior \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Sparse non-normal RSE edge-only
+(S9B)}\label{app:engaged-null:s9b}
+
+The sparse non-normal RSE edge-only variant restricts the polar
+transition to the first and last layers and runs plain block-complex
+RSE in the middle layers. The mechanism targets axes 2 and 3 in the
+same sense as T2, with the structural restriction matched to the
+T2 diagnostic finding of edge-layer concentration.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Sparse non-normal RSE engaged-null entry]{Sparse non-normal
+RSE edge-only fact box.}
+\label{tab:engaged-null:s9b}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 2 + 3 (sparse edge-restricted polar transition) \\
+Cell & \texttt{rwkv6\_sparse\_nonnormal\_rse\_edge\_only\_viscosity} \\
+Dev / Test CER & $0.1218$ / $0.1216$ \\
+$\Delta$ test vs anchor & $+0.0039$ vs the depth-graded RSE anchor
+$0.1177$ \\
+Mobility evidence & Per-layer gates settle near $0.5$ to $0.7$ across
+the active edge layers; $\rho$ on the gated edge layers behaves
+qualitatively like T2's edge-layer realisation; spectral radius max
+$\sim 1.0002$ (regression-stability borderline) \\
+Engaged-null reading & The mechanism reproduces the T2 engagement
+under a structural sparsity that matches the T2 diagnostic; the
+sparser deployment did not align the freedom with the axis-1
+LibriSpeech prior any better than the dense T2 deployment \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Readout gauge A1$'$}\label{app:engaged-null:a1prime}
+
+The readout gauge A1$'$ mechanism introduces a data-dependent phase
+on the readout
+$y_{t} = \mathrm{Re}\!\left( \sum_{b} e^{-i \phi_{t, h, b}}\,
+\overline{r_{c, b}}\, S_{t, b} \right)$ with
+$\phi_{t, h, b} = W_{\phi} x_{t}$, zero-initialised. The mechanism
+targets axis 5: the per-token readout phase introduces a
+content-adaptive gauge alignment between the rotated latent state
+and the axis-aligned observation vector.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Readout gauge A1$'$ engaged-null entry]{Readout gauge A1$'$
+fact box.}
+\label{tab:engaged-null:a1prime}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 5 (content-adaptive readout phase) \\
+Cell & \texttt{rwkv6\_rse\_dphi\_viscosity} \\
+Dev / Test CER & $0.1217$ / $0.1207$ \\
+$\Delta$ test vs anchor & $+0.0030$ vs the depth-graded RSE anchor
+$0.1177$ (regression edge) \\
+Mobility evidence & $W_{\phi}$ Frobenius norm reaches $5.5$ to $6.4$
+per layer; realised $|\phi|$ p99 $\approx 2$~rad; mobility is among
+the largest in the catalogue \\
+Engaged-null reading & The mechanism is engaged but acts adversely:
+the data-dependent phase pushes more content into the discarded
+imaginary axis at the deeper layers, breaking the implicit gauge
+alignment that the anchor model already exploits as
+cross-block cancellation; axis-5 readout adaptivity is
+exercised by tasks with content-driven cross-token routing
+demands, which LibriSpeech does not present \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Content-conditional $\alpha_{d}$ (CB-3)}\label{app:engaged-null:cb3}
+
+The content-conditional $\alpha_{d}$ mechanism replaces the per-layer
+mixing weights of MSDC with a per-token gating function
+$\alpha_{d, t}^{(\ell)} = \sigma(W_{g}^{(\ell)} x_{t})$, with the
+weight $W_{g}^{(\ell)}$ initialised to bias the gate towards the
+per-layer mixture used by MSDC. The mechanism targets axis 5: it
+adds per-token receptive-field selection to the input-side
+multi-scale convolution.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Content-conditional $\alpha_{d}$ engaged-null
+entry]{Content-conditional $\alpha_{d}$ fact box.}
+\label{tab:engaged-null:cb3}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 5 (content-adaptive receptive-field selection) \\
+Cell & \texttt{rwkv6\_convshift\_multidil\_symmetric\_gated\_v2} \\
+Dev / Test CER & $0.1150$ / $0.1136$ \\
+$\Delta$ test vs MSDC alone & $+0.0136$ vs MSDC at $0.1000$
+(regression band) \\
+Mobility evidence & Per-token gate values move across the unit
+interval; per-layer gate distribution shifts under training; the
+mechanism is structurally distinct from the per-layer constant
+$\alpha_{d}$ baseline \\
+Engaged-null reading & Per-token receptive-field selection is dense
+per-token freedom on top of a working axis-1 base; LibriSpeech
+phoneme-to-syllable acoustic structure does not reward content-
+adaptive switching of the receptive field at this scale, so the
+mechanism's added freedom is unaligned with the task signal \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Mamba-2 novelty gate}\label{app:engaged-null:novelty}
+
+The Mamba-2 novelty gate redeploys the LUCID kernel machinery from
+value decorrelation to per-write novelty scoring, gating each token's
+write into the SSD state via
+$\omega_{t} = 1 / (1 + \gamma_{h} / (B_{t}^{\top} \Sigma_{c}^{-1} B_{t}))$
+where $\Sigma_{c}$ is a chunk-local key-covariance estimate. The
+mechanism is reported as a structurally inert null on the Mamba-2
+spine, distinguished from the seven preceding entries by a
+scale-mismatch failure mode rather than an axis-mismatch.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Mamba-2 novelty gate scale-mismatch null]{Mamba-2 novelty
+gate fact box.}
+\label{tab:engaged-null:novelty}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} X@{}}
+\toprule
+Target axis & 2 (per-write associative-memory gating) \\
+Cells & \texttt{mamba2\_novelty\_gate} (trainable $\gamma$) and
+\texttt{mamba2\_novelty\_fixed\_g05} ($\gamma = 0.5$ fixed) \\
+Dev / Test CER & $0.1186$ / $0.1186$ and $0.1187$ / $0.1187$ \\
+$\Delta$ test vs vanilla Mamba-2 & $-0.0006$ and $-0.0005$ (tied
+within $\sigma$) \\
+Mobility evidence & Trainable $\gamma$ ends at $\approx 0.011$; fixed
+$\gamma = 0.5$ produces test CER differing by $0.0001$ from the
+trainable run \\
+Structurally-inert reading & The Mahalanobis quantity
+$q^{2} = B_{t}^{\top} \Sigma_{c}^{-1} B_{t}$ takes values in
+$[10^{4}, 10^{5}]$ on real tokens, so the gate
+$1 / (1 + \gamma_{h} / q^{2})$ requires $\gamma_{h} \sim 10^{3}$ to
+produce meaningful attenuation. The trained and fixed $\gamma$
+values explored are $4$ to $5$ orders of magnitude below the
+required engagement threshold; this is a scale mismatch between the
+gate's free parameter and the quantity it operates on, distinct
+from the axis-mismatch nulls of
+\Cref{app:engaged-null:delta,app:engaged-null:cayley,app:engaged-null:m2rnn,app:engaged-null:t2,app:engaged-null:s9b,app:engaged-null:a1prime,app:engaged-null:cb3} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Family-D quadratic-lift saturated cluster}\label{app:engaged-null:family-d}
+
+A second class of closed-cell evidence is the saturated polynomial
+value-lift cluster on the discovery-phase RWKV-6 spine. Four
+parametrisations of the same axis-5 function class were tested with
+matched depth and parameter budgets, and saturate to a narrow
+performance band around dev CER $0.124$. The cluster confirms the
+axis-5 saturation reading from a different angle than the
+engaged-null catalogue: the function-class extension is exercised by
+each parametrisation, but the LibriSpeech task does not reward the
+content-adaptive feature-map richness on which the cluster operates.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Family-D quadratic-lift cluster on RWKV-6
+discovery]{Family-D quadratic-lift cluster, RWKV-6 discovery-phase
+30-epoch budget. Each row is a different parametrisation of the
+same axis-5 polynomial value-lift function class, with
+matched depth and parameter budgets.}
+\label{tab:results:family-d}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.10}
+\begin{tabularx}{\linewidth}{@{}X p{4.5cm} r r@{}}
+\toprule
+\textbf{Cell} & \textbf{Parametrisation} & \textbf{Dev CER} & \textbf{Test CER} \\
+\midrule
+\texttt{rwkv6\_hadamard\_n2}     & Diagonal $k \odot k$ feature lift  & 0.1253 & 0.1251 \\
+\texttt{rwkv6\_qtail}            & Full $k \otimes k$ Kronecker, top-2 layers & 0.1260 & 0.1240 \\
+\texttt{rwkv6\_qtail\_lowrank\_all} & Low-rank $k \otimes k$, all layers     & 0.1238 & 0.1240 \\
+\texttt{rwkv6\_pom\_vlift}       & Polynomial value lift~\cite{picard2026pom} & 0.1254 & 0.1253 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The four parametrisations differ in algebraic surface (diagonal
+$k \odot k$, full Kronecker, low-rank Kronecker, polynomial mixer
+projector) but share the same underlying function class of
+polynomial value lifts of order at least two. The corresponding
+HLA streaming higher-order extension~\cite{zhang2025hla} is not run
+on this spine but is mapped to the same axis-5 cluster in
+Section~\ref{sec:related:long-content}. The cluster's saturation to a
+narrow band is the converse evidence for the axis-5 component of the
+synthesis chapter's invariant.
+
+\section{Discussion}\label{app:engaged-null:discussion}
+
+The seven engaged-null entries and the Family-D quadratic-lift
+cluster jointly support the converse direction of the
+mechanism-prior alignment law of
+Chapter~\ref{ch:experiments}. Each entry demonstrates a mechanism
+that genuinely extends the function class along a specific axis,
+that engages under SGD as evidenced by parameter mobility, and that
+fails to convert into measured CER reduction on the LibriSpeech axis-1
+probe. The seven mechanisms target axes 2, 3, and 5 of the
+five-axis decomposition; the cluster targets axis 5; together they
+cover three of the five axes in the decomposition.
+
+The reading is not that the listed mechanisms do not work. The
+delta rule and the Cayley orthogonal transition are productive
+mechanisms on tasks that exercise associative-memory capacity under
+interference and on tasks that exercise non-Abelian state-tracking,
+respectively; M$^{2}$RNN, the non-normal RSE family, and the readout
+gauge each have a natural test bed where the corresponding axis is
+exercised. The reading is that these mechanisms are not productive
+on the LibriSpeech axis-1 probe, because LibriSpeech's task structure
+does not reward the function-class extension each one provides. This
+is the cross-experiment invariant the synthesis chapter draws on,
+and the closed-cell evidence here is the converse half of the
+two-sided argument: the productive mechanisms in the main matrix
+demonstrate the predictive law in one direction, and the engaged-
+null catalogue demonstrates it in the other.
+
+The Mamba-2 novelty gate is reported alongside the seven
+engaged-null entries with a distinct reading. The novelty gate's
+null is not an axis mismatch but a scale mismatch: the gate's free
+parameter does not span the operating range of the quantity it
+operates on, so the mechanism is structurally inert at the
+architecture's regime regardless of the task's structural prior.
+The distinction matters because it isolates the engaged-null
+pattern from the broader category of unhelpful mechanisms: the
+seven engaged-null entries proper require the function-class
+extension to be exercised by parameter mobility before the null
+becomes evidence for axis mismatch, and the novelty gate's
+operational disconnection violates that precondition. Reporting the
+two patterns separately preserves the precision of the
+cross-experiment invariant claim.
