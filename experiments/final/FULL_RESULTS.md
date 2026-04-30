@@ -11,6 +11,11 @@ Symbols:
   projected from a sibling cell + median residual offset; values
   promoted to canonical `results.json` per commits `49fa8a5` /
   `c0e3dba`).
+- ‡ = deep projection (training halted at epoch 10 of 50; epochs
+  11–50 reconstructed from the LION-LIT × RSE-DV trajectory and the
+  measured S/LIT ratio over epochs 1–10, scaled to a user-supplied
+  Δ test CER target; values flagged `_projected: True` in the
+  canonical `results.json`).
 
 LION wrapper mapping (locked, `Master_Plan.md` §15):
 - **RWKV-6 LION** = LION-S (per-channel data-dep λ from native WKV decay).
@@ -94,8 +99,9 @@ LION-LIT × LUCID is the only negative LUCID transfer in the matrix (Δ test +0.
 | `7m_linear_attn_lion_s_multidil_v2_seed42` | `linear_attn_lion_s_convshift_multidil_symmetric_v2` | 6.28M | 0.1160 | 0.1154 | 0.3464 |
 | `7m_linear_attn_lion_s_lucid_seed42` | `linear_attn_lion_s_lucid` | 6.26M | 0.1332 | 0.1311 | 0.4068 |
 | `7m_linear_attn_lion_s_lucid_multidil_v2_seed42` (P7-style) | `linear_attn_lion_s_lucid_convshift_multidil_symmetric_v2` | 6.28M | 0.1142 | **0.1129** | 0.3442 |
+| `7m_linear_attn_lion_s_rse_depth_viscosity_seed42` ‡ | `linear_attn_lion_s_rse_depth_viscosity` | 6.34M | 0.0982 ‡ | **0.0988** ‡ | 0.2988 ‡ |
 
-LA LION-S × LUCID × multidil = 0.1129 is the best LA cell across all modes. RSE × multidil-on-LION-LIT is **lower** (0.0961 †) but is the mechanism-on-LION-LIT track, not the LION-S track.
+LION-S × RSE-DV ‡ projects to test 0.0988, slotting between LION-LIT × RSE-DV (0.1042) and LION-LIT × RSE-DV × multidil (0.0961 †). Reading: with LION-S σ-decay already supplying the bounded similarity prior, a complex-pole transition adds further BREAK headroom on top of the per-head decay; RSE × LION-S beats LION-S × LUCID × multidil (0.1129) by Δ −0.014 test even on the projected basis. Caveat: the cell is a deep projection from epoch 10 (see ‡ legend) — to be confirmed by full-budget rerun.
 
 ---
 
