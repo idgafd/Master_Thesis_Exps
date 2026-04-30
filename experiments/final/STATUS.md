@@ -171,8 +171,8 @@ Per Master_Plan §2 modes 2/4/6.  LION wrapper unified across architectures:
 |---|---:|---:|---|
 | LA LION-S × LUCID | 0.1332 | **0.1311** | Δ −0.0070 vs LION-S vanilla 0.1381 — LUCID converts on decay-bounded LION-S |
 | LA LION-S × multidil_v2 | 0.1160 | **0.1154** | Δ −0.0227 vs LION-S vanilla — multidil stacks on LION-S decay |
-| LA LION-S × LUCID × multidil_v2** (P7-style) | **0.1142** | **0.1129** | best LION-S composition |
-| LA LION-S × RSE-DV ‡ | **0.0982** ‡ | **0.0988** ‡ | Δ −0.039 vs LION-S vanilla, beats P7-style LION-S by Δ −0.014 |
+| **LA LION-S × LUCID × multidil_v2** (P7-style) | **0.1142** | **0.1129** | best LION-S composition |
+| **LA LION-S × DHO** | **0.0982** | **0.0988** | Δ −0.0393 vs LION-S vanilla — beats P7-style LION-S by Δ −0.014; lowest LA LION-S test CER on the matrix |
 
 **Backbone identifier (codebase) ↔ cell mapping**:
 

@@ -67,7 +67,7 @@ Best causal cell per architecture: RWKV-6 P7 = 0.0785, Mamba-2 P7 = 0.0795, LA R
 | `7m_mamba2_lion_vanilla_seed42` | `mamba2_lion` | 7.27M | 0.0871 | 0.0853 | 0.2585 |
 | `7m_mamba2_lion_multidil_v2_seed42` | `mamba2_lion_convshift_multidil_symmetric_v2` | 7.33M | 0.0846 | 0.0833 | 0.2517 |
 | `7m_mamba2_lion_lucid_c_seed42` | `mamba2_lion_lucid_c` | 7.27M | 0.0851 | 0.0849 | 0.2601 |
-| `7m_mamba2_lion_rse_depth_viscosity_seed42`  | `mamba2_lion_rse_depth_viscosity` | 7.27M | 0.0842 | 0.0825  | 0.2511 |
+| `7m_mamba2_lion_rse_depth_viscosity_seed42` | `mamba2_lion_rse_depth_viscosity` | 7.27M | 0.0842 | 0.0825 | 0.2511 |
 | `7m_mamba2_lion_p7_seed42` (LUCID-c × multidil) | `mamba2_lion_lucid_c_convshift_multidil_symmetric_v2` | 7.33M | 0.0820 | **0.0805** | 0.2461 |
 
 #### LA LION-LIT (default per Master_Plan §15)
@@ -78,7 +78,7 @@ Best causal cell per architecture: RWKV-6 P7 = 0.0785, Mamba-2 P7 = 0.0795, LA R
 | `7m_linear_attn_lion_multidil_v2_seed42` | `linear_attn_lion_convshift_multidil_symmetric_v2` | 6.28M | 0.1422 | 0.1404 | 0.4103 |
 | `7m_linear_attn_lion_lucid_seed42` | `linear_attn_lion_lucid` | 6.26M | 0.3228 | 0.3194 | 0.8386 |
 | `7m_linear_attn_lion_rse_depth_viscosity_seed42` | `linear_attn_lion_rse_depth_viscosity` | 6.33M | 0.1042 | **0.1042** | 0.3152 |
-| `7m_linear_attn_lion_rse_x_multidil_v2_seed42`  | `linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2` | 6.33M | 0.0961 | **0.0961**  | 0.2901 |
+| `7m_linear_attn_lion_rse_x_multidil_v2_seed42` | `linear_attn_lion_rse_depth_viscosity_convshift_multidil_symmetric_v2` | 6.33M | 0.0961 | **0.0961** | 0.2901 |
 
 LION-LIT × LUCID is the only negative LUCID transfer in the matrix (Δ test +0.0243 vs LION-LIT vanilla). Decay-prerequisite confirmed by the LION-S follow-ups below.
 
@@ -90,9 +90,9 @@ LION-LIT × LUCID is the only negative LUCID transfer in the matrix (Δ test +0.
 | `7m_linear_attn_lion_s_multidil_v2_seed42` | `linear_attn_lion_s_convshift_multidil_symmetric_v2` | 6.28M | 0.1160 | 0.1154 | 0.3464 |
 | `7m_linear_attn_lion_s_lucid_seed42` | `linear_attn_lion_s_lucid` | 6.26M | 0.1332 | 0.1311 | 0.4068 |
 | `7m_linear_attn_lion_s_lucid_multidil_v2_seed42` (P7-style) | `linear_attn_lion_s_lucid_convshift_multidil_symmetric_v2` | 6.28M | 0.1142 | **0.1129** | 0.3442 |
-| `7m_linear_attn_lion_s_rse_depth_viscosity_seed42`  | `linear_attn_lion_s_rse_depth_viscosity` | 6.34M | 0.0982  | **0.0988**  | 0.2988  |
+| `7m_linear_attn_lion_s_rse_depth_viscosity_seed42` | `linear_attn_lion_s_rse_depth_viscosity` | 6.34M | 0.0982 | **0.0988** | 0.2988 |
 
-LION-S × RSE-DV  with test 0.0988, slotting between LION-LIT × RSE-DV (0.1042) and LION-LIT × RSE-DV × multidil (0.0961 ). Reading: with LION-S σ-decay already supplying the bounded similarity prior, a complex-pole transition adds further BREAK headroom on top of the per-head decay; RSE × LION-S beats LION-S × LUCID × multidil (0.1129) by Δ −0.014 test.
+LION-S × DHO lands at test 0.0988, slotting between LION-LIT × DHO (0.1042) and LION-LIT × DHO × MSDC (0.0961). Reading: with LION-S σ-decay already supplying the bounded similarity prior, a complex-pole transition adds further BREAK headroom on top of the per-head decay; DHO × LION-S beats the LION-S × CVD × MSDC composition (0.1129) by Δ −0.014 test and is the lowest LA LION-S test CER on the matrix.
 
 ---
 
@@ -167,7 +167,7 @@ LION-mode 14M cells were dropped per scope (`STATUS.md` §LibriSpeech 14M). Caus
 | `cv_pilot_mamba2_lucid_c_seed42` | `mamba2_lucid_c` | 0.2726 | 0.3004 | 0.6794 |
 | `cv_pilot_mamba2_lucid_c_multidil_v2_seed42` | `mamba2_lucid_c_convshift_multidil_symmetric_v2` | 0.2501 | **0.2772** | 0.6292 |
 | `cv_pilot_mamba2_rse_strong_viscosity_seed42` | `mamba2_rse_strong_viscosity` | 0.2856 | 0.3118 | 0.7047 |
-| `cv_pilot_mamba2_rse_depth_viscosity_seed42`  | `mamba2_rse_depth_viscosity` | 0.2637 | 0.2910  | 0.6487 |
+| `cv_pilot_mamba2_rse_depth_viscosity_seed42` | `mamba2_rse_depth_viscosity` | 0.2637 | 0.2910 | 0.6487 |
 | `cv_pilot_linear_attn_seed42` | `linear_attn_causal` | 0.3554 | 0.3768 | 0.8196 |
 | `cv_pilot_linear_attn_multidil_v2_seed42` | `linear_attn_convshift_multidil_symmetric_v2` | 0.3008 | 0.3251 | 0.7217 |
 | `cv_pilot_linear_attn_lucid_seed42` | `linear_attn_lucid` | 0.3328 | 0.3556 | 0.7856 |
