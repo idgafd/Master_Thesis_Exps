@@ -119,7 +119,11 @@ DHO~$\times$~MSDC on Linear Attention). Bold values mark the
 matrix ceiling at the 14M Mamba-2 row. The single positive
 $\Delta$ in the matrix is the LA LION-LIT~$\times$~CVD cell at
 $0.3194$ ($+8\%$ relative); this cell is examined in
-Section~\ref{sec:experiments:lion}.}
+Section~\ref{sec:experiments:lion}. Relative reductions are
+scaled by each row's vanilla baseline; the deficit-proportional
+ordering claim of Section~\ref{sec:experiments:transfer} is
+argued in absolute $\Delta$ terms because baseline differences
+shift the relative ordering on some MSDC cells.}
 \label{tab:results:aggregated}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.20}
@@ -201,7 +205,16 @@ native short convolution at $k = 4$, receives the smallest gain
 Mamba-2 ordering is reproduced at both scales, and the gain on
 RWKV-6 grows with capacity, indicating that the mechanism
 recovers more of the architectural deficit at higher scale
-rather than saturating.
+rather than saturating. The relative-reduction column of
+Table~\ref{tab:results:aggregated} differs from this absolute
+ordering at 14M, where MSDC delivers $-32\%$ on RWKV-6 against
+$-29\%$ on LA: the discrepancy reflects the difference in
+vanilla baselines ($0.1103$ on RWKV-6 versus $0.1359$ on LA at
+14M). The deficit-proportional claim is argued in absolute
+$\Delta$ terms throughout the chapter, since the
+architecture-deficit map of
+Section~\ref{sec:backbones:deficit} predicts absolute headroom
+rather than fractional reduction.
 
 \begin{figure}[h]
 \centering
