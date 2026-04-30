@@ -191,6 +191,32 @@ After deletions and restructuring:
 | C   | B   | Complete Empirical Results |
 | E   | C   | Supplementary Diagnostics and Bidirectional Comparison |
 
+## Caption length (not fixing in current pass)
+
+Several table and figure captions across Chapter~5 and the
+appendices are long, multi-paragraph descriptions that combine
+the table's structural definition with verdict semantics, footnote
+notes, and reading guidance. Examples:
+
+- Table~5.1 (aggregated empirical summary, §5.2): caption now
+  spans ~12 lines, including the relative-reduction explanation
+  and the deficit-proportional-ordering disclaimer.
+- Table~5.2 (MQAR cohort, §5.6): caption explains all five verdict
+  classes (PASS, PARTIAL, FAIL, SKIP$^{\dagger}$, OOM), the
+  asterisk semantic for the Linear Attention vanilla cell, and
+  the Causal Transformer FAIL detail.
+- Master-matrix tables in Appendix~B (renumbered C): each carries
+  several lines of context.
+- LION versus operator-level table in Appendix~C (renumbered E):
+  ~7 lines of caption.
+
+The current convention is acceptable for a Master's thesis where
+captions can be self-contained, but in a paper-length
+deliverable these would be substantially trimmed and most of
+the verdict-and-footnote prose would move to the surrounding
+section text. Recorded here for awareness; not addressed in the
+current writing pass.
+
 ## Style sweep items
 
 - Confirm no em-dashes anywhere in chapter 1 to 4, appendices A, C,

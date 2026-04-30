@@ -1,1 +1,85 @@
-\chapter{Conclusions}
+\chapter{Conclusions}\label{ch:conclusions}
+
+This thesis characterised three causal linear-time recurrent
+backbones (RWKV-6, Mamba-2, Linear Attention) and three
+mechanism-level extensions (Multi-Scale Depthwise Convolution,
+Damped Harmonic Oscillator, Chunked Value Decorrelation) on a
+cross-architecture transfer matrix at 7M and 14M parameter
+scales. The matrix supports a predictive criterion that we call
+mechanism-prior alignment: a mechanism's gain on a task is
+proportional to the residual structural deficit the architecture
+leaves uncovered along the axis the mechanism targets, and is
+null when the mechanism's axis is not exercised by the task.
+
+\section{Summary of findings}\label{sec:conclusions:summary}
+
+The matrix populates the criterion in six structural signatures
+across modes, scales, probes, and composition settings
+(Section~\ref{sec:experiments:synthesis}): deficit-proportional
+ordering on MSDC, structural BREAK on DHO on Linear Attention
+together with a near-null on Mamba-2 under the LibriSpeech
+distribution, asymmetric transfer on CVD, the
+LION-LIT~$\times$~CVD controlled falsifier isolating decay as
+the bidirectional-mode prerequisite, the
+Mamba-2~$\times$~DHO cross-distribution refinement to alignment
+between mechanism and task-as-exercised-by-data, and the axis-2
+isolation on the Multi-Query Associative Recall length sweep
+where mechanism-augmented linear-time backbones solve the task
+at $T = 1024$ while the causal Transformer fails. The matrix
+ceiling on LibriSpeech is the 14M Mamba-2 CVD~$\times$~MSDC
+composition cell at test character error rate $0.0618$; the
+strongest single-mechanism gain is the LA LION-LIT~$\times$~DHO
+BREAK at a $65\%$ relative reduction. The chapter does not
+lead on these absolute or relative numbers; the artefact is the
+matrix and the predictive criterion the matrix supports.
+
+\section{Limitations}\label{sec:conclusions:limitations}
+
+Three limitations bracket the empirical scope. First, the matrix
+is single-seed for every reported cell; the across-matrix
+pattern is read off approximately seventy statistical tests
+oriented in a single coherent direction, but per-cell standard
+errors are not estimated. Multi-seed validation of the
+BREAK-band cells (LA causal DHO, LA LION-LIT DHO) would sharpen
+the within-cell claim without changing the across-matrix
+pattern. Second, the matrix scales to 14M parameters; the
+conditional 30M scale was dropped from scope since no ranking
+inversion appears between 7M and 14M, but the deficit-proportional
+ordering is not asserted at scales beyond 14M. Third, the
+acoustic probes are English-only; the Common Voice
+cross-distribution validation exercises within-language
+acoustic variability rather than cross-language transfer.
+
+\section{Scope and future work}\label{sec:conclusions:future-work}
+
+The criterion as stated holds within the diagonal-class function
+family of Section~\ref{sec:bounds}. The matrix does not test it
+on diagonal-plus-low-rank architectures, and the criterion is
+not asserted on that class. The natural extension of the
+framework is to repeat the cross-architecture transfer matrix
+on a diagonal-plus-low-rank backbone class such as
+DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} or
+RWKV-7~\cite{peng2025rwkv7}, with mechanisms targeting axis~3
+(non-Abelian state-tracking). The formal complexity-class
+boundary recalled in Section~\ref{sec:bounds} brackets exactly
+where the diagonal class cannot reach and where the
+diagonal-plus-low-rank class is the principal route across.
+
+A second extension direction is the cross-modality replication of
+the matrix on vision and language probes. The thesis instantiated
+MSDC on speech as one node in a five-paper cross-domain pattern
+(Section~\ref{sec:related:cross-modality}); the
+cross-architecture transfer matrix is portable to those
+modalities with appropriate substitution of the axis-1 and
+axis-2 probes.
+
+The framework remains agnostic to the specific evaluation domain
+and to the specific mechanism instantiation. What it asserts is
+the predictive structure: a mechanism's gain orders with the
+residual structural deficit along the axis it targets, modulated
+by what the task-as-exercised-by-data exercises. The empirical
+matrix populates the criterion in three productive signatures
+across the diagonal-class linear-time family and one controlled
+falsifier; further work extends the criterion across the
+diagonal-plus-low-rank boundary and across modalities other
+than speech.
