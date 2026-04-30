@@ -110,35 +110,37 @@ matrix]{Aggregated test character error rate on LibriSpeech
 test-clean across the cross-architecture transfer matrix at the
 matched 50-epoch budget. Each row is a single
 (architecture, mode, scale) configuration; columns report the
-five mechanism cells of that configuration. The composition
-column reports the test character error rate of the best
-pre-registered composition (CVD~$\times$~MSDC on RWKV-6 and
-Mamba-2; DHO~$\times$~MSDC on Linear Attention). Bold values mark
-the matrix ceiling at the 14M Mamba-2 row. The single positive
+five mechanism cells of that configuration. Each non-vanilla
+cell reports test character error rate followed by the relative
+reduction over the matched vanilla baseline in parentheses.
+The composition column reports the best pre-registered
+composition (CVD~$\times$~MSDC on RWKV-6 and Mamba-2;
+DHO~$\times$~MSDC on Linear Attention). Bold values mark the
+matrix ceiling at the 14M Mamba-2 row. The single positive
 $\Delta$ in the matrix is the LA LION-LIT~$\times$~CVD cell at
-$0.3194$; this cell is examined in
+$0.3194$ ($+8\%$ relative); this cell is examined in
 Section~\ref{sec:experiments:lion}.}
 \label{tab:results:aggregated}
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.15}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.20}
 \begin{tabularx}{\linewidth}{@{}X r r r r r@{}}
 \toprule
 \textbf{Configuration} &
 \textbf{Vanilla} & \textbf{MSDC} & \textbf{CVD} &
 \textbf{DHO} & \textbf{Composition} \\
 \midrule
-RWKV-6 causal 7M       & 0.1049 & 0.0788 & 0.1007 & 0.0989 & 0.0785 \\
-Mamba-2 causal 7M      & 0.1036 & 0.0825 & 0.0958 & 0.1006 & 0.0795 \\
-LA causal 7M           & 0.1879 & 0.1409 & 0.1714 & 0.1198 & 0.0999 \\
+RWKV-6 causal 7M       & 0.1049 & 0.0788 ($-25\%$) & 0.1007 ($-4\%$) & 0.0989 ($-6\%$) & 0.0785 ($-25\%$) \\
+Mamba-2 causal 7M      & 0.1036 & 0.0825 ($-20\%$) & 0.0958 ($-8\%$) & 0.1006 ($-3\%$) & 0.0795 ($-23\%$) \\
+LA causal 7M           & 0.1879 & 0.1409 ($-25\%$) & 0.1714 ($-9\%$) & 0.1198 ($-36\%$) & 0.0999 ($-47\%$) \\
 \addlinespace
-RWKV-6 causal 14M      & 0.1103 & 0.0751 & 0.1051 & 0.1077 & 0.0746 \\
-Mamba-2 causal 14M     & 0.0827 & \textbf{0.0631} & 0.0728 & 0.0781 & \textbf{0.0618} \\
-LA causal 14M          & 0.1359 & 0.0969 & 0.1300 & 0.0947 & 0.0786 \\
+RWKV-6 causal 14M      & 0.1103 & 0.0751 ($-32\%$) & 0.1051 ($-5\%$) & 0.1077 ($-2\%$) & 0.0746 ($-32\%$) \\
+Mamba-2 causal 14M     & 0.0827 & \textbf{0.0631} ($-24\%$) & 0.0728 ($-12\%$) & 0.0781 ($-6\%$) & \textbf{0.0618} ($-25\%$) \\
+LA causal 14M          & 0.1359 & 0.0969 ($-29\%$) & 0.1300 ($-4\%$) & 0.0947 ($-30\%$) & 0.0786 ($-42\%$) \\
 \addlinespace
-RWKV-6 LION-S 7M       & 0.0859 & 0.0750 & 0.0852 & 0.0740 & 0.0747 \\
-Mamba-2 LION-S 7M      & 0.0853 & 0.0833 & 0.0849 & 0.0825 & 0.0805 \\
-LA LION-LIT 7M         & 0.2951 & 0.1404 & 0.3194 & 0.1042 & 0.0961 \\
-LA LION-S 7M           & 0.1381 & 0.1154 & 0.1311 & 0.0988 & 0.1129 \\
+RWKV-6 LION-S 7M       & 0.0859 & 0.0750 ($-13\%$) & 0.0852 ($-1\%$) & 0.0740 ($-14\%$) & 0.0747 ($-13\%$) \\
+Mamba-2 LION-S 7M      & 0.0853 & 0.0833 ($-2\%$) & 0.0849 ($-1\%$) & 0.0825 ($-3\%$) & 0.0805 ($-6\%$) \\
+LA LION-LIT 7M         & 0.2951 & 0.1404 ($-52\%$) & 0.3194 ($+8\%$) & 0.1042 ($-65\%$) & 0.0961 ($-67\%$) \\
+LA LION-S 7M           & 0.1381 & 0.1154 ($-16\%$) & 0.1311 ($-5\%$) & 0.0988 ($-28\%$) & 0.1129 ($-18\%$) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -222,8 +224,9 @@ attenuation and no native phase, and smallest on the
 architecture whose selective scalar transition absorbs the
 block-complex extension under the LibriSpeech distribution. The
 matrix matches the prediction: on Linear Attention at 7M
-causal, $\Delta = -0.0681$, the largest single-mechanism gain
-in the matrix, with the BREAK pattern preserved at 14M
+causal, $\Delta = -0.0681$ (a $36\%$ relative reduction over
+the LA vanilla baseline), the largest single-mechanism gain in
+the matrix, with the BREAK pattern preserved at 14M
 ($-0.0412$); on Mamba-2 at 7M causal, $\Delta = -0.0030$, near
 the noise floor of the matched-budget evaluation, and similarly
 near-null at 14M ($-0.0046$); on RWKV-6, whose per-channel
@@ -321,9 +324,10 @@ $\Delta = +0.0243$, the only positive $\Delta$ in the matrix,
 since the chunk-local preconditioner loses its conditioning
 guarantee on an unbounded value accumulation;
 LION-LIT~$\times$~DHO remains a clean BREAK at
-$\Delta = -0.1909$, since the block-complex transition
-introduces decay through its damping channel
-$e^{-\lambda_{\mathrm{eff}}}$ rather than through the LION mask.
+$\Delta = -0.1909$ (a $65\%$ relative reduction), since the
+block-complex transition introduces decay through its damping
+channel $e^{-\lambda_{\mathrm{eff}}}$ rather than through the
+LION mask.
 
 The controlled LION-S deployment on Linear Attention adds a
 per-token sigmoid decay that is not present in the underlying
