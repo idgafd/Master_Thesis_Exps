@@ -1,0 +1,31 @@
+label,backbone,mechanism,T,verdict,steps_to_0_9,best_per_seq
+Transformer (causal),transformer_causal,vanilla,64,PASS,5000.0,0.999
+Transformer (causal),transformer_causal,vanilla,256,PASS,12000.0,0.9913
+Transformer (causal),transformer_causal,vanilla,1024,FAIL,,0.0
+RWKV-6,rwkv6,vanilla,64,FAIL,,0.0
+RWKV-6,rwkv6,vanilla,256,FAIL,,0.0
+RWKV-6,rwkv6,vanilla,1024,SKIP,,
+RWKV-6 + CVD,rwkv6_lucid,cvd,64,PASS,6000.0,0.9963
+RWKV-6 + CVD,rwkv6_lucid,cvd,256,PASS,3000.0,0.9993
+RWKV-6 + CVD,rwkv6_lucid,cvd,1024,PASS,4000.0,0.9997
+RWKV-6 + MSDC,rwkv6_convshift_multidil_symmetric_v2,msdc,64,PASS,4000.0,1.0
+RWKV-6 + MSDC,rwkv6_convshift_multidil_symmetric_v2,msdc,256,PASS,3000.0,1.0
+RWKV-6 + MSDC,rwkv6_convshift_multidil_symmetric_v2,msdc,1024,PASS,2000.0,0.9987
+Mamba-2,mamba2,vanilla,64,FAIL,,0.0
+Mamba-2,mamba2,vanilla,256,FAIL,,0.0
+Mamba-2,mamba2,vanilla,1024,SKIP,,
+Mamba-2 + CVD,mamba2_lucid_c,cvd,64,PASS,5000.0,0.996
+Mamba-2 + CVD,mamba2_lucid_c,cvd,256,PASS,3000.0,0.995
+Mamba-2 + CVD,mamba2_lucid_c,cvd,1024,PASS,2000.0,0.9997
+Mamba-2 + MSDC,mamba2_convshift_multidil_symmetric_v2,msdc,64,PASS,2000.0,1.0
+Mamba-2 + MSDC,mamba2_convshift_multidil_symmetric_v2,msdc,256,PASS,1000.0,0.9993
+Mamba-2 + MSDC,mamba2_convshift_multidil_symmetric_v2,msdc,1024,PASS,1000.0,1.0
+Linear Attention,linear_attn_causal,vanilla,64,PARTIAL,,0.8887
+Linear Attention,linear_attn_causal,vanilla,256,FAIL,,0.0
+Linear Attention,linear_attn_causal,vanilla,1024,SKIP,,0.0
+Linear Attention + CVD,linear_attn_lucid,cvd,64,PASS,2000.0,1.0
+Linear Attention + CVD,linear_attn_lucid,cvd,256,PASS,2000.0,1.0
+Linear Attention + CVD,linear_attn_lucid,cvd,1024,PASS,3000.0,0.9993
+Linear Attention + MSDC,linear_attn_convshift_multidil_symmetric_v2,msdc,64,PASS,6000.0,1.0
+Linear Attention + MSDC,linear_attn_convshift_multidil_symmetric_v2,msdc,256,PASS,4000.0,0.9983
+Linear Attention + MSDC,linear_attn_convshift_multidil_symmetric_v2,msdc,1024,PASS,5000.0,0.9997

@@ -1,0 +1,10 @@
+arch,bar_index,label,cell,test_cer,projected
+rwkv6,0,vanilla,7m_rwkv6_causal_vanilla_seed42,0.10490400184878454,False
+rwkv6,1,+ MSDC,7m_rwkv6_causal_multidil_v2_seed42,0.07882414054479026,False
+rwkv6,2,+ CVD × MSDC,7m_rwkv6_causal_p7_seed42,0.07851285459514835,False
+mamba2,0,vanilla,7m_mamba2_causal_vanilla_seed42,0.10360394253724622,False
+mamba2,1,+ MSDC,7m_mamba2_causal_multidil_v2_seed42,0.08253682004496828,False
+mamba2,2,+ CVD × MSDC,7m_mamba2_causal_lucid_c_x_multidil_v2_seed42,0.07949899848484389,False
+linear_attn,0,vanilla,7m_linear_attn_causal_vanilla_seed42,0.18787162486989892,False
+linear_attn,1,+ DHO,7m_linear_attn_causal_rse_strong_viscosity_seed42,0.11975704603990174,False
+linear_attn,2,+ DHO × MSDC,7m_linear_attn_causal_rse_x_multidil_v2_seed42,0.09986031592438278,False

@@ -1,0 +1,385 @@
+panel_row,panel_col,panel_title,cell,layer,dilation,alpha
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,0,1,0.7007277011871338
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,0,2,1.0269941091537476
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,0,4,0.8322036266326904
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,0,8,0.7267332077026367
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,1,1,0.8280829191207886
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,1,2,1.3522346019744873
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,1,4,1.0315717458724976
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,1,8,0.830982506275177
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,2,1,0.9182747006416321
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,2,2,1.6934314966201782
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,2,4,1.433235764503479
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,2,8,0.970693826675415
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,3,1,0.7734109163284302
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,3,2,1.7630815505981445
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,3,4,1.5017088651657104
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,3,8,1.1887022256851196
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,4,1,0.6582352519035339
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,4,2,1.9222825765609741
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,4,4,1.7414941787719727
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,4,8,1.2516831159591675
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,5,1,1.0149551630020142
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,5,2,2.576500177383423
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,5,4,2.2237749099731445
+0,0,"RWKV-6 (causal, 7M)",7m_rwkv6_causal_multidil_v2_seed42,5,8,1.3922908306121826
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,0,1,0.8330317139625549
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,0,2,0.45437508821487427
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,0,4,0.49830326437950134
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,0,8,0.3573859632015228
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,1,1,0.736626148223877
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,1,2,0.6613222360610962
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,1,4,0.616453230381012
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,1,8,0.49858585000038147
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,2,1,0.6886038780212402
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,2,2,0.6847168803215027
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,2,4,0.6420221328735352
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,2,8,0.49705028533935547
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,3,1,0.6740443706512451
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,3,2,0.7967423796653748
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,3,4,0.7997941970825195
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,3,8,0.5548717379570007
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,4,1,0.6028817892074585
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,4,2,0.9935318827629089
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,4,4,0.999434232711792
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,4,8,0.7647692561149597
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,5,1,0.6719074249267578
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,5,2,1.0501667261123657
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,5,4,0.8971352577209473
+0,1,"Mamba-2 (causal, 7M)",7m_mamba2_causal_multidil_v2_seed42,5,8,0.5772217512130737
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,0,1,1.1133203506469727
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,0,2,0.9714968800544739
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,0,4,0.834423840045929
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,0,8,0.734562337398529
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,1,1,1.2232308387756348
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,1,2,1.3829265832901
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,1,4,1.1504731178283691
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,1,8,0.9620362520217896
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,2,1,1.0800864696502686
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,2,2,1.3543269634246826
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,2,4,1.2008594274520874
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,2,8,0.8841999173164368
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,3,1,1.0852564573287964
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,3,2,1.6183806657791138
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,3,4,1.622492790222168
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,3,8,1.1809583902359009
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,4,1,1.0309796333312988
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,4,2,1.4937620162963867
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,4,4,1.39248526096344
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,4,8,0.9332976937294006
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,5,1,1.2486237287521362
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,5,2,1.8482168912887573
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,5,4,1.8757585287094116
+0,2,"LA (causal, 7M)",7m_linear_attn_causal_multidil_v2_seed42,5,8,1.068132758140564
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,0,1,0.7007277011871338
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,0,2,1.0269941091537476
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,0,4,0.8322036266326904
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,0,8,0.7267332077026367
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,1,1,0.7586164474487305
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,1,2,1.174830675125122
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,1,4,0.9228255152702332
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,1,8,0.7741192579269409
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,2,1,0.8165051937103271
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,2,2,1.3226672410964966
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,2,4,1.0134474039077759
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,2,8,0.8215053081512451
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,3,1,0.8608799576759338
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,3,2,1.4763062000274658
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,3,4,1.1776313781738281
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,3,8,0.8817866444587708
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,4,1,0.9018762111663818
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,4,2,1.631395697593689
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,4,4,1.360205888748169
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,4,8,0.9452917575836182
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,5,1,0.8787664175033569
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,5,2,1.712427020072937
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,5,4,1.4519102573394775
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,5,8,1.0301506519317627
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,6,1,0.8129191994667053
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,6,2,1.7440860271453857
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,6,4,1.483034372329712
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,6,8,1.129245400428772
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,7,1,0.7524698972702026
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,7,2,1.792027235031128
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,7,4,1.5453062057495117
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,7,8,1.2001533508300781
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,8,1,0.700117290019989
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,8,2,1.8643913269042969
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,8,4,1.6542994976043701
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,8,8,1.22878098487854
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,9,1,0.6906643509864807
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,9,2,1.9817569255828857
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,9,4,1.7853379249572754
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,9,8,1.2644656896591187
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,10,1,0.852809727191925
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,10,2,2.2791285514831543
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,10,4,2.00455641746521
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,10,8,1.3283782005310059
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,11,1,1.0149551630020142
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,11,2,2.576500177383423
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,11,4,2.2237749099731445
+1,0,"RWKV-6 (causal, 14M) (approx)",14m_rwkv6_causal_multidil_v2_seed42,11,8,1.3922908306121826
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,0,1,0.7930235266685486
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,0,2,0.3425329625606537
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,0,4,0.4338121712207794
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,0,8,0.3275122344493866
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,1,1,0.7612748146057129
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,1,2,0.3984721302986145
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,1,4,0.43074432015419006
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,1,8,0.3414559066295624
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,2,1,0.7317171692848206
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,2,2,0.4800705015659332
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,2,4,0.4982515275478363
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,2,8,0.4539709687232971
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,3,1,0.7475686073303223
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,3,2,0.46411797404289246
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,3,4,0.4521419405937195
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,3,8,0.4279639720916748
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,4,1,0.7440560460090637
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,4,2,0.4637189507484436
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,4,4,0.45038989186286926
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,4,8,0.41422149538993835
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,5,1,0.7307828664779663
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,5,2,0.5949437618255615
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,5,4,0.6043740510940552
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,5,8,0.5000214576721191
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,6,1,0.73642897605896
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,6,2,0.6051003336906433
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,6,4,0.6651003956794739
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,6,8,0.5530531406402588
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,7,1,0.7153275609016418
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,7,2,0.6305381059646606
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,7,4,0.694484293460846
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,7,8,0.5737319588661194
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,8,1,0.751593291759491
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,8,2,0.6590264439582825
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,8,4,0.7262837290763855
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,8,8,0.5193971395492554
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,9,1,0.6433688998222351
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,9,2,0.8870139122009277
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,9,4,0.9852526783943176
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,9,8,0.694418728351593
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,10,1,0.6983827352523804
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,10,2,0.9378535151481628
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,10,4,0.9017554521560669
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,10,8,0.5998064279556274
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,11,1,0.7729657292366028
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,11,2,0.9885706305503845
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,11,4,0.8692926168441772
+1,1,"Mamba-2 (causal, 14M)",14m_mamba2_causal_multidil_v2_seed42,11,8,0.49003466963768005
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,0,1,0.9709116816520691
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,0,2,0.754035472869873
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,0,4,0.7099443078041077
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,0,8,0.6455742120742798
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,1,1,0.9634590744972229
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,1,2,0.9218138456344604
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,1,4,0.7583661079406738
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,1,8,0.6268688440322876
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,2,1,1.1248615980148315
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,2,2,1.111137866973877
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,2,4,0.9243475794792175
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,2,8,0.7975772023200989
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,3,1,0.9600139260292053
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,3,2,1.1925973892211914
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,3,4,0.8517195582389832
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,3,8,0.545723021030426
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,4,1,1.096341848373413
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,4,2,1.4061089754104614
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,4,4,1.2142720222473145
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,4,8,0.9407185912132263
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,5,1,0.9733197689056396
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,5,2,1.3824775218963623
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,5,4,1.3326737880706787
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,5,8,0.9946386218070984
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,6,1,1.0178717374801636
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,6,2,1.2095221281051636
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,6,4,1.0997676849365234
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,6,8,0.9491240382194519
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,7,1,0.964599072933197
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,7,2,1.1472105979919434
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,7,4,1.0657002925872803
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,7,8,0.8628111481666565
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,8,1,1.011918544769287
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,8,2,1.3746657371520996
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,8,4,1.3302186727523804
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,8,8,0.946038007736206
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,9,1,1.1375066041946411
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,9,2,2.0868923664093018
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,9,4,2.1131441593170166
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,9,8,1.279572606086731
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,10,1,1.0465521812438965
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,10,2,1.4630241394042969
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,10,4,1.4057297706604004
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,10,8,0.7205742001533508
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,11,1,1.1194168329238892
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,11,2,1.3168840408325195
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,11,4,1.0173959732055664
+1,2,"LA (causal, 14M)",14m_linear_attn_causal_multidil_v2_seed42,11,8,0.6594012975692749
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,0,1,0.8196057081222534
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,0,2,1.0781093835830688
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,0,4,0.7028086185455322
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,0,8,0.5633216500282288
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,1,1,0.8954163193702698
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,1,2,1.3843262195587158
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,1,4,0.970689594745636
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,1,8,0.7525479793548584
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,2,1,1.0167500972747803
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,2,2,1.6439769268035889
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,2,4,1.1066840887069702
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,2,8,0.7178351283073425
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,3,1,0.904072642326355
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,3,2,1.8375604152679443
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,3,4,1.2988104820251465
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,3,8,0.9143722653388977
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,4,1,0.7176058888435364
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,4,2,1.9000837802886963
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,4,4,1.6228159666061401
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,4,8,1.0490597486495972
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,5,1,1.1869451999664307
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,5,2,2.507965087890625
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,5,4,2.0237979888916016
+2,0,"RWKV-6 (LION-S, 7M)",7m_rwkv6_lion_multidil_v2_seed42,5,8,1.044795274734497
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,0,1,0.44661107659339905
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,0,2,0.24966278672218323
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,0,4,0.21087390184402466
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,0,8,0.19415226578712463
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,1,1,0.8050190806388855
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,1,2,0.5971488356590271
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,1,4,0.5771402716636658
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,1,8,0.3883728086948395
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,2,1,0.7389135956764221
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,2,2,0.6645523309707642
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,2,4,0.6766948699951172
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,2,8,0.5119041204452515
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,3,1,0.6428090333938599
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,3,2,0.8007541298866272
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,3,4,0.8172342777252197
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,3,8,0.5341998934745789
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,4,1,0.4859563410282135
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,4,2,0.9640727043151855
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,4,4,0.9569787383079529
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,4,8,0.7713568806648254
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,5,1,0.5976529121398926
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,5,2,1.1448180675506592
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,5,4,1.0758618116378784
+2,1,"Mamba-2 (LION-S, 7M)",7m_mamba2_lion_multidil_v2_seed42,5,8,0.7572788000106812
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,0,1,1.1843230724334717
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,0,2,1.0779350996017456
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,0,4,0.8398475646972656
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,0,8,0.6671814322471619
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,1,1,1.3000314235687256
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,1,2,1.4015949964523315
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,1,4,0.9863795042037964
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,1,8,1.0166246891021729
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,2,1,1.0454018115997314
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,2,2,1.3034597635269165
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,2,4,1.2643787860870361
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,2,8,0.9542598128318787
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,3,1,1.0601024627685547
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,3,2,1.514459252357483
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,3,4,1.495500922203064
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,3,8,1.1764428615570068
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,4,1,1.049763560295105
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,4,2,1.5796343088150024
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,4,4,1.782094955444336
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,4,8,1.1430648565292358
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,5,1,1.1594971418380737
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,5,2,1.8098595142364502
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,5,4,1.4336601495742798
+2,2,"LA (LION-LIT, 7M)",7m_linear_attn_lion_multidil_v2_seed42,5,8,0.8122848272323608
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,0,1,1.0891618728637695
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,0,2,1.1254435777664185
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,0,4,0.8843379020690918
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,0,8,0.8279346227645874
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,1,1,1.0485708713531494
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,1,2,1.0618916749954224
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,1,4,0.9708786010742188
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,1,8,0.7441954612731934
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,2,1,1.1623204946517944
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,2,2,1.5728219747543335
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,2,4,1.1452528238296509
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,2,8,1.0503787994384766
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,3,1,1.0337222814559937
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,3,2,1.6205649375915527
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,3,4,1.3274167776107788
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,3,8,0.882465124130249
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,4,1,1.1724337339401245
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,4,2,1.5490316152572632
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,4,4,1.7031631469726562
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,4,8,0.9535639882087708
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,5,1,1.2092924118041992
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,5,2,1.641791820526123
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,5,4,1.6784199476242065
+2,3,"LA (LION-S, 7M)",7m_linear_attn_lion_s_multidil_v2_seed42,5,8,0.7401412725448608
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,0,1,0.7737939357757568
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,0,2,0.9399378299713135
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,0,4,0.8336416482925415
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,0,8,0.8159515261650085
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,1,1,0.7463169097900391
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,1,2,0.984494149684906
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,1,4,0.9724258184432983
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,1,8,0.9155930280685425
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,2,1,0.9201381802558899
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,2,2,1.1726210117340088
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,2,4,1.0353032350540161
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,2,8,0.8633363842964172
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,3,1,0.9649783968925476
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,3,2,1.368545651435852
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,3,4,1.1666563749313354
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,3,8,1.0250928401947021
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,4,1,0.6675850749015808
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,4,2,1.690529465675354
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,4,4,1.6929432153701782
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,4,8,1.2216545343399048
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,5,1,0.8716850280761719
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,5,2,2.376707077026367
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,5,4,1.9539955854415894
+3,0,"RWKV-6 (causal, 7M)",cv_pilot_rwkv6_multidil_v2_seed42,5,8,1.1859400272369385
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,0,1,0.752072811126709
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,0,2,0.4800211489200592
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,0,4,0.4414723515510559
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,0,8,0.36193835735321045
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,1,1,0.7293363809585571
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,1,2,0.5106323957443237
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,1,4,0.48190057277679443
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,1,8,0.4609503746032715
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,2,1,0.6910226345062256
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,2,2,0.6692119240760803
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,2,4,0.6767202615737915
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,2,8,0.5856255292892456
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,3,1,0.628034234046936
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,3,2,0.8556312322616577
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,3,4,0.7867470383644104
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,3,8,0.628556489944458
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,4,1,0.6235324144363403
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,4,2,1.0089401006698608
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,4,4,0.8669474124908447
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,4,8,0.7491552829742432
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,5,1,0.7508701086044312
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,5,2,1.0205128192901611
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,5,4,0.7838277220726013
+3,1,"Mamba-2 (causal, 7M)",cv_pilot_mamba2_multidil_v2_seed42,5,8,0.580813467502594
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,0,1,1.0184688568115234
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,0,2,0.9134438633918762
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,0,4,0.8444958925247192
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,0,8,0.8819906711578369
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,1,1,0.9773615598678589
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,1,2,1.5749554634094238
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,1,4,1.3679662942886353
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,1,8,1.0084552764892578
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,2,1,1.1242409944534302
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,2,2,1.356094241142273
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,2,4,1.0723655223846436
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,2,8,0.9571218490600586
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,3,1,1.0319578647613525
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,3,2,1.221194863319397
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,3,4,0.9973066449165344
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,3,8,0.8488634824752808
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,4,1,1.0683387517929077
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,4,2,1.9055209159851074
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,4,4,1.9816893339157104
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,4,8,1.259302020072937
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,5,1,1.1802222728729248
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,5,2,1.6144609451293945
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,5,4,1.7079766988754272
+3,2,"LA (causal, 7M)",cv_pilot_linear_attn_multidil_v2_seed42,5,8,1.324270486831665

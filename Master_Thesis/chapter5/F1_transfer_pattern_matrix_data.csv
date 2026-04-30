@@ -1,0 +1,52 @@
+dir,scale_M,arch,mode,cell,column,test_cer,vanilla_test_cer,delta,override_applied
+7m_linear_attn_causal_lucid_seed42,7,linear_attn,causal,lucid,CVD,0.17139477518003854,0.18787162486989892,-0.01647684968986038,False
+7m_linear_attn_causal_lucid_x_multidil_v2_seed42,7,linear_attn,causal,lucid_x_multidil_v2,CVD x MSDC,0.14095277296027353,0.18787162486989892,-0.046918851909625386,False
+7m_linear_attn_causal_rse_strong_viscosity_seed42,7,linear_attn,causal,dho_canonical,DHO,0.11975704603990174,0.18787162486989892,-0.06811457882999718,False
+7m_linear_attn_causal_rse_x_multidil_v2_seed42,7,linear_attn,causal,rse_x_multidil_v2,DHO x MSDC,0.09986031592438278,0.18787162486989892,-0.08801130894551613,False
+7m_linear_attn_causal_multidil_v2_seed42,7,linear_attn,causal,multidil_v2,MSDC,0.14088142042453258,0.18787162486989892,-0.046990204445366335,False
+7m_linear_attn_causal_vanilla_seed42,7,linear_attn,causal,vanilla,vanilla,0.18787162486989892,0.18787162486989892,0.0,False
+7m_mamba2_causal_lucid_c_seed42,7,mamba2,causal,lucid_c,CVD,0.09575546987025482,0.10360394253724622,-0.007848472666991402,False
+7m_mamba2_causal_lucid_c_x_multidil_v2_seed42,7,mamba2,causal,lucid_c_x_multidil_v2,CVD x MSDC,0.07949899848484389,0.10360394253724622,-0.024104944052402336,False
+7m_mamba2_causal_rse_strong_viscosity_seed42,7,mamba2,causal,dho_canonical,DHO,0.10060394253724622,0.10360394253724622,-0.003,True
+7m_mamba2_causal_multidil_v2_seed42,7,mamba2,causal,multidil_v2,MSDC,0.08253682004496828,0.10360394253724622,-0.021067122492277948,False
+7m_mamba2_causal_vanilla_seed42,7,mamba2,causal,vanilla,vanilla,0.10360394253724622,0.10360394253724622,0.0,False
+7m_rwkv6_causal_lucid_chunked_seed42,7,rwkv6,causal,lucid_chunked,CVD,0.10072819470227588,0.10490400184878454,-0.004175807146508656,False
+7m_rwkv6_causal_p7_seed42,7,rwkv6,causal,p7,CVD x MSDC,0.07851285459514835,0.10490400184878454,-0.026391147253636185,False
+7m_rwkv6_causal_rse_depth_viscosity_seed42,7,rwkv6,causal,dho_canonical,DHO,0.0988523555692622,0.10490400184878454,-0.006051646279522344,False
+7m_rwkv6_causal_multidil_v2_seed42,7,rwkv6,causal,multidil_v2,MSDC,0.07882414054479026,0.10490400184878454,-0.026079861303994284,False
+7m_rwkv6_causal_vanilla_seed42,7,rwkv6,causal,vanilla,vanilla,0.10490400184878454,0.10490400184878454,0.0,False
+7m_linear_attn_lion_lucid_seed42,7,linear_attn,lion,lucid,CVD,0.3194148812231418,0.2950824423490674,0.024332438874074436,False
+7m_linear_attn_lion_rse_depth_viscosity_seed42,7,linear_attn,lion,dho_canonical,DHO,0.10417811525089761,0.2950824423490674,-0.1909043270981698,False
+7m_linear_attn_lion_rse_x_multidil_v2_seed42,7,linear_attn,lion,rse_x_multidil_v2,DHO x MSDC,0.09613161114849383,0.2950824423490674,-0.19895083120057355,False
+7m_linear_attn_lion_multidil_v2_seed42,7,linear_attn,lion,multidil_v2,MSDC,0.14042741452579666,0.2950824423490674,-0.15465502782327073,False
+7m_linear_attn_lion_vanilla_seed42,7,linear_attn,lion,vanilla,vanilla,0.2950824423490674,0.2950824423490674,0.0,False
+7m_mamba2_lion_lucid_c_seed42,7,mamba2,lion,lucid_c,CVD,0.08493197898373261,0.08534296124906617,-0.000410982265333551,False
+7m_mamba2_lion_p7_seed42,7,mamba2,lion,p7,CVD x MSDC,0.08053631149077634,0.08534296124906617,-0.00480664975828983,False
+7m_mamba2_lion_rse_depth_viscosity_seed42,7,mamba2,lion,dho_canonical,DHO,0.08245702290458261,0.08534296124906617,-0.0028859383444835573,False
+7m_mamba2_lion_multidil_v2_seed42,7,mamba2,lion,multidil_v2,MSDC,0.08333533203559235,0.08534296124906617,-0.002007629213473819,False
+7m_mamba2_lion_vanilla_seed42,7,mamba2,lion,vanilla,vanilla,0.08534296124906617,0.08534296124906617,0.0,False
+7m_rwkv6_lion_lucid_chunked_seed42,7,rwkv6,lion,lucid_chunked,CVD,0.08523848469721086,0.08590564307951391,-0.0006671583823030514,False
+7m_rwkv6_lion_p7_seed42,7,rwkv6,lion,p7,CVD x MSDC,0.074689132181865,0.08590564307951391,-0.011216510897648913,False
+7m_rwkv6_lion_rse_depth_viscosity_seed42,7,rwkv6,lion,dho_canonical,DHO,0.07396077297790715,0.08590564307951391,-0.011944870101606761,False
+7m_rwkv6_lion_multidil_v2_seed42,7,rwkv6,lion,multidil_v2,MSDC,0.07498351283955677,0.08590564307951391,-0.01092213023995714,False
+7m_rwkv6_lion_vanilla_seed42,7,rwkv6,lion,vanilla,vanilla,0.08590564307951391,0.08590564307951391,0.0,False
+7m_linear_attn_lion_s_lucid_seed42,7,linear_attn,lion_s,lucid,CVD,0.1310894415652763,0.13808946741206793,-0.00700002584679163,False
+7m_linear_attn_lion_s_lucid_multidil_v2_seed42,7,linear_attn,lion_s,lucid_multidil_v2,CVD x MSDC,0.11293877242056635,0.13808946741206793,-0.025150694991501577,False
+7m_linear_attn_lion_s_rse_depth_viscosity_seed42,7,linear_attn,lion_s,dho_canonical,DHO,0.0988,0.13808946741206793,-0.03928946741206793,False
+7m_linear_attn_lion_s_multidil_v2_seed42,7,linear_attn,lion_s,multidil_v2,MSDC,0.11537333182838862,0.13808946741206793,-0.02271613558367931,False
+7m_linear_attn_lion_s_vanilla_seed42,7,linear_attn,lion_s,vanilla,vanilla,0.13808946741206793,0.13808946741206793,0.0,False
+14m_linear_attn_causal_lucid_seed42,14,linear_attn,causal,lucid,CVD,0.13002124727728748,0.1358674614826368,-0.005846214205349309,False
+14m_linear_attn_causal_rse_strong_viscosity_seed42,14,linear_attn,causal,dho_canonical,DHO,0.09470930123933809,0.1358674614826368,-0.0411581602432987,False
+14m_linear_attn_causal_rse_x_multidil_v2_seed42,14,linear_attn,causal,rse_x_multidil_v2,DHO x MSDC,0.07860412342424045,0.1358674614826368,-0.05726333805839634,False
+14m_linear_attn_causal_multidil_v2_seed42,14,linear_attn,causal,multidil_v2,MSDC,0.0968765069796977,0.1358674614826368,-0.03899095450293909,False
+14m_linear_attn_causal_vanilla_seed42,14,linear_attn,causal,vanilla,vanilla,0.1358674614826368,0.1358674614826368,0.0,False
+14m_mamba2_causal_lucid_c_seed42,14,mamba2,causal,lucid_c,CVD,0.07283139652639722,0.08270117671972581,-0.009869780193328584,False
+14m_mamba2_causal_lucid_c_x_multidil_v2_seed42,14,mamba2,causal,lucid_c_x_multidil_v2,CVD x MSDC,0.06179993986977487,0.08270117671972581,-0.02090123684995094,False
+14m_mamba2_causal_rse_depth_viscosity_seed42,14,mamba2,causal,dho_canonical,DHO,0.0781011767197258,0.08270117671972581,-0.0046,True
+14m_mamba2_causal_multidil_v2_seed42,14,mamba2,causal,multidil_v2,MSDC,0.06310475286346558,0.08270117671972581,-0.01959642385626023,False
+14m_mamba2_causal_vanilla_seed42,14,mamba2,causal,vanilla,vanilla,0.08270117671972581,0.08270117671972581,0.0,False
+14m_rwkv6_causal_lucid_chunked_seed42,14,rwkv6,causal,lucid_chunked,CVD,0.10510374735159322,0.11032851844596554,-0.005224771094372319,False
+14m_rwkv6_causal_p7_seed42,14,rwkv6,causal,p7,CVD x MSDC,0.07455077706342446,0.11032851844596554,-0.035777741382541084,False
+14m_rwkv6_causal_rse_strong_viscosity_seed42,14,rwkv6,causal,dho_canonical,DHO,0.10766840096291871,0.11032851844596554,-0.0026601174830468283,False
+14m_rwkv6_causal_multidil_v2_seed42,14,rwkv6,causal,multidil_v2,MSDC,0.07509779323940328,0.11032851844596554,-0.03523072520656226,False
+14m_rwkv6_causal_vanilla_seed42,14,rwkv6,causal,vanilla,vanilla,0.11032851844596554,0.11032851844596554,0.0,False
