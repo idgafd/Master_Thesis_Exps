@@ -27,7 +27,9 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
+import torch.distributed as dist
 import yaml
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 
 from src.config import load_config
@@ -51,6 +53,46 @@ from src.training.run_plots import render_run_plots
 from src.utils.misc import seed_everything, count_parameters, format_param_count
 
 logger = logging.getLogger(__name__)
+
+
+# ── DDP helpers ─────────────────────────────────────────────────────────────
+# Activated automatically when launched via torchrun (sets RANK/WORLD_SIZE/
+# LOCAL_RANK env vars).  Single-GPU path is unchanged.
+#
+# Effective-batch invariant: per-rank `batch_max_seconds = cfg.batch_max_seconds
+# / world_size`, so the sum of rank-local batches matches the single-GPU
+# 300 s budget that every other LION × RSE cell was trained under.  The
+# AdamW + cosine + 1000-step warmup schedule (Master_Plan §7) needs no
+# changes — step count per epoch and effective batch are both invariant
+# under this sharding.
+
+def _ddp_env() -> tuple[bool, int, int, int]:
+    """Returns (is_ddp, rank, world_size, local_rank)."""
+    if "RANK" in os.environ and "WORLD_SIZE" in os.environ:
+        rank = int(os.environ["RANK"])
+        world_size = int(os.environ["WORLD_SIZE"])
+        local_rank = int(os.environ.get("LOCAL_RANK", rank))
+        return world_size > 1, rank, world_size, local_rank
+    return False, 0, 1, 0
+
+
+def _shard_entries(entries: list, rank: int, world_size: int) -> list:
+    """Round-robin shard preserving duration distribution per rank."""
+    if world_size <= 1:
+        return entries
+    return entries[rank::world_size]
+
+
+def _all_reduce_min_int(value: int, device: torch.device) -> int:
+    t = torch.tensor([value], device=device, dtype=torch.long)
+    dist.all_reduce(t, op=dist.ReduceOp.MIN)
+    return int(t.item())
+
+
+def _broadcast_bool(value: bool, src: int, device: torch.device) -> bool:
+    t = torch.tensor([1 if value else 0], device=device, dtype=torch.long)
+    dist.broadcast(t, src=src)
+    return bool(t.item())
 
 
 @torch.no_grad()
@@ -88,16 +130,23 @@ def _compute_wer_by_speaker(model, entries, vocab, cfg, device) -> dict:
     return out
 
 
-def _setup_logging(run_dir: Path) -> None:
-    """Log to both stderr and `run_dir/train.log`."""
+def _setup_logging(run_dir: Path, rank: int = 0, world_size: int = 1) -> None:
+    """Log to both stderr and `run_dir/train.log`.
+
+    Under DDP, rank 0 owns the canonical ``train.log``; non-zero ranks
+    write to ``train.log.rankN`` so debugging information is preserved
+    without clobbering the canonical log.
+    """
     run_dir.mkdir(parents=True, exist_ok=True)
+    log_name = "train.log" if (world_size <= 1 or rank == 0) else f"train.log.rank{rank}"
     handlers = [
         logging.StreamHandler(),
-        logging.FileHandler(run_dir / "train.log", mode="a"),
+        logging.FileHandler(run_dir / log_name, mode="a"),
     ]
+    fmt_prefix = "" if world_size <= 1 else f"[rank{rank}] "
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
+        format=f"%(asctime)s %(levelname)s {fmt_prefix}%(message)s",
         handlers=handlers,
         force=True,
     )
@@ -156,17 +205,36 @@ def main():
     if not args.output_dir:
         cfg.output_dir = f"./outputs/{args.backbone}_seed{cfg.seed}"
     run_dir = Path(cfg.output_dir)
-    run_dir.mkdir(parents=True, exist_ok=True)
 
-    _setup_logging(run_dir)
-    _write_run_metadata(run_dir, cfg, sys.argv[1:])
-
-    device = (
-        torch.device(f"cuda:{args.gpu}") if args.gpu is not None
-        else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    )
-    if args.gpu is not None:
+    # ── DDP init (no-op under single-GPU) ──────────────────────────────────
+    is_ddp, rank, world_size, local_rank = _ddp_env()
+    is_main = rank == 0
+    if is_ddp:
+        dist.init_process_group(backend="nccl")
+        device = torch.device(f"cuda:{local_rank}")
         torch.cuda.set_device(device)
+    else:
+        device = (
+            torch.device(f"cuda:{args.gpu}") if args.gpu is not None
+            else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        )
+        if args.gpu is not None:
+            torch.cuda.set_device(device)
+
+    if is_main:
+        run_dir.mkdir(parents=True, exist_ok=True)
+    if is_ddp:
+        dist.barrier()  # ensure run_dir exists on non-zero ranks before logging
+
+    _setup_logging(run_dir, rank=rank, world_size=world_size)
+    if is_main:
+        _write_run_metadata(run_dir, cfg, sys.argv[1:])
+    if is_ddp:
+        logger.info(
+            f"DDP active | rank={rank}/{world_size} | local_rank={local_rank} "
+            f"| device={device}"
+        )
+
     seed_everything(cfg.seed)
 
     # ── --fast: TF32 matmul only, applied AFTER seed_everything ────────────
@@ -187,13 +255,32 @@ def main():
     dev_entries = load_dataset_split(cfg, "dev")
     test_entries = load_dataset_split(cfg, "test")
 
-    train_ds = ASRDataset(train_entries, vocab, cfg)
+    # Per-rank training shard.  Round-robin slicing preserves duration
+    # distribution because LibriSpeech entries are not pre-sorted.  The
+    # DurationBatchSampler will resort by duration internally.  Effective
+    # global batch is unchanged: each rank carries 1/world_size of the
+    # 300 s budget; DDP all-reduce averages gradients across ranks ⇒
+    # equivalent to a single 300 s batch on a single GPU.
+    train_entries_local = _shard_entries(train_entries, rank, world_size)
+    per_rank_batch_seconds = cfg.batch_max_seconds / world_size
+    if is_ddp:
+        logger.info(
+            f"Train shard: {len(train_entries_local)}/{len(train_entries)} "
+            f"utterances on this rank | per-rank batch budget "
+            f"{per_rank_batch_seconds:.2f}s "
+            f"(global {cfg.batch_max_seconds:.0f}s preserved)"
+        )
+
+    train_ds = ASRDataset(train_entries_local, vocab, cfg)
+    # Dev and test only used on rank 0 (eval is single-process).
     dev_ds = ASRDataset(dev_entries, vocab, cfg)
     test_ds = ASRDataset(test_entries, vocab, cfg)
 
     train_loader = DataLoader(
         train_ds,
-        batch_sampler=DurationBatchSampler(train_entries, cfg.batch_max_seconds, True, cfg.seed),
+        batch_sampler=DurationBatchSampler(
+            train_entries_local, per_rank_batch_seconds, True, cfg.seed,
+        ),
         collate_fn=collate_fn, num_workers=4,
     )
     dev_loader = DataLoader(
@@ -215,19 +302,51 @@ def main():
     # ── Model ──────────────────────────────────────────────────────────────
     model = ASRModel(vocab_size=vocab.size, cfg=cfg).to(device)
     pc = count_parameters(model)
-    logger.info(f"Backbone: {args.backbone} | Params: {format_param_count(pc['total'])}")
-    logger.info(f"  Frontend: {format_param_count(pc['frontend'])} | "
-                f"Encoder: {format_param_count(pc['encoder'])} | "
-                f"Head: {format_param_count(pc['ctc_head'])}")
+    if is_main:
+        logger.info(f"Backbone: {args.backbone} | Params: {format_param_count(pc['total'])}")
+        logger.info(f"  Frontend: {format_param_count(pc['frontend'])} | "
+                    f"Encoder: {format_param_count(pc['encoder'])} | "
+                    f"Head: {format_param_count(pc['ctc_head'])}")
 
     if cfg.compile_encoder:
         torch.set_float32_matmul_precision("high")
         logger.info("Compiling encoder with torch.compile (first batch will be slow)...")
         model.encoder = torch.compile(model.encoder, mode="default", dynamic=True)
 
+    # ── DDP wrap ───────────────────────────────────────────────────────────
+    # find_unused_parameters=False: every parameter participates in every
+    # forward (the LION-S decay_proj contributes to log_z's real part across
+    # all heads/blocks, the RSE LoRA contributes via theta in every layer).
+    # gradient_as_bucket_view: cheap memory win, no semantic change.
+    # The `forward_parallel_lion` path uses torch.utils.checkpoint with
+    # use_reentrant=False, which is DDP-safe in PyTorch ≥ 2.0.
+    train_model = model
+    if is_ddp:
+        train_model = DDP(
+            model,
+            device_ids=[local_rank],
+            output_device=local_rank,
+            find_unused_parameters=False,
+            gradient_as_bucket_view=True,
+        )
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    total_steps = len(train_loader) * cfg.num_epochs
+    # Synchronise per-epoch step count across ranks so the cosine scheduler
+    # sees an identical total_steps on every rank (otherwise schedule drifts
+    # by 1-3 steps under uneven duration sharding).
+    local_steps_per_epoch = len(train_loader)
+    if is_ddp:
+        steps_per_epoch = _all_reduce_min_int(local_steps_per_epoch, device)
+    else:
+        steps_per_epoch = local_steps_per_epoch
+    total_steps = steps_per_epoch * cfg.num_epochs
     scheduler = WarmupCosineScheduler(optimizer, cfg.warmup_steps, total_steps)
+    if is_main:
+        logger.info(
+            f"Steps/epoch: local={local_steps_per_epoch}, "
+            f"synced(min)={steps_per_epoch}; "
+            f"total_steps={total_steps}"
+        )
 
     # ── Resume ─────────────────────────────────────────────────────────────
     start_epoch = 1
@@ -238,9 +357,11 @@ def main():
     if args.resume:
         resume_path = find_resume_point(run_dir)
         if resume_path is None:
-            logger.info("No last_model.pt found — starting from scratch")
+            if is_main:
+                logger.info("No last_model.pt found — starting from scratch")
         else:
-            logger.info(f"Resuming from {resume_path}")
+            if is_main:
+                logger.info(f"Resuming from {resume_path}")
             state = load_checkpoint(
                 resume_path, model=model, optimizer=optimizer,
                 scheduler=scheduler, map_location=device,
@@ -248,7 +369,6 @@ def main():
             start_epoch = state["epoch"] + 1
             best_cer = state["best_cer"]
             patience_counter = state["patience_counter"]
-            # Best-effort global step: reconstruct from history if available
             history_csv = run_dir / "history.csv"
             if history_csv.exists():
                 import pandas as pd
@@ -258,22 +378,57 @@ def main():
 
     # ── Training loop ──────────────────────────────────────────────────────
     git_sha = get_git_sha()
-    metric_logger = MetricLogger(run_dir, step_log_interval=50)
+    metric_logger = MetricLogger(run_dir, step_log_interval=50) if is_main else None
 
     try:
         for epoch in range(start_epoch, cfg.num_epochs + 1):
             epoch_t0 = time.time()
-            torch.cuda.reset_peak_memory_stats(device) if device.type == "cuda" else None
+            if device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats(device)
 
+            # Each rank trains on its own data shard; DDP all-reduce
+            # averages gradients each step.  Loss / grad-norm / throughput
+            # logged here are rank-local — we report rank 0's view and
+            # all-reduce the loss for an aggregate later.
             train_stats = train_one_epoch(
-                model, train_loader, optimizer, scheduler, spec_aug,
+                train_model, train_loader, optimizer, scheduler, spec_aug,
                 cfg, epoch, device,
                 metric_logger=metric_logger,
                 global_step_offset=global_step,
+                max_steps=steps_per_epoch,
             )
             global_step = train_stats["last_step"]
 
-            dev_metrics = evaluate(model, dev_loader, vocab, device, tag="dev")
+            # Aggregate train loss across ranks (mean) so the logged value
+            # reflects the global epoch loss, not just rank 0's shard.
+            if is_ddp:
+                _t = torch.tensor(
+                    [train_stats["train_loss"], train_stats["grad_norm_mean"]],
+                    device=device, dtype=torch.float32,
+                )
+                dist.all_reduce(_t, op=dist.ReduceOp.AVG)
+                train_stats["train_loss"] = float(_t[0].item())
+                train_stats["grad_norm_mean"] = float(_t[1].item())
+
+            # Dev eval on rank 0 only (single-process eval is fast enough
+            # and avoids DDP-vs-eval model-sync gymnastics).
+            if is_main:
+                dev_metrics = evaluate(model, dev_loader, vocab, device, tag="dev")
+            else:
+                dev_metrics = {"loss": 0.0, "cer": 1.0, "wer": 1.0}
+
+            # Broadcast dev_cer to all ranks so they all know whether to
+            # save a new best / increment patience identically.
+            if is_ddp:
+                _t = torch.tensor(
+                    [dev_metrics["loss"], dev_metrics["cer"], dev_metrics["wer"]],
+                    device=device, dtype=torch.float32,
+                )
+                dist.broadcast(_t, src=0)
+                dev_metrics = {"loss": float(_t[0].item()),
+                               "cer": float(_t[1].item()),
+                               "wer": float(_t[2].item())}
+
             epoch_time = time.time() - epoch_t0
             peak_mem = (
                 torch.cuda.max_memory_allocated(device) / 1e9
@@ -294,42 +449,55 @@ def main():
                 "peak_mem_gb": peak_mem,
                 "last_step": global_step,
             }
-            metric_logger.log_epoch(row)
+            if is_main:
+                metric_logger.log_epoch(row)
+                logger.info(
+                    f"Epoch {epoch} | Train: {train_stats['train_loss']:.4f} | "
+                    f"Dev CER: {dev_metrics['cer']:.4f} | "
+                    f"Dev WER: {dev_metrics['wer']:.4f} | "
+                    f"Time: {epoch_time:.0f}s | Peak: {peak_mem:.1f} GB"
+                )
 
-            logger.info(
-                f"Epoch {epoch} | Train: {train_stats['train_loss']:.4f} | "
-                f"Dev CER: {dev_metrics['cer']:.4f} | "
-                f"Dev WER: {dev_metrics['wer']:.4f} | "
-                f"Time: {epoch_time:.0f}s | Peak: {peak_mem:.1f} GB"
-            )
-
-            # Checkpointing
+            # Checkpointing — rank 0 only.  All ranks update best_cer /
+            # patience_counter so the early-stop decision is identical.
             is_best = dev_metrics["cer"] < best_cer
             if is_best:
                 best_cer = dev_metrics["cer"]
                 patience_counter = 0
-                logger.info(f"  New best CER: {best_cer:.4f}")
+                if is_main:
+                    logger.info(f"  New best CER: {best_cer:.4f}")
             else:
                 patience_counter += 1
 
-            save_checkpoint(
-                run_dir,
-                epoch=epoch, model=model, optimizer=optimizer, scheduler=scheduler,
-                best_cer=best_cer, patience_counter=patience_counter,
-                config=cfg, git_sha=git_sha, is_best=is_best,
-                total_epochs=cfg.num_epochs,
-            )
-
-            # Regenerate in-run plots (cheap: reads history.csv + metrics.jsonl)
-            render_run_plots(run_dir, title_prefix=f"{args.backbone} — ")
+            if is_main:
+                save_checkpoint(
+                    run_dir,
+                    epoch=epoch, model=model, optimizer=optimizer, scheduler=scheduler,
+                    best_cer=best_cer, patience_counter=patience_counter,
+                    config=cfg, git_sha=git_sha, is_best=is_best,
+                    total_epochs=cfg.num_epochs,
+                )
+                render_run_plots(run_dir, title_prefix=f"{args.backbone} — ")
 
             if patience_counter >= cfg.early_stopping_patience:
-                logger.info(f"Early stopping at epoch {epoch}")
+                if is_main:
+                    logger.info(f"Early stopping at epoch {epoch}")
                 break
+
+            if is_ddp:
+                dist.barrier()  # all ranks resync at epoch boundary
     finally:
-        metric_logger.close()
+        if metric_logger is not None:
+            metric_logger.close()
 
     # ── Final evaluation on best checkpoint ────────────────────────────────
+    # Rank 0 only.  Other ranks wait at the final barrier.
+    if not is_main:
+        if is_ddp:
+            dist.barrier()
+            dist.destroy_process_group()
+        return
+
     best_path = run_dir / "best_model.pt"
     load_checkpoint(best_path, model=model, map_location=device, restore_rng=False)
     test_metrics = evaluate(model, test_loader, vocab, device, tag="test")
@@ -406,6 +574,10 @@ def main():
     render_run_plots(run_dir, title_prefix=f"{args.backbone} — ")
 
     logger.info(f"Done. Best dev CER: {best_cer:.4f} | Test CER: {test_metrics['cer']:.4f}")
+
+    if is_ddp:
+        dist.barrier()
+        dist.destroy_process_group()
 
 
 if __name__ == "__main__":
