@@ -109,15 +109,15 @@ are reported in Appendix~\ref{app:results}. Reported gains are
 not bought by parameter inflation.
 
 All cells are single-seed because the matched 65-cell matrix
-exhausts the available compute. A small set of matched-budget
-reruns conducted during the calibration phase, under the same
-preprocessing, optimiser, and decoding pipeline, gives an
-empirical CER noise floor of $\sigma \approx 0.0014$. This value
-is used as a descriptive threshold for categorising deltas, not
-as a formal hypothesis test: $|\Delta| > 5\sigma$ is treated as a
-BREAK, $|\Delta| \le 2\sigma$ as marginal, and intermediate
-values as productive but not BREAK. Across-matrix directional
-coherence offsets the variance of any individual cell.
+exhausts the available compute. We classify each $\Delta$
+descriptively rather than as a formal significance test:
+$|\Delta| > 0.010$ is reported as the \textit{break band},
+$|\Delta| \le 0.003$ as the \textit{marginal band}, and
+intermediate values as productive but not break-band. The
+thresholds are descriptive heuristics chosen at
+order-of-magnitude granularity; the chapter argues effects
+through cross-matrix directional coherence and across-scale
+reproduction, not through per-cell significance.
 
 \section{Aggregated empirical summary}\label{sec:experiments:summary}
 
@@ -313,7 +313,7 @@ $0.1879$; LION-LIT~$\times$~CVD becomes harmful at
 $\Delta = +0.0243$, the only positive $\Delta$ in the matrix,
 since the chunk-local preconditioner loses its conditioning
 guarantee on an unbounded value accumulation;
-LION-LIT~$\times$~DHO remains a clean BREAK at
+LION-LIT~$\times$~DHO remains a clean break-band gain at
 $\Delta = -0.1909$ (a $65\%$ relative reduction), since the
 block-complex transition introduces decay through its damping
 channel $e^{-\lambda_{\mathrm{eff}}}$ rather than through the
@@ -381,7 +381,7 @@ LA~$\times$~DHO~$\times$~MSDC cells deliver smaller absolute
 gains on Common Voice than on LibriSpeech
 ($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} = +0.0331$ and
 $+0.0263$), reflecting the absorbed share of the LA-on-LibriSpeech
-BREAK pattern under the broader distribution. The
+break-band pattern under the broader distribution. The
 RWKV-6~$\times$~CVD~$\times$~MSDC composition shows the largest
 amplification in the opposite direction
 ($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} = -0.0335$),
