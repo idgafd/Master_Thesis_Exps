@@ -172,15 +172,28 @@ pre-registers this distinction as a probe property prior to any
 experiment on the proposed mechanisms.
 
 The training subset is constructed from the validated split of
-the Common Voice release. Utterances are sampled stratified by
-speaker so that no speaker appears in more than one of the train,
-dev, or test partitions, and so that the cumulative duration
-matches the LibriSpeech train-clean-100 budget within rounding.
-The dev and test partitions follow the released Common Voice
-splits restricted to the sampled speaker set. Audio preprocessing
-matches the LibriSpeech pipeline. The only change is the
-vocabulary, which retains the same character set since both
-corpora are English.
+the Common Voice English release. The validated split aggregates
+utterances that have received sufficient up-votes from the Common
+Voice review pipeline; its total duration varies by release
+version and is in the multi-thousand-hour range at recent
+releases. The selection protocol of this thesis proceeds as
+follows. The validated split is partitioned by speaker
+identifier; speakers are drawn uniformly without replacement
+under the matrix-wide random seed ($42$,
+Table~\ref{tab:setup:hyperparams}); utterances from each drawn
+speaker are accumulated until the cumulative duration crosses the
+LibriSpeech train-clean-100 budget within rounding. Inclusion
+criteria match the LibriSpeech pipeline: utterances longer than
+$20$~s and shorter than $0.5$~s are filtered. Validated-split
+utterances without an associated speaker identifier are excluded
+from the speaker-stratified sampling, since the no-overlap
+guarantee at evaluation time relies on a deterministic speaker
+key. The dev and test partitions are the released Common Voice
+splits restricted to the sampled speaker set, which preserves the
+no-speaker-overlap property at evaluation time. Audio
+preprocessing matches the LibriSpeech pipeline; the only change
+is the vocabulary, which retains the same character set since
+both corpora are English.
 
 The pre-experimental contrast between the two probes is recorded
 in Table~\ref{tab:librispeech-vs-cv} of
@@ -211,6 +224,27 @@ value-prediction positions; the success criterion is per-sequence
 accuracy reaching $0.9$. Each MQAR cell is run for up to $30\,000$
 steps with early stopping when per-sequence accuracy reaches
 $0.999$ on a held-out validation batch.
+
+The thirteen-backbone cohort uses a shared encoder
+configuration; only the time-mixing block varies between cells.
+The shared configuration is two encoder layers with
+$d_{\text{model}} = 64$ and the architecture-specific time-mix
+substituted in. The causal Transformer baseline is
+parameter-matched to the linear-time backbones at the same
+configuration, with standard multi-head attention substituted in
+place of the linear-time time-mix; the head count is $H = 1$ at
+head dimension $64$, the channel-mix block expands by a factor
+of $4$ to a feed-forward dimension of $256$, and no positional
+encoding is applied beyond the implicit sequence-position signal
+of standard causal attention. The fair-comparison interpretation
+of the $T = 1024$ FAIL of the causal Transformer therefore
+attributes to the architecture rather than to a parameter-budget
+or capacity gap. The optimisation schedule is shared across
+every cohort cell: AdamW with peak learning rate
+$3 \times 10^{-4}$ and a $1000$-step linear warmup followed by
+cosine decay to a small positive floor, matching the LibriSpeech
+schedule of Section~\ref{app:setup:training} as closely as the
+step-based MQAR budget allows.
 
 \section{Hardware environment}\label{app:setup:hw}
 

@@ -105,7 +105,11 @@ two sources of variance from the mechanism attribution: the
 autoregressive sampling noise that beam search and language-model
 rescoring introduce, and the architectural confound of an
 external decoder whose contribution to the metric overlaps with
-what the encoder mechanism is meant to deliver. The synthetic
+what the encoder mechanism is meant to deliver. The omission is
+deliberate rather than incidental, since either decoder addition
+would introduce a decoder-architecture-bias confound with the
+encoder-level mechanism attribution that is the chapter's
+principal claim. The synthetic
 probe reports per-sequence accuracy under a verdict convention
 shared with the Zoology study: a cell PASSes when per-sequence
 accuracy reaches $0.99$ at the early-stopping point, FAILs when
@@ -710,6 +714,20 @@ every tested length while the causal Transformer FAILs at
 $T = 1024$; the DHO cells FAIL at $T = 64$ already, matching
 the predicted axis mismatch between an axis-1 mechanism and
 an axis-2 task.
+
+\paragraph{One-directional matrix evidence.} The six signatures
+above populate the positive-transfer half of the criterion: where
+a mechanism's axis is exercised by the task, gain materialises in
+the predicted ordering. The converse half, where a mechanism
+engages under stochastic gradient descent without converting into
+measured task gain, is not exercised by the matrix and is left to
+the discovery-phase archive that preceded the 50-epoch budget.
+The matrix evidence reported in this chapter is therefore
+one-directional with respect to the criterion; the
+falsification-protocol extension recorded in
+Section~\ref{sec:conclusions:future-work} of
+Chapter~\ref{ch:conclusions} commits the framework to a
+two-directional protocol as future work.
 
 \paragraph{Scope.} The criterion as stated holds within the
 diagonal-class function family of
