@@ -182,6 +182,16 @@ headsepline, % Uncomment to get a line under the header
 \cleardoublepage
 
 %----------------------------------------------------------------------------------------
+%	QUOTATION PAGE 
+%----------------------------------------------------------------------------------------
+
+\vspace*{0.2\textheight}
+
+\noindent\enquote{\itshape Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less.}\bigbreak
+
+\hfill Marie Curie
+
+%----------------------------------------------------------------------------------------
 %	ABSTRACT PAGE
 %----------------------------------------------------------------------------------------
 
@@ -232,6 +242,18 @@ diagonal-class function family.
 \end{abstract}
 
 %----------------------------------------------------------------------------------------
+%	ACKNOWLEDGEMENTS
+%----------------------------------------------------------------------------------------
+
+\begin{acknowledgements}
+\addchaptertocentry{\acknowledgementname} % Add the acknowledgements to the table of contents
+\hspace*{\parindent}I would like to express my sincere gratitude to my supervisor, Eric Alcaide, whose guidance, mentorship, and trust gave me the autonomy to pursue this research.
+
+My deepest respect and boundless gratitude go to the Defence Forces of Ukraine. It is solely because of your courage, sacrifice, and daily protection that I have the privilege of living, studying, and undertaking science even under the most difficult conditions. This work exists because of the future you are defending.
+
+\end{acknowledgements}
+
+%----------------------------------------------------------------------------------------
 %	LIST OF CONTENTS/FIGURES/TABLES PAGES
 %----------------------------------------------------------------------------------------
 
@@ -245,21 +267,33 @@ diagonal-class function family.
 %	ABBREVIATIONS
 %----------------------------------------------------------------------------------------
 
-\begin{abbreviations}{ll} % Include a list of abbreviations (a table of two columns)
+\begin{abbreviations}{@{}p{2.4cm} p{10.8cm}@{}} % Include a list of abbreviations (a table of two columns)
 
-\textbf{ASR}  & Automatic Speech Recognition \\
-\textbf{CER}  & Character Error Rate \\
-\textbf{CTC}  & Connectionist Temporal Classification \\
-\textbf{CVD}  & Chunked Value Decorrelation \\
-\textbf{DHO}  & Damped Harmonic Oscillator \\
-\textbf{DPLR} & Diagonal-Plus-Low-Rank \\
-\textbf{LA}   & Linear Attention \\
-\textbf{LION} & Linear-time bidirectional parallel-form framework \\
-\textbf{MQAR} & Multi-Query Associative Recall \\
-\textbf{MSDC} & Multi-Scale Depthwise Convolution \\
-\textbf{RWKV} & Receptance Weighted Key Value \\
-\textbf{SSM}  & State-Space Model \\
-\textbf{WER}  & Word Error Rate \\
+\textbf{ASR}      & \textbf{A}utomatic \textbf{S}peech \textbf{R}ecognition \\
+\textbf{Bi-WKV}   & \textbf{Bi}directional \textbf{WKV} scan \\
+\textbf{CER}      & \textbf{C}haracter \textbf{E}rror \textbf{R}ate \\
+\textbf{CTC}      & \textbf{C}onnectionist \textbf{T}emporal \textbf{C}lassification \\
+\textbf{CV}       & \textbf{C}ommon \textbf{V}oice \\
+\textbf{CVD}      & \textbf{C}hunked \textbf{V}alue \textbf{D}ecorrelation \\
+\textbf{DHO}      & \textbf{D}amped \textbf{H}armonic \textbf{O}scillator \\
+\textbf{DPLR}     & \textbf{D}iagonal-\textbf{P}lus-\textbf{L}ow-\textbf{R}ank \\
+\textbf{GLA}      & \textbf{G}ated \textbf{L}inear \textbf{A}ttention \\
+\textbf{LA}       & \textbf{L}inear \textbf{A}ttention \\
+\textbf{LION}     & \textbf{Li}near Attenti\textbf{on} for Efficient Bidirectional Sequence Modeling \\
+\textbf{LION-LIT} & LION no-decay variant with $\lambda_{k} = 1$ \\
+\textbf{LION-S}   & LION variant with per-token sigmoid decay \\
+\textbf{LLM}      & \textbf{L}arge \textbf{L}anguage \textbf{M}odel \\
+\textbf{LS}       & \textbf{L}ibri\textbf{S}peech \\
+\textbf{LUCID}    & Attention with Preconditioned Representations \\
+\textbf{MQAR}     & \textbf{M}ulti-\textbf{Q}uery \textbf{A}ssociative \textbf{R}ecall \\
+\textbf{MSDC}     & \textbf{M}ulti-\textbf{S}cale \textbf{D}epthwise \textbf{C}onvolution \\
+\textbf{RWKV}     & \textbf{R}eceptance \textbf{W}eighted \textbf{K}ey \textbf{V}alue \\
+\textbf{S4}       & \textbf{S}tructured \textbf{S}tate \textbf{S}pace \textbf{S}equence Model \\
+\textbf{SSD}      & Structured \textbf{S}tate \textbf{S}pace \textbf{D}uality \\
+\textbf{SSM}      & \textbf{S}tate-\textbf{S}pace \textbf{M}odel \\
+\textbf{Vim}      & \textbf{Vi}sion \textbf{M}amba \\
+\textbf{WER}      & \textbf{W}ord \textbf{E}rror \textbf{R}ate \\
+\textbf{WKV}      & \textbf{W}eighted \textbf{K}ey \textbf{V}alue \\
 
 \end{abbreviations}
 
@@ -267,13 +301,13 @@ diagonal-class function family.
 %	SYMBOLS
 %----------------------------------------------------------------------------------------
 
-\begin{symbols}{lll} % Include a list of Symbols (a three column table)
+% \begin{symbols}{lll} % Include a list of Symbols (a three column table)
 
-$T$    & post-frontend sequence length          & tokens \\
-$d$    & state (model) dimension                & channels \\
-$T_{c}$ & chunk size for chunked-streaming and SSD-form computation & tokens \\
+% $T$    & post-frontend sequence length          & tokens \\
+% $d$    & state (model) dimension                & channels \\
+% $T_{c}$ & chunk size for chunked-streaming and SSD-form computation & tokens \\
 
-\end{symbols}
+% \end{symbols}
 
 %----------------------------------------------------------------------------------------
 %	THESIS CONTENT - CHAPTERS
