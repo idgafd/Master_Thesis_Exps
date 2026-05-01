@@ -177,21 +177,13 @@ Appendix~\ref{app:diagnostics}.
 matrix]{Aggregated test character error rate on LibriSpeech
 test-clean across the cross-architecture transfer matrix at the
 matched 50-epoch budget. Each row is a single
-(architecture, mode, scale) configuration; columns report the
-five mechanism cells of that configuration. Each non-vanilla
-cell reports test character error rate followed by the relative
-reduction over the matched vanilla baseline in parentheses.
-The composition column reports the best pre-registered
-composition (CVD~$\times$~MSDC on RWKV-6 and Mamba-2;
-DHO~$\times$~MSDC on Linear Attention). Bold values mark the
-matrix ceiling at the 14M Mamba-2 row. The single positive
-$\Delta$ in the matrix is the LA LION-LIT~$\times$~CVD cell at
-$0.3194$ ($+8\%$ relative); this cell is examined in
-Section~\ref{sec:experiments:lion}. Relative reductions are
-scaled by each row's vanilla baseline; the deficit-proportional
-ordering claim of Section~\ref{sec:experiments:transfer} is
-argued in absolute $\Delta$ terms because baseline differences
-shift the relative ordering on some MSDC cells.}
+(architecture, mode, scale) configuration; non-vanilla cells give
+test CER followed by the relative reduction over the matched
+vanilla baseline in parentheses. The composition column reports
+the pre-registered composition for each architecture
+(CVD~$\times$~MSDC on RWKV-6 and Mamba-2; DHO~$\times$~MSDC on
+Linear Attention). Bold values mark the matrix ceiling on the
+14M Mamba-2 row.}
 \label{tab:results:aggregated}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.20}
@@ -217,6 +209,13 @@ LA LION-S 7M           & 0.1381 & 0.1154 ($-16\%$) & 0.1311 ($-5\%$) & 0.0988 ($
 \end{tabularx}
 \end{table}
 
+The relative reductions in
+Table~\ref{tab:results:aggregated} are scaled by each row's
+vanilla baseline; the deficit-proportional ordering claim of
+Section~\ref{sec:experiments:transfer} is argued in absolute
+$\Delta$ terms because baseline differences shift the relative
+ordering on some MSDC cells.
+
 The matrix populates the mechanism-prior alignment criterion of
 Chapter~\ref{ch:proposed} in three signatures across the family.
 On the Multi-Scale Depthwise Convolution row, the gain orders
@@ -235,7 +234,7 @@ the subject of Section~\ref{sec:experiments:lion}. The
 remaining sections present each row of the argument with the
 corresponding figure.
 
-\section{Cross-architecture transfer pattern on LibriSpeech}\label{sec:experiments:transfer}
+\section{Transfer pattern on LibriSpeech}\label{sec:experiments:transfer}
 
 The transfer pattern of each mechanism across the three causal
 backbones at 7M and 14M is visualised in
@@ -485,7 +484,7 @@ refines the alignment criterion: alignment is between mechanism and
 \textit{task-as-exercised-by-data} rather than between mechanism
 and architecture in isolation.
 
-\section{Axis-2 isolation: MQAR length sweep}\label{sec:experiments:mqar}
+\section{Axis-2 isolation via MQAR}\label{sec:experiments:mqar}
 
 The Multi-Query Associative Recall benchmark
 of~\citet{arora2023zoology} isolates axis~2 by construction:
@@ -496,7 +495,20 @@ state dimension $d$. The cohort sweeps
 $T \in \{64, 256, 1024\}$ with the matching
 $K \in \{16, 64, 256\}$ across thirteen backbones; verdicts and
 convergence speed are reported in
-Table~\ref{tab:results:mqar-cohort}.
+Table~\ref{tab:results:mqar-cohort}. The verdict convention is
+the one introduced in Section~\ref{sec:experiments:framework}:
+PASS denotes per-sequence accuracy $\ge 0.99$ at the
+early-stopping point, PARTIAL denotes $\ge 0.5$ but $< 0.9$ at
+the wall-clock budget, and FAIL denotes accuracy at or near zero
+with the loss flat near the initialisation level. The
+SKIP$^{\dagger}$ marker denotes a cell that was not run because
+the same architecture FAILed at a shorter length, since adding
+distractors to a non-converging configuration cannot produce
+convergence; OOM denotes a cell that exceeded the configured
+chunk-size memory budget. The asterisk on the Linear Attention
+vanilla $T = 64$ cell marks the partial-but-not-converging case:
+the cell reaches $0.5$ per-sequence accuracy at $17$ kS without
+reaching $0.9$ within the budget.
 
 \begin{table}[!htbp]
 \centering
@@ -505,18 +517,9 @@ Table~\ref{tab:results:mqar-cohort}.
 verdicts and convergence speed across three sequence lengths.
 Each cell reports the per-sequence-accuracy verdict and the
 steps-to-0.9 count in thousand-step units (kS) where defined.
-PASS denotes per-sequence accuracy $\ge 0.99$ at the
-early-stopping point; PARTIAL denotes $\ge 0.5$ but $< 0.9$ at
-the wall-clock budget; FAIL denotes accuracy at or near zero
-with the loss flat near the initialisation level;
-SKIP$^{\dagger}$ denotes a cell that was not run because the
-same architecture FAILed at a shorter length, since adding
-distractors to a non-converging configuration cannot produce
-convergence; OOM denotes the cell exceeded the configured
-chunk-size memory budget. The Linear Attention vanilla cell
-reaches $0.5$ per-sequence accuracy at $17$ kS but does not
-reach $0.9$ within the budget; the asterisk on its $T = 64$
-verdict marks this case.}
+Verdict semantics, the SKIP$^{\dagger}$ propagation rule, and
+the asterisk on the LA vanilla $T = 64$ cell are described in
+the prose around the table.}
 \label{tab:results:mqar-cohort}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}

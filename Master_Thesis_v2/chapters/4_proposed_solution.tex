@@ -1,30 +1,15 @@
 \chapter{Proposed Solution}\label{ch:proposed}
 
-This chapter presents three mechanisms that target the structural
-deficits of the three causal linear-time backbones formalised in
-Section~\ref{sec:backbones}, together with the bidirectional
-adaptation that extends each mechanism to the LION parallel form of
-Section~\ref{sec:lion}. Section~\ref{sec:proposed:matrix} states the
-problem formulation: the experimental matrix that the chapter is
-organised around, the mechanism-prior alignment criterion that the matrix
-is designed to test, and the probes used to test it.
-Section~\ref{sec:proposed:msdc} introduces the Multi-Scale Depthwise
-Convolution mechanism, which addresses the short-range temporal
-hierarchy deficit identified in
-Section~\ref{sec:backbones:deficit}. Section~\ref{sec:proposed:dho}
-introduces the Damped Harmonic Oscillator mechanism, which extends
-the real-diagonal transition operator of the diagonal-class backbones
-with the block-complex transition primitive of
-Section~\ref{sec:primitives:dho}. Section~\ref{sec:proposed:cvd}
-introduces the Chunked Value Decorrelation mechanism, which targets
-the absent interference-cancellation deficit on the linear-time
-recurrent substrate. Section~\ref{sec:proposed:lion} describes the
-unified LION wrapper that maps each causal backbone to its
-bidirectional parallel form, and the decay-class correspondence that
-follows. Section~\ref{sec:proposed:probes} closes the chapter with a
-brief description of the diagnostic instrumentation used in
-Chapter~\ref{ch:experiments} to attribute mechanism behaviour at the
-parameter level.
+This chapter introduces the experimental matrix as the chapter's
+principal artefact, states the mechanism-prior alignment criterion
+the matrix is built to test, and defines the three mechanisms
+whose cross-architecture transfer it measures: the Multi-Scale
+Depthwise Convolution, the Damped Harmonic Oscillator, and the
+Chunked Value Decorrelation. The chapter also describes the
+unified LION wrapper that lifts each causal backbone to its
+bidirectional parallel form and the diagnostic instrumentation
+used by Chapter~\ref{ch:experiments} to attribute mechanism
+behaviour at the parameter level.
 
 \section{Problem formulation and the experimental matrix}\label{sec:proposed:matrix}
 

@@ -72,10 +72,8 @@ LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ 
 \centering
 \small
 \caption[Master matrix on LibriSpeech, causal, 14M]{LibriSpeech
-master matrix, causal mode, 14M scale (twelve layers). The 14M
-Mamba-2 MSDC cell at test CER $0.0631$ and the 14M Mamba-2
-CVD $\times$ MSDC cell at test CER $0.0618$ are the matrix ceiling
-across all reported architecture-mode-scale combinations.}
+master matrix, causal mode, 14M scale (twelve layers). Layout
+matches Table~\ref{tab:results:master-matrix-causal-7m}.}
 \label{tab:results:master-matrix-causal-14m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
@@ -109,15 +107,12 @@ LA       & DHO $\times$ MSDC & 0.0784 & 0.0786 & $-0.0573$ & 0.2316 & $-0.1950$ 
 \begin{table}[p]
 \centering
 \small
-\caption[Master matrix on LibriSpeech, LION, 7M]{LibriSpeech master
-matrix, LION bidirectional mode, 7M scale (six layers). RWKV-6 and
-Mamba-2 LION cells inherit the LION-S decay class from their causal
-backbone. Linear Attention LION rows are split into the LION-LIT
-default (per~\citet{afzal2025linear} Table~1) and the LION-S
-falsification control with a per-token sigmoid decay added; both
-are reported, since the contrast isolates the role of decay as a
-prerequisite for the bidirectional value-decorrelation mechanism.
-The 14M LION matrix is dropped from scope.}
+\caption[Master matrix on LibriSpeech, LION, 7M]{LibriSpeech
+master matrix, LION bidirectional mode, 7M scale (six layers).
+RWKV-6 and Mamba-2 LION cells inherit the LION-S decay class
+per~\citet{afzal2025linear} Table~1; Linear Attention LION rows
+are split into the LION-LIT default and the LION-S falsification
+control. The 14M LION matrix is out of scope.}
 \label{tab:results:master-matrix-lion-7m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}

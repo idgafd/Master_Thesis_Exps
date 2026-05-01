@@ -1,21 +1,15 @@
 \chapter{Theoretical Background}\label{ch:theoretical}
 
-This chapter establishes the mathematical foundation on which the
-proposed mechanisms of Chapter~\ref{ch:proposed} are built.
-Section~\ref{sec:axes} introduces the axis decomposition of linear-time
-recurrent expressivity that frames the entire thesis.
-Section~\ref{sec:backbones} formalises the three causal linear-time
-backbones used in the experimental matrix within a unified recurrence
-template, and identifies the structural axis on which they differ.
-Section~\ref{sec:lion} presents the parallel form used for
-bidirectional adaptation, together with the decay-class taxonomy that
-motivates a controlled experiment on the Linear Attention backbone.
-Section~\ref{sec:primitives} introduces three mathematical primitives,
-drawn from prior literature on different substrates, that serve as the
-building blocks for the proposed mechanisms. Section~\ref{sec:bounds}
-closes the chapter by recalling the formal complexity-class boundaries
-that bracket the diagonal class within which the three proposed
-mechanisms operate.
+This chapter develops the conceptual scaffold and the
+mathematical machinery on which the proposed mechanisms of
+Chapter~\ref{ch:proposed} stand: the axis decomposition of
+linear-time recurrent expressivity, the unified causal recurrence
+template that places the three matrix backbones inside one
+algebraic frame, the LION bidirectional form with its decay-class
+taxonomy, the three primitives that supply the mechanisms'
+building blocks, and the formal complexity-class bounds that
+delimit the diagonal class within which the entire thesis
+operates.
 
 \section{Axis decomposition of linear-time RNN expressivity}\label{sec:axes}
 
@@ -186,7 +180,7 @@ Polynomial-mixer benchmarks; discovery-phase only \\
 \end{tabularx}
 \end{table}
 
-\section{Linear-time recurrence: unified formulation and three backbones}\label{sec:backbones}
+\section{Three causal backbones}\label{sec:backbones}
 
 Causal RWKV-6, Mamba-2, and Linear Attention are presented in the
 literature with distinct notations and differing emphases on
@@ -382,7 +376,7 @@ Section~\ref{sec:primitives:cvd}, addresses the absent
 interference-cancellation deficit on the linear-time recurrent
 substrate.
 
-\section{Bidirectional adaptation: the parallel form and decay taxonomy}\label{sec:lion}
+\section{Bidirectional adaptation via LION}\label{sec:lion}
 
 The three causal linear-time backbones formalised in
 Section~\ref{sec:backbones} propagate state in one direction, which
@@ -735,7 +729,7 @@ systems in place of the full $T \times T$ preconditioner. The
 relationship between the two is one of shared logical motivation
 rather than direct adaptation.
 
-\section{Formal expressivity bounds and the diagonal-class scope}\label{sec:bounds}
+\section{Formal expressivity bounds}\label{sec:bounds}
 
 The chapter closes with a recapitulation of the formal
 complexity-class boundaries surveyed in the related-work chapter,
