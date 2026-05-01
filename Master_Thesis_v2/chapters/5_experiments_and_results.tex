@@ -407,8 +407,8 @@ reports PASS / PARTIAL / FAIL verdicts and steps-to-$0.9$.
 \caption[MQAR verdicts]{MQAR verdicts and steps to $0.9$
 per-sequence accuracy in thousand-step units (kS).
 SKIP$^{\dagger}$ marks lengths omitted after a shorter-length
-FAIL (adding distractors cannot produce convergence); OOM marks
-a memory-budget failure. The asterisk on the LA vanilla
+FAIL, since adding distractors to a non-converging configuration
+cannot produce convergence. The asterisk on the LA vanilla
 $T = 64$ cell marks a partial-but-not-converging case
 ($0.5$ per-sequence accuracy at $17$ kS, never reaching $0.9$
 within the budget).}
@@ -434,7 +434,7 @@ Mamba-2 + DHO            & FAIL          & SKIP$^{\dagger}$ & SKIP$^{\dagger}$ \
 Linear Attention         & PARTIAL$^{\ast}$ & FAIL          & SKIP$^{\dagger}$ \\
 Linear Attention + MSDC  & PASS / 6 kS  & PASS / 4 kS  & PASS / 5 kS \\
 Linear Attention + CVD   & PASS / 2 kS  & PASS / 2 kS  & PASS / 3 kS \\
-Linear Attention + DHO   & FAIL          & SKIP$^{\dagger}$ & OOM \\
+Linear Attention + DHO   & FAIL          & SKIP$^{\dagger}$ & SKIP$^{\dagger}$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -462,9 +462,10 @@ key-similarity preconditioner. The empirical result inverts the
 standard sub-quadratic-versus-quadratic narrative at the
 sequence length where the comparison becomes binding.
 
-DHO FAILs at $T = 64$ on all three backbones (and OOMs at
-$T = 1024$ on Linear Attention), matching the predicted axis
-mismatch: DHO extends the function class along the
+DHO FAILs at $T = 64$ on all three backbones, with the longer
+lengths SKIP$^{\dagger}$ed by the same propagation rule that
+applies to the vanilla cells. The pattern matches the predicted
+axis mismatch: DHO extends the function class along the
 damped-oscillator sub-axis of axis~1, whereas MQAR exercises
 axis~2. Productive transfer of DHO on the matched-axis ASR probe
 therefore does not imply gain on MQAR.
