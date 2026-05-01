@@ -140,8 +140,9 @@ sections unpack these signatures.
 Figures~\ref{fig:f1-transfer-pattern}
 and~\ref{fig:f2-deficit-ordering} show the causal transfer
 pattern at 7M and 14M. The three mechanisms produce three
-structurally distinct signatures, each predicted from the
-deficit map of Section~\ref{sec:backbones:deficit}.
+structurally distinct signatures, each consistent with the
+structural features identified in
+Section~\ref{sec:backbones:deficit}.
 
 \begin{figure}[!htbp]
 \centering
@@ -157,25 +158,27 @@ the LA LION-LIT~$\times$~CVD configuration at 7M.}
 The Multi-Scale Depthwise Convolution (\textbf{MSDC}) targets
 the short-range temporal-hierarchy axis. Across the three causal
 backbones at both 7M and 14M, the absolute $\Delta$ ranks
-LA $>$ RWKV-6 $>$ Mamba-2, matching the deficit map of
-Section~\ref{sec:backbones:deficit}: Linear Attention, with no
-native local mixing, takes the largest gain ($-0.0470$ at 7M,
-$-0.0390$ at 14M); RWKV-6, whose Time-Mix block carries a
-single-step data-dependent token shift, takes an intermediate
-gain ($-0.0261$ at 7M, $-0.0352$ at 14M); and Mamba-2, whose
-vanilla path includes a native short convolution at $k = 4$,
-takes the smallest gain ($-0.0211$ at 7M, $-0.0196$ at 14M).
-The ordering reproduces at both scales and the RWKV-6 gain
-grows with capacity, consistent with the mechanism recovering
-more of the architectural deficit at the larger scale rather
-than saturating. The relative-reduction column of
+LA $>$ RWKV-6 $>$ Mamba-2. The ordering is an empirical
+observation that aligns with the architectural features
+identified in Section~\ref{sec:backbones:deficit}: Linear
+Attention has no native input-side local mixing operator and
+takes the largest gain ($-0.0470$ at 7M, $-0.0390$ at 14M);
+RWKV-6, whose Time-Mix block carries a single-step
+data-dependent token shift, takes an intermediate gain
+($-0.0261$ at 7M, $-0.0352$ at 14M); and Mamba-2, whose vanilla
+path includes a native short convolution at $k = 4$, takes the
+smallest gain ($-0.0211$ at 7M, $-0.0196$ at 14M). The ordering
+reproduces at both scales and the RWKV-6 gain grows with
+capacity, consistent with the mechanism recovering more of the
+architectural deficit at the larger scale rather than
+saturating. The relative-reduction column of
 Table~\ref{tab:results:aggregated} differs from the absolute
 ordering at 14M (MSDC delivers $-32\%$ on RWKV-6 against $-29\%$
 on LA), reflecting the difference in vanilla baselines ($0.1103$
 on RWKV-6 versus $0.1359$ on LA at 14M); the chapter argues the
 deficit-driven ordering in absolute $\Delta$ terms throughout,
-since the deficit map predicts absolute headroom rather than
-fractional reduction.
+since the structural argument concerns absolute headroom rather
+than fractional reduction.
 
 \begin{table}[!htbp]
 \centering
@@ -222,16 +225,15 @@ LA $>$ RWKV-6 $>$ Mamba-2 holds at both scales.}
 \end{figure}
 
 
-The deficit map predicts that the Damped Harmonic Oscillator
-(\textbf{DHO}), introduced in
+The Damped Harmonic Oscillator (\textbf{DHO}), introduced in
 Section~\ref{sec:proposed:dho} as the block-complex closure of
-the real-diagonal transition, reaches furthest on the
-architecture whose vanilla transition admits no native
-attenuation and no native phase, and is small on the architecture
-whose selective scalar transition absorbs the block-complex
-extension under the LibriSpeech audiobook distribution. Across
-the matrix on LibriSpeech the direction is consistent with this
-prediction: Linear Attention takes the largest absolute gain
+the real-diagonal transition, is expected on structural grounds
+to reach furthest on the architecture whose vanilla transition
+admits no native attenuation and no native phase, and to be
+small on the architecture whose selective scalar transition
+absorbs the block-complex extension under the LibriSpeech
+audiobook distribution. Across the matrix on LibriSpeech the
+direction is consistent with this expectation: Linear Attention takes the largest absolute gain
 ($-0.0681$ at 7M, $-0.0412$ at 14M), RWKV-6 a small productive
 $\Delta$ ($-0.0061$ at 7M, $-0.0026$ at 14M) consistent with its
 native per-channel decay covering the attenuation component, and
@@ -272,8 +274,9 @@ both scales. The MSDC mechanism gain preserves on Mamba-2
 ($\Delta = -0.0211 \to -0.0196$) and Linear Attention
 ($-0.0470 \to -0.0390$) and grows on RWKV-6
 ($-0.0261 \to -0.0352$); the LA $>$ RWKV-6 $>$ Mamba-2 ordering
-predicted by the deficit map of
-Section~\ref{sec:backbones:deficit} reproduces at both scales.
+reproduces at both scales, consistent with the structural
+features identified in
+Section~\ref{sec:backbones:deficit}.
 The CVD and DHO mechanisms preserve their causal-mode signatures
 across scale as well, with CVD asymmetric across the family and
 DHO showing the same LibriSpeech direction as in §5.3. No
