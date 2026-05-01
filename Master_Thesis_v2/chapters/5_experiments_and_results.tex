@@ -44,6 +44,58 @@ $T \in \{64, 256, 1024\}$ and the matching stored-pair counts
 $K \in \{16, 64, 256\}$ that grow with $T$ to keep the difficulty
 parameter $K / d$ meaningful at every length. The synthetic probe
 uses two disjoint $8192$-token vocabularies for keys and values.
+Table~\ref{tab:librispeech-vs-cv} summarises the pre-experimental
+comparison between the two acoustic probes that motivates the
+cross-distribution validation of
+Section~\ref{sec:experiments:cv}; the broader acoustic variance of
+Common Voice along speaker, accent, and recording-condition axes
+is identified as a probe property prior to any experiment on the
+proposed mechanisms.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[LibriSpeech clean-100 versus Common Voice English 100h]{
+Pre-experimental comparison of the two acoustic probes along the
+axes that motivate the cross-distribution validation of
+Section~\ref{sec:experiments:cv}. Numbers and qualitative
+descriptors are taken from~\citet{panayotov2015librispeech} for
+LibriSpeech and~\citet{ardila2019commonvoice} for Common Voice;
+subset-construction details for the $100$~h Common Voice partition
+are recorded in Appendix~\ref{app:setup:cv}.}
+\label{tab:librispeech-vs-cv}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{3.2cm} X X@{}}
+\toprule
+\textbf{Property} & \textbf{LibriSpeech train-clean-100} & \textbf{Common Voice English 100h} \\
+\midrule
+Source protocol
+  & Audiobook reading from LibriVox
+  & Volunteer crowd-sourced single-read contribution \\
+\addlinespace
+Total duration
+  & $100.6$~h
+  & $100$~h, balanced subset of the validated split \\
+\addlinespace
+Speaker count
+  & $251$ speakers
+  & Several thousand contributors in the validated split, sampled stratified so no speaker appears in more than one of train, dev, test \\
+\addlinespace
+Accent annotation
+  & Not provided
+  & Annotated across multiple regional varieties of English \\
+\addlinespace
+Recording conditions
+  & Studio-grade, single read protocol
+  & Heterogeneous; volunteer microphones, varied recording environments \\
+\addlinespace
+Vocabulary head
+  & $29$-character CTC head
+  & $29$-character CTC head (shared with LibriSpeech) \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \paragraph{Evaluation framework.} The acoustic probes report
 character error rate under full-utterance greedy connectionist

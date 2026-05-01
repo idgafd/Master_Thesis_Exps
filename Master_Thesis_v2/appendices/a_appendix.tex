@@ -182,6 +182,19 @@ matches the LibriSpeech pipeline. The only change is the
 vocabulary, which retains the same character set since both
 corpora are English.
 
+The pre-experimental contrast between the two probes is recorded
+in Table~\ref{tab:librispeech-vs-cv} of
+Section~\ref{sec:experiments:framework}. The numerical anchors of
+that table reference the source publications: LibriSpeech
+train-clean-100 carries $251$ speakers across $100.6$~h of
+audiobook-source read English~\cite{panayotov2015librispeech}, and
+Common Voice English aggregates volunteer contributions across
+several thousand speakers in its validated split with explicit
+accent labels across regional English
+varieties~\cite{ardila2019commonvoice}. The $100$~h Common Voice
+subset of this thesis is sampled from the validated split under
+the stratification protocol described above.
+
 \subsection{Multi-Query Associative Recall}\label{app:setup:mqar}
 
 The synthetic axis-2 probe is the multi-query associative recall
