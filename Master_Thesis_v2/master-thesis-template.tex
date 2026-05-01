@@ -43,8 +43,15 @@ headsepline, % Uncomment to get a line under the header
 
 \usepackage[utf8]{inputenc} % Required for inputting international characters
 \usepackage[T1, T2A]{fontenc} % Output font encoding for international characters
+\DeclareUnicodeCharacter{0394}{\ensuremath{\Delta}} % Allow raw Unicode capital Delta in text/tables
+\DeclareUnicodeCharacter{2212}{\ensuremath{-}} % Allow raw Unicode minus in text/tables
 
 \usepackage[ukrainian, english]{babel}
+\usepackage{tabularx} % Provides the tabularx environment and X column type
+\usepackage{ragged2e} % Better ragged-right text inside narrow table columns
+\usepackage{amsmath,amssymb} % Provides AMS math environments and symbols such as \mathbb
+\usepackage{float}
+\renewcommand{\tabularxcolumn}[1]{>{\RaggedRight\arraybackslash}p{#1}} % Make X columns readable in narrow tables
 
 % \usepackage{mathpazo} % Use the Palatino font by default 
   % O.F. Breaks Cyrillic, including Ukrainian, breaks bold, italic, etc. Commented out. The alternative is to use Lualatex.
