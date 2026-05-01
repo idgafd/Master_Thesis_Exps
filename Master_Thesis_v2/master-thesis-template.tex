@@ -194,9 +194,10 @@ deployments while sharing a common architectural family. Each
 backbone expresses its hidden state as a bounded-dimensional
 recurrence; underneath this shared form, the three principal
 members of the family leave different residual deficits along
-orthogonal axes of expressivity, including short-range temporal
-mixing, associative recall under interference, and the algebraic
-richness of the recurrent transition class. This thesis
+conceptually distinct but empirically interacting axes of
+expressivity, including short-range temporal mixing, associative
+recall under interference, and the algebraic richness of the
+recurrent transition class. This thesis
 investigates whether mechanism-level extensions designed against
 documented expressivity deficits transfer across the family at
 matched compute, and characterises the structural pattern of that
@@ -211,10 +212,10 @@ bidirectional), and three probes (LibriSpeech, Common Voice
 English, Multi-Query Associative Recall). The resulting
 cross-architecture transfer matrix supports the
 \textit{mechanism-prior alignment criterion}, a predictive
-heuristic stating that a mechanism's gain on a task is
-proportional to the residual structural deficit the architecture
-leaves uncovered along the axis the mechanism targets, and is
-null when the mechanism's axis is not exercised by the task.
+heuristic stating that larger residual deficits along the axis a
+mechanism targets tend to correspond to larger absolute gains,
+and that no measured gain is expected when the mechanism's axis
+is not exercised by the task.
 
 The binding empirical claim is that on Multi-Query Associative
 Recall at sequence length $T = 1024$, every linear-time backbone

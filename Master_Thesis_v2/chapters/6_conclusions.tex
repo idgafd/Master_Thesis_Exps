@@ -6,19 +6,20 @@ mechanism-level extensions (Multi-Scale Depthwise Convolution,
 Damped Harmonic Oscillator, Chunked Value Decorrelation) on a
 cross-architecture transfer matrix at 7M and 14M parameter
 scales. The matrix supports a predictive criterion that we call
-mechanism-prior alignment: a mechanism's gain on a task is
-proportional to the residual structural deficit the architecture
-leaves uncovered along the axis the mechanism targets, and is
-null when the mechanism's axis is not exercised by the task.
+mechanism-prior alignment: larger residual deficits along the
+axis a mechanism targets tend to correspond to larger absolute
+gains, and no measured gain is expected when the mechanism's
+axis is not exercised by the task.
 
 \section{Summary of findings}\label{sec:conclusions:summary}
 
 The matrix populates the criterion in six structural signatures
 across modes, scales, probes, and composition settings
-(Section~\ref{sec:experiments:synthesis}): deficit-proportional
-ordering on MSDC, structural BREAK on DHO on Linear Attention
-together with a near-null on Mamba-2 under the LibriSpeech
-distribution, asymmetric transfer on CVD, the
+(Section~\ref{sec:experiments:synthesis}): deficit-driven
+ordering on MSDC, the LibriSpeech-only DHO direction (largest
+absolute gain on Linear Attention, small absolute gains on
+RWKV-6 and Mamba-2 under the audiobook distribution),
+asymmetric transfer on CVD, the
 LION-LIT~$\times$~CVD controlled falsifier isolating decay as
 the bidirectional-mode prerequisite, the
 Mamba-2~$\times$~DHO cross-distribution refinement to alignment
@@ -48,7 +49,7 @@ particular the LA causal DHO and LA LION-LIT DHO cells, would
 sharpen the within-cell claim without changing the across-matrix
 pattern. Second, the matrix scales to 14M parameters; the
 conditional 30M scale was dropped from scope since no ranking
-inversion appears between 7M and 14M, but the deficit-proportional
+inversion appears between 7M and 14M, but the deficit-driven
 ordering is not asserted at scales beyond 14M. Third, the
 acoustic probes are English-only; the Common Voice
 cross-distribution validation exercises within-language

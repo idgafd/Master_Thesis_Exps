@@ -180,7 +180,7 @@ matched 50-epoch budget. Each row is a single
 (architecture, mode, scale) configuration; non-vanilla cells give
 test CER followed by the relative reduction over the matched
 vanilla baseline in parentheses. The composition column reports
-the pre-registered composition for each architecture
+the pre-specified composition for each architecture
 (CVD~$\times$~MSDC on RWKV-6 and Mamba-2; DHO~$\times$~MSDC on
 Linear Attention). Bold values mark the matrix ceiling on the
 14M Mamba-2 row.}
@@ -211,7 +211,7 @@ LA LION-S 7M           & 0.1381 & 0.1154 ($-16\%$) & 0.1311 ($-5\%$) & 0.0988 ($
 
 The relative reductions in
 Table~\ref{tab:results:aggregated} are scaled by each row's
-vanilla baseline; the deficit-proportional ordering claim of
+vanilla baseline; the deficit-driven ordering claim of
 Section~\ref{sec:experiments:transfer} is argued in absolute
 $\Delta$ terms because baseline differences shift the relative
 ordering on some MSDC cells.
@@ -238,7 +238,7 @@ corresponding figure.
 
 The transfer pattern of each mechanism across the three causal
 backbones at 7M and 14M is visualised in
-Figure~\ref{fig:f1-transfer-pattern}; the deficit-proportional
+Figure~\ref{fig:f1-transfer-pattern}; the deficit-driven
 ordering of the Multi-Scale Depthwise Convolution row is
 isolated in Figure~\ref{fig:f2-deficit-ordering}. The three
 mechanisms produce three structurally distinct signatures in
@@ -258,35 +258,33 @@ LA LION-LIT~$\times$~CVD configuration at the 7M scale.}
 \label{fig:f1-transfer-pattern}
 \end{figure}
 
-\paragraph{MSDC universal, deficit-proportional.} The mechanism
-transfers productively across all three causal backbones at
-both scales. The ordering of $\Delta$ matches the share of
-axis-1 coverage each backbone already had: Linear Attention,
-with no native local mixing, receives the largest gain
-($\Delta = -0.0470$ at 7M, $-0.0390$ at 14M); RWKV-6, whose
-Time-Mix block carries a single-step data-dependent token
-shift, receives an intermediate gain ($-0.0261$ at 7M,
-$-0.0352$ at 14M); Mamba-2, whose vanilla path includes a
-native short convolution at $k = 4$, receives the smallest gain
-($-0.0211$ at 7M, $-0.0196$ at 14M). The LA $>$ RWKV-6 $>$
-Mamba-2 ordering is reproduced at both scales, and the gain on
-RWKV-6 grows with capacity, indicating that the mechanism
-recovers more of the architectural deficit at higher scale
-rather than saturating. The relative-reduction column of
-Table~\ref{tab:results:aggregated} differs from this absolute
-ordering at 14M, where MSDC delivers $-32\%$ on RWKV-6 against
-$-29\%$ on LA: the discrepancy reflects the difference in
-vanilla baselines ($0.1103$ on RWKV-6 versus $0.1359$ on LA at
-14M). The deficit-proportional claim is argued in absolute
-$\Delta$ terms throughout the chapter, since the
-architecture-deficit map of
-Section~\ref{sec:backbones:deficit} predicts absolute headroom
-rather than fractional reduction.
+\textbf{MSDC.} The Multi-Scale Depthwise Convolution targets the
+short-range temporal-hierarchy axis. Across the three causal
+backbones at both 7M and 14M, the absolute $\Delta$ ranks
+LA $>$ RWKV-6 $>$ Mamba-2, matching the deficit map of
+Section~\ref{sec:backbones:deficit}: Linear Attention, with no
+native local mixing, takes the largest gain ($-0.0470$ at 7M,
+$-0.0390$ at 14M); RWKV-6, whose Time-Mix block carries a
+single-step data-dependent token shift, takes an intermediate
+gain ($-0.0261$ at 7M, $-0.0352$ at 14M); and Mamba-2, whose
+vanilla path includes a native short convolution at $k = 4$,
+takes the smallest gain ($-0.0211$ at 7M, $-0.0196$ at 14M).
+The ordering reproduces at both scales and the RWKV-6 gain
+grows with capacity, consistent with the mechanism recovering
+more of the architectural deficit at the larger scale rather
+than saturating. The relative-reduction column of
+Table~\ref{tab:results:aggregated} differs from the absolute
+ordering at 14M (MSDC delivers $-32\%$ on RWKV-6 against $-29\%$
+on LA), reflecting the difference in vanilla baselines ($0.1103$
+on RWKV-6 versus $0.1359$ on LA at 14M); the chapter argues the
+deficit-driven ordering in absolute $\Delta$ terms throughout,
+since the deficit map predicts absolute headroom rather than
+fractional reduction.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F2_deficit_proportional_ordering.pdf}
-\caption[Deficit-proportional ordering of MSDC]{Test $\Delta$ of
+\caption[Deficit-driven ordering of MSDC]{Test $\Delta$ of
 the Multi-Scale Depthwise Convolution mechanism across the
 three causal backbones at 7M and 14M. The ordering LA $>$
 RWKV-6 $>$ Mamba-2 reproduces at both scales and matches the
@@ -295,40 +293,43 @@ Section~\ref{sec:backbones:deficit}.}
 \label{fig:f2-deficit-ordering}
 \end{figure}
 
-\paragraph{DHO: BREAK on Linear Attention, near-null on Mamba-2.}
-The Damped Harmonic Oscillator extends the real-diagonal
-transition with the block-complex closure of
-Section~\ref{sec:proposed:dho}. Its predicted reach is largest
-on the architecture whose vanilla transition admits no native
-attenuation and no native phase, and smallest on the
-architecture whose selective scalar transition absorbs the
-block-complex extension under the LibriSpeech distribution. The
-matrix matches the prediction: on Linear Attention at 7M
-causal, $\Delta = -0.0681$ (a $36\%$ relative reduction over
-the LA vanilla baseline), the largest single-mechanism gain in
-the matrix, with the BREAK pattern preserved at 14M
-($-0.0412$); on Mamba-2 at 7M causal, $\Delta = -0.0030$, near
-the noise floor of the matched-budget evaluation, and similarly
-near-null at 14M ($-0.0046$); on RWKV-6, whose per-channel
-data-dependent decay already covers the attenuation component,
-$\Delta = -0.0061$ at 7M and $-0.0026$ at 14M.
-Section~\ref{sec:experiments:cv} returns to the Mamba-2
-near-null and shows that the absorption is task-prior modulated
-rather than absolute.
+\textbf{DHO.} The Damped Harmonic Oscillator extends the
+real-diagonal transition with the block-complex closure of
+Section~\ref{sec:proposed:dho}. The deficit map predicts the
+largest reach on the architecture whose vanilla transition
+admits no native attenuation and no native phase, and the
+smallest reach on the architecture whose selective scalar
+transition absorbs the block-complex extension under the
+LibriSpeech audiobook distribution. Across the matrix on
+LibriSpeech the direction is consistent with this prediction:
+Linear Attention takes the largest absolute gain ($-0.0681$ at
+7M, $-0.0412$ at 14M), RWKV-6 a small productive $\Delta$
+($-0.0061$ at 7M, $-0.0026$ at 14M) consistent with its native
+per-channel decay covering the attenuation component, and the
+Mamba-2 cell shows a small absolute $\Delta$ ($-0.0030$ at 7M,
+$-0.0046$ at 14M) consistent with the selective scalar
+transition absorbing the contribution under this distribution.
+The Mamba-2 reading is task-prior modulated rather than
+absolute; Section~\ref{sec:experiments:cv} returns to the same
+cell and shows that on Common Voice the same architecture-
+mechanism pair is productive at $\Delta_{\mathrm{CV}} = -0.0226$,
+which constrains the LibriSpeech reading to the
+LibriSpeech-as-exercised-by-data condition.
 
-\paragraph{CVD: asymmetric.} The Chunked Value Decorrelation
-transfers asymmetrically across the family. On Linear Attention
-at 7M causal, $\Delta = -0.0165$, the largest CVD gain in the
-matrix; on Mamba-2, $\Delta = -0.0078$; on RWKV-6,
-$\Delta = -0.0042$. The ordering inverts the natural-home-in-
-attention prior, since the value-decorrelation principle
-descends from a softmax-attention construction
+\textbf{CVD.} The Chunked Value Decorrelation transfers
+asymmetrically across the family on LibriSpeech. The largest
+single-cell $\Delta$ is on Linear Attention ($-0.0165$ at 7M),
+the intermediate $\Delta$ is on Mamba-2 ($-0.0078$), and the
+smallest is on RWKV-6 ($-0.0042$). The ordering inverts a naive
+natural-home-in-attention prior, since the value-decorrelation
+principle descends from a softmax construction
 (Section~\ref{sec:primitives:cvd}) and might be expected to
-transfer most strongly to the family member whose recurrence
-is closest to softmax attention. The matrix instead places the
-largest gain on the no-decay backbone. The LION-mode reading of
-this asymmetry is the subject of
-Section~\ref{sec:experiments:lion}.
+transfer most strongly to the family member whose recurrence is
+closest to softmax attention; instead the matrix places the
+largest gain on the no-decay backbone. The structural reading
+of this asymmetry follows once the LION-mode falsifier of
+Section~\ref{sec:experiments:lion} isolates decay as the
+prerequisite for the bidirectional version of the mechanism.
 
 \section{Cross-scale persistence and LION
 mode}\label{sec:experiments:lion}
@@ -355,20 +356,21 @@ ceiling at $0.0631$ and $0.0618$ respectively.}
 \label{fig:f5-cross-scale}
 \end{figure}
 
-\paragraph{Cross-scale persistence.} The MSDC mechanism gain
-preserves on Mamba-2 ($\Delta = -0.0211 \to -0.0196$) and Linear
-Attention ($-0.0470 \to -0.0390$) and grows on RWKV-6
-($-0.0261 \to -0.0352$). The LA $>$ RWKV-6 $>$ Mamba-2 ordering
+The cross-scale comparison preserves the causal-mode pattern at
+both scales. The MSDC mechanism gain preserves on Mamba-2
+($\Delta = -0.0211 \to -0.0196$) and Linear Attention
+($-0.0470 \to -0.0390$) and grows on RWKV-6
+($-0.0261 \to -0.0352$); the LA $>$ RWKV-6 $>$ Mamba-2 ordering
 predicted by the deficit map of
-Section~\ref{sec:backbones:deficit} preserves at both scales.
-The CVD and DHO mechanisms preserve their causal-mode
-signatures across scale as well, with CVD asymmetric and DHO
-BREAK on Linear Attention and near-null on Mamba-2. No mechanism
-exhibits a ranking inversion under the 7M-to-14M scaling step;
-the conditional 30M scale is dropped from scope on this basis.
-The matrix ceiling at 14M is the Mamba-2 CVD~$\times$~MSDC
-composition at $0.0618$, with the Mamba-2 MSDC single-mechanism
-cell at $0.0631$ slightly above.
+Section~\ref{sec:backbones:deficit} reproduces at both scales.
+The CVD and DHO mechanisms preserve their causal-mode signatures
+across scale as well, with CVD asymmetric across the family and
+DHO showing the same LibriSpeech direction as in §5.3. No
+mechanism exhibits a ranking inversion under the 7M-to-14M
+scaling step; the conditional 30M scale is dropped from scope
+on this basis. The matrix ceiling at 14M is the Mamba-2
+CVD~$\times$~MSDC composition at $0.0618$, with the Mamba-2 MSDC
+single-mechanism cell at $0.0631$ slightly above.
 
 \begin{figure}[!htbp]
 \centering
@@ -384,14 +386,15 @@ backbone.}
 \label{fig:f7-causal-lion}
 \end{figure}
 
-\paragraph{Decay as the structural prerequisite for value
-decorrelation in the bidirectional setting.} The LION-mode
-matrix reproduces the causal-mode pattern on RWKV-6 and
-Mamba-2: all three mechanisms transfer productively, with the
-LION wrapper improving the absolute test character error rate
-over the causal counterpart (RWKV-6 LION-S vanilla $0.0859$
-versus causal $0.1049$; Mamba-2 LION-S vanilla $0.0853$ versus
-causal $0.1036$). On Linear Attention the pattern bifurcates.
+The LION-mode matrix reproduces the causal-mode pattern on
+RWKV-6 and Mamba-2: all three mechanisms transfer productively,
+with the LION wrapper improving the absolute test character
+error rate over the causal counterpart (RWKV-6 LION-S vanilla
+$0.0859$ versus causal $0.1049$; Mamba-2 LION-S vanilla $0.0853$
+versus causal $0.1036$). On Linear Attention the pattern
+bifurcates between the two LION variants, and the contrast
+isolates the structural role of decay in the bidirectional
+setting.
 Under the natural mapping per~\citet{afzal2025linear} Table~1,
 Linear Attention inherits LION-LIT with $\lambda = 1$
 throughout. The unmasked
@@ -434,7 +437,7 @@ The 7M causal matrix is repeated on Common Voice English in the
 pilot configuration of Appendix~\ref{app:setup:cv}. The broader
 acoustic distribution of Common Voice (speaker diversity, accent
 variability, recording-condition heterogeneity) is a
-pre-registered probe property documented in the dataset
+pre-specified probe property documented in the dataset
 paper~\cite{ardila2019commonvoice}, not a property inferred from
 the experimental result. The delta-of-deltas
 $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ measures how much
@@ -547,15 +550,15 @@ Linear Attention + DHO   & FAIL          & SKIP$^{\dagger}$ & OOM \\
 \end{tabularx}
 \end{table}
 
-\paragraph{Linear-time plus mechanism solves MQAR at every
-tested length.} Vanilla RWKV-6, Mamba-2, and Linear Attention
-all FAIL or PARTIAL at $T = 64$ already, confirming the
-no-recall baseline of the diagonal class without explicit
-interference cancellation. Adding MSDC or CVD to any of the
-three backbones sends the cell to PASS at every tested length,
-in one to six thousand training steps. The causal Transformer
-baseline PASSes at $T = 64$ and $T = 256$ within twelve
-thousand steps but \textit{FAILs at $T = 1024$}. The mechanism
+The cohort separates into three groups by verdict pattern.
+Vanilla RWKV-6, Mamba-2, and Linear Attention all FAIL or
+PARTIAL at $T = 64$ already, confirming the no-recall baseline
+of the diagonal class without explicit interference
+cancellation. Across the cohort, adding MSDC or CVD to any of
+the three backbones sends the cell to PASS at every reported
+length, in one to six thousand training steps. The causal
+Transformer baseline PASSes at $T = 64$ and $T = 256$ within
+twelve thousand steps but \textit{FAILs at $T = 1024$}. The mechanism
 behind the FAIL is structural: at $T = 1024$ with $K = 256$, the
 model must learn an induction-head-like
 circuit~\cite{olsson2022induction} that selects one of $256$
@@ -578,21 +581,21 @@ implicitly. The empirical result inverts the standard
 sub-quadratic-versus-quadratic narrative at the sequence length
 where the comparison becomes binding.
 
-\paragraph{DHO does not solve MQAR.} Every DHO cell in the
-cohort FAILs at $T = 64$ already, with the Linear Attention DHO
-cell additionally exceeding the configured chunk-size memory
-budget at $T = 1024$. The pattern is the predicted axis
-mismatch from Section~\ref{sec:axes}: DHO extends the function
-class along axis~1, the damped-oscillator sub-axis; MQAR
-exercises axis~2, associative-memory capacity under
-interference. A mechanism that extends the function class along
-axis~1 does not convert into measured gain on a task that
-exercises axis~2, regardless of how productively it transfers
-on the matched-axis probe.
+DHO behaves differently on the same cohort. Every DHO cell
+FAILs at $T = 64$ already, with the Linear Attention DHO cell
+additionally exceeding the configured chunk-size memory budget
+at $T = 1024$. The pattern is the axis mismatch predicted by
+the criterion from Section~\ref{sec:axes}: DHO extends the
+function class along axis~1, the damped-oscillator sub-axis;
+MQAR exercises axis~2, associative-memory capacity under
+interference. A mechanism that extends the function class
+along axis~1 does not convert into measured gain on a task that
+exercises axis~2, regardless of how productively the same
+mechanism transfers on the matched-axis probe.
 
 \section{Composition behaviour}\label{sec:experiments:composition}
 
-The pre-registered composition cells of the matrix probe whether
+The pre-specified composition cells of the matrix probe whether
 mechanism-prior alignment extends to pairs of mechanisms applied
 jointly. The matrix populates one productive composition (the LA
 DHO~$\times$~MSDC stack, which couples a phase-side and an
@@ -610,7 +613,7 @@ composition cells are populated.
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F6_composition_saturation.pdf}
 \caption[Composition saturation pattern]{Vanilla, best single
-mechanism, and pre-registered composition test character error
+mechanism, and pre-specified composition test character error
 rate per architecture and scale on the causal matrix. Bars
 within each (architecture, scale) group are ordered vanilla
 $\to$ best single mechanism $\to$ composition. Composition
@@ -619,7 +622,7 @@ on Mamba-2, and stacks productively on Linear Attention.}
 \label{fig:f6-composition}
 \end{figure}
 
-The CVD~$\times$~MSDC composition pre-registered on RWKV-6 and
+The CVD~$\times$~MSDC composition pre-specified on RWKV-6 and
 Mamba-2 saturates on RWKV-6 ($\Delta$ over MSDC alone:
 $-0.0003$ at 7M, $-0.0005$ at 14M) and stacks marginally on
 Mamba-2 ($-0.0030$ at 7M, $-0.0013$ at 14M); the Mamba-2
@@ -627,7 +630,7 @@ advantage is consistent with CVD's stronger single-mechanism
 transfer on Mamba-2 than on RWKV-6
 (Section~\ref{sec:experiments:transfer}). The matrix ceiling at
 14M Mamba-2 falls on this composition cell at test $0.0618$.
-The DHO~$\times$~MSDC composition pre-registered on Linear
+The DHO~$\times$~MSDC composition pre-specified on Linear
 Attention stacks productively at both scales: at 7M causal,
 $\Delta = -0.0410$ over MSDC alone, since MSDC fills the
 absent input-side mixing deficit and DHO independently fills
@@ -678,17 +681,16 @@ exhaustion of available training time.
 \section{Synthesis: mechanism-prior alignment}\label{sec:experiments:synthesis}
 
 The matrix supports a predictive criterion that we call
-mechanism-prior alignment: a mechanism's gain on a task is
-proportional to the residual structural deficit the
-architecture leaves uncovered along the axis the mechanism
-targets, and is null when the mechanism's axis is not
-exercised by the task. Six structural signatures from the
-chapter populate the criterion.
+mechanism-prior alignment: larger residual deficits along the
+axis a mechanism targets tend to correspond to larger absolute
+gains, and no measured gain is expected when the mechanism's
+axis is not exercised by the task. Six structural signatures
+from the chapter populate the criterion.
 
 Three signatures sit on the cross-architecture transfer row.
-The MSDC mechanism transfers in deficit-proportional ordering
-across the family (LA $>$ RWKV-6 $>$ Mamba-2 at both scales),
-matching the architecture-deficit map of
+The MSDC mechanism transfers in deficit-driven ordering across
+the family (LA $>$ RWKV-6 $>$ Mamba-2 at both scales), matching
+the architecture-deficit map of
 Section~\ref{sec:backbones:deficit}. The DHO mechanism
 delivers a structural BREAK on Linear Attention and a
 near-null on Mamba-2 under the LibriSpeech distribution,

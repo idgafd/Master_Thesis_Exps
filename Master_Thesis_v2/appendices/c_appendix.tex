@@ -27,7 +27,7 @@ matched 50-epoch budget. Cells are grouped by mode (causal first,
 then LION) and scale (7M then 14M); within each block the
 architectures are listed RWKV-6, Mamba-2, Linear Attention. Inside
 each architecture-mode-scale block the rows are vanilla, MSDC, CVD,
-DHO, and the pre-registered composition. The DHO row reports the
+DHO, and the pre-specified composition. The DHO row reports the
 mechanism in its canonical depth-graded form. The $\Delta$ test
 column is test CER minus the matched vanilla test CER for the same
 (architecture, mode, scale) triple.
@@ -39,7 +39,7 @@ column is test CER minus the matched vanilla test CER for the same
 matrix, causal mode, 7M scale (six layers). Vanilla rows are the
 per-architecture reference. The composition cell on RWKV-6 and
 Mamba-2 is CVD $\times$ MSDC; on Linear Attention it is
-DHO $\times$ MSDC, the pre-registered axis-1 plus axis-1-sub
+DHO $\times$ MSDC, the pre-specified axis-1 plus axis-1-sub
 composition.}
 \label{tab:results:master-matrix-causal-7m}
 \setlength{\tabcolsep}{2pt}
@@ -166,7 +166,7 @@ on the matrix and beats the LA LION-S CVD $\times$ MSDC composition
 
 The reading of the master matrix is the subject of
 Chapter~\ref{ch:experiments}; the central observations are that
-MSDC transfers in deficit-proportional ordering across the three
+MSDC transfers in deficit-driven ordering across the three
 architectures (LA $>$ RWKV-6 $>$ Mamba-2), that DHO produces a
 clean BREAK on Linear Attention and a NULL on Mamba-2 under the
 LibriSpeech distribution, and that CVD transfers asymmetrically

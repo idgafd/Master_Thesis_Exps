@@ -46,10 +46,10 @@ chapter states the criterion the matrix is built to test and defines the
 three mechanisms whose transfer it measures.
 
 The criterion that the matrix tests is
-\textit{mechanism-prior alignment}. A mechanism's gain on a given
-task is proportional to the residual structural deficit the
-architecture leaves uncovered along the axis the mechanism
-targets. The criterion is two-sided. On the positive side, a
+\textit{mechanism-prior alignment}. Larger residual deficits
+along the axis a mechanism targets tend to correspond to larger
+absolute gains; no measured gain is expected when the axis is
+not exercised by the task. The criterion is two-sided. On the positive side, a
 mechanism that extends the function class along an axis on which
 the architecture leaves a deficit, applied to a task that exercises
 that axis, should yield a gain whose magnitude orders with the
@@ -99,7 +99,7 @@ broader distribution introduce?
 \paragraph{Research hypotheses.}
 Three hypotheses provide pre-experimental falsifiability markers.
 
-\textbf{RH1 (deficit-proportional ordering).} If the alignment
+\textbf{RH1 (deficit-driven ordering).} If the alignment
 criterion holds in the causal mode, the per-mechanism $\Delta$ test
 character error rate ordering across architectures should align
 with the architecture-deficit map of
@@ -117,7 +117,7 @@ decay) variants of Linear Attention.
 
 \textbf{RH3 (cross-distribution).} A more diverse acoustic
 distribution should expose mechanism-task interactions that a
-narrower distribution masks. We pre-register Common Voice
+narrower distribution masks. We pre-specify Common Voice
 English~\cite{ardila2019commonvoice}, with its broader speaker
 diversity, accent variability, and recording-condition
 heterogeneity, as a probe where mechanisms selectively absorbed by
@@ -438,9 +438,9 @@ but no phase; DHO contributes the phase. The reach is smallest on
 RWKV-6, where the per-channel data-dependent decay vector $w_{t}$
 already provides per-channel decay diversity, and DHO's contribution
 is restricted to closing pairs of channels under rotation. The
-deficit-proportional ordering of the table follows from the
-structural reading: the more degenerate the vanilla transition, the
-more residual function class the block-complex extension recovers.
+deficit-driven ordering of the table follows from the structural
+reading: the more degenerate the vanilla transition, the more
+residual function class the block-complex extension recovers.
 
 The block-complex transition is structurally compatible with the
 symmetric decay mask of the LION parallel form. The LION mask of
