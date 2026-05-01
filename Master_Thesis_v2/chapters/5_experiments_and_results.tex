@@ -150,13 +150,17 @@ All cells are trained at single seed. The matched 50-epoch budget
 across 65 cells exhausts the available compute for this thesis,
 and the directional coherence of the across-matrix pattern
 provides aggregate statistical confidence that offsets the
-variance of any individual cell. The empirical noise floor on
-test character error rate between matched re-runs at the codebase
-configuration is approximately $\sigma \approx 0.0014$, estimated
-from prior matched-budget runs. The chapter applies the
-convention that a per-cell $\Delta$ at $|\Delta| > 5\sigma$ is in
-the BREAK band, $|\Delta| \le 2\sigma$ is marginal, and
-intermediate values are productive but not BREAK.
+variance of any individual cell. The empirical CER noise floor
+between matched re-runs at the codebase configuration is
+approximately $\sigma \approx 0.0014$, estimated from a small set
+of matched-budget reruns conducted during the calibration phase
+under the same preprocessing, optimiser, and decoding pipeline.
+The estimate is used only as a descriptive threshold for
+categorising deltas, not as a formal hypothesis test. The chapter
+applies the convention that a per-cell $\Delta$ at
+$|\Delta| > 5\sigma$ is in the BREAK band, $|\Delta| \le 2\sigma$
+is marginal, and intermediate values are productive but not
+BREAK.
 
 \section{Aggregated empirical summary}\label{sec:experiments:summary}
 
@@ -720,19 +724,16 @@ $T = 1024$; the DHO cells FAIL at $T = 64$ already, matching
 the predicted axis mismatch between an axis-1 mechanism and
 an axis-2 task.
 
-\paragraph{One-directional matrix evidence.} The six signatures
-above populate the positive-transfer half of the criterion: where
-a mechanism's axis is exercised by the task, gain materialises in
-the predicted ordering. The converse half, where a mechanism
-engages under stochastic gradient descent without converting into
-measured task gain, is not exercised by the matrix and is left to
-the discovery-phase archive that preceded the 50-epoch budget.
-The matrix evidence reported in this chapter is therefore
-one-directional with respect to the criterion; the
-falsification-protocol extension recorded in
+The present matrix provides stronger evidence for the
+positive-transfer side of the criterion than for the full
+converse / null side. The six signatures above all sit on the
+positive-transfer half: where a mechanism's axis is exercised by
+the task, gain materialises in the predicted ordering. Systematic
+null-effect validation on the converse half is left to future
+multi-seed work; the falsification-protocol extension recorded in
 Section~\ref{sec:conclusions:future-work} of
 Chapter~\ref{ch:conclusions} commits the framework to a
-two-directional protocol as future work.
+two-directional protocol as the natural next step.
 
 \paragraph{Scope.} The criterion as stated holds within the
 diagonal-class function family of
