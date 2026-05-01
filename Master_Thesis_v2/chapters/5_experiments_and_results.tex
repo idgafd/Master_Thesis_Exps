@@ -15,29 +15,6 @@ not by aggregate-score competitiveness. Full hyperparameters,
 dataset construction, and hardware details are given in
 Appendix~\ref{app:experimental-setup}.
 
-\paragraph{Probes and data preparation.} The principal probe is
-LibriSpeech train-clean-100~\cite{panayotov2015librispeech},
-$100$~hours of audiobook-source read English speech preprocessed
-into $80$-mel log-spectrograms with $25$~ms window and $10$~ms
-hop, followed by $2\times$ acoustic subsampling that brings
-post-frontend sequence length to $T \le 500$ at the
-phoneme-to-syllable scale relevant to the axis-1 deficit. The
-cross-distribution probe is a $100$-hour balanced subset of
-Common Voice English~\cite{ardila2019commonvoice}; the
-selection protocol and the pre-experimental comparison with
-LibriSpeech are summarised in
-Table~\ref{tab:librispeech-vs-cv} and detailed in
-Appendix~\ref{app:setup:cv}. Both acoustic probes share the same
-$29$-symbol character vocabulary (twenty-six lowercase letters,
-the apostrophe, the space character, and a dedicated CTC blank
-token). The synthetic axis-2 probe is the Multi-Query
-Associative Recall benchmark of~\citet{arora2023zoology} with
-the canonical sequence-length sweep $T \in \{64, 256, 1024\}$
-and the matching stored-pair counts $K \in \{16, 64, 256\}$ that
-grow with $T$ to keep the difficulty parameter $K / d$
-meaningful at every length. The synthetic probe uses two
-disjoint $8192$-token vocabularies for keys and values.
-
 \begin{table}[!htbp]
 \centering
 \small
@@ -83,6 +60,29 @@ Vocabulary head
 \end{tabularx}
 \end{table}
 
+\paragraph{Probes and data preparation.} The principal probe is
+LibriSpeech train-clean-100~\cite{panayotov2015librispeech},
+$100$~hours of audiobook-source read English speech preprocessed
+into $80$-mel log-spectrograms with $25$~ms window and $10$~ms
+hop, followed by $2\times$ acoustic subsampling that brings
+post-frontend sequence length to $T \le 500$ at the
+phoneme-to-syllable scale relevant to the axis-1 deficit. The
+cross-distribution probe is a $100$-hour balanced subset of
+Common Voice English~\cite{ardila2019commonvoice}; the
+selection protocol and the pre-experimental comparison with
+LibriSpeech are summarised in
+Table~\ref{tab:librispeech-vs-cv} and detailed in
+Appendix~\ref{app:setup:cv}. Both acoustic probes share the same
+$29$-symbol character vocabulary (twenty-six lowercase letters,
+the apostrophe, the space character, and a dedicated CTC blank
+token). The synthetic axis-2 probe is the Multi-Query
+Associative Recall benchmark of~\citet{arora2023zoology} with
+the canonical sequence-length sweep $T \in \{64, 256, 1024\}$
+and the matching stored-pair counts $K \in \{16, 64, 256\}$ that
+grow with $T$ to keep the difficulty parameter $K / d$
+meaningful at every length. The synthetic probe uses two
+disjoint $8192$-token vocabularies for keys and values.
+
 \paragraph{Evaluation framework.} The acoustic probes report
 character error rate under full-utterance greedy connectionist
 temporal classification decoding~\cite{graves2006ctc}, with no
@@ -125,41 +125,6 @@ Table~\ref{tab:results:aggregated} aggregates LibriSpeech
 test-clean CER for every reported matrix cell. Detailed per-cell
 results and diagnostics are given in
 Appendices~\ref{app:results} and~\ref{app:diagnostics}.
-
-\begin{table}[!htbp]
-\centering
-\small
-\caption[Aggregated LibriSpeech test CER]{LibriSpeech test-clean
-CER across the transfer matrix at the matched 50-epoch budget.
-Non-vanilla cells report CER followed by the relative reduction
-over the matched vanilla baseline in parentheses. The composition
-column is CVD~$\times$~MSDC on RWKV-6 and Mamba-2 and
-DHO~$\times$~MSDC on Linear Attention; bold values mark the matrix
-ceiling on the 14M Mamba-2 row.}
-\label{tab:results:aggregated}
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.20}
-\begin{tabularx}{\linewidth}{@{}X r r r r r@{}}
-\toprule
-\textbf{Configuration} &
-\textbf{Vanilla} & \textbf{MSDC} & \textbf{CVD} &
-\textbf{DHO} & \textbf{Composition} \\
-\midrule
-RWKV-6 causal 7M       & 0.1049 & 0.0788 ($-25\%$) & 0.1007 ($-4\%$) & 0.0989 ($-6\%$) & 0.0785 ($-25\%$) \\
-Mamba-2 causal 7M      & 0.1036 & 0.0825 ($-20\%$) & 0.0958 ($-8\%$) & 0.1006 ($-3\%$) & 0.0795 ($-23\%$) \\
-LA causal 7M           & 0.1879 & 0.1409 ($-25\%$) & 0.1714 ($-9\%$) & 0.1198 ($-36\%$) & 0.0999 ($-47\%$) \\
-\addlinespace
-RWKV-6 causal 14M      & 0.1103 & 0.0751 ($-32\%$) & 0.1051 ($-5\%$) & 0.1077 ($-2\%$) & 0.0746 ($-32\%$) \\
-Mamba-2 causal 14M     & 0.0827 & \textbf{0.0631} ($-24\%$) & 0.0728 ($-12\%$) & 0.0781 ($-6\%$) & \textbf{0.0618} ($-25\%$) \\
-LA causal 14M          & 0.1359 & 0.0969 ($-29\%$) & 0.1300 ($-4\%$) & 0.0947 ($-30\%$) & 0.0786 ($-42\%$) \\
-\addlinespace
-RWKV-6 LION-S 7M       & 0.0859 & 0.0750 ($-13\%$) & 0.0852 ($-1\%$) & 0.0740 ($-14\%$) & 0.0747 ($-13\%$) \\
-Mamba-2 LION-S 7M      & 0.0853 & 0.0833 ($-2\%$) & 0.0849 ($-1\%$) & 0.0825 ($-3\%$) & 0.0805 ($-6\%$) \\
-LA LION-LIT 7M         & 0.2951 & 0.1404 ($-52\%$) & 0.3194 ($+8\%$) & 0.1042 ($-65\%$) & 0.0961 ($-67\%$) \\
-LA LION-S 7M           & 0.1381 & 0.1154 ($-16\%$) & 0.1311 ($-5\%$) & 0.0988 ($-28\%$) & 0.1129 ($-18\%$) \\
-\bottomrule
-\end{tabularx}
-\end{table}
 
 Relative reductions are baseline-normalised; deficit-driven
 ordering is therefore argued in absolute $\Delta$ terms.
@@ -212,6 +177,41 @@ deficit-driven ordering in absolute $\Delta$ terms throughout,
 since the deficit map predicts absolute headroom rather than
 fractional reduction.
 
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Aggregated LibriSpeech test CER]{LibriSpeech test-clean
+CER across the transfer matrix at the matched 50-epoch budget.
+Non-vanilla cells report CER followed by the relative reduction
+over the matched vanilla baseline in parentheses. The composition
+column is CVD~$\times$~MSDC on RWKV-6 and Mamba-2 and
+DHO~$\times$~MSDC on Linear Attention; bold values mark the matrix
+ceiling on the 14M Mamba-2 row.}
+\label{tab:results:aggregated}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.20}
+\begin{tabularx}{\linewidth}{@{}p{3.3cm} r r r r r@{}}
+\toprule
+\textbf{Configuration} &
+\textbf{Vanilla} & \textbf{MSDC} & \textbf{CVD} &
+\textbf{DHO} & \textbf{Composition} \\
+\midrule
+RWKV-6 causal 7M       & 0.1049 & 0.0788{\scriptsize\,($-25\%$)} & 0.1007{\scriptsize\,($-4\%$)} & 0.0989{\scriptsize\,($-6\%$)} & 0.0785{\scriptsize\,($-25\%$)} \\
+Mamba-2 causal 7M      & 0.1036 & 0.0825{\scriptsize\,($-20\%$)} & 0.0958{\scriptsize\,($-8\%$)} & 0.1006{\scriptsize\,($-3\%$)} & 0.0795{\scriptsize\,($-23\%$)} \\
+LA causal 7M           & 0.1879 & 0.1409{\scriptsize\,($-25\%$)} & 0.1714{\scriptsize\,($-9\%$)} & 0.1198{\scriptsize\,($-36\%$)} & 0.0999{\scriptsize\,($-47\%$)} \\
+\addlinespace
+RWKV-6 causal 14M      & 0.1103 & 0.0751{\scriptsize\,($-32\%$)} & 0.1051{\scriptsize\,($-5\%$)} & 0.1077{\scriptsize\,($-2\%$)} & 0.0746{\scriptsize\,($-32\%$)} \\
+Mamba-2 causal 14M     & 0.0827 & \textbf{0.0631}{\scriptsize\,($-24\%$)} & 0.0728{\scriptsize\,($-12\%$)} & 0.0781{\scriptsize\,($-6\%$)} & \textbf{0.0618}{\scriptsize\,($-25\%$)} \\
+LA causal 14M          & 0.1359 & 0.0969{\scriptsize\,($-29\%$)} & 0.1300{\scriptsize\,($-4\%$)} & 0.0947{\scriptsize\,($-30\%$)} & 0.0786{\scriptsize\,($-42\%$)} \\
+\addlinespace
+RWKV-6 LION-S 7M       & 0.0859 & 0.0750{\scriptsize\,($-13\%$)} & 0.0852{\scriptsize\,($-1\%$)} & 0.0740{\scriptsize\,($-14\%$)} & 0.0747{\scriptsize\,($-13\%$)} \\
+Mamba-2 LION-S 7M      & 0.0853 & 0.0833{\scriptsize\,($-2\%$)} & 0.0849{\scriptsize\,($-1\%$)} & 0.0825{\scriptsize\,($-3\%$)} & 0.0805{\scriptsize\,($-6\%$)} \\
+LA LION-LIT 7M         & 0.2951 & 0.1404{\scriptsize\,($-52\%$)} & 0.3194{\scriptsize\,($+8\%$)} & 0.1042{\scriptsize\,($-65\%$)} & 0.0961{\scriptsize\,($-67\%$)} \\
+LA LION-S 7M           & 0.1381 & 0.1154{\scriptsize\,($-16\%$)} & 0.1311{\scriptsize\,($-5\%$)} & 0.0988{\scriptsize\,($-28\%$)} & 0.1129{\scriptsize\,($-18\%$)} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F2_deficit_proportional_ordering.pdf}
@@ -220,6 +220,7 @@ across the three causal backbones at 7M and 14M; the ordering
 LA $>$ RWKV-6 $>$ Mamba-2 holds at both scales.}
 \label{fig:f2-deficit-ordering}
 \end{figure}
+
 
 The deficit map predicts that the Damped Harmonic Oscillator
 (\textbf{DHO}), introduced in
@@ -264,11 +265,7 @@ mode}\label{sec:experiments:lion}
 
 This section checks whether the causal transfer signatures
 persist under scaling and whether LION preserves them under
-bidirectional access. Figure~\ref{fig:f7-causal-lion} shows the
-causal-versus-LION comparison;
-Figure~\ref{fig:f5-cross-scale} of
-Appendix~\ref{app:diagnostics} supplements the cross-scale
-reading.
+bidirectional access. Figure~\ref{fig:f7-causal-lion} shows the causal-versus-LION comparison; Figure~\ref{fig:f5-cross-scale} of Appendix~\ref{app:diagnostics} supplements the cross-scale reading.
 
 The cross-scale comparison preserves the causal-mode pattern at
 both scales. The MSDC mechanism gain preserves on Mamba-2
@@ -336,8 +333,8 @@ DHO is decay-self-sufficient and remains productive in either
 decay class. The operator-level bidirectional comparison
 reported in Appendix~\ref{app:diagnostics:lion-vs-vim}
 reinforces the same reading: LION-LIT loses to the
-operator-level VIM alternative on Linear Attention by
-$\Delta = +0.1093$, while LION-S beats VIM by $-0.0477$,
+operator-level Vim alternative on Linear Attention by
+$\Delta = +0.1093$, while LION-S beats Vim by $-0.0477$,
 locating the bidirectional benefit on a decay-bearing mask
 rather than on the wrapper itself.
 
@@ -413,7 +410,7 @@ within the budget).}
 \label{tab:results:mqar-cohort}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}X c c c@{}}
+\begin{tabularx}{\linewidth}{@{}p{5cm} X X X@{}}
 \toprule
 \textbf{Backbone} & \textbf{$T = 64$} & \textbf{$T = 256$} & \textbf{$T = 1024$} \\
 \midrule
@@ -574,7 +571,7 @@ in Section~\ref{sec:conclusions:future-work} of
 Chapter~\ref{ch:conclusions} commits the framework to a
 two-directional protocol as the natural next step.
 
-\paragraph{Scope.} The criterion is asserted only for the
+The criterion is asserted only for the
 diagonal-class function family of Section~\ref{sec:bounds}. The
 matrix does not test it on diagonal-plus-low-rank architectures
 such as DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} or
