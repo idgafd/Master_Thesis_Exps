@@ -468,34 +468,28 @@ compute.
 
   \section{Evaluation probes and datasets}
 
-  The empirical evaluation of the thesis rests on three benchmark
-  families chosen for the structural axis each one exercises rather
-  than for aggregate-score competitiveness. The principal probe is
-  automatic speech recognition on
+  The empirical evaluation of this thesis rests on three benchmark
+  families, chosen for the structural axis each one exercises
+  rather than for aggregate-score competitiveness. The principal
+  probe is automatic speech recognition on
   LibriSpeech~\cite{panayotov2015librispeech} clean-100, evaluated
   with a connectionist temporal classification
   head~\cite{graves2006ctc} and SpecAugment~\cite{park2019specaugment}
-  augmentation. The choice is deliberate: short post-subsampling
-  sequences ($T \le 500$), deterministic greedy CTC decoding, and a
-  single primary metric (character error rate) make LibriSpeech a
-  clean axis-1 instrument that exercises short-range temporal
-  structure at the phoneme-to-syllable scale. Common
-  Voice~\cite{ardila2019commonvoice} is used as a cross-distribution
-  companion: same task, same metric, but a different acoustic
+  augmentation; short post-subsampling sequences ($T \le 500$),
+  deterministic greedy CTC decoding, and a single primary metric
+  (character error rate) make LibriSpeech a clean axis-1
+  instrument for isolating short-range temporal structure at the
+  phoneme-to-syllable scale. Common
+  Voice~\cite{ardila2019commonvoice} serves as a cross-distribution
+  companion on the same task and metric, with a different acoustic
   distribution covering a wide range of speakers, accents, and
-  recording conditions, which lets the same mechanism be re-tested
-  on inputs whose prosodic and spectral statistics differ from the
-  LibriSpeech audiobook regime.
+  recording conditions.
 
   The synthetic axis-2 probe is the multi-query associative recall
   benchmark introduced by Arora et al. as part of the Zoology
-  study~\cite{arora2023zoology}. MQAR is by construction the
-  cleanest available test of associative-memory capacity under
-  interference: the model is presented with a sequence of $(k, v)$
-  pairs followed by query keys whose values must be retrieved, and
-  the difficulty of the task scales with the relationship between
-  the number of stored pairs and the architectural state dimension.
-  Sweeping the sequence length $T \in \{64, 256, 1024\}$ produces a
-  length-stratified differential that is unobtainable on a natural
-  audio benchmark and that operates without the variance overhead of
-  autoregressive evaluation.
+  study~\cite{arora2023zoology}, the cleanest available test of
+  associative-memory capacity under interference. Sweeping the
+  sequence length $T \in \{64, 256, 1024\}$ produces a
+  length-stratified differential that is unobtainable on a
+  natural audio benchmark and that operates without the variance
+  overhead of autoregressive evaluation.
