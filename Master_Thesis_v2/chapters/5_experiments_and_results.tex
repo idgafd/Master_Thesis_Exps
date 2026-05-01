@@ -90,6 +90,18 @@ $7.74$~M at 7M, $+0.224$~M out of $13.56$~M at 14M); per-cell
 parameter counts are reported in Appendix~\ref{app:results}.
 Reported gains are not bought by parameter inflation.
 
+All cells are trained at single seed. The matched 50-epoch budget
+across 65 cells exhausts the available compute for this thesis,
+and the directional coherence of the across-matrix pattern
+provides aggregate statistical confidence that offsets the
+variance of any individual cell. The empirical noise floor on
+test character error rate between matched re-runs at the codebase
+configuration is approximately $\sigma \approx 0.0014$, estimated
+from prior matched-budget runs. The chapter applies the
+convention that a per-cell $\Delta$ at $|\Delta| > 5\sigma$ is in
+the BREAK band, $|\Delta| \le 2\sigma$ is marginal, and
+intermediate values are productive but not BREAK.
+
 \section{Aggregated empirical summary}\label{sec:experiments:summary}
 
 Table~\ref{tab:results:aggregated} aggregates the LibriSpeech test
@@ -364,8 +376,12 @@ rather than on the wrapper itself.
 \section{Cross-distribution validation}\label{sec:experiments:cv}
 
 The 7M causal matrix is repeated on Common Voice English in the
-pilot configuration of Appendix~\ref{app:setup:cv}. The
-delta-of-deltas
+pilot configuration of Appendix~\ref{app:setup:cv}. The broader
+acoustic distribution of Common Voice (speaker diversity, accent
+variability, recording-condition heterogeneity) is a
+pre-registered probe property documented in the dataset
+paper~\cite{ardila2019commonvoice}, not a property inferred from
+the experimental result. The delta-of-deltas
 $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ measures how much
 each mechanism's effect changes between the LibriSpeech
 audiobook distribution and the Common Voice multi-speaker

@@ -36,12 +36,16 @@ matrix and the predictive criterion the matrix supports.
 \section{Limitations}\label{sec:conclusions:limitations}
 
 Three limitations bracket the empirical scope. First, the matrix
-is single-seed for every reported cell; the across-matrix
-pattern is read off approximately seventy statistical tests
-oriented in a single coherent direction, but per-cell standard
-errors are not estimated. Multi-seed validation of the
-BREAK-band cells (LA causal DHO, LA LION-LIT DHO) would sharpen
-the within-cell claim without changing the across-matrix
+is single-seed for every reported cell. Per-cell standard errors
+are not estimated. The across-matrix pattern is read off
+approximately seventy statistical tests oriented in a single
+coherent direction, which provides aggregate statistical
+confidence that offsets the variance of any individual cell. The
+single-seed methodology is a deliberate scope decision under the
+available compute for the matched 50-epoch budget across 65
+cells. Multi-seed validation of the BREAK-band cells, in
+particular the LA causal DHO and LA LION-LIT DHO cells, would
+sharpen the within-cell claim without changing the across-matrix
 pattern. Second, the matrix scales to 14M parameters; the
 conditional 30M scale was dropped from scope since no ranking
 inversion appears between 7M and 14M, but the deficit-proportional
@@ -65,13 +69,27 @@ boundary recalled in Section~\ref{sec:bounds} brackets exactly
 where the diagonal class cannot reach and where the
 diagonal-plus-low-rank class is the principal route across.
 
-A second extension direction is the cross-modality replication of
+A second extension addresses a structural epistemological point
+about the criterion. The criterion as stated tests a mechanism's
+gain against a post-hoc reading of what a task exercises along
+each axis. A stricter falsifiability protocol would specify, for
+each (architecture, mechanism, dataset) triple, a numerical
+prediction made independently of the experimental result, derived
+from dataset-level metrics that quantify the structural axes the
+dataset exercises. Examples include a phoneme-to-syllable energy
+spectrum for axis 1 on speech, a key-similarity entropy for axis
+2 on synthetic recall, and analogous metrics for the remaining
+axes. The thesis does not develop such metrics. Their development
+is the natural prerequisite for converting the alignment
+criterion from a predictive heuristic into a strictly falsifiable
+claim.
+
+A third extension direction is the cross-modality replication of
 the matrix on vision and language probes. The thesis instantiated
 MSDC on speech as one node in a five-paper cross-domain pattern
-(Section~\ref{sec:related:cross-modality}); the
-cross-architecture transfer matrix is portable to those
-modalities with appropriate substitution of the axis-1 and
-axis-2 probes.
+(Section~\ref{sec:related:cross-modality}). The cross-architecture
+transfer matrix is portable to those modalities with appropriate
+substitution of the axis-1 and axis-2 probes.
 
 The framework remains agnostic to the specific evaluation domain
 and to the specific mechanism instantiation. What it asserts is

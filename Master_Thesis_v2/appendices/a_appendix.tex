@@ -159,17 +159,28 @@ language model rescoring.
 
 \subsection{Common Voice English 100h}\label{app:setup:cv}
 
-The cross-distribution probe is a $100$-hour balanced subset of the
-Common Voice English corpus~\cite{ardila2019commonvoice}. The
-training subset is constructed from the validated split of the
-Common Voice release: utterances are sampled stratified by speaker
-so that no speaker appears in more than one of the train, dev, or
-test partitions, and so that the cumulative duration matches the
-LibriSpeech train-clean-100 budget within rounding. The dev and test
-partitions follow the released Common Voice splits restricted to the
-sampled speaker set. Audio preprocessing matches the LibriSpeech
-pipeline; the only change is the vocabulary, which retains the same
-character set since both corpora are English.
+The cross-distribution probe is a $100$-hour balanced subset of
+the Common Voice English corpus~\cite{ardila2019commonvoice}. The
+dataset is selected for its broader acoustic variance relative to
+LibriSpeech. Common Voice is community-collected from several
+thousand contributors, with explicit accent labels across
+regional varieties of English and recording-condition
+heterogeneity arising from non-studio crowd-sourced contribution.
+The audiobook-source LibriSpeech recording protocol does not
+expose comparable variability along these axes. The thesis
+pre-registers this distinction as a probe property prior to any
+experiment on the proposed mechanisms.
+
+The training subset is constructed from the validated split of
+the Common Voice release. Utterances are sampled stratified by
+speaker so that no speaker appears in more than one of the train,
+dev, or test partitions, and so that the cumulative duration
+matches the LibriSpeech train-clean-100 budget within rounding.
+The dev and test partitions follow the released Common Voice
+splits restricted to the sampled speaker set. Audio preprocessing
+matches the LibriSpeech pipeline. The only change is the
+vocabulary, which retains the same character set since both
+corpora are English.
 
 \subsection{Multi-Query Associative Recall}\label{app:setup:mqar}
 
