@@ -36,7 +36,7 @@ matrix and the predictive criterion the matrix supports.
 
 \section{Limitations}\label{sec:conclusions:limitations}
 
-Four limitations bracket the empirical scope. First, the matrix
+Five limitations bracket the empirical scope. First, the matrix
 is single-seed for every reported cell. Per-cell standard errors
 are not estimated. The across-matrix pattern is read off
 approximately seventy statistical tests oriented in a single
@@ -52,11 +52,15 @@ for the positive-transfer side of the criterion than for the
 full converse / null side; systematic null-effect validation is
 left for future multi-seed work, and the criterion is reported as
 a predictive heuristic supported primarily on its
-positive-transfer half. Third, the matrix scales to 14M
-parameters; the conditional 30M scale was dropped from scope
-since no ranking inversion appears between 7M and 14M, but the
-deficit-driven ordering is not asserted at scales beyond 14M.
-Fourth, the acoustic probes are English-only; the Common Voice
+positive-transfer half. Third, we do not fully disentangle
+structural inductive bias from generic optimisation benefits;
+generic parameter-matched controls (for example, MSDC compared
+to a residual block of equivalent parameter count) are left for
+future work. Fourth, the matrix scales to 14M parameters; the
+conditional 30M scale was dropped from scope since no ranking
+inversion appears between 7M and 14M, but the deficit-driven
+ordering is not asserted at scales beyond 14M. Fifth, the
+acoustic probes are English-only; the Common Voice
 cross-distribution validation exercises within-language acoustic
 variability rather than cross-language transfer.
 

@@ -617,6 +617,20 @@ $K_{c}^{\mathrm{RN}} (K_{c}^{\mathrm{RN}})^{\top}$ Gram matrix of
 the generic form and produces a preconditioner whose
 interpretation matches the RWKV-6 and Linear Attention forms.
 
+The three CVD forms above, and the three MSDC and DHO forms in
+Sections~\ref{sec:proposed:msdc} and~\ref{sec:proposed:dho},
+illustrate a property of the mechanisms shared with all three
+proposed extensions of this thesis. The mechanisms are
+transferable at the functional level, not necessarily at the
+tensor-implementation level. Each backbone-specific form
+implements the same logical operation on the chunk structure
+native to that substrate: the chunk-local key-similarity
+preconditioner is the operation; the chunk structure is the
+substrate; the routing into the substrate is local. The shared
+operation is what the cross-architecture transfer matrix tests;
+the local routing is what the per-backbone formalisation
+provides.
+
 \section{Unified LION wrapper}\label{sec:proposed:lion}
 
 The LION framework of~\citet{afzal2025linear} supplies the
