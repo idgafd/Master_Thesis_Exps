@@ -5,75 +5,70 @@
 Linear-time recurrent sequence models share a common architectural
 family. RWKV, Mamba-2, and Linear Attention all express their hidden
 state as a bounded-dimensional recurrence, and the family has moved
-into production-substrate scale on recent industrial deployments
-including MiniMax-01~\cite{li2025minimax01}, Tencent's
-Hunyuan-TurboS~\cite{liu2025hunyuanturbos}, and NVIDIA's Nemotron-H
-series~\cite{blakeman2025nemotronh}. Underneath the architectural
-variety, each backbone leaves different residual deficits along
-orthogonal axes of expressivity. These include short-range temporal
-mixing, associative recall under interference, and the algebraic
-richness of the recurrent transition class.
+into production-substrate scale on recent industrial deployments and
+research efforts, including MiniMax-01~\cite{li2025minimax01},
+Tencent's Hunyuan-TurboS~\cite{liu2025hunyuanturbos}, NVIDIA's
+Nemotron-H series~\cite{blakeman2025nemotronh}, and Apple's
+cross-architecture distillation recipe from Transformer teachers to
+Mamba students~\cite{moudgil2026distillation}. Underneath the
+architectural variety, each backbone leaves different residual
+deficits along conceptually distinct but empirically interacting
+axes of expressivity. These include short-range temporal mixing,
+associative recall under interference, and the algebraic richness
+of the recurrent transition class.
 
-The literature has independently rediscovered mechanism-level fixes
-for some of these deficits across modalities, including
-quad-directional spatial shifts in vision, depthwise convolutions in
-audio, and decorrelation operators in language modelling. These
-fixes have not been compared on a single substrate at matched
-compute, which leaves open the question of whether they constitute
-architecture-specific patches or transferable structural primitives.
-This thesis investigates the second alternative. We propose three
-mechanism-level extensions designed against documented expressivity
-deficits, deploy each on three causal backbones at matched compute,
-and characterise the transferability of mechanism gains across the
-family.
-
-The central contribution is the demonstration that mechanism transfer
-is structured rather than incidental. Gains order with the residual
-structural deficit each backbone leaves uncovered, and the transfer
-pattern obeys an axis decomposition that we formalise as the
-\textit{mechanism-prior alignment} criterion. Speech recognition is
-selected as a probe for the short-range temporal-hierarchy axis
-because it is clean and reproducible, not because it is the
-application domain of the contribution. The thesis does not claim
-state of the art on any speech recognition benchmark, does not
-propose three speech recognisers, and does not assert the alignment
-criterion holds outside the diagonal-class function family of
-Section~\ref{sec:bounds}.
+The literature has been rediscovering similar bottlenecks for the
+linear-time family across modalities: short-range mixing in vision
+and audio, associative recall under interference in language, the
+transition-class limit in formal complexity. The fixes proposed in
+different papers tend to be architecture-specific and modality-bound,
+and have not been compared on a single substrate at matched compute.
+This thesis takes a different route. We treat each bottleneck as a
+structural deficit located on a specific axis of the diagonal-class
+recurrence operator, and derive a mechanism-level extension whose
+form follows from the deficit's mathematical signature. The three
+resulting mechanisms are independent derivations from the deficit
+map developed in Chapter~\ref{ch:theoretical}; they are not
+adaptations of prior fixes. Each mechanism is then deployed on three
+causal backbones at matched compute, and the transferability of its
+gains is read off the cross-architecture transfer matrix.
 
 \section{Contributions}
 
-The thesis makes three contributions.
+The thesis contributes an axis decomposition of expressivity for the
+diagonal-class linear-time recurrent family, in which five
+conceptually distinct but empirically interacting axes organise the
+deficits each backbone leaves uncovered and provide a structural
+scaffold for mechanism design. The empirical matrix exercises axes
+one and two directly on its primary probes; axis three is bracketed
+by the formal complexity-class bound that delimits the diagonal
+class and is left to future work on the diagonal-plus-low-rank
+extension. The decomposition supports the
+\textit{mechanism-prior alignment} criterion, a predictive heuristic
+stating that larger residual deficits along the axis a mechanism
+targets tend to correspond to larger absolute gains, and that no
+measured gain is expected when the axis is not exercised by the task.
 
-\paragraph{Conceptual.}
-An axis decomposition of expressivity for the diagonal-class
-linear-time recurrent family. Five orthogonal axes provide a
-structural scaffold for mechanism design; the empirical matrix
-directly exercises axes one and two on its primary probes, and
-axis three is bracketed by the formal complexity-class bound that
-delimits the diagonal-class scope. The decomposition supports
-the \textit{mechanism-prior alignment} criterion, a predictive
-heuristic that orders mechanism gains by the residual structural
-deficit each architecture leaves uncovered along the axis the
-mechanism targets.
+The matrix that supports the criterion combines three causal
+backbones (RWKV-6, Mamba-2, Linear Attention), two access modes
+(causal and LION bidirectional), two parameter scales (7M and 14M),
+and three probes (LibriSpeech, Common Voice English, Multi-Query
+Associative Recall), populated cell by cell under a matched
+50-epoch single-seed budget. The matched-budget design is what
+allows the experimental chapter to attribute observed mechanism
+gains to architectural cause rather than to capacity inflation, and
+the single-seed convention is a deliberate scope choice under the
+available compute.
 
-\paragraph{Methodological.}
-A cross-architecture transfer matrix populated under matched compute.
-The matrix combines three causal backbones (RWKV-6, Mamba-2, Linear
-Attention), two access modes (causal and LION bidirectional), two
-parameter scales (7M and 14M), and three probes (LibriSpeech, Common
-Voice English, Multi-Query Associative Recall). The single-seed
-matched-budget design attributes mechanism gains to architectural
-cause rather than to capacity inflation.
-
-\paragraph{Empirical.}
-Three transferable mechanism-level extensions, the Multi-Scale
-Depthwise Convolution, the Damped Harmonic Oscillator, and the
-Chunked Value Decorrelation. The binding empirical claim of the
-thesis is that on Multi-Query Associative Recall at sequence length
-$T = 1024$, every linear-time backbone augmented with the
-Multi-Scale Depthwise Convolution or with the Chunked Value
-Decorrelation solves the task while the causal Transformer baseline
-fails. The result inverts the standard
+The three mechanisms whose transfer the matrix measures are the
+Multi-Scale Depthwise Convolution, the Damped Harmonic Oscillator,
+and the Chunked Value Decorrelation, each derived from the
+architectural deficit it targets rather than adapted from prior
+work. The binding empirical claim is that on Multi-Query
+Associative Recall at sequence length $T = 1024$, every linear-time
+backbone augmented with the Multi-Scale Depthwise Convolution or
+with the Chunked Value Decorrelation solves the task, while the
+causal Transformer baseline fails. The result inverts the standard
 sub-quadratic-versus-quadratic narrative at the sequence length
 where the comparison becomes binding.
 

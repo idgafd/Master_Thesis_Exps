@@ -556,12 +556,11 @@ all `\ref` and `\cite` keys still resolve.
   The reviewer is over-strict on this point; the present plan does not
   reframe the work as exploratory empirical characterisation.
 
-### K-still-open (need a decision before the corresponding step).
+### K-still-open.
 
-- **B1 noise-floor rerun count $N$.** Is there a specific count of
-  matched-budget reruns that produced the $\sigma \approx 0.0014$
-  estimate, or is the "small set" wording the right level of disclosure?
-  If a count is known, the sentence becomes "$N$ matched-budget reruns";
-  otherwise the sentence stays at "a small set of matched-budget
-  reruns conducted during the calibration phase". Default if no answer
-  by the time step 6 fires: keep "a small set".
+None. All decisions are now locked.
+
+**B1 noise-floor wording (decided).** No actual rerun count $N$ is on
+record. The B1 sentence stays at "a small set of matched-budget reruns
+conducted during the calibration phase under the same preprocessing,
+optimiser, and decoding pipeline".
