@@ -258,8 +258,8 @@ LA LION-LIT~$\times$~CVD configuration at the 7M scale.}
 \label{fig:f1-transfer-pattern}
 \end{figure}
 
-\textbf{MSDC.} The Multi-Scale Depthwise Convolution targets the
-short-range temporal-hierarchy axis. Across the three causal
+The Multi-Scale Depthwise Convolution (\textbf{MSDC}) targets
+the short-range temporal-hierarchy axis. Across the three causal
 backbones at both 7M and 14M, the absolute $\Delta$ ranks
 LA $>$ RWKV-6 $>$ Mamba-2, matching the deficit map of
 Section~\ref{sec:backbones:deficit}: Linear Attention, with no
@@ -293,21 +293,21 @@ Section~\ref{sec:backbones:deficit}.}
 \label{fig:f2-deficit-ordering}
 \end{figure}
 
-\textbf{DHO.} The Damped Harmonic Oscillator extends the
-real-diagonal transition with the block-complex closure of
-Section~\ref{sec:proposed:dho}. The deficit map predicts the
-largest reach on the architecture whose vanilla transition
-admits no native attenuation and no native phase, and the
-smallest reach on the architecture whose selective scalar
-transition absorbs the block-complex extension under the
-LibriSpeech audiobook distribution. Across the matrix on
-LibriSpeech the direction is consistent with this prediction:
-Linear Attention takes the largest absolute gain ($-0.0681$ at
-7M, $-0.0412$ at 14M), RWKV-6 a small productive $\Delta$
-($-0.0061$ at 7M, $-0.0026$ at 14M) consistent with its native
-per-channel decay covering the attenuation component, and the
-Mamba-2 cell shows a small absolute $\Delta$ ($-0.0030$ at 7M,
-$-0.0046$ at 14M) consistent with the selective scalar
+The deficit map predicts that the Damped Harmonic Oscillator
+(\textbf{DHO}), introduced in
+Section~\ref{sec:proposed:dho} as the block-complex closure of
+the real-diagonal transition, reaches furthest on the
+architecture whose vanilla transition admits no native
+attenuation and no native phase, and is small on the architecture
+whose selective scalar transition absorbs the block-complex
+extension under the LibriSpeech audiobook distribution. Across
+the matrix on LibriSpeech the direction is consistent with this
+prediction: Linear Attention takes the largest absolute gain
+($-0.0681$ at 7M, $-0.0412$ at 14M), RWKV-6 a small productive
+$\Delta$ ($-0.0061$ at 7M, $-0.0026$ at 14M) consistent with its
+native per-channel decay covering the attenuation component, and
+the Mamba-2 cell shows a small absolute $\Delta$ ($-0.0030$ at
+7M, $-0.0046$ at 14M) consistent with the selective scalar
 transition absorbing the contribution under this distribution.
 The Mamba-2 reading is task-prior modulated rather than
 absolute; Section~\ref{sec:experiments:cv} returns to the same
@@ -316,19 +316,19 @@ mechanism pair is productive at $\Delta_{\mathrm{CV}} = -0.0226$,
 which constrains the LibriSpeech reading to the
 LibriSpeech-as-exercised-by-data condition.
 
-\textbf{CVD.} The Chunked Value Decorrelation transfers
-asymmetrically across the family on LibriSpeech. The largest
-single-cell $\Delta$ is on Linear Attention ($-0.0165$ at 7M),
-the intermediate $\Delta$ is on Mamba-2 ($-0.0078$), and the
-smallest is on RWKV-6 ($-0.0042$). The ordering inverts a naive
-natural-home-in-attention prior, since the value-decorrelation
-principle descends from a softmax construction
-(Section~\ref{sec:primitives:cvd}) and might be expected to
-transfer most strongly to the family member whose recurrence is
-closest to softmax attention; instead the matrix places the
-largest gain on the no-decay backbone. The structural reading
-of this asymmetry follows once the LION-mode falsifier of
-Section~\ref{sec:experiments:lion} isolates decay as the
+Asymmetric across-family transfer is the clearest signature on
+the Chunked Value Decorrelation (\textbf{CVD}) row of the matrix.
+The largest single-cell $\Delta$ on LibriSpeech sits on Linear
+Attention ($-0.0165$ at 7M), the intermediate $\Delta$ on Mamba-2
+($-0.0078$), and the smallest on RWKV-6 ($-0.0042$). This
+ordering inverts a naive natural-home-in-attention prior, since
+the value-decorrelation principle descends from a softmax
+construction (Section~\ref{sec:primitives:cvd}) and might be
+expected to transfer most strongly to the family member whose
+recurrence is closest to softmax attention; instead the matrix
+places the largest gain on the no-decay backbone. The structural
+reading of this asymmetry follows once the LION-mode falsifier
+of Section~\ref{sec:experiments:lion} isolates decay as the
 prerequisite for the bidirectional version of the mechanism.
 
 \section{Cross-scale persistence and LION
