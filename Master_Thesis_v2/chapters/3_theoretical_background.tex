@@ -688,12 +688,10 @@ recurrent setting, where the full $T \times T$ attention matrix is
 never materialised, the complexity envelope is linear, and the value
 tensor enters a recurrent state update rather than an explicit
 attention sum. Chapter~\ref{ch:proposed} introduces a separate
-mechanism, the Chunked Value Decorrelation, that shares the
-key-similarity decorrelation principle of LUCID but is constructed
-for the linear-time recurrent substrate, with chunk-local linear
-systems in place of the full $T \times T$ preconditioner. The
-relationship between the two is one of shared logical motivation
-rather than direct adaptation.
+mechanism, the Chunked Value Decorrelation, that realises the
+same key-similarity decorrelation principle on a linear-time
+recurrent substrate, with chunk-local linear systems in place of
+the full $T \times T$ preconditioner.
 
 \section{Formal expressivity bounds}\label{sec:bounds}
 
