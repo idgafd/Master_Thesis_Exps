@@ -341,6 +341,21 @@ across `chapters/*.tex` and `appendices/*.tex`; `bibliography.bib` carries
 3. Bring the cited count up to a defensible 75+ without padding. The bar
    is "would a reviewer expect this paper to be cited given the topic".
 
+**Bar (decided).** "Only papers that directly support a claim already made
+in the text". No padding for completeness. The bibliography sweep removes
+unused entries that are not on standby for a known forthcoming claim, and
+adds only entries that fill an existing gap.
+
+**Required addition.** Apple's *Attention to Mamba: A Recipe for
+Cross-Architecture Distillation* (Moudgil, Huang, Dhekane, Rodríguez,
+Zappella, Danieli, 2026; arXiv 2604.14191) goes into §1.1 Motivation as
+part of the production-scale interest in the linear-time family. The
+paper reports a two-stage Transformer-to-Mamba distillation recipe at
+1B scale; its inclusion underlines that major industrial labs treat
+the linear-time substrate as a serious destination for cross-architecture
+transfer, complementing the MiniMax-01 / Hunyuan-TurboS / Nemotron-H
+deployment chain already cited.
+
 **Out of scope.** Replacing existing valid citations.
 
 ---
@@ -393,56 +408,160 @@ and are reported as design choices rather than as ablated optima."
 
 ---
 
+## Section L. §1.1 Motivation and §1.2 Contributions rewrite (P0, user point 6)
+
+The current §1.1 / §1.2 carries leftovers from the original "we
+adapt existing fixes" framing, which the reviewer is right to pressure.
+The rewrite repositions the work as our own derivations from
+expressivity deficits, not as repackagings of prior fixes.
+
+### L1. §1.1 Motivation rewrite.
+
+**Drop entirely.** The closing paragraph beginning "The central
+contribution is the demonstration that mechanism transfer is structured
+rather than incidental..." moves out of §1.1. Its content is already
+covered by §1.2 (Contributions) and §3.1 (axis decomposition); having it
+in §1.1 is redundant and pushes the chapter towards a strong-claim voice.
+
+**Reframe the literature paragraph.** The current "The literature has
+independently rediscovered mechanism-level fixes for some of these
+deficits across modalities..." is wrong about who rediscovers what. The
+literature has been rediscovering \textit{bottlenecks} (the same
+short-range mixing deficit, the same recall-under-interference
+saturation, the same transition-class limit) across modalities; the
+\textit{fixes} proposed in this thesis are derived independently from
+the architectural deficit each backbone leaves uncovered, not adapted
+from prior fixes.
+
+Target framing (substitute when implementing):
+
+> The literature has been rediscovering similar bottlenecks for the
+> linear-time family across modalities: short-range mixing in vision
+> and audio, associative recall under interference in language, the
+> transition-class limit in formal complexity. The fixes proposed in
+> different papers tend to be architecture-specific and modality-bound.
+> This thesis takes a different route. We treat each bottleneck as a
+> structural deficit located on a specific axis of the diagonal-class
+> recurrence operator, and derive a mechanism-level extension whose form
+> follows from the deficit's mathematical signature. The three resulting
+> mechanisms are not adaptations of prior fixes; they are independent
+> derivations from the deficit map of
+> Section~\ref{sec:backbones:deficit}.
+
+**Apple paper insertion.** The motivation also names recent industrial
+interest in the linear-time family. Currently cited: MiniMax-01,
+Hunyuan-TurboS, Nemotron-H. Add the Apple cross-architecture distillation
+paper (arXiv 2604.14191) to this chain; it shows that a major industrial
+lab treats Mamba as a serious destination for distillation from
+Transformer teachers.
+
+**Mechanism-positioning rule.** Throughout §1.1 (and rippled through the
+thesis), refer to the three mechanisms as \textit{our derivations} from
+the deficit map, not as \textit{adaptations} of LUCID, depthwise
+convolutions, or harmonic oscillators. The primitives those papers
+introduce supply the mathematical building blocks (Section~\ref{sec:primitives});
+the assembly into MSDC, DHO, CVD on the linear-time substrate is the
+contribution.
+
+### L2. §1.2 Contributions rewrite.
+
+**Drop the three bold paragraph headers.** The existing
+\paragraph{Conceptual.} / \paragraph{Methodological.} /
+\paragraph{Empirical.} structure is replaced with a single flowing
+paragraph (or two short paragraphs if the prose runs long) without bold
+headers and without the three-buckets framing.
+
+**Tone.** Honest, not pretentious. State what the thesis does and what
+it claims, without hyping.
+
+**Content invariants the new paragraph must carry.** The five-axis
+decomposition; the matrix specification (3 backbones × 2 modes × 2
+scales × 3 probes); the criterion as a predictive heuristic supported
+primarily on its positive-transfer half; the three mechanisms named
+(MSDC, DHO, CVD); the MQAR T = 1024 binding empirical claim. No "central
+contribution is the demonstration" phrasing.
+
+**Style block ripple.** The terminology fixes from C1, C2 apply here as
+well: "conceptually distinct but empirically interacting axes" replaces
+"orthogonal axes"; the proportionality language is replaced with
+"larger residual deficits tend to correspond to larger absolute gains".
+
+---
+
 ## Section J. Suggested execution order
 
-The order minimises rework: voice and language land first because they
-ripple across many sections; methodological framing is independent and
-can be slotted in any order; the bibliography sweep and whole-text
-tightening come last because they benefit from a stable text.
+The order minimises rework: the §1.1 / §1.2 rewrite runs first because it
+sets the canonical voice for the rest of the manuscript; voice and
+language sweeps follow; methodological framing is independent and slots
+in anywhere; the bibliography sweep and whole-text tightening come last
+because they benefit from a stable text.
 
-1. **A1.** Rewrite §5.3 mechanism paragraphs without bold-claim headers.
-2. **A2.** Same sweep on §5.4 / §5.6 / §5.7.
-3. **C1, C2, C3.** Single-replacement language passes for "proportional",
+1. **L1, L2.** §1.1 / §1.2 rewrite (drops the closing-claim paragraph,
+   reframes the literature paragraph, names the Apple paper, removes
+   bold-paragraph headers from §1.2).
+2. **A1.** Rewrite §5.3 mechanism paragraphs without bold-claim headers.
+3. **A2.** Same sweep on §5.4 / §5.6 / §5.7.
+4. **C1, C2, C3.** Single-replacement language passes for "proportional",
    "orthogonal", "pre-registered".
-4. **D.** §1.2 Conceptual revision tying C1+C2 together; same swap in the
-   abstract.
-5. **B1.** Noise-floor methodological sentence in §5.1.
-6. **B2.** Null-effect-side defense in §5.9 and §6.2.
-7. **B3.** Mixed-precision: prefer removal from §A.1 + chapter prose;
-   fallback to the defensive sentence.
-8. **B4, B5.** Optimisation-confound limit in §6.2; mechanism-vs-patch
+5. **D.** §1.2 Conceptual revision tying C1+C2 together; same swap in the
+   abstract. (Now applied on top of L2.)
+6. **B1.** Noise-floor methodological sentence in §5.1.
+7. **B2.** Null-effect-side defense in §5.9 and §6.2.
+8. **B3.** Mixed-precision: remove the fp32 / bf16 row from Table A.1
+   and any chapter prose mentioning bf16 / fp32 / mixed precision.
+   (Decision: full removal, no fallback sentence.)
+9. **B4, B5.** Optimisation-confound limit in §6.2; mechanism-vs-patch
    defense in §4.4 closing.
-9. **E.** Composition sign error in §5.7.
-10. **F.** LION-vs-operator table caption + prose repositioning in
-    `e_appendix.tex` §C.5.
-11. **I1, I2.** Reviewer-specific defensive sentences for composition
+10. **E.** Composition sign error in §5.7.
+11. **F.** LION-vs-operator table caption + prose repositioning in
+    `e_appendix.tex` §C.5. ($2\times$ serial-compute-per-layer framing
+    confirmed.)
+12. **I1, I2.** Reviewer-specific defensive sentences for composition
     coverage and internal-hyperparameter ablations.
-12. **G.** Bibliography sweep (orphan check + recommended additions).
-13. **H.** Whole-text tightening pass.
+13. **G.** Bibliography sweep (orphan triage + Apple paper addition;
+    bar set at "only papers that directly support a claim already made
+    in the text").
+14. **H.** Whole-text tightening pass.
 
-Each step is a separate commit. After step 13, run the static
+Each step is a separate commit. After step 14, run the static
 cross-reference / citation check from D3 of the v2 pass again; verify
 all `\ref` and `\cite` keys still resolve.
 
 ---
 
-## Section K. Open questions (need author decision)
+## Section K. Decisions and open questions
 
-1. **B1 noise-floor sentence.** Do we have the rerun count $N$ on record?
-   If yes, substitute "a small set" with the actual count.
-2. **B3 mixed-precision.** Preferred is removal of the fp32 / bf16
-   distinction from §A.1. Is rerunning the LA LION-mode cells in fp32
-   feasible before the deadline, or do we accept the fallback defensive
-   sentence?
-3. **F LION-vs-operator framing.** Confirm the "$2\times$ serial compute
-   per layer" framing is the right way to position the operator-level
-   family. Alternative framing: "matched parameters; not matched
-   layer-equivalent compute".
-4. **G bibliography sweep.** How aggressive on additions? Bar at "would a
-   reviewer expect this paper" or higher (only papers that directly
-   support a claim made in the text)?
-5. **Reviewer's fallback escape (editor's note).** The reviewer's editor
-   floats a fallback of dropping the alignment criterion entirely and
-   reframing the thesis as exploratory empirical characterisation. The
-   present plan declines that fallback and instead calibrates the
-   criterion's claim strength. Confirm this is the right call.
+### K-decided (locked into the plan).
+
+- **B3 mixed-precision: remove entirely.** Drop the "Numerical precision"
+  row from Table A.1 (`tab:setup:hyperparams` in `a_appendix.tex`) and
+  remove any chapter prose that mentions `bf16`, `fp32`, or "mixed
+  precision". The manuscript becomes silent on numerical precision; this
+  is acceptable for a thesis-level appendix.
+- **F LION-vs-operator framing: "$2\times$ serial compute per layer".**
+  The 14M operator-level configuration runs forward + backward inside
+  each layer, paying $2\times$ serial compute per layer relative to a
+  causal layer of the same parameter count. Caption and prose are
+  rewritten around this framing; "12 layers" is reframed as "12
+  bidirectional layer-equivalents at $2\times$ serial compute per
+  layer".
+- **G bibliography sweep: bar set at 'only papers that directly support
+  a claim already made in the text'.** No padding for completeness.
+  Required addition: the Apple cross-architecture distillation paper
+  (arXiv 2604.14191) into §1.1 Motivation alongside the existing
+  industrial-deployment chain.
+- **Reviewer's editorial-note fallback: declined.** The thesis keeps
+  the mechanism-prior alignment criterion as its central conceptual
+  contribution and dials the claim strength to a predictive heuristic.
+  The reviewer is over-strict on this point; the present plan does not
+  reframe the work as exploratory empirical characterisation.
+
+### K-still-open (need a decision before the corresponding step).
+
+- **B1 noise-floor rerun count $N$.** Is there a specific count of
+  matched-budget reruns that produced the $\sigma \approx 0.0014$
+  estimate, or is the "small set" wording the right level of disclosure?
+  If a count is known, the sentence becomes "$N$ matched-budget reruns";
+  otherwise the sentence stays at "a small set of matched-budget
+  reruns conducted during the calibration phase". Default if no answer
+  by the time step 6 fires: keep "a small set".
