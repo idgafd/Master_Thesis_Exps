@@ -56,7 +56,7 @@ RWKV-6   & CVD $\times$ MSDC & 0.0787 & 0.0785 & $-0.0264$ & 0.2332 & $-0.0850$ 
 Mamba-2  & Vanilla         & 0.1057 & 0.1036 & ref       & 0.3180 & ref       & 7\,268\,269 \\
 Mamba-2  & MSDC            & 0.0839 & 0.0825 & $-0.0211$ & 0.2481 & $-0.0699$ & 7\,325\,893 \\
 Mamba-2  & CVD             & 0.0966 & 0.0958 & $-0.0078$ & 0.2942 & $-0.0238$ & 7\,268\,317 \\
-Mamba-2  & DHO             & 0.1020 & 0.1006 & $-0.0030$ & 0.3172 & $-0.0008$ & 7\,420\,285 \\
+Mamba-2  & DHO\textsuperscript{$\dagger$}  & 0.1020 & 0.1006 & $-0.0030$ & 0.3172 & $-0.0008$ & 7\,420\,285 \\
 Mamba-2  & CVD $\times$ MSDC & 0.0812 & 0.0795 & $-0.0241$ & 0.2377 & $-0.0803$ & 7\,325\,941 \\
 \addlinespace
 LA       & Vanilla         & 0.1903 & 0.1879 & ref       & 0.5607 & ref       & 6\,256\,669 \\
@@ -66,6 +66,14 @@ LA       & DHO             & 0.1213 & 0.1198 & $-0.0681$ & 0.3608 & $-0.1999$ & 
 LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ & 6\,388\,021 \\
 \bottomrule
 \end{tabularx}
+\par\smallskip
+{\footnotesize\noindent
+$\dagger$\,The 7M Mamba-2 DHO row reports test CER from the
+canonical depth-graded run; the test WER value is taken from the
+matched strong-viscosity run, since no separate depth-graded WER
+measurement was recorded for this cell. The CER asymmetry of
+$-0.0030$ on LibriSpeech is the structural reading;
+the WER value is reported for completeness only.}
 \end{table}
 
 \begin{table}[p]

@@ -634,90 +634,76 @@ interpretation matches the RWKV-6 and Linear Attention forms.
 
 \section{Unified LION wrapper}\label{sec:proposed:lion}
 
-The LION framework of~\citet{afzal2025linear}, presented in
-Section~\ref{sec:lion}, supplies the bidirectional access pattern
-for the experimental matrix on each of the three causal
-backbones. This section describes the LION computation on each
-backbone and the decay-class correspondence that maps each
-causal backbone to its LION counterpart.
+The LION framework of~\citet{afzal2025linear} supplies the
+bidirectional access pattern for every backbone in the matrix.
+The framework parameterises the per-step decay $\lambda_{k}$ of
+equation~(\ref{eq:lion-mask}) into three classes summarised in
+Table~\ref{tab:lion-variants}. Each causal backbone in the matrix
+inherits one class through the decay-bearing primitive of its
+recurrence. The WKV decay $w_{t}$ on RWKV-6 places the backbone
+in LION-S; the per-token scalar $a_{t}$ from the selective step
+size $\Delta_{t}$ on Mamba-2 places it in LION-S; the unit
+accumulator $A_{t} = I$ on Linear
+Attention~\cite{katharopoulos2020transformers} places it in
+LION-LIT. Table~\ref{tab:lion-mapping} records the per-backbone
+mapping. The chapter refers to the three forms collectively as
+the LION wrapper.
 
-The LION computation is structured as a shared algebraic
-convention rather than a single shared wrapper. Each causal
-backbone in the matrix carries its own per-backbone form, and
-the three forms share the algebraic structure of the
-bidirectional parallel attention of equations~(\ref{eq:lion-mask})
-and~(\ref{eq:lion-fullatt}) while differing in which backbone
-parameter supplies the mask factor $\lambda_{k}$. On RWKV-6, the
-LION mode reuses the Time-Mix block via a mode parameter,
-dispatching into a parallel attention kernel that consumes the
-WKV decay $w_{t}$ as the LION mask factor. On Mamba-2, the LION
-mode reuses the SSD block, dispatching into a parallel attention
-kernel that consumes the per-token scalar $a_{t}$ as the mask
-factor. On Linear
-Attention~\cite{katharopoulos2020transformers}, the LION form
-runs through a separate kernel with its own parallel-form
-forward path, since the underlying causal recurrence has no
-decay parameter and the LION mask must be supplied independently.
-The three forms present a uniform algebraic interface to the
-rest of the chapter and to the experimental matrix, and the
-chapter refers to them collectively as the LION wrapper.
+The matrix additionally reports a controlled LION-S form on
+Linear Attention in which a per-token sigmoid decay is introduced
+that is not present in the underlying causal backbone. The
+controlled form isolates the per-token decay parameter on the
+only substrate without a decay-bearing primitive, and supports
+the LION-LIT~vs~LION-S contrast that tests the role of decay as
+a prerequisite for the bidirectional value-decorrelation
+mechanism of Section~\ref{sec:proposed:cvd}. The structural
+motivation is recalled from Section~\ref{sec:lion}; bounded value
+accumulation in the bidirectional setting requires either an
+external normalisation step or a decay-bearing mask, and a
+downstream value-decorrelation mechanism loses its conditioning
+guarantee on a substrate whose accumulation is unbounded.
 
-The decay-class correspondence between each causal backbone and its
-LION counterpart follows from the structure of the per-step decay
-factor $\lambda_{k}$ in the LION mask of
-equation~(\ref{eq:lion-mask}). RWKV-6 inherits LION-S, since the
-WKV decay $w_{t}$ is per-channel data-dependent through
-equation~(\ref{eq:rwkv6-decay}) and maps directly onto the LION-S
-parameterisation of $\lambda_{k}$ as a learnable per-token gate.
-Mamba-2 inherits LION-S, since the scalar $a_{t}$ is per-token
-data-dependent through the selective step size $\Delta_{t}$ of
-equation~(\ref{eq:mamba2-delta}) and maps onto the LION-S
-parameterisation as a per-token, single-channel decay. Linear
-Attention inherits LION-LIT, since the causal accumulator has
-$A_{t} = I$ and therefore no decay to inherit, which corresponds
-to the $\lambda_{k} = 1$ form of the LION mask.
-
-The matrix additionally reports a controlled LION-S form on the
-Linear Attention backbone, in which a per-token sigmoid decay is
-introduced that is not present in the underlying causal backbone.
-The controlled form serves as the cleanest available test of the
-structural role of decay in the bidirectional setting: it
-isolates the contribution of the per-token decay parameter from
-every other aspect of the LION parallel form, since the Linear
-Attention backbone has no other decay-bearing primitive, and it
-allows the experimental matrix to compare LION-LIT and LION-S on
-the same kernel-attention substrate. The structural motivation
-for the controlled form is recalled from Section~\ref{sec:lion}:
-bounded value accumulation in the bidirectional setting requires
-either an external normalisation step or a decay-bearing mask,
-and a downstream value-decorrelation mechanism such as the
-Chunked Value Decorrelation of Section~\ref{sec:proposed:cvd}
-loses its conditioning guarantee when applied to a substrate
-whose accumulation is unbounded.
-Table~\ref{tab:lion-mapping} summarises the per-backbone mapping.
+\begin{table}[t]
+\centering
+\small
+\caption[LION decay variants]{Three LION decay classes
+from~\citet{afzal2025linear}, Table~1. The $\lambda_{k}$ form
+controls the mask factor in the bidirectional parallel attention
+of equation~(\ref{eq:lion-mask}).}
+\label{tab:lion-variants}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{1.8cm} p{4.2cm} X@{}}
+\toprule
+\textbf{Class} & \textbf{$\lambda_{k}$ form} & \textbf{Decay parameter} \\
+\midrule
+LION-LIT & $\lambda_{k} = 1$                              & no decay \\
+LION-D   & $\lambda_{k} \in (0, 1)$ scalar                & global learnable \\
+LION-S   & $\lambda_{k} = \sigma(f_{\theta}(x_{k}))$      & per-token data-dependent \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \begin{table}[t]
 \centering
 \small
 \caption[LION decay-class mapping per backbone]{Decay-class
 correspondence between each causal backbone and its LION
-counterpart. The default LION class is the natural mapping per the
-LION framework of~\citet{afzal2025linear}. The controlled LION-S
-form on Linear Attention introduces a per-token sigmoid decay
-that is not present in the underlying causal backbone, and is
-the only entry in the controlled column.}
+counterpart. The controlled LION-S form on Linear Attention is
+the falsifier for the role of decay in the bidirectional
+value-decorrelation setting.}
 \label{tab:lion-mapping}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\linewidth}{@{}p{2.6cm} X X X@{}}
+\begin{tabularx}{\linewidth}{@{}p{2.6cm} X X@{}}
 \toprule
-\textbf{Architecture} & \textbf{Causal decay class} & \textbf{LION decay class (default)} & \textbf{LION decay class (controlled)} \\
+\textbf{Architecture} & \textbf{Causal decay} & \textbf{LION decay} \\
 \midrule
-RWKV-6 & per-channel data-dependent & LION-S & not applicable \\
+RWKV-6 & per-channel data-dependent & LION-S \\
 \addlinespace
-Mamba-2 & scalar per-token data-dependent & LION-S & not applicable \\
+Mamba-2 & per-token data-dependent scalar & LION-S \\
 \addlinespace
-Linear Attention & none ($\lambda_{k} = 1$) & LION-LIT & LION-S \\
+Linear Attention & none ($\lambda_{k} = 1$) & LION-LIT (default); LION-S (controlled) \\
 \bottomrule
 \end{tabularx}
 \end{table}
