@@ -73,15 +73,15 @@ headsepline, % Uncomment to get a line under the header
 %	THESIS INFORMATION
 %----------------------------------------------------------------------------------------
 
-\thesistitle{Thesis Title} % Your thesis title, this is used in the title and abstract, print it elsewhere with \ttitle
-\supervisor{Dr. James \textsc{Smith}} % Your supervisor's name, this is used in the title page, print it elsewhere with \supname
+\thesistitle{On Expressiveness and Mechanism Design of Linear Recurrent Models} % Your thesis title, this is used in the title and abstract, print it elsewhere with \ttitle
+\supervisor{Dr.\ \textsc{[TODO supervisor name]}} % TODO: replace with actual supervisor before final compile
 \examiner{} % Your examiner's name, this is not currently used anywhere in the template, print it elsewhere with \examname
 \degree{Master of Science} % Your degree name, this is used in the title page and abstract, print it elsewhere with \degreename
-\author{John \textsc{Smith}} % Your name, this is used in the title page and abstract, print it elsewhere with \authorname
+\author{Anastasiia \textsc{Mazur}} % Your name, this is used in the title page and abstract, print it elsewhere with \authorname
 \addresses{} % Your address, this is not currently used anywhere in the template, print it elsewhere with \addressname
 
 \subject{Data Science} % Your subject area, this is not currently used anywhere in the template, print it elsewhere with \subjectname
-\keywords{} % Keywords for your thesis, this is not currently used anywhere in the template, print it elsewhere with \keywordnames
+\keywords{linear-time recurrent models, mechanism design, expressivity axes, sequence modelling, automatic speech recognition} % Keywords for your thesis, this is not currently used anywhere in the template, print it elsewhere with \keywordnames
 \university{\href{http://www.ucu.edu.ua}{Ukrainian Catholic University}} % Your university's name and URL, this is used in the title page and abstract, print it elsewhere with \univname
 \department{\href{http://apps.ucu.edu.ua}{Faculty of Applied Sciences}} % Your department's name and URL, this is used in the title page and abstract, print it elsewhere with \deptname
 \group{\href{http://apps.ucu.edu.ua}{Department of Computer Sciences and Information Technologies}} % Your research group's name and URL, this is used in the title page, print it elsewhere with \groupname
@@ -117,13 +117,13 @@ headsepline, % Uncomment to get a line under the header
 \begin{minipage}[t]{0.4\textwidth}
 \begin{flushleft} \large
 \emph{Author:}\\
-\href{http://www.johnsmith.com}{\authorname} % Author name - remove the \href bracket to remove the link
+\authorname
 \end{flushleft}
 \end{minipage}
 \begin{minipage}[t]{0.4\textwidth}
 \begin{flushright} \large
 \emph{Supervisor:} \\
-\href{http://www.jamessmith.com}{\supname} % Supervisor name - remove the \href bracket to remove the link  
+\supname
 \end{flushright}
 \end{minipage}\\[3cm]
  
@@ -168,21 +168,11 @@ headsepline, % Uncomment to get a line under the header
  
 \noindent Signed (supervisor): \underline{\hspace{5.4cm}} \supname \\
  
-\noindent Date: 26 April 2026
+\noindent Date: 1 May 2026
 
 \end{declaration}
 
 \cleardoublepage
-
-%----------------------------------------------------------------------------------------
-%	QUOTATION PAGE 
-%----------------------------------------------------------------------------------------
-
-\vspace*{0.2\textheight}
-
-\noindent\enquote{\itshape Thanks to my solid academic training, today I can write hundreds of words on virtually any topic without possessing a shred of information, which is how I got a good job in journalism.}\bigbreak
-
-\hfill Dave Barry
 
 %----------------------------------------------------------------------------------------
 %	ABSTRACT PAGE
@@ -190,24 +180,48 @@ headsepline, % Uncomment to get a line under the header
 
 \begin{abstract}
 \addchaptertocentry{\abstractname} % Add the abstract to the table of contents
-The Thesis Abstract is written here (and usually kept to just this page). The page is kept centered vertically so it can expand into the blank space above the title too\ldots
+
+Linear-time recurrent sequence models such as RWKV, Mamba-2, and
+Linear Attention now reach production scale on industrial
+deployments while sharing a common architectural family. Each
+backbone expresses its hidden state as a bounded-dimensional
+recurrence; underneath this shared form, the three principal
+members of the family leave different residual deficits along
+orthogonal axes of expressivity, including short-range temporal
+mixing, associative recall under interference, and the algebraic
+richness of the recurrent transition class. This thesis
+investigates whether mechanism-level extensions designed against
+documented expressivity deficits transfer across the family at
+matched compute, and characterises the structural pattern of that
+transfer.
+
+The thesis instantiates three mechanisms (the Multi-Scale
+Depthwise Convolution, the Damped Harmonic Oscillator, and the
+Chunked Value Decorrelation) and deploys each on three causal
+backbones (RWKV-6, Mamba-2, Linear Attention) at two parameter
+scales (7M and 14M), two access modes (causal and LION
+bidirectional), and three probes (LibriSpeech, Common Voice
+English, Multi-Query Associative Recall). The resulting
+cross-architecture transfer matrix supports the
+\textit{mechanism-prior alignment criterion}, a predictive
+heuristic stating that a mechanism's gain on a task is
+proportional to the residual structural deficit the architecture
+leaves uncovered along the axis the mechanism targets, and is
+null when the mechanism's axis is not exercised by the task.
+
+The binding empirical claim is that on Multi-Query Associative
+Recall at sequence length $T = 1024$, every linear-time backbone
+augmented with the Multi-Scale Depthwise Convolution or with the
+Chunked Value Decorrelation solves the task while the causal
+Transformer baseline fails. The result inverts the standard
+sub-quadratic-versus-quadratic narrative at the sequence length
+where the comparison becomes binding. Speech recognition is
+selected as a probe for the short-range temporal-hierarchy axis
+rather than as the application domain of the contribution; the
+thesis does not claim state of the art on any speech recognition
+benchmark and does not assert the alignment criterion outside the
+diagonal-class function family.
 \end{abstract}
-
-%----------------------------------------------------------------------------------------
-%	ACKNOWLEDGEMENTS
-%----------------------------------------------------------------------------------------
-
-\begin{acknowledgements}
-\addchaptertocentry{\acknowledgementname} % Add the acknowledgements to the table of contents
-The acknowledgments and the people to thank go here, don't forget to include your project advisor\ldots
-
-If you were supported by a scholarship, please thank your donor organization
-or a person who supported you.\\
-
-
-\noindent \textbf{Note:} the Acknowledgements section is optional. You may not acknowledge anybody or anything, if you don't feel like you should. 
-
-\end{acknowledgements}
 
 %----------------------------------------------------------------------------------------
 %	LIST OF CONTENTS/FIGURES/TABLES PAGES
@@ -225,25 +239,21 @@ or a person who supported you.\\
 
 \begin{abbreviations}{ll} % Include a list of abbreviations (a table of two columns)
 
-\textbf{LAH} & \textbf{L}ist \textbf{A}bbreviations \textbf{H}ere\\
-\textbf{WSF} & \textbf{W}hat (it) \textbf{S}tands \textbf{F}or\\
+\textbf{ASR}  & Automatic Speech Recognition \\
+\textbf{CER}  & Character Error Rate \\
+\textbf{CTC}  & Connectionist Temporal Classification \\
+\textbf{CVD}  & Chunked Value Decorrelation \\
+\textbf{DHO}  & Damped Harmonic Oscillator \\
+\textbf{DPLR} & Diagonal-Plus-Low-Rank \\
+\textbf{LA}   & Linear Attention \\
+\textbf{LION} & Linear-time bidirectional parallel-form framework \\
+\textbf{MQAR} & Multi-Query Associative Recall \\
+\textbf{MSDC} & Multi-Scale Depthwise Convolution \\
+\textbf{RWKV} & Receptance Weighted Key Value \\
+\textbf{SSM}  & State-Space Model \\
+\textbf{WER}  & Word Error Rate \\
 
 \end{abbreviations}
-\textbf{Note:} this section is also optional. Keep if you have abbreviations. \\
-
-%----------------------------------------------------------------------------------------
-%	PHYSICAL CONSTANTS/OTHER DEFINITIONS
-%----------------------------------------------------------------------------------------
-
-\begin{constants}{lr@{${}={}$}l} % The list of physical constants is a three column table
-
-% The \SI{}{} command is provided by the siunitx package, see its documentation for instructions on how to use it
-
-Speed of Light & $c_{0}$ & \SI{2.99792458e8}{\meter\per\second} (exact)\\
-%Constant Name & $Symbol$ & $Constant Value$ with units\\
-
-\end{constants}
-\textbf{Note:} this one is also optional. Keep if you have abbreviations. \\
 
 %----------------------------------------------------------------------------------------
 %	SYMBOLS
@@ -251,22 +261,11 @@ Speed of Light & $c_{0}$ & \SI{2.99792458e8}{\meter\per\second} (exact)\\
 
 \begin{symbols}{lll} % Include a list of Symbols (a three column table)
 
-$a$ & distance & \si{\meter} \\
-$P$ & power & \si{\watt} (\si{\joule\per\second}) \\
-%Symbol & Name & Unit \\
-
-\addlinespace % Gap to separate the Roman symbols from the Greek
-
-$\omega$ & angular frequency & \si{\radian} \\
+$T$    & post-frontend sequence length          & tokens \\
+$d$    & state (model) dimension                & channels \\
+$T_{c}$ & chunk size for chunked-streaming and SSD-form computation & tokens \\
 
 \end{symbols}
-\textbf{Note:} this one too. Keep if you have abbreviations. \\
-
-%----------------------------------------------------------------------------------------
-%	DEDICATION
-%----------------------------------------------------------------------------------------
-
-\dedicatory{For/Dedicated to/To my\ldots (this is optional)} 
 
 %----------------------------------------------------------------------------------------
 %	THESIS CONTENT - CHAPTERS
