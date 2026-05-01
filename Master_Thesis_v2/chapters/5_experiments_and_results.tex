@@ -647,6 +647,15 @@ two mechanisms target distinct deficits on the architecture's
 operator chain, and saturates where the second mechanism
 intersects the deficit the first already addresses.
 
+Exhaustive pairwise composition testing is out of scope for the
+matched-budget matrix. The pre-specified pair per backbone was
+selected to test the criterion's prediction on different-axis
+composition (LA: DHO axis-1-phase $\times$ MSDC axis-1-input)
+and same-axis composition (RWKV-6 and Mamba-2: CVD axis-2
+$\times$ MSDC axis-1). Alternative pairings such as
+DHO~$\times$~CVD on RWKV-6 or Mamba-2 are not run here under
+the budget constraint and are left for future work.
+
 \section{Convergence under matched budget}\label{sec:experiments:convergence}
 
 The matched 50-epoch training budget supports the

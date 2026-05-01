@@ -119,12 +119,17 @@ scan in place rather than adding parameters.
 \small
 \caption[LION versus operator-level bidirectional comparison, 7M]{LION
 mechanism-level adaptation versus operator-level Bi-WKV and Vision
-Mamba forward-plus-backward adaptation at 7M, 6 layers, matched
-50-epoch budget. The LION column reports the natural decay-class
-mapping per~\citet{afzal2025linear} Table~1 and, for Linear
-Attention, the controlled LION-S deployment in addition. The Δ
-column is the LION test CER minus the operator-level test CER
-within the same architecture row.}
+Mamba forward-plus-backward adaptation at 7M, six layers, matched
+50-epoch budget and matched parameter count. The LION column
+reports the natural decay-class mapping
+per~\citet{afzal2025linear} Table~1 and, for Linear Attention,
+the controlled LION-S deployment in addition. The $\Delta$ column
+is the LION test CER minus the operator-level test CER within
+the same architecture row. Operator-level cells run forward and
+backward inside each layer, paying $2\times$ serial compute per
+layer relative to a causal layer of the same parameter count;
+LION cells pay quadratic memory in $T$ for the parallel attention
+but do not double the serial compute.}
 \label{tab:results:bidirectional-comparison-7m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
@@ -146,10 +151,11 @@ Linear Attention & LION-S    & 0.1381 & 0.1858 (VIM)    & $-0.0477$ \\
 \centering
 \small
 \caption[Operator-level bidirectional reference at 14M]{Operator-level
-bidirectional reference at the 14M, 12-layer scale. The LION 14M
-cells are dropped from scope, so the 14M comparison is operator-only
-and is included for completeness rather than as a head-to-head
-contrast.}
+bidirectional reference at the 14M scale: twelve layers,
+doubled parameter count, $2\times$ serial compute per layer
+relative to causal due to the forward+backward pairing. The LION
+14M cells are dropped from scope, so the 14M comparison is
+operator-only.}
 \label{tab:results:bidirectional-comparison-14m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
@@ -181,19 +187,26 @@ causal backbone.
 
 A complementary reading attaches to the 14M operator-level
 reference of
-Table~\ref{tab:results:bidirectional-comparison-14m}. On the two
-backbones that carry native decay, the operator-level
-configuration at twelve layers and doubled parameter count
-reaches test CER values within rounding of, and modestly below,
-the matched 7M LION-S rows of the same architectures ($0.0738$
-on 14M RWKV-6 with Bi-WKV against $0.0859$ on 7M RWKV-6 LION-S;
-$0.0746$ on 14M Mamba-2 with VIM against $0.0853$ on 7M Mamba-2
-LION-S). The mechanism-level LION wrapper at 7M sits in
+Table~\ref{tab:results:bidirectional-comparison-14m}. The 14M
+operator-level configuration runs twelve layers each carrying
+its own forward+backward pairing, which is best read as twelve
+bidirectional layer-equivalents at $2\times$ serial compute per
+layer relative to a causal stack of the same parameter count.
+The 7M LION-S rows are six layers; LION runs the bidirectional
+access in parallel form within each layer, so the serial
+compute per layer is the same as in the causal stack. On the
+two backbones with native decay, the 14M operator-level
+configuration reaches test CER values modestly below the
+matched 7M LION-S rows: $0.0738$ on 14M RWKV-6 with Bi-WKV
+against $0.0859$ on 7M RWKV-6 LION-S, and $0.0746$ on 14M
+Mamba-2 with VIM against $0.0853$ on 7M Mamba-2 LION-S. The
+mechanism-level LION wrapper at 7M therefore sits in
 approximately the range the operator-level family reaches only
-once depth and parameter count are doubled. The reading is that
-the LION wrapper provides equivalent bidirectional expressivity
-at roughly half the compute and parameter budget on the two
-backbones whose causal recurrence carries native decay, with the
-operator-level family's principal cost axis located in the
-doubled serial computation per layer rather than in any
+after doubling the parameter budget and doubling the
+per-layer serial compute. The reading is that, on the two
+backbones whose causal recurrence carries native decay, the
+LION wrapper provides equivalent bidirectional expressivity at
+roughly half the parameter and serial-compute budget; the
+operator-level family's principal cost axis is the
+doubled-per-layer serial computation rather than any
 expressivity advantage at matched scale.

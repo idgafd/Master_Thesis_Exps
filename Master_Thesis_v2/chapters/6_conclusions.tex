@@ -64,6 +64,14 @@ acoustic probes are English-only; the Common Voice
 cross-distribution validation exercises within-language acoustic
 variability rather than cross-language transfer.
 
+Internal hyperparameter ablations of the proposed mechanisms
+(the MSDC dilation set $\{1, 2, 4, 8\}$, the DHO depth-graded
+$\theta$-clip schedule of $\pi/8$ and $\pi/4$, the CVD
+chunk-local preconditioner temperature $\tau_{h}$) are not
+exhaustively tested in this thesis. The chosen values follow
+literature precedent for the underlying primitives and are
+reported as design choices rather than as ablated optima.
+
 \section{Scope and future work}\label{sec:conclusions:future-work}
 
 The criterion as stated holds within the diagonal-class function
