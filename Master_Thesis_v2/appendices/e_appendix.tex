@@ -1,135 +1,106 @@
 \chapter{Supplementary Diagnostics and Bidirectional Comparison}\label{app:diagnostics}
 
-This appendix collects diagnostic figures whose chapter-level
-references appear in the synthesis section of
-Chapter~\ref{ch:experiments}, the chunked-streaming evaluation in
-its per-architecture form, and the empirical justification for the
-choice of the LION mechanism-level wrapper over the operator-level
-bidirectional alternatives. The data underlying every figure is
-stored alongside the figure script in the thesis figure folder.
+This appendix collects supplementary diagnostics for
+Chapter~\ref{ch:experiments}: per-mechanism parameter figures,
+per-architecture chunked-streaming results, and the LION versus
+operator-level bidirectional comparison. Figure data are stored
+alongside the corresponding scripts in the thesis figure folder.
 
 \section{MSDC trained mixing weights}\label{app:diagnostics:msdc}
 
-The MSDC mechanism's per-layer per-channel mixing weights
-$\alpha_{d}$ for $d \in \{1, 2, 4, 8\}$ determine whether the
-multi-dilation structure is exercised by the gradient. The values
-are initialised at $\alpha_{1} = 1$ and $\alpha_{d > 1} = 0.01$ per
-the design notes of Section~\ref{sec:proposed:msdc}; trained values
-that diverge from initialisation indicate that the multi-dilation
-branches receive gradient and contribute to the input-side mixing.
+The MSDC diagnostic tracks trained mixing weights $\alpha_{d}$
+for $d \in \{1, 2, 4, 8\}$. Divergence from the initial values
+$\alpha_{1} = 1$ and $\alpha_{d > 1} = 0.01$ indicates that the
+multi-dilation branches are exercised by the gradient.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F8_msdc_alpha_heatmaps.pdf}
-\caption[MSDC trained $\alpha_{d}$ heatmaps]{Per-layer trained
-$\alpha_{d}$ values across the three architectures at the 7M scale.
-Rows index encoder layers; columns index dilations
-$\{1, 2, 4, 8\}$. The trained $\alpha_{d > 1}$ values diverge from
-their small initialisation in every layer of every backbone,
-confirming that the multi-dilation branches are exercised by the
-gradient and contribute non-trivially to the input-side mixing.}
+\caption[MSDC trained $\alpha_{d}$ heatmaps]{Trained MSDC
+$\alpha_{d}$ values at the 7M scale. Rows index encoder layers
+and columns index dilations $\{1, 2, 4, 8\}$; non-initial
+$\alpha_{d > 1}$ values indicate engaged multi-dilation
+branches.}
 \label{fig:app:msdc-alpha}
 \end{figure}
 
 \section{DHO rotation angle and viscosity diagnostics}\label{app:diagnostics:dho}
 
-The DHO mechanism's per-block rotation angle $\theta_{t, h, b}$ and
-its per-head per-block viscosity coefficient $\eta_{h, b}$ are the
-two diagnostic scalars that determine whether the mechanism's
-physical-prior structure is exercising. The viscosity is
-initialised at $\eta_{h, b} = 0$, and trained values that diverge
-from zero indicate that the Rayleigh dissipation coupling engages.
-The rotation angle is bounded by the depth-graded clip schedule of
+The DHO diagnostic tracks rotation angles $\theta_{t, h, b}$ and
+viscosities $\eta_{h, b}$. Non-zero trained $\eta$ indicates
+engaged Rayleigh dissipation; the realised $\theta$ distribution
+is bounded by the depth-graded clip schedule of
 Section~\ref{sec:proposed:dho}.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F9_dho_eta_theta.pdf}
-\caption[DHO $\eta$ and $\theta$ diagnostics]{Per-layer rotation-angle
-and viscosity-coefficient diagnostics for the DHO cells in the
-matrix. The depth-graded $\theta$-clip schedule is visible in the
-realised distribution of $\theta$; the trained $\eta$ values
-exhibit architecture-specific patterns that align with each
-backbone's structural deficit.}
+\caption[DHO $\eta$ and $\theta$ diagnostics]{DHO rotation-angle
+and viscosity diagnostics across matrix cells. The realised
+$\theta$ distribution reflects the depth-graded clip schedule;
+trained $\eta$ indicates Rayleigh-coupling engagement.}
 \label{fig:app:dho-eta-theta}
 \end{figure}
 
 \section{CVD per-head temperature heatmaps}\label{app:diagnostics:cvd}
 
-The CVD mechanism's per-head learnable temperature $\tau_{h}$ is the
-free parameter of the chunk-local preconditioner of
-Section~\ref{sec:proposed:cvd}. Trained values per layer and per
-head indicate the strength of the key-similarity decorrelation in
-each head.
+The CVD diagnostic tracks the trained per-head temperature
+$\tau_{h}$, which controls the strength of the chunk-local
+key-similarity preconditioner.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F10_cvd_tau_heatmaps.pdf}
-\caption[CVD per-head $\tau_{h}$ heatmaps]{Trained $\tau_{h}$ values
-per layer and per head across the productive CVD deployments. The
-across-architecture pattern exhibits substantial between-head
-variation, confirming that the per-head temperature is exercised by
-the gradient and that the per-head freedom is not redundant.}
+\caption[CVD per-head $\tau_{h}$ heatmaps]{Trained CVD
+temperatures $\tau_{h}$ per layer and head across the
+productive CVD deployments.}
 \label{fig:app:cvd-tau}
 \end{figure}
 
 \section{Chunked-streaming evaluation per architecture}\label{app:diagnostics:chunked}
 
-The per-architecture detail of the chunked-streaming evaluation is
-provided here as a single figure; the across-architecture summary
-is reported in Table~\ref{tab:results:chunked-summary} of
+This figure gives the per-architecture breakdown of the
+chunked-streaming evaluation summarised in
+Table~\ref{tab:results:chunked-summary} of
 Appendix~\ref{app:results}.
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.9\linewidth]{figures/chapter5/F13_chunked_streaming.pdf}
-\caption[Chunked-streaming evaluation per architecture]{Test CER
-under chunked-streaming evaluation at window sizes
-$\{2.0, 5.0, 10.0\}$~s and reset-or-carry state policies, broken
-out per architecture for the 7M causal cells. The full-utterance
-test CER is the rightmost reference. The reset-policy degradation
-at the 2-second window is largest on the cells with the highest
-vanilla CER and is markedly reduced on the mechanism cells.}
+\caption[Chunked-streaming per architecture]{Chunked-streaming
+test CER for 7M causal cells under window sizes
+$\{2.0, 5.0, 10.0\}$~s and reset/carry state policies, broken
+out per architecture. Full-utterance CER is shown as the
+reference.}
 \label{fig:app:chunked}
 \end{figure}
 
 \section{Mechanism-level versus operator-level bidirectional adaptation}\label{app:diagnostics:lion-vs-vim}
 
-The thesis instantiates the bidirectional adaptation through the
-mechanism-level LION framework of~\citet{afzal2025linear}. Two
-operator-level alternatives appear in the related-work chapter:
-the Bi-WKV scan of Vision-RWKV~\cite{duan2024visionrwkv}, which
-runs the causal RWKV recurrence forwards and backwards and combines
-the resulting hidden states; and the forward-and-backward block
-pairing of Vision Mamba~\cite{zhu2024visionmamba}, which applies
-the same template to selective state-space models. The
-operator-level family pays a doubled serial computation per layer
-in exchange for retaining the linear-time envelope, while the
-mechanism-level LION wrapper pays the quadratic memory of the
-parallel attention but does not double the serial computation.
-Layer counts and total parameter counts are matched across the
-two families: every cell in
-Table~\ref{tab:results:bidirectional-comparison-7m} carries the
-same six-layer encoder and the same parameter count as its causal
-counterpart, with the bidirectional mechanism replacing the causal
-scan in place rather than adding parameters.
+The thesis uses LION~\citep{afzal2025linear} as the
+mechanism-level bidirectional wrapper. This section compares it
+with operator-level alternatives:
+Bi-WKV~\cite{duan2024visionrwkv} runs the causal RWKV recurrence
+forwards and backwards and combines the resulting hidden states;
+Vision Mamba~\cite{zhu2024visionmamba} applies the same
+forward-plus-backward template to selective state-space models.
+Operator-level methods retain the linear-time envelope but pay
+$2\times$ serial compute per layer; LION pays quadratic memory in
+$T$ for the parallel attention but does not double the serial
+compute. Every cell in
+Table~\ref{tab:results:bidirectional-comparison-7m} is matched in
+layer count and parameter count to its causal counterpart, with
+the bidirectional mechanism replacing the causal scan in place.
 
 \begin{table}[!htbp]
 \centering
 \small
-\caption[LION versus operator-level bidirectional comparison, 7M]{LION
-mechanism-level adaptation versus operator-level Bi-WKV and Vision
-Mamba forward-plus-backward adaptation at 7M, six layers, matched
-50-epoch budget and matched parameter count. The LION column
-reports the natural decay-class mapping
-per~\citet{afzal2025linear} Table~1 and, for Linear Attention,
-the controlled LION-S deployment in addition. The $\Delta$ column
-is the LION test CER minus the operator-level test CER within
-the same architecture row. Operator-level cells run forward and
-backward inside each layer, paying $2\times$ serial compute per
-layer relative to a causal layer of the same parameter count;
-LION cells pay quadratic memory in $T$ for the parallel attention
-but do not double the serial compute.}
+\caption[LION versus operator-level bidirectional comparison, 7M]{
+Matched 7M comparison between LION and operator-level
+bidirectional adaptations. The LION column reports the natural
+decay-class mapping and, for Linear Attention, the controlled
+LION-S deployment. The $\Delta$ column is LION test CER minus
+operator-level test CER within the same architecture row.}
 \label{tab:results:bidirectional-comparison-7m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
@@ -150,12 +121,9 @@ Linear Attention & LION-S    & 0.1381 & 0.1858 (VIM)    & $-0.0477$ \\
 \begin{table}[!htbp]
 \centering
 \small
-\caption[Operator-level bidirectional reference at 14M]{Operator-level
-bidirectional reference at the 14M scale: twelve layers,
-doubled parameter count, $2\times$ serial compute per layer
-relative to causal due to the forward+backward pairing. The LION
-14M cells are dropped from scope, so the 14M comparison is
-operator-only.}
+\caption[Operator-level bidirectional reference at 14M]{
+Operator-level bidirectional reference at the 14M scale. LION
+14M cells are out of scope, so this table is operator-only.}
 \label{tab:results:bidirectional-comparison-14m}
 \setlength{\tabcolsep}{6pt}
 \renewcommand{\arraystretch}{1.15}
