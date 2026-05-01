@@ -17,6 +17,9 @@ Chapter~\ref{ch:experiments}. Throughout the appendix, character
 error rate is the primary metric and word error rate the
 secondary metric; the single-seed convention applies.
 
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{N}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+
 \section{Master matrix on LibriSpeech}\label{app:results:master}
 
 The master matrix collects every reported LibriSpeech cell at the
@@ -39,31 +42,31 @@ Mamba-2 is CVD $\times$ MSDC; on Linear Attention it is
 DHO $\times$ MSDC, the pre-registered axis-1 plus axis-1-sub
 composition.}
 \label{tab:results:master-matrix-causal-7m}
-\setlength{\tabcolsep}{6pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{1.8cm} p{2.0cm} r r r r r r@{}}
+\begin{tabularx}{\linewidth}{@{}L{1.89cm} L{2.83cm} N{1.43cm} N{1.43cm} N{1.61cm} N{1.49cm} N{1.61cm} N{0.90cm}@{}}
 \toprule
-\textbf{Architecture} & \textbf{Mechanism} &
-\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
-\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\textbf{\shortstack[l]{Archi-\\tecture}} & \textbf{Mechanism} &
+\textbf{\shortstack[r]{Dev\\CER}} & \textbf{\shortstack[r]{Test\\CER}} & \textbf{\shortstack[r]{$\Delta$\\CER}} &
+\textbf{\shortstack[r]{Test\\WER}} & \textbf{\shortstack[r]{$\Delta$\\WER}} & \textbf{Par.} \\
 \midrule
-RWKV-6   & Vanilla         & 0.1051 & 0.1049 & ref       & 0.3182 & ref       & 7\,736\,605 \\
-RWKV-6   & MSDC            & 0.0803 & 0.0788 & $-0.0261$ & 0.2372 & $-0.0810$ & 7\,755\,061 \\
-RWKV-6   & CVD             & 0.1005 & 0.1007 & $-0.0042$ & 0.3001 & $-0.0181$ & 7\,736\,629 \\
-RWKV-6   & DHO             & 0.0999 & 0.0989 & $-0.0061$ & 0.2994 & $-0.0188$ & 7\,811\,869 \\
-RWKV-6   & CVD $\times$ MSDC & 0.0787 & 0.0785 & $-0.0264$ & 0.2332 & $-0.0850$ & 7\,755\,085 \\
+RWKV-6   & Vanilla         & 0.1051 & 0.1049 & ref       & 0.3182 & ref       & 7.7M \\
+RWKV-6   & MSDC            & 0.0803 & 0.0788 & $-0.0261$ & 0.2372 & $-0.0810$ & 7.8M \\
+RWKV-6   & CVD             & 0.1005 & 0.1007 & $-0.0042$ & 0.3001 & $-0.0181$ & 7.7M \\
+RWKV-6   & DHO             & 0.0999 & 0.0989 & $-0.0061$ & 0.2994 & $-0.0188$ & 7.8M \\
+RWKV-6   & CVD $\times$ MSDC & 0.0787 & 0.0785 & $-0.0264$ & 0.2332 & $-0.0850$ & 7.8M \\
 \addlinespace
-Mamba-2  & Vanilla         & 0.1057 & 0.1036 & ref       & 0.3180 & ref       & 7\,268\,269 \\
-Mamba-2  & MSDC            & 0.0839 & 0.0825 & $-0.0211$ & 0.2481 & $-0.0699$ & 7\,325\,893 \\
-Mamba-2  & CVD             & 0.0966 & 0.0958 & $-0.0078$ & 0.2942 & $-0.0238$ & 7\,268\,317 \\
-Mamba-2  & DHO             & 0.1020 & 0.1006 & $-0.0030$ & 0.3172 & $-0.0008$ & 7\,420\,285 \\
-Mamba-2  & CVD $\times$ MSDC & 0.0812 & 0.0795 & $-0.0241$ & 0.2377 & $-0.0803$ & 7\,325\,941 \\
+Mamba-2  & Vanilla         & 0.1057 & 0.1036 & ref       & 0.3180 & ref       & 7.3M \\
+Mamba-2  & MSDC            & 0.0839 & 0.0825 & $-0.0211$ & 0.2481 & $-0.0699$ & 7.3M \\
+Mamba-2  & CVD             & 0.0966 & 0.0958 & $-0.0078$ & 0.2942 & $-0.0238$ & 7.3M \\
+Mamba-2  & DHO             & 0.1020 & 0.1006 & $-0.0030$ & 0.3172 & $-0.0008$ & 7.4M \\
+Mamba-2  & CVD $\times$ MSDC & 0.0812 & 0.0795 & $-0.0241$ & 0.2377 & $-0.0803$ & 7.3M \\
 \addlinespace
-LA       & Vanilla         & 0.1903 & 0.1879 & ref       & 0.5607 & ref       & 6\,256\,669 \\
-LA       & MSDC            & 0.1448 & 0.1409 & $-0.0470$ & 0.4148 & $-0.1459$ & 6\,275\,125 \\
-LA       & CVD             & 0.1730 & 0.1714 & $-0.0165$ & 0.5189 & $-0.0418$ & 6\,256\,693 \\
-LA       & DHO             & 0.1213 & 0.1198 & $-0.0681$ & 0.3608 & $-0.1999$ & 6\,369\,565 \\
-LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ & 6\,388\,021 \\
+LA       & Vanilla         & 0.1903 & 0.1879 & ref       & 0.5607 & ref       & 6.3M \\
+LA       & MSDC            & 0.1448 & 0.1409 & $-0.0470$ & 0.4148 & $-0.1459$ & 6.3M \\
+LA       & CVD             & 0.1730 & 0.1714 & $-0.0165$ & 0.5189 & $-0.0418$ & 6.3M \\
+LA       & DHO             & 0.1213 & 0.1198 & $-0.0681$ & 0.3608 & $-0.1999$ & 6.4M \\
+LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ & 6.4M \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -75,31 +78,31 @@ LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ 
 master matrix, causal mode, 14M scale (twelve layers). Layout
 matches Table~\ref{tab:results:master-matrix-causal-7m}.}
 \label{tab:results:master-matrix-causal-14m}
-\setlength{\tabcolsep}{6pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{1.8cm} p{2.0cm} r r r r r r@{}}
+\begin{tabularx}{\linewidth}{@{}L{1.89cm} L{2.83cm} N{1.43cm} N{1.43cm} N{1.61cm} N{1.49cm} N{1.61cm} N{0.90cm}@{}}
 \toprule
-\textbf{Architecture} & \textbf{Mechanism} &
-\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
-\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\textbf{\shortstack[l]{Archi-\\tecture}} & \textbf{Mechanism} &
+\textbf{\shortstack[r]{Dev\\CER}} & \textbf{\shortstack[r]{Test\\CER}} & \textbf{\shortstack[r]{$\Delta$\\CER}} &
+\textbf{\shortstack[r]{Test\\WER}} & \textbf{\shortstack[r]{$\Delta$\\WER}} & \textbf{Par.} \\
 \midrule
-RWKV-6   & Vanilla         & 0.1082 & 0.1103 & ref       & 0.3244 & ref       & 13\,561\,117 \\
-RWKV-6   & MSDC            & 0.0747 & 0.0751 & $-0.0352$ & 0.2214 & $-0.1030$ & 13\,598\,029 \\
-RWKV-6   & CVD             & 0.1051 & 0.1051 & $-0.0052$ & 0.3093 & $-0.0151$ & 13\,561\,165 \\
-RWKV-6   & DHO             & 0.1058 & 0.1077 & $-0.0026$ & 0.3186 & $-0.0058$ & 13\,785\,373 \\
-RWKV-6   & CVD $\times$ MSDC & 0.0745 & 0.0746 & $-0.0357$ & 0.2171 & $-0.1073$ & 13\,598\,077 \\
+RWKV-6   & Vanilla         & 0.1082 & 0.1103 & ref       & 0.3244 & ref       & 13.6M \\
+RWKV-6   & MSDC            & 0.0747 & 0.0751 & $-0.0352$ & 0.2214 & $-0.1030$ & 13.6M \\
+RWKV-6   & CVD             & 0.1051 & 0.1051 & $-0.0052$ & 0.3093 & $-0.0151$ & 13.6M \\
+RWKV-6   & DHO             & 0.1058 & 0.1077 & $-0.0026$ & 0.3186 & $-0.0058$ & 13.8M \\
+RWKV-6   & CVD $\times$ MSDC & 0.0745 & 0.0746 & $-0.0357$ & 0.2171 & $-0.1073$ & 13.6M \\
 \addlinespace
-Mamba-2  & Vanilla         & 0.0821 & 0.0827 & ref       & 0.2468 & ref       & 12\,624\,445 \\
-Mamba-2  & MSDC            & 0.0635 & 0.0631 & $-0.0196$ & 0.1850 & $-0.0618$ & 12\,739\,693 \\
-Mamba-2  & CVD             & 0.0729 & 0.0728 & $-0.0099$ & 0.2180 & $-0.0288$ & 12\,624\,541 \\
-Mamba-2  & DHO             & 0.0783 & 0.0781 & $-0.0046$ & 0.1912 & $-0.0556$ & 12\,928\,477 \\
-Mamba-2  & CVD $\times$ MSDC & 0.0627 & 0.0618 & $-0.0209$ & 0.1810 & $-0.0658$ & 12\,739\,789 \\
+Mamba-2  & Vanilla         & 0.0821 & 0.0827 & ref       & 0.2468 & ref       & 12.6M \\
+Mamba-2  & MSDC            & 0.0635 & 0.0631 & $-0.0196$ & 0.1850 & $-0.0618$ & 12.7M \\
+Mamba-2  & CVD             & 0.0729 & 0.0728 & $-0.0099$ & 0.2180 & $-0.0288$ & 12.6M \\
+Mamba-2  & DHO             & 0.0783 & 0.0781 & $-0.0046$ & 0.1912 & $-0.0556$ & 12.9M \\
+Mamba-2  & CVD $\times$ MSDC & 0.0627 & 0.0618 & $-0.0209$ & 0.1810 & $-0.0658$ & 12.7M \\
 \addlinespace
-LA       & Vanilla         & 0.1378 & 0.1359 & ref       & 0.4266 & ref       & 10\,601\,245 \\
-LA       & MSDC            & 0.0975 & 0.0969 & $-0.0390$ & 0.2874 & $-0.1392$ & 10\,638\,157 \\
-LA       & CVD             & 0.1291 & 0.1300 & $-0.0058$ & 0.4018 & $-0.0248$ & 10\,601\,293 \\
-LA       & DHO             & 0.0953 & 0.0947 & $-0.0412$ & 0.2850 & $-0.1416$ & 10\,827\,037 \\
-LA       & DHO $\times$ MSDC & 0.0784 & 0.0786 & $-0.0573$ & 0.2316 & $-0.1950$ & 10\,863\,949 \\
+LA       & Vanilla         & 0.1378 & 0.1359 & ref       & 0.4266 & ref       & 10.6M \\
+LA       & MSDC            & 0.0975 & 0.0969 & $-0.0390$ & 0.2874 & $-0.1392$ & 10.6M \\
+LA       & CVD             & 0.1291 & 0.1300 & $-0.0058$ & 0.4018 & $-0.0248$ & 10.6M \\
+LA       & DHO             & 0.0953 & 0.0947 & $-0.0412$ & 0.2850 & $-0.1416$ & 10.8M \\
+LA       & DHO $\times$ MSDC & 0.0784 & 0.0786 & $-0.0573$ & 0.2316 & $-0.1950$ & 10.9M \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -114,37 +117,37 @@ per~\citet{afzal2025linear} Table~1; Linear Attention LION rows
 are split into the LION-LIT default and the LION-S falsification
 control. The 14M LION matrix is out of scope.}
 \label{tab:results:master-matrix-lion-7m}
-\setlength{\tabcolsep}{6pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{2.5cm} p{2.0cm} r r r r r r@{}}
+\begin{tabularx}{\linewidth}{@{}L{2.60cm} L{2.48cm} N{1.32cm} N{1.32cm} N{1.60cm} N{1.40cm} N{1.60cm} N{0.86cm}@{}}
 \toprule
-\textbf{Architecture (mode)} & \textbf{Mechanism} &
-\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
-\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\textbf{\shortstack[l]{Architecture\\(mode)}} & \textbf{Mechanism} &
+\textbf{\shortstack[r]{Dev\\CER}} & \textbf{\shortstack[r]{Test\\CER}} & \textbf{\shortstack[r]{$\Delta$\\CER}} &
+\textbf{\shortstack[r]{Test\\WER}} & \textbf{\shortstack[r]{$\Delta$\\WER}} & \textbf{Par.} \\
 \midrule
-RWKV-6 (LION-S)    & Vanilla         & 0.0858 & 0.0859 & ref       & 0.2545 & ref       & 7\,736\,605 \\
-RWKV-6 (LION-S)    & MSDC            & 0.0764 & 0.0750 & $-0.0109$ & 0.2275 & $-0.0270$ & 7\,755\,061 \\
-RWKV-6 (LION-S)    & CVD             & 0.0857 & 0.0852 & $-0.0007$ & 0.2547 & $+0.0002$ & 7\,736\,629 \\
-RWKV-6 (LION-S)    & DHO             & 0.0727 & 0.0740 & $-0.0119$ & 0.2219 & $-0.0326$ & 7\,811\,869 \\
-RWKV-6 (LION-S)    & CVD $\times$ MSDC & 0.0746 & 0.0747 & $-0.0112$ & 0.2242 & $-0.0303$ & 7\,755\,085 \\
+RWKV-6 (LION-S)    & Vanilla         & 0.0858 & 0.0859 & ref       & 0.2545 & ref       & 7.7M \\
+RWKV-6 (LION-S)    & MSDC            & 0.0764 & 0.0750 & $-0.0109$ & 0.2275 & $-0.0270$ & 7.8M \\
+RWKV-6 (LION-S)    & CVD             & 0.0857 & 0.0852 & $-0.0007$ & 0.2547 & $+0.0002$ & 7.7M \\
+RWKV-6 (LION-S)    & DHO             & 0.0727 & 0.0740 & $-0.0119$ & 0.2219 & $-0.0326$ & 7.8M \\
+RWKV-6 (LION-S)    & CVD $\times$ MSDC & 0.0746 & 0.0747 & $-0.0112$ & 0.2242 & $-0.0303$ & 7.8M \\
 \addlinespace
-Mamba-2 (LION-S)   & Vanilla         & 0.0871 & 0.0853 & ref       & 0.2585 & ref       & 7\,268\,269 \\
-Mamba-2 (LION-S)   & MSDC            & 0.0846 & 0.0833 & $-0.0020$ & 0.2517 & $-0.0068$ & 7\,325\,893 \\
-Mamba-2 (LION-S)   & CVD             & 0.0851 & 0.0849 & $-0.0004$ & 0.2601 & $+0.0016$ & 7\,268\,317 \\
-Mamba-2 (LION-S)   & DHO             & 0.0842 & 0.0825 & $-0.0028$ & 0.2511 & $-0.0074$ & 7\,268\,269 \\
-Mamba-2 (LION-S)   & CVD $\times$ MSDC & 0.0820 & 0.0805 & $-0.0048$ & 0.2461 & $-0.0124$ & 7\,325\,941 \\
+Mamba-2 (LION-S)   & Vanilla         & 0.0871 & 0.0853 & ref       & 0.2585 & ref       & 7.3M \\
+Mamba-2 (LION-S)   & MSDC            & 0.0846 & 0.0833 & $-0.0020$ & 0.2517 & $-0.0068$ & 7.3M \\
+Mamba-2 (LION-S)   & CVD             & 0.0851 & 0.0849 & $-0.0004$ & 0.2601 & $+0.0016$ & 7.3M \\
+Mamba-2 (LION-S)   & DHO             & 0.0842 & 0.0825 & $-0.0028$ & 0.2511 & $-0.0074$ & 7.3M \\
+Mamba-2 (LION-S)   & CVD $\times$ MSDC & 0.0820 & 0.0805 & $-0.0048$ & 0.2461 & $-0.0124$ & 7.3M \\
 \addlinespace
-LA (LION-LIT)      & Vanilla         & 0.3003 & 0.2951 & ref       & 0.7967 & ref       & 6\,256\,669 \\
-LA (LION-LIT)      & MSDC            & 0.1422 & 0.1404 & $-0.1547$ & 0.4103 & $-0.3864$ & 6\,275\,125 \\
-LA (LION-LIT)      & CVD             & 0.3228 & 0.3194 & $+0.0243$ & 0.8386 & $+0.0419$ & 6\,256\,693 \\
-LA (LION-LIT)      & DHO             & 0.1042 & 0.1042 & $-0.1909$ & 0.3152 & $-0.4815$ & 6\,332\,701 \\
-LA (LION-LIT)      & DHO $\times$ MSDC & 0.0961 & 0.0961 & $-0.1990$ & 0.2901 & $-0.5066$ & 6\,332\,701 \\
+LA (LION-LIT)      & Vanilla         & 0.3003 & 0.2951 & ref       & 0.7967 & ref       & 6.3M \\
+LA (LION-LIT)      & MSDC            & 0.1422 & 0.1404 & $-0.1547$ & 0.4103 & $-0.3864$ & 6.3M \\
+LA (LION-LIT)      & CVD             & 0.3228 & 0.3194 & $+0.0243$ & 0.8386 & $+0.0419$ & 6.3M \\
+LA (LION-LIT)      & DHO             & 0.1042 & 0.1042 & $-0.1909$ & 0.3152 & $-0.4815$ & 6.3M \\
+LA (LION-LIT)      & DHO $\times$ MSDC & 0.0961 & 0.0961 & $-0.1990$ & 0.2901 & $-0.5066$ & 6.3M \\
 \addlinespace
-LA (LION-S)        & Vanilla         & 0.1417 & 0.1381 & ref       & 0.4301 & ref       & 6\,262\,837 \\
-LA (LION-S)        & MSDC            & 0.1160 & 0.1154 & $-0.0227$ & 0.3464 & $-0.0837$ & 6\,281\,293 \\
-LA (LION-S)        & CVD             & 0.1332 & 0.1311 & $-0.0070$ & 0.4068 & $-0.0233$ & 6\,262\,861 \\
-LA (LION-S)        & CVD $\times$ MSDC & 0.1142 & 0.1129 & $-0.0252$ & 0.3442 & $-0.0859$ & 6\,281\,317 \\
-LA (LION-S)        & DHO             & 0.0982 & 0.0988 & $-0.0393$ & 0.2988 & $-0.1313$ & 6\,338\,869 \\
+LA (LION-S)        & Vanilla         & 0.1417 & 0.1381 & ref       & 0.4301 & ref       & 6.3M \\
+LA (LION-S)        & MSDC            & 0.1160 & 0.1154 & $-0.0227$ & 0.3464 & $-0.0837$ & 6.3M \\
+LA (LION-S)        & CVD             & 0.1332 & 0.1311 & $-0.0070$ & 0.4068 & $-0.0233$ & 6.3M \\
+LA (LION-S)        & CVD $\times$ MSDC & 0.1142 & 0.1129 & $-0.0252$ & 0.3442 & $-0.0859$ & 6.3M \\
+LA (LION-S)        & DHO             & 0.0982 & 0.0988 & $-0.0393$ & 0.2988 & $-0.1313$ & 6.3M \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -199,14 +202,14 @@ values of $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ indicate the
 mechanism's gain is smaller on Common Voice than on LibriSpeech;
 negative values indicate the opposite.}
 \label{tab:results:cv-cross}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{1.7cm} X r r r r r@{}}
+\begin{tabularx}{\linewidth}{@{}L{1.89cm} L{3.02cm} N{1.44cm} N{1.44cm} N{1.74cm} N{1.74cm} N{2.06cm}@{}}
 \toprule
-\textbf{Arch.} & \textbf{Mechanism} &
-\textbf{CV test} & \textbf{LS test} &
+\textbf{\shortstack[l]{Archi-\\tecture}} & \textbf{Mechanism} &
+\textbf{\shortstack[r]{CV\\test}} & \textbf{\shortstack[r]{LS\\test}} &
 \textbf{$\Delta_{\mathrm{CV}}$} & \textbf{$\Delta_{\mathrm{LS}}$} &
-\textbf{$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$} \\
+\textbf{\shortstack[r]{$\Delta_{\mathrm{CV}}$\\$-\Delta_{\mathrm{LS}}$}} \\
 \midrule
 RWKV-6  & CVD $\times$ MSDC & 0.2693 & 0.0785 & $-0.0599$ & $-0.0264$ & $-0.0335$ \\
 LA      & DHO               & 0.3418 & 0.1198 & $-0.0351$ & $-0.0681$ & $+0.0331$ \\
@@ -249,7 +252,7 @@ cell remains the cleanest example of CV-amplification.
 
 \begin{table}[!htbp]
 \centering
-\small
+\footnotesize
 \caption[Common Voice cross-distribution comparison on WER]{
 Common Voice cross-distribution comparison on word error rate,
 sorted by $|\Delta^{\mathrm{WER}}_{\mathrm{CV}} -
@@ -260,15 +263,15 @@ gain is smaller on Common Voice than on LibriSpeech; negative
 values indicate the opposite. Vanilla rows appear at the bottom
 by definition.}
 \label{tab:results:cv-cross-wer}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\linewidth}{@{}p{1.7cm} X r r r r r@{}}
+\begin{tabularx}{\linewidth}{@{}L{2.02cm} L{2.95cm} N{1.43cm} N{1.43cm} N{1.64cm} N{1.64cm} N{2.20cm}@{}}
 \toprule
-\textbf{Arch.} & \textbf{Mechanism} &
-\textbf{CV WER} & \textbf{LS WER} &
-\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{CV}}$} &
-\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{LS}}$} &
-\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{CV}} - \Delta^{\mathrm{WER}}_{\mathrm{LS}}$} \\
+\textbf{\shortstack[l]{Archi-\\tecture}} & \textbf{Mechanism} &
+\textbf{\shortstack[r]{CV\\WER}} & \textbf{\shortstack[r]{LS\\WER}} &
+\textbf{\shortstack[r]{$\Delta^{\mathrm{WER}}$\\$_{\mathrm{CV}}$}} &
+\textbf{\shortstack[r]{$\Delta^{\mathrm{WER}}$\\$_{\mathrm{LS}}$}} &
+\textbf{\shortstack[r]{$\Delta^{\mathrm{WER}}_{\mathrm{CV}}$\\$-\Delta^{\mathrm{WER}}_{\mathrm{LS}}$}} \\
 \midrule
 LA      & DHO $\times$ MSDC & 0.6937 & 0.2967 & $-0.1259$ & $-0.2640$ & $+0.1381$ \\
 LA      & DHO               & 0.7460 & 0.3608 & $-0.0736$ & $-0.1999$ & $+0.1263$ \\
