@@ -6,7 +6,7 @@ Section~\ref{sec:backbones}, together with the bidirectional
 adaptation that extends each mechanism to the LION parallel form of
 Section~\ref{sec:lion}. Section~\ref{sec:proposed:matrix} states the
 problem formulation: the experimental matrix that the chapter is
-organised around, the mechanism-prior alignment law that the matrix
+organised around, the mechanism-prior alignment criterion that the matrix
 is designed to test, and the probes used to test it.
 Section~\ref{sec:proposed:msdc} introduces the Multi-Scale Depthwise
 Convolution mechanism, which addresses the short-range temporal
@@ -31,10 +31,11 @@ parameter level.
 The three mechanisms introduced in the remainder of the chapter are
 not the chapter's principal artefact. The principal artefact is the
 \textit{transfer-pattern matrix} they populate. The mechanisms are
-demonstrations of a predictive law about how a mechanism's gain on a
-task relates to the structural deficit the architecture leaves
-uncovered along the axis the mechanism targets; the matrix is the
-structure on which that law becomes a falsifiable claim.
+demonstrations of a predictive criterion about how a mechanism's
+gain on a task relates to the structural deficit the architecture
+leaves uncovered along the axis the mechanism targets, and the
+matrix is the structure on which that criterion becomes a
+falsifiable claim.
 
 The experimental matrix is the three-by-two-by-two grid defined by
 three causal backbones, two access modes, and two parameter scales.
@@ -56,14 +57,15 @@ cross-distribution validation within axis one, and the Multi-Query
 Associative Recall benchmark of~\citet{arora2023zoology} at sequence
 lengths $T \in \{64, 256, 1024\}$ for axis two. The empirical content
 of the matrix is reported in Chapter~\ref{ch:experiments}; this
-chapter states the law the matrix is built to test and defines the
+chapter states the criterion the matrix is built to test and defines the
 three mechanisms whose transfer it measures.
 
-The predictive law that the matrix tests is the
-\textit{mechanism-prior alignment} law: a mechanism's gain on a given
+The criterion that the matrix tests is
+\textit{mechanism-prior alignment}. A mechanism's gain on a given
 task is proportional to the residual structural deficit the
-architecture leaves uncovered along the axis the mechanism targets.
-The law is two-sided. On the positive side, a mechanism that extends
+architecture leaves uncovered along the axis the mechanism
+targets. The criterion is two-sided. On the positive side, a
+mechanism that extends
 the function class along an axis on which the architecture leaves a
 deficit, applied to a task that exercises that axis, should yield a
 gain whose magnitude orders with the deficit size across
