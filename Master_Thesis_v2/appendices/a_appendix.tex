@@ -159,11 +159,15 @@ per-sequence accuracy $0.999$.
 The MQAR cohort uses two encoder layers with
 $d_{\text{model}} = 64$; only the time-mix block varies. The
 causal Transformer baseline replaces the time-mix with standard
-multi-head attention at $H = 1$ heads of head dimension $64$, a
-channel-mix feed-forward dimension of $256$, and no explicit
-positional encoding beyond the causal mask. All cohort cells use
-AdamW with peak learning rate $3 \times 10^{-4}$, $1000$-step
-linear warmup, and cosine decay.
+multi-head attention at $H = 1$ heads of head dimension $64$ and
+a channel-mix feed-forward dimension of $256$. Position is
+encoded by a fixed sinusoidal positional encoding of dimension
+$d_{\text{model}}$ (sin on even channels, cos on odd, with
+$\mathrm{max\_len} = 8000$) added to the token embedding before
+the encoder stack; ordering is enforced inside the attention
+block by a causal mask. All cohort cells use AdamW with peak
+learning rate $3 \times 10^{-4}$, $1000$-step linear warmup, and
+cosine decay.
 
 \section{Hardware environment}\label{app:setup:hw}
 
