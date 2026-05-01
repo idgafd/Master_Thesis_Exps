@@ -8,30 +8,40 @@ state as a bounded-dimensional recurrence, and the family has moved
 into production-substrate scale on recent industrial deployments and
 research efforts, including MiniMax-01~\cite{li2025minimax01},
 Tencent's Hunyuan-TurboS~\cite{liu2025hunyuanturbos}, NVIDIA's
-Nemotron-H series~\cite{blakeman2025nemotronh}, and Apple's
-cross-architecture distillation recipe from Transformer teachers to
-Mamba students~\cite{moudgil2026distillation}. Underneath the
+Nemotron-H series~\cite{blakeman2025nemotronh}, AI21's Jamba 1.5
+hybrid Transformer-Mamba release~\cite{lenz2024jamba15}, the
+Technology Innovation Institute's Falcon Mamba pure-Mamba
+LLM~\cite{zuo2024falconmamba}, and Apple's cross-architecture
+distillation recipe from Transformer teachers to Mamba
+students~\cite{moudgil2026attentiontomamba}. Underneath this
 architectural variety, each backbone leaves different residual
 deficits along conceptually distinct but empirically interacting
-axes of expressivity. These include short-range temporal mixing,
+axes of expressivity, including short-range temporal mixing,
 associative recall under interference, and the algebraic richness
-of the recurrent transition class.
+of the recurrent transition class. The literature has been
+rediscovering these same deficits for the linear-time family
+across modalities (vision, audio, language, and formal
+complexity), but the fixes proposed in different papers tend to
+be architecture-specific and modality-bound, and have not been
+compared on a single substrate at matched compute.
 
-The literature has been rediscovering similar bottlenecks for the
-linear-time family across modalities: short-range mixing in vision
-and audio, associative recall under interference in language, the
-transition-class limit in formal complexity. The fixes proposed in
-different papers tend to be architecture-specific and modality-bound,
-and have not been compared on a single substrate at matched compute.
-This thesis takes a different route. We treat each bottleneck as a
-structural deficit located on a specific axis of the diagonal-class
-recurrence operator, and derive a mechanism-level extension whose
-form follows from the deficit's mathematical signature. The three
-resulting mechanisms are independent derivations from the deficit
-map developed in Chapter~\ref{ch:theoretical}; they are not
-adaptations of prior fixes. Each mechanism is then deployed on three
-causal backbones at matched compute, and the transferability of its
-gains is read off the cross-architecture transfer matrix.
+Each of the rediscovered deficits is, at root, a question about
+\textit{expressiveness}: the capacity of a single recurrent
+update or kernel to encode the state-update and data-mixing
+dynamics that a task structurally requires. A short-range mixing
+deficit, an associative-recall deficit, and a transition-class
+limit are not three independent problems but three faces of the
+same expressiveness question evaluated against three different
+task structures. This thesis takes that view as its starting
+point. We treat each deficit as a structural gap on a specific
+axis of the diagonal-class recurrence operator, and derive a
+mechanism-level extension whose form follows from the deficit's
+mathematical signature. The three resulting mechanisms are
+independent derivations from the deficit map developed in
+Chapter~\ref{ch:theoretical}; they are not adaptations of prior
+fixes. Each mechanism is then deployed on three causal backbones
+at matched compute, and the transferability of its gains is read
+off the cross-architecture transfer matrix.
 
 \section{Contributions}
 
