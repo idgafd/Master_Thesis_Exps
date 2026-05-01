@@ -281,7 +281,12 @@ reappearing in this thesis on one-dimensional speech. The
 recurring observation is that linear-complexity sequence mixers,
 regardless of the algebraic structure of their transition
 operator, leave a short-range mixing deficit that an explicit
-depth-wise-convolution-class operator restores. Audio
+depth-wise-convolution-class operator restores. The same pattern
+is canonical on the Transformer side as well: the
+Conformer~\cite{gulati2020conformer} establishes the
+convolution-augmented attention block as the de facto ASR
+encoder by interleaving a depthwise-convolution module with the
+self-attention module in each layer. Audio
 Mamba~\cite{erol2024audiomamba} provides the cleanest
 counterpoint: a self-attention-free bidirectional state-space
 model for audio classification that does not introduce explicit

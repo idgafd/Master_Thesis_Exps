@@ -5,14 +5,16 @@
 Linear-time recurrent sequence models share a common architectural
 family. RWKV, Mamba-2, and Linear Attention all express their hidden
 state as a bounded-dimensional recurrence, and the family has moved
-into production-substrate scale on recent industrial deployments and
-research efforts, including MiniMax-01~\cite{li2025minimax01},
+into production-substrate scale on recent industrial deployments
+and research efforts, including MiniMax-01~\cite{li2025minimax01},
 Tencent's Hunyuan-TurboS~\cite{liu2025hunyuanturbos}, NVIDIA's
-Nemotron-H series~\cite{blakeman2025nemotronh}, AI21's Jamba 1.5
-hybrid Transformer-Mamba release~\cite{lenz2024jamba15}, the
+Nemotron-H series~\cite{blakeman2025nemotronh}, AI21 Labs' Jamba
+hybrid Transformer-Mamba release~\cite{lieber2024jamba}, the
 Technology Innovation Institute's Falcon Mamba pure-Mamba
-LLM~\cite{zuo2024falconmamba}, and Apple's cross-architecture
-distillation recipe from Transformer teachers to Mamba
+LLM~\cite{zuo2024falconmamba}, the Evo~2 genomic foundation model
+on a StripedHyena-2 linear-time substrate~\cite{brixi2026evo2},
+and Apple's cross-architecture distillation recipe from
+Transformer teachers to Mamba
 students~\cite{moudgil2026attentiontomamba}. Underneath this
 architectural variety, each backbone leaves different residual
 deficits along conceptually distinct but empirically interacting

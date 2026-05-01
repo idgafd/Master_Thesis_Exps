@@ -254,4 +254,9 @@ distributed training to fit the bidirectional complex-attention
 scan within a practical wall-clock window; the gradient
 accumulation pattern was set to keep the effective batch budget at
 the matrix-wide $300$~s of audio. The software stack consists of
-PyTorch with CUDA acceleration.
+PyTorch with CUDA acceleration; the Mamba-2 backbone uses the
+official SSD CUDA kernel from the
+\texttt{state-spaces/mamba} reference
+repository~\cite{gu2024mambacode}, and the RWKV-6 backbone uses
+the reference time-mix and channel-mix block implementations
+from the RWKV Foundation~\cite{rwkv2024block}.
