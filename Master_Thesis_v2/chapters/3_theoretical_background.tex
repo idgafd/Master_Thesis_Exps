@@ -1,0 +1,813 @@
+\chapter{Theoretical Background}\label{ch:theoretical}
+
+This chapter establishes the mathematical foundation on which the
+proposed mechanisms of Chapter~\ref{ch:proposed} are built.
+Section~\ref{sec:axes} introduces the axis decomposition of linear-time
+recurrent expressivity that frames the entire thesis.
+Section~\ref{sec:backbones} formalises the three causal linear-time
+backbones used in the experimental matrix within a unified recurrence
+template, and identifies the structural axis on which they differ.
+Section~\ref{sec:lion} presents the parallel form used for
+bidirectional adaptation, together with the decay-class taxonomy that
+motivates a controlled experiment on the Linear Attention backbone.
+Section~\ref{sec:primitives} introduces three mathematical primitives,
+drawn from prior literature on different substrates, that serve as the
+building blocks for the proposed mechanisms. Section~\ref{sec:bounds}
+closes the chapter by recalling the formal complexity-class boundaries
+that bracket the diagonal class within which the three proposed
+mechanisms operate.
+
+\section{Axis decomposition of linear-time RNN expressivity}\label{sec:axes}
+
+The expressivity of a sequence-modelling architecture is sometimes
+treated as a single-scalar property, with one architecture said to be
+\textit{more expressive} than another. This thesis adopts a different
+position. The expressivity of causal linear-time recurrent
+architectures does not collapse to a single scalar: it decomposes
+into orthogonal axes, each exercised by a different task structure,
+and a mechanism that extends the function class along one axis does
+not generally convert into measured gain on a task whose structural
+prior does not exercise that axis. The decomposition is the
+conceptual scaffold around which the rest of the thesis is organised.
+
+Three axes are central to the thesis and are exercised by the
+empirical matrix reported in Chapter~\ref{ch:experiments}. Two
+additional axes are mentioned for completeness, principally to
+position the closed-cell evidence that accompanies the main matrix,
+but are not exercised on the matrix's primary probes.
+
+The first axis concerns the architecture's capacity to encode
+short-range temporal structure. The relevant patterns include
+phoneme-to-syllable transitions in speech, formant trajectories in
+voiced segments, $n$-gram structure in language, and adjacent-pixel
+structure in vision. The structural deficit is shared across the
+linear-time recurrent family that Section~\ref{sec:backbones}
+formalises: each token sees only its own embedding plus the running
+recurrent state, and the state cannot encode short-range
+neighbourhood information as efficiently as an explicit local
+operator can (Section~\ref{sec:primitives:msdc}). The diagnostic
+property of an axis-one task is that improvements in short-range
+mixing translate into reductions of the primary metric. For the
+ASR probes used in this thesis, the primary metric is character error
+rate at post-subsampling sequence lengths $T \le 500$. Linear-time
+architectures exhibit characteristic failure modes on axis-one tasks,
+most visibly through the scaling difficulties of Vision
+Mamba~\cite{zhu2024visionmamba} on image classification beyond
+modest parameter counts and through the documented gap of Audio
+Mamba~\cite{erol2024audiomamba} on speech recognition in the
+absence of explicit local mixing.
+
+The second axis concerns the architecture's capacity to store and
+retrieve key-value associations when many of the keys are similar.
+Recurrent linear-time architectures compress the history into a
+bounded state of dimension $d$: when the number of stored pairs $N$
+approaches or exceeds $d$, similar keys overlap in the state and
+become difficult to disentangle at readout. Softmax attention, by
+contrast, performs a non-collapsing pairwise comparison and does not
+exhibit the same interference pattern at the same scale. The
+diagnostic property of an axis-two task is the structured saturation
+of recall accuracy as $N/d$ grows. The Multi-Query Associative
+Recall benchmark of~\citet{arora2023zoology}, designed exactly for
+this property, sweeps the sequence length $T \in \{64, 256, 1024\}$
+with the number of stored pairs growing in proportion, and is the
+cleanest available probe for axis two in the linear-time recurrent
+literature.
+
+The third axis concerns the architecture's capacity to track
+discrete state across arbitrary sequence length, including the word
+problems of finite groups. Diagonal linear-time recurrences,
+encompassing all three backbones of Section~\ref{sec:backbones} and
+the block-complex extension of Section~\ref{sec:primitives:dho}, are
+bounded above by the constant-depth threshold-circuit class
+$\mathsf{TC}^{0}$~\cite{merrill2024illusion}. The result
+of~\citet{sarrof2024expressive} sharpens this further: complex-
+diagonal state-space models of depth $L$ cannot represent the word
+problem for any non-Abelian group whose subnormal Abelian-factor
+series exceeds length $L$, regardless of width. Axis three is
+therefore bracketed by formal complexity theory and is out of scope
+for the mechanisms proposed in this thesis. The diagonal-plus-low-rank
+lift of DeltaNet, DeltaProduct, and
+RWKV-7~\cite{schlag2021deltanet, yang2024deltanet, peng2025rwkv7} is
+the principal route by which a recurrent linear-time architecture
+crosses the formal class boundary, and is referenced here to mark
+the boundary rather than exercised. Section~\ref{sec:bounds} returns
+to this axis in detail.
+
+Two further axes appear in the related-work map of the thesis but
+are not central to the proposed mechanisms. The fourth axis,
+long-range information flow at sequence lengths far beyond the
+chunk-local window of standard linear-time recurrent architectures,
+has its own line of work that includes log-linear
+attention~\cite{guo2025loglinear} and chunk-level sparse retrieval
+mechanisms~\cite{hou2025rwkvx, hu2025hsa}; these address regimes
+that exceed the operating range of the discovery probe used in this
+thesis ($T \le 500$). The fifth axis, content-adaptive feature-map
+richness through polynomial value lifts and channel-side
+cross-products, has been explored across a saturated cluster of
+polynomial-mixer parametrisations~\cite{mongaras2025expressiveness, picard2026pom, hammoud2025dont, zhang2025hla}.
+The closed-cell evidence reported in Chapter~\ref{ch:experiments}
+contains mechanisms that target axes four and five and that activate
+under stochastic gradient descent without converting into measured
+gain; in the synthesis chapter they are interpreted as axis-mismatch
+evidence rather than as mechanism failures.
+
+Across the three primary axes, the thesis observes a single
+empirical regularity that the synthesis chapter formalises as a
+predictive law: a mechanism's gain on a given task is proportional
+to the residual structural deficit the architecture leaves uncovered
+along the axis the mechanism targets, and is null when the mechanism
+extends the function class along an axis the task does not
+exercise. The remainder of the thesis is organised around this law.
+Chapter~\ref{ch:proposed} introduces three proposed mechanisms, each
+targeting a specific axis. Chapter~\ref{ch:experiments} reports the
+cross-architecture transfer pattern on the empirical matrix, which
+exhibits the law in three different signatures across the three
+mechanisms.
+
+\begin{table}[t]
+\centering
+\small
+\caption[Axes of expressivity for causal linear-time RNNs]{Axes of
+expressivity considered in this thesis, with the diagnostic property
+that distinguishes each axis, the task or task-family that exercises
+it, and the role each axis plays in the empirical matrix. Axes one,
+two, and three are exercised by the matrix; axes four and five are
+mentioned for completeness and contextualisation of closed-cell
+evidence.}
+\label{tab:axes}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{0.4cm} p{3.0cm} X p{3.0cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Axis} & \textbf{Diagnostic property} & \textbf{Task / probe} \\
+\midrule
+1 &
+Short-range temporal hierarchy &
+Improvements in explicit short-range mixing translate into
+reductions of the primary metric &
+ASR (LibriSpeech, Common Voice) \\
+\addlinespace
+2 &
+Associative memory under interference &
+Recall accuracy saturates as the number of stored key-value pairs
+$N$ approaches the state dimension $d$ &
+MQAR with $T \in \{64, 256, 1024\}$ \\
+\addlinespace
+3 &
+State-tracking, non-Abelian permutation &
+Architecture position relative to the $\mathsf{NC}^{1}$ /
+$\mathsf{PNC}^{1}$ class boundary &
+$S_{n}$ permutation, Dyck-$k$ ($k \ge 2$); out of scope \\
+\addlinespace
+4 &
+Long-range information flow &
+Capacity at $T$ far beyond the chunk-local window &
+NIAH, BABILong; out of scope at $T \le 500$ \\
+\addlinespace
+5 &
+Content-adaptive feature-map richness &
+Channel-side polynomial-lift expressivity &
+Polynomial-mixer benchmarks; closed-cell only \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Linear-time recurrence: unified formulation and three backbones}\label{sec:backbones}
+
+Causal RWKV-6, Mamba-2, and Linear Attention are presented in the
+literature with distinct notations and differing emphases on
+continuous-time, recurrent, or kernel-attention interpretations. This
+section formalises the three within a single unified discrete-time
+recurrence template, which makes their structural differences visible
+at a glance and allows the rest of the thesis to refer to the three
+as variants of a single object. Each backbone's canonical form is
+reproduced as it appears in the source paper that introduced the
+architecture, with notation alignment performed only to make the
+unified template readable.
+
+The most general discrete-time linear recurrence considered in this
+thesis takes the form
+\begin{equation}\label{eq:unified}
+h_{t} = A_{t} \odot h_{t-1} + B_{t} \, x_{t}, \qquad y_{t} = C_{t}^{\top} h_{t},
+\end{equation}
+where $h_{t}$ is the hidden state, $A_{t}$ is an elementwise (or
+diagonal-structured) transition operator at step $t$, $B_{t}$ is the
+input-write operator, $C_{t}$ is the readout direction, and $\odot$
+denotes the elementwise product. The notation matches the formal SSM
+definition of~\citet{sarrof2024expressive} and the discrete S6 form
+of~\citet{dao2024transformers}, in both of which the bar notation
+distinguishing continuous and discrete parameters is intentionally
+dropped to focus on the discrete dynamics. The three backbones used
+in the experimental matrix instantiate
+equation~(\ref{eq:unified}) with different choices of $A_{t}$,
+$B_{t}$, and the structure of $h_{t}$. The structural axis on which
+they differ is primarily the transition operator $A_{t}$, which
+varies from the trivial accumulator $A_{t} = I$ of Linear Attention,
+through the per-channel data-dependent diagonal of RWKV-6, to the
+input-modulated scalar-identity form of Mamba-2 SSD.
+
+\subsection{Linear Attention as a pure accumulator}\label{sec:backbones:la}
+
+The Linear Attention architecture of~\citet{katharopoulos2020transformers}
+expresses causal attention as a recurrence with bounded state. With
+$\phi(\cdot)$ a positive feature map applied to the keys and queries,
+the recurrence is
+\begin{equation}\label{eq:la-state}
+S_{t} = S_{t-1} + \phi(K_{t}) V_{t}^{\top}, \qquad
+z_{t} = z_{t-1} + \phi(K_{t}),
+\end{equation}
+\begin{equation}\label{eq:la-output}
+y_{t} = \frac{\phi(Q_{t})^{\top} S_{t}}{\phi(Q_{t})^{\top} z_{t}},
+\end{equation}
+where $S_{t} \in \mathbb{R}^{d_{K} \times d_{V}}$ is the matrix-valued
+state, $z_{t} \in \mathbb{R}^{d_{K}}$ is the normalisation
+accumulator, and $K_{t}, V_{t}, Q_{t}$ are the per-token key, value,
+and query projections of the input $x_{t}$. The state is a pure
+accumulator: each token write is added to the running sum without any
+attenuation of earlier writes.
+
+Within the unified template of equation~(\ref{eq:unified}), Linear
+Attention corresponds to the trivial transition $A_{t} = I$, an
+input-write operator $B_{t} = \phi(K_{t})$ that produces a rank-one
+outer-product update with $V_{t}$, and a separable readout direction
+$C_{t} = \phi(Q_{t})$ applied with a normalisation step over $z_{t}$.
+Among the three backbones, Linear Attention leaves the largest
+residual structural deficit: the architecture has no native primitive
+that bounds the magnitude of the accumulator, no native primitive
+that selectively attenuates earlier writes, and no explicit local
+mixing on the input side.
+
+\subsection{RWKV-6 with per-channel data-dependent decay}\label{sec:backbones:rwkv6}
+
+The RWKV-6 architecture, introduced as Finch
+in~\citet{peng2024eaglefinch}, builds on the matrix-state RWKV-5/6
+family with a per-channel data-dependent decay. The Time Mix block
+computes a state update and a readout in two coupled equations:
+\begin{equation}\label{eq:rwkv6-state}
+s_{t} = \mathrm{diag}(w_{t}) \cdot s_{t-1} + k_{t}^{\top} v_{t},
+\end{equation}
+\begin{equation}\label{eq:rwkv6-readout}
+\mathrm{wkv}_{t} = s_{t-1} + \mathrm{diag}(u) \cdot k_{t}^{\top} v_{t},
+\end{equation}
+where $s_{t} \in \mathbb{R}^{(D/h) \times (D/h)}$ is the per-head
+matrix-valued state, $w_{t} \in \mathbb{R}^{D/h}$ is the per-channel
+data-dependent decay vector, $u \in \mathbb{R}^{D/h}$ is a static
+bonus vector applied to the current rank-one outer product, and
+$k_{t}^{\top} v_{t}$ is the rank-one write at step $t$. Note the
+recurrence order: the readout $\mathrm{wkv}_{t}$ uses the previous
+state $s_{t-1}$ together with the bonus on the current write, and the
+state then advances to $s_{t}$ for the next step.
+
+The decay vector $w_{t}$ is data-dependent. It is produced by a
+data-dependent linear interpolation of $x_{t}$ and $x_{t-1}$,
+followed by a low-rank LoRA-style projection and a stabilising
+double-exponential map:
+\begin{equation}\label{eq:rwkv6-decay}
+d_{t} = \mathrm{lora}_{d}\!\big(\mathrm{ddlerp}_{d}(x_{t}, x_{t-1})\big),
+\qquad w_{t} = \exp\!\big({-}\exp(d_{t})\big),
+\end{equation}
+where $\mathrm{ddlerp}_{\ast}(a, b) = a + (b - a) \odot \mathrm{lora}_{\ast}\!\big(a + (b - a) \odot \mu_{x}\big)$
+is the Finch data-dependent linear-interpolation operator and
+$\mathrm{lora}_{\ast}(x) = \lambda_{\ast} + \tanh(x A_{\ast}) B_{\ast}$
+is its low-rank residual core, with $\mu_{x}$ and $\lambda_{\ast}$
+trainable vectors and $A_{\ast}, B_{\ast}$ trainable low-rank
+projections. The double-exponential map ensures $w_{t} \in (0, 1)^{D/h}$
+without requiring an explicit clamp.
+
+Within the unified template of equation~(\ref{eq:unified}), RWKV-6
+corresponds to a transition $A_{t} = \mathrm{diag}(w_{t})$ that is
+diagonal and per-token data-dependent, an input-write operator that
+produces the rank-one outer product $k_{t}^{\top} v_{t}$, and a
+readout that includes the static bonus $\mathrm{diag}(u)$ in addition
+to the previous-state component $s_{t-1}$. The architecture's
+distinctive feature, relative to Linear Attention, is that decay is
+both present and per-channel data-dependent, which gives the recurrent
+state a native mechanism for selectively attenuating earlier writes
+on a per-channel basis.
+
+\subsection{Mamba-2 with input-modulated scalar transitions}\label{sec:backbones:mamba2}
+
+Mamba-2, introduced in~\citet{dao2024transformers}, refines the
+selective state-space model of~\citet{gu2023mamba} with the
+structured state-space duality (SSD) framework. The general
+selective recurrence has the form
+\begin{equation}\label{eq:mamba2-s6}
+h_{t} = A_{t} h_{t-1} + B_{t} x_{t}, \qquad y_{t} = C_{t}^{\top} h_{t},
+\end{equation}
+where $A_{t}, B_{t}, C_{t}$ are the discrete (per-step) parameters of
+the SSM. The SSD structural restriction sets $A_{t} = a_{t} I$ for a
+scalar $a_{t} \in \mathbb{R}$ and the identity matrix $I$, which is
+the formal step that connects Mamba-2 to masked kernel attention with
+one-semiseparable masks~\cite[Section~3]{dao2024transformers}.
+Substituting the restriction into equation~(\ref{eq:mamba2-s6}) yields
+\begin{equation}\label{eq:mamba2-ssd}
+h_{t} = a_{t} \cdot h_{t-1} + B_{t} x_{t}, \qquad y_{t} = C_{t}^{\top} h_{t}.
+\end{equation}
+
+The scalar $a_{t}$ is parameterised by an input-dependent step size
+$\Delta_{t}$ and an underlying continuous parameter $\mathring{A}$
+through a zero-order-hold discretisation
+of~\citet[eq.~zoh]{gu2023mamba}: $a_{t} = \exp(\Delta_{t} \mathring{A})$.
+The selective step size $\Delta_{t}$ is itself input-dependent through
+a low-rank linear projection followed by a softplus activation:
+\begin{equation}\label{eq:mamba2-delta}
+\Delta_{t} = \mathrm{softplus}\!\Big(\mathsf{P} + \mathrm{Broadcast}_{D}\!\big(\mathrm{Linear}_{1}(x_{t})\big)\Big),
+\end{equation}
+where $\mathsf{P}$ is a learnable per-channel bias parameter and
+$\mathrm{Linear}_{1}(x_{t})$ projects the input to a scalar that is
+broadcast across the channel dimension before being added to the bias.
+The discrete input-write parameter $B_{t}$ and readout direction
+$C_{t}$ are similarly produced by input-dependent linear projections
+$s_{B}(x_{t}) = \mathrm{Linear}_{N}(x_{t})$ and $s_{C}(x_{t}) = \mathrm{Linear}_{N}(x_{t})$~\cite{gu2023mamba}.
+
+Within the unified template of equation~(\ref{eq:unified}), Mamba-2
+corresponds to a transition $A_{t} = a_{t} I$ that is structurally
+restricted to the scalar-identity form, with the scalar magnitude
+$a_{t}$ controlled by a single per-token data-dependent step size
+$\Delta_{t}$. The input-write parameter $B_{t}$ and readout direction
+$C_{t}$ are also input-dependent through low-rank projections of
+$x_{t}$. The architecture's distinctive feature, relative to RWKV-6,
+is that the selectivity passes through a single scalar per token
+rather than a per-channel decay vector, which simplifies the
+state-space duality with kernel attention at the cost of removing
+per-channel decay diversity from the transition operator.
+
+\subsection{Architecture-deficit map}\label{sec:backbones:deficit}
+
+The three instantiations differ along the structural axis of the
+transition operator and along the input-write geometry, and each
+leaves a different residual deficit uncovered. Linear Attention has
+no native decay and no explicit local mixing, and the unbounded
+accumulator implies that interference between similar keys
+accumulates without any architectural correction. RWKV-6 introduces
+per-channel data-dependent decay, which addresses the absent-state-
+attenuation deficit on Linear Attention's terms, but its rank-one
+outer-product writes provide no structural mechanism for active
+interference cancellation between correlated keys. Mamba-2 introduces
+an input-dependent scalar transition $a_{t}$ that selects how
+strongly each token write persists, partially closing the
+content-adaptive routing deficit, but the SSD scalar-identity
+restriction means the transition does not differentiate per-channel
+decay rates, and the architecture has no native interference-
+cancellation mechanism either. None of the three backbones has an
+explicit input-side local-mixing operator at the post-subsampling
+scale relevant to short-range temporal hierarchy.
+
+The proposed mechanisms of Chapter~\ref{ch:proposed} target these
+residual deficits one at a time. The Multi-Scale Depthwise
+Convolution mechanism, which builds on the input-side local-mixing
+primitive of Section~\ref{sec:primitives:msdc}, addresses the
+short-range temporal hierarchy deficit shared by all three backbones.
+The Damped Harmonic Oscillator mechanism, which builds on the
+block-complex transition primitive of
+Section~\ref{sec:primitives:dho}, targets the damped-oscillation
+sub-axis on architectures whose native transition is real-diagonal
+or trivial. The Chunked Value Decorrelation mechanism, which builds
+on the key-similarity preconditioning primitive of
+Section~\ref{sec:primitives:cvd}, addresses the absent
+interference-cancellation deficit on the linear-time recurrent
+substrate.
+
+\section{Bidirectional adaptation: the parallel form and decay taxonomy}\label{sec:lion}
+
+The three causal linear-time backbones formalised in
+Section~\ref{sec:backbones} propagate state in one direction, which
+suits streaming and autoregressive workloads but discards future
+context that is available in offline settings such as full-utterance
+speech recognition. The related-work chapter surveyed three
+structurally distinct strategies for adapting an existing causal
+architecture to bidirectional input access: a mechanism-level
+parallel attention, an operator-level forward-plus-backward scan, and
+an ordering-level per-layer scan alternation. This thesis adopts the
+mechanism-level strategy and instantiates the LION framework
+of~\citet{afzal2025linear} as a unified parallel adaptation across
+the three backbones. The choice is motivated by the structural
+property that the parallel form inherits the causal mechanism
+vocabulary directly and does not double the serial compute per layer;
+an empirical comparison against the operator-level alternatives of
+Vision-RWKV's Bi-WKV scan~\cite{duan2024visionrwkv} and Vision
+Mamba's forward-and-backward block pairing~\cite{zhu2024visionmamba}
+is reserved for the experimental chapter.
+
+The mathematical construction of LION starts from the observation
+that causal linear attention, once written as a matrix-vector
+operation rather than a per-token recurrence, takes the form
+$\mathbf{Y} = \mathrm{Scale}\!\big((\mathbf{Q} \mathbf{K}^{\top}) \odot \mathbf{M}^{C}\big) \mathbf{V}$,
+where $\mathbf{M}^{C}$ is a lower-triangular causal mask whose
+off-diagonal entries encode the cumulative decay between any pair of
+positions. Writing the entry of $\mathbf{M}^{C}$ in row $i$ and column
+$j$ as $\mathbf{M}^{C}_{ij} = \prod_{k = j+1}^{i} \lambda_{k}$ for
+$i > j$ makes explicit that the causal mask is a product of per-step
+decay factors $\lambda_{k}$. The bidirectional generalisation drops
+the lower-triangular constraint and uses a symmetric mask whose
+entry between positions $i$ and $j$ equals the product of decay
+factors between them in either direction:
+\begin{equation}\label{eq:lion-mask}
+\mathbf{M}_{ij} = \begin{cases}
+\prod_{k = j}^{i - 1} \lambda_{k} & i > j, \\
+1 & i = j, \\
+\prod_{k = i + 1}^{j} \lambda_{k} & i < j.
+\end{cases}
+\end{equation}
+The Full Linear Attention output is then
+\begin{equation}\label{eq:lion-fullatt}
+\mathbf{Y} = \mathrm{Scale}\!\big((\mathbf{Q} \mathbf{K}^{\top}) \odot \mathbf{M}\big) \mathbf{V},
+\end{equation}
+where $\odot$ denotes the elementwise product and $\mathrm{Scale}(\cdot)$
+is a row-wise normalisation step. The mask $\mathbf{M}$ admits a
+rank-one semi-separable factorisation~\cite{afzal2025linear} that
+allows efficient construction via cumulative sums in log-space, which
+keeps the parallel implementation tractable at large sequence lengths
+while paying the quadratic memory footprint of the bidirectional
+access pattern.
+
+The structure of $\lambda_{k}$ defines a taxonomy of LION variants.
+Three named instantiations appear in the LION paper, each
+corresponding to a distinct causal backbone via the natural
+parallel-form mapping:
+\begin{itemize}
+    \item \textbf{LION-LIT}: $\lambda_{k} = 1$ for all $k$. The mask
+      becomes the all-ones matrix and
+      equation~(\ref{eq:lion-fullatt}) reduces to the bidirectional
+      analogue of Vanilla Linear
+      Attention~\cite{katharopoulos2020transformers}. No decay.
+    \item \textbf{LION-S}: $\lambda_{k} = \sigma(W x_{k} + b)$, where
+      $\sigma$ is the sigmoid activation (with a shifted SiLU
+      pre-activation in the reference implementation), $W$ and $b$
+      are learnable, and the decay is per-token data-dependent.
+      The variant is the bidirectional extension of Gated Random
+      Feature Attention and is described as inspired by the
+      input-dependent selectivity of Mamba-2.
+    \item \textbf{Learnable fixed decay}: $\lambda_{k} = \lambda$
+      for a single learnable scalar shared across positions, which
+      makes $\mathbf{M}$ a Kac-Murdock-Szego matrix. This is the
+      natural parallel form for architectures with a single global
+      decay rate.
+\end{itemize}
+
+For the experimental matrix of this thesis, the natural parallel-form
+mapping per causal backbone is as follows. RWKV-6 inherits LION-S,
+since the WKV decay vector $w_{t}$ is per-channel data-dependent
+through equation~(\ref{eq:rwkv6-decay}). Mamba-2 inherits LION-S,
+since the scalar $a_{t}$ is per-token data-dependent through the
+selective step size $\Delta_{t}$ of equation~(\ref{eq:mamba2-delta}).
+Linear Attention inherits LION-LIT, since the causal accumulator has
+$A_{t} = I$ and therefore no decay to inherit. The matrix
+additionally reports a controlled LION-S deployment on the Linear
+Attention backbone, in which a per-token sigmoid decay is introduced
+that is not present in the underlying causal backbone. The motivation
+for this controlled deployment is structural and is examined in the
+remainder of this section.
+
+The role of decay in the bidirectional setting is more constraining
+than in the causal setting. In the causal recurrence, the unbounded
+accumulator of Linear Attention is acceptable because the readout
+normalisation $z_{t} = \sum_{j \le t} \phi(K_{j})$ grows in proportion
+to the state, and the ratio in equation~(\ref{eq:la-output}) remains
+bounded. In the parallel bidirectional setting, the row sums of the
+unmasked $\phi(\mathbf{Q}) \phi(\mathbf{K})^{\top}$ block grow as
+$O(T \cdot d_{K})$, and the absence of a decay structure on
+$\mathbf{M}$ means the value tensor enters the output proportional to
+a sum that scales linearly in sequence length without architectural
+attenuation. The LION-LIT instantiation remains a correct definition,
+but a downstream mechanism that operates on this output, such as the
+value-decorrelation primitive of Section~\ref{sec:primitives:cvd},
+loses its conditioning guarantee when applied to a substrate whose
+accumulation is unbounded.
+
+This observation is the structural reason why the experimental matrix
+of this thesis reports both LION-LIT and LION-S on the Linear
+Attention backbone. LION-LIT is the table-default instantiation per
+the natural parallel-form mapping, and serves as a controlled
+baseline for the bidirectional behaviour of Linear Attention without
+decay. LION-S, in contrast, adds a per-token sigmoid decay that is
+not present in the underlying causal backbone, and serves as a
+controlled experiment for the question of whether decay is
+structurally required for the value-decorrelation mechanism of
+Chapter~\ref{ch:proposed} to engage productively in the bidirectional
+setting. The empirical outcome of this comparison is reported in
+Chapter~\ref{ch:experiments}.
+
+\section{Mathematical primitives for mechanism design}\label{sec:primitives}
+
+Chapter~\ref{ch:proposed} introduces three proposed mechanisms designed
+to address structural deficits of the three causal linear-time backbones
+formalised in Section~\ref{sec:backbones}. Each proposed mechanism
+builds on a mathematical primitive that has been previously introduced
+in the literature, in a setting that differs from the one this thesis
+exercises. This section presents the three primitives in their original
+formulations and defers the linear-time-recurrent instantiations to the
+proposed-solution chapter.
+
+The three primitives are: the input-side multi-scale local-mixing
+pattern, independently rediscovered across vision, audio, and language
+settings; the block-complex transition with Rayleigh dissipation,
+drawn from analytical mechanics and Lie-group theory; and the
+key-similarity preconditioning operator introduced for softmax
+attention by Duvvuri et al. They underpin, respectively, the
+Multi-Scale Depthwise Convolution, Damped Harmonic Oscillator, and
+Chunked Value Decorrelation mechanisms of Chapter~\ref{ch:proposed}.
+
+\subsection{Multi-scale depthwise dilated convolution}\label{sec:primitives:msdc}
+
+The structural deficit is shared across the linear-time recurrent
+family: each token sees only its own embedding plus the running
+recurrent state, and that state cannot encode short-range structure as
+efficiently as an explicit local operator can. The deficit has been
+documented separately in vision through the scaling difficulties of
+Vision Mamba~\cite{zhu2024visionmamba} beyond modest parameter counts,
+in audio classification, and in long-context language modelling. The
+literature converges on a single functional pattern: an input-side
+local operator that gives every token explicit access to a short-range
+neighbourhood before the recurrent core processes the sequence.
+
+Four instances of the pattern appear across the linear-time literature,
+differing in syntactic form rather than in function.
+Vision-RWKV~\cite{duan2024visionrwkv} introduces a quad-directional
+shift, named Q-Shift, that splits the channel dimension into four
+groups and shifts each group by one position in one of $\{$up, down,
+left, right$\}$ before concatenation:
+\begin{equation}\label{eq:qshift-shift}
+\begin{split}
+X^{\dagger}[h, w] = \mathrm{Concat}\big(
+&X[h{-}1,\, w,\, 0{:}C/4],\; X[h{+}1,\, w,\, C/4{:}C/2], \\
+&X[h,\, w{-}1,\, C/2{:}3C/4],\; X[h,\, w{+}1,\, 3C/4{:}C]\big)
+\end{split}
+\end{equation}
+\begin{equation}\label{eq:qshift-mix}
+\mathrm{Q\text{-}Shift}(X) = X + (1 - \mu) \, X^{\dagger},
+\end{equation}
+with $\mu$ a learnable per-channel scalar that controls the residual
+mixing strength. The connectivity pattern itself is fixed; only the
+mixing weight is learned.
+
+LiT~\cite{wang2025lit} attaches a depthwise convolution to the value
+path of a linear attention layer,
+\begin{equation}\label{eq:lit-vconv}
+V \leftarrow \mathrm{DWConv}_{k}(V),
+\end{equation}
+introducing a single learnable kernel of size $k$ on each channel.
+Compared with Q-Shift, the operator is fully learned but operates at a
+single dilation.
+
+The non-attention language model of Kiruluta et
+al.~\cite{kiruluta2025breaking} generalises the fixed-shift and
+single-convolution forms to a parallel bank of dilated convolutions:
+\begin{equation}\label{eq:multi-resolution}
+Z_{k} = \mathrm{Conv1d}(x,\, \mathrm{dilation} = d_{k}), \qquad k \in \{1, \ldots, K\},
+\end{equation}
+with the parallel branches combined typically through summation or
+concatenation. The dilation set is described in the source as powers
+of two, such as $1, 2, 4$, and so on, and the specific combination
+scheme is left unspecified beyond the requirement that the parallel
+branches feed back into the residual stream.
+
+AudioRWKV~\cite{xiong2025audiorwkv} attaches a two-dimensional
+depthwise-separable ConvShift, instantiated as a learnable variant of
+Q-Shift, to the RWKV-7 backbone. The operator builds a local residual
+that feeds into the decay, key, and value paths of the time-mix
+block, and the paper's ablation reports a positive contribution from
+the ConvShift in addition to the contribution from the underlying
+Q-Shift.
+
+The four instances differ on three orthogonal axes. The first is
+whether the local connectivity pattern is fixed (Q-Shift, ConvShift)
+or learned (LiT, multi-resolution). The second is whether multiple
+spatial scales are aggregated in parallel (multi-resolution,
+ConvShift) or a single scale is used (Q-Shift, LiT). The third is the
+path on which the operator is applied: the input side, the value
+path, or all three of the key, value, and decay paths. The common
+functional pattern across the four is the introduction of an explicit
+short-range mixing operator on top of the linear-time recurrent core,
+restoring local inductive bias that the recurrence alone cannot
+express. Chapter~\ref{ch:proposed} introduces the specific
+instantiation used in this thesis, including the dilation schedule,
+kernel size, mixing-weight parameterisation, and an initialisation
+correction that arose during the discovery phase of the experimental
+matrix.
+
+\subsection{Block-complex transitions and Rayleigh dissipation}\label{sec:primitives:dho}
+
+The transition operator of a linear-time recurrent architecture
+determines the function class the hidden state can express across
+time. RWKV-6's per-channel decay produces a real-diagonal transition
+in $(\mathbb{R}_{+})^{K}$, which acts on each state channel as
+multiplicative damping. Linear Attention's pure accumulator
+corresponds to the trivial case $A_{t} = I$, which sits inside the
+same real-diagonal class. Each of these is a special case of a
+real-diagonal transition: state channels evolve independently, with
+no representation of phase. The function class cannot represent
+oscillatory dynamics, which restricts its capacity to model phenomena
+including formant trajectories in voiced speech, rotational
+trajectories in handwriting and motion, and any other process whose
+state lives on a circle rather than a half-line.
+
+The natural extension of the real-diagonal class that admits
+oscillation while remaining inside the diagonalisable matrix family
+is the block-complex transition. The standard reference for the
+rotation group $SO(2)$ and its embedding into matrix Lie-group theory
+is~\citet[Chapter 1]{hall2015lie}. Replacing each pair of state
+channels with a two-vector that is rotated by an angle $\theta$ and
+scaled by a damping factor $e^{-\lambda}$ yields the per-block
+transition
+\begin{equation}\label{eq:block-complex}
+G_{b} = e^{-\lambda} \, R(\theta), \qquad R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}.
+\end{equation}
+Stacking $K/2$ such two-by-two blocks produces a block-diagonal
+transition in $SO(2)^{K/2} \times \mathbb{R}_{+}^{K/2}$. This is the
+smallest natural extension of the real-diagonal $(\mathbb{R}_{+})^{K}$
+class that admits damped oscillation. Each block has eigenvalues
+$r e^{\pm i \theta}$ with $r = e^{-\lambda}$, placing the transition
+inside the complex-diagonal SSM class characterised formally
+by~\citet{sarrof2024expressive}. The block-complex form is therefore
+a structured subset of the complex-diagonal class and inherits the
+formal-language properties of that class as recalled in
+Section~\ref{sec:bounds}.
+
+Allowing the rotation angle $\theta$ to grow without further
+structural constraint produces phase drift across many recurrent
+steps and a sensitivity of the late-sequence state to the exact angle
+distribution at early positions. The standard physical prior that
+regulates this regime is the Rayleigh dissipation function from
+analytical mechanics~\cite[Sections 1.5 and 2.5]{goldstein2002classical},
+which couples damping to the squared angular velocity of an
+oscillator. The discrete-step analogue, applied to the per-block
+damping, takes the form
+\begin{equation}\label{eq:rayleigh}
+\lambda_{\mathrm{eff}} = \lambda_{\mathrm{raw}} + \eta \cdot \theta^{2},
+\end{equation}
+with $\eta \ge 0$ a viscosity coefficient. Higher-frequency rotations
+damp more rapidly, and the rotation budget becomes self-regulating: a
+clip on $|\theta|$ functions as a soft constraint rather than a hard
+wall, and the long-sequence behaviour of the recurrent state remains
+controlled. Setting $\eta = 0$ recovers the undamped block-complex
+transition exactly, which makes the construction zero-initialisable:
+the Rayleigh coupling reduces to the uncoupled block-complex form at
+step zero of training and engages only as $\eta$ moves under the
+gradient.
+
+Chapter~\ref{ch:proposed} introduces the data-dependence
+parameterisation of $\theta$ and the depth-graded rotation-budget
+schedule used in this thesis as the Damped Harmonic Oscillator
+mechanism, together with its three architecture-specific deployments.
+
+\subsection{Key-similarity preconditioning and value decorrelation}\label{sec:primitives:cvd}
+
+Recurrent linear-time architectures compress the history into a
+bounded state. When several stored keys are similar, their associated
+values overlap in the state and become difficult to disentangle at
+readout. The same interference pattern arises in softmax attention at
+long context lengths, where correlated keys cause the softmax
+distribution to diffuse probability mass across multiple ostensibly
+relevant tokens, degrading retrieval quality. The two settings differ
+in substrate, but share the underlying problem: a representation
+constructed from key-value pairs accumulates interference proportional
+to the correlation among the keys.
+
+A direct algebraic correction to this interference appears in the
+LUCID Attention mechanism of~\citet{duvvuri2026lucid}, which targets
+long-context retrieval inside a quadratic-complexity Transformer.
+LUCID constructs a preconditioner from key-similarity statistics in
+the reproducing kernel Hilbert space induced by the exponential
+kernel:
+\begin{equation}\label{eq:lucid-base}
+P = M \circ \exp(K K^{\top}),
+\end{equation}
+where $M$ is the causal mask, $\circ$ denotes the elementwise
+(Hadamard) product, and the exponential is applied entrywise. The
+preconditioned values $P^{-1} V$ are then combined with standard
+softmax attention weights to produce the LUCID attention output:
+\begin{equation}\label{eq:lucid-output}
+O = \mathrm{softmax}(Q K^{\top} / \sqrt{d}) \cdot P^{-1} V.
+\end{equation}
+For numerical stability and proper variance scaling, the
+implementation reported in the LUCID paper applies a row-wise RMS
+normalisation to the keys, denoted $K_{\mathrm{RN}}$, and a
+$-\sqrt{d}$ shift inside the exponential. The resulting preconditioner
+is unit-diagonal by construction:
+\begin{equation}\label{eq:lucid-rn}
+P = M \circ \exp\!\left( \frac{K_{\mathrm{RN}} K_{\mathrm{RN}}^{\top}}{\sqrt{d}} - \sqrt{d} \right),
+\end{equation}
+which improves the conditioning of $P$ at long context lengths and
+admits a direct triangular solve for $P^{-1} V$.
+
+The construction has a clean interpretation as a closed-form
+delta-rule update in the exponential-kernel reproducing kernel
+Hilbert space: applying $P^{-1}$ to $V$ removes from each value the
+components that project onto the directions of earlier keys under the
+key-similarity geometry. This is structurally analogous to the
+rank-one Householder erasure introduced by
+DeltaNet~\cite{schlag2021deltanet,yang2024deltanet}, where each
+token's update subtracts an explicit rank-one component along the
+current key, but realised in closed form across the entire sequence
+rather than online per token.
+
+The substrate of LUCID is softmax attention. The mechanism preserves
+the $O(N^{2} d)$ complexity of standard attention, its target task
+domain is multi-needle long-context retrieval, and the
+$\mathrm{softmax}(Q K^{\top} / \sqrt{d})$ factor in front of
+$P^{-1} V$ is essential to its derivation: without softmax weights,
+the operator no longer corresponds to a delta-rule update in the
+exponential-kernel reproducing kernel Hilbert space that the paper
+derives. None of these features transfer directly to the linear-time
+recurrent setting, where the full $T \times T$ attention matrix is
+never materialised, the complexity envelope is linear, and the value
+tensor enters a recurrent state update rather than an explicit
+attention sum. Chapter~\ref{ch:proposed} introduces a separate
+mechanism, the Chunked Value Decorrelation, that shares the
+key-similarity decorrelation principle of LUCID but is constructed
+for the linear-time recurrent substrate, with chunk-local linear
+systems in place of the full $T \times T$ preconditioner. The
+relationship between the two is one of shared logical motivation
+rather than direct adaptation.
+
+\section{Formal expressivity bounds and the diagonal-class scope}\label{sec:bounds}
+
+The chapter closes with a recapitulation of the formal
+complexity-class boundaries surveyed in the related-work chapter,
+with emphasis on the function-class membership of the three
+proposed mechanisms. The purpose of this section is to make
+explicit the formal scope within which the empirical matrix of
+Chapter~\ref{ch:experiments} operates rather than to re-establish
+the bounds themselves.
+
+The position of attention-based and recurrent linear-time
+architectures in the parallel-circuit hierarchy has been established
+through a connected sequence of upper-bound results that the
+related-work chapter discussed in detail.
+Hahn~\cite{hahn2020limitations} placed the first formal limit on
+hard-attention transformers, demonstrating that PARITY and Dyck-2
+are not recognisable in the limit by the family. Merrill and
+Sabharwal~\cite{merrill2023parallelism} extended the bound to
+log-precision attention, placing it strictly inside uniform
+$\mathsf{TC}^{0}$. The survey of Strobl et
+al.~\cite{strobl2024formal} unifies subsequent circuit-complexity
+and logic-based characterisations of transformer expressivity. The
+same $\mathsf{TC}^{0}$ ceiling applies to state-space models and
+linear recurrences via the result of Merrill, Petty, and
+Sabharwal~\cite{merrill2024illusion}, which extends the
+characterisation to the SSM family including Mamba and demonstrates
+that the apparent state of these architectures does not enable
+genuine state-tracking on non-Abelian permutation tasks at any
+width.
+
+The diagonal SSM class characterised formally
+by~\citet{sarrof2024expressive} is the function-class home of the
+three causal backbones formalised in Section~\ref{sec:backbones}.
+The single-layer definition takes the form
+\begin{equation}\label{eq:diagonal-ssm}
+h_{t} = A(x_{t}) \odot h_{t-1} + B(x_{t}), \qquad z_{t} = \phi(h_{t}, x_{t}),
+\end{equation}
+with $\odot$ the elementwise product, $A(x_{t}) \in \mathbb{R}^{d}$
+(or $\mathbb{C}^{d}$) the diagonal gate at step $t$, $B(x_{t})$ the
+input-write, and $\phi$ a channel-mixing transformation. The source
+explicitly admits the complex-diagonal extension without loss of
+generality, which places the block-complex transition of
+Section~\ref{sec:primitives:dho} inside the same formal class: each
+$2 \times 2$ rotation-and-damping block diagonalises over
+$\mathbb{C}$ to a pair of conjugate eigenvalues $r e^{\pm i \theta}$
+with $r = e^{-\lambda}$, and the block-diagonal product of $K/2$
+such blocks fits the elementwise form of
+equation~(\ref{eq:diagonal-ssm}) under a complex
+re-parameterisation.
+
+The principal route by which a recurrent linear-time architecture
+moves out of the diagonal class is the diagonal-plus-low-rank lift
+introduced by DeltaNet~\cite{schlag2021deltanet} and parallelised
+by Yang et al.~\cite{yang2024deltanet}, in which a rank-one
+Householder update $(I - \beta_{t} k_{t} k_{t}^{\top})$ enlarges
+the reachable transition group beyond what the diagonal spectrum
+alone can simulate. RWKV-7~\cite{peng2025rwkv7} adopts the same
+diagonal-plus-low-rank parameterisation in its time-mix block.
+Architectures in this class can in principle recognise non-Abelian
+permutation languages that the diagonal class cannot, and the
+impossibility result of~\citet{merrill2024illusion} applies
+specifically to the diagonal class without bounding the
+diagonal-plus-low-rank class above.
+
+The three mechanisms proposed in Chapter~\ref{ch:proposed} operate
+within the diagonal-class function family across all three causal
+backbones. The Multi-Scale Depthwise Convolution mechanism of
+Section~\ref{sec:primitives:msdc} operates on the input side without
+modifying the transition operator. The Damped Harmonic Oscillator
+mechanism of Section~\ref{sec:primitives:dho} extends the
+real-diagonal transition to its block-complex closure but, by the
+argument above, remains inside the diagonal class characterised
+by~\citet{sarrof2024expressive}. The Chunked Value Decorrelation
+mechanism of Section~\ref{sec:primitives:cvd} operates on the value
+tensor without modifying the recurrence's transition either. None
+of the three crosses the diagonal-to-low-rank boundary.
+
+The formal results recalled in this section therefore function as a
+scope clarifier rather than as theorems the thesis attempts to
+violate. The empirical matrix of Chapter~\ref{ch:experiments}
+pre-registers the prediction that no mechanism in the matrix yields
+a non-Abelian state-tracking gain at any scale or sequence length,
+and the probes used in the experimental matrix (LibriSpeech, Common
+Voice, MQAR) are chosen deliberately so as not to require such a
+gain. State-tracking probes such as $S_{n}$ permutation composition
+and Dyck-$k$ for $k \ge 2$ are deferred to future work on
+diagonal-plus-low-rank mechanisms; the natural extension of the
+framework is to repeat the cross-architecture transfer matrix on a
+diagonal-plus-low-rank backbone class with mechanisms that target
+the third axis introduced in Section~\ref{sec:axes}.

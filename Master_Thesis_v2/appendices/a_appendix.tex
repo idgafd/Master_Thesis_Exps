@@ -1,0 +1,201 @@
+\chapter{Experimental Setup}\label{app:experimental-setup}
+
+This appendix records the configuration that produced every empirical
+result reported in Chapter~\ref{ch:experiments}. The content
+complements the chapter-level methodology with the per-run
+hyperparameter schedule, the ASR baseline architecture, the
+dataset-construction details, the MQAR cohort configuration, and the
+hardware environment. The implementations of the proposed mechanisms
+and the experimental harness are available upon request from the
+author.
+
+\section{Training configuration}\label{app:setup:training}
+
+The training schedule is the locked 50-epoch matched budget shared by
+every LibriSpeech and Common Voice cell of the matrix. The values in
+Table~\ref{tab:setup:hyperparams} apply to every reported cell at
+both the 7M and 14M scales unless otherwise noted.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Locked training hyperparameters]{Training hyperparameters
+shared by every LibriSpeech and Common Voice cell. The schedule is
+locked across architectures and scales.}
+\label{tab:setup:hyperparams}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{4.5cm} X@{}}
+\toprule
+\textbf{Hyperparameter} & \textbf{Value} \\
+\midrule
+Optimiser & AdamW \\
+Peak learning rate & $3 \times 10^{-4}$ \\
+Weight decay & $0.01$ \\
+Learning-rate schedule & Cosine decay with $1000$-step linear warmup \\
+Epochs (matched budget) & $50$ \\
+Early-stopping patience & $15$ epochs on dev CER \\
+Batch budget & $\le 300$~s of audio per batch \\
+Gradient clipping ($\ell_{2}$ norm) & $5.0$ \\
+SpecAugment policy & LD: freq mask $F = 27$, time mask $T = 100$ \\
+SpecAugment masks per utterance & $2$ frequency masks, $2$ time masks \\
+Dropout & $0.1$ \\
+Random seed & $42$ \\
+Numerical precision & fp32 baseline; bf16 only for the LA LION-mode
+cells where memory pressure required it \\
+Mamba-2 SSD chunk size & $64$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The cosine schedule is applied to the learning rate after the
+$1000$-step linear warmup completes; the schedule decays to a small
+positive floor over the remaining steps of the 50-epoch budget. The
+patience-15 early-stopping rule is set against dev CER and was not
+triggered for any reported cell, since the matched 50-epoch budget
+sits within the convergence horizon of all three backbones at both
+scales.
+
+The batch budget is duration-based rather than utterance-based.
+Each training mini-batch packs utterances until the cumulative
+duration reaches $300$~s, which keeps GPU occupancy stable across
+the short-to-medium audio length distribution of LibriSpeech and
+Common Voice without requiring per-step length statistics.
+Validation batches use a fixed duration limit of $300$~s as well,
+with no SpecAugment.
+
+The single-seed convention is the matrix-wide default. The
+matrix-as-artefact framing of Chapter~\ref{ch:experiments} relies
+on the single coherent direction across approximately seventy
+statistical tests rather than on any single-cell multi-seed claim.
+
+\section{ASR baseline architecture}\label{app:setup:arch}
+
+The ASR model is identical across cells except for the time-mixing
+backbone. Table~\ref{tab:setup:arch} summarises the shared pipeline
+from audio frontend to CTC head.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[ASR baseline architecture]{ASR baseline pipeline shared by
+every reported cell. The backbone row is the only stage that varies
+across cells.}
+\label{tab:setup:arch}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{3.5cm} X@{}}
+\toprule
+\textbf{Stage} & \textbf{Configuration} \\
+\midrule
+Audio frontend & Log-mel spectrogram, $80$ mel bins, $25$~ms window,
+$10$~ms hop, sample rate $16$~kHz \\
+\addlinespace
+Subsampling & $2\times$ acoustic subsampling before the encoder
+backbone, applied via a small convolutional stack \\
+\addlinespace
+Encoder block (per layer) & Time-mix block (backbone-specific) plus a
+channel-mix block, each with residual connection and pre-LayerNorm \\
+\addlinespace
+Backbone & Per-cell choice of causal RWKV-6, Mamba-2, or Linear
+Attention; or the LION bidirectional adaptation of the same three \\
+\addlinespace
+CTC head & Linear projection to vocabulary followed by softmax and
+the connectionist temporal classification
+loss~\cite{graves2006ctc} \\
+\addlinespace
+Decoding & Greedy CTC, no language model rescoring, no beam search \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The encoder configuration at the 7M scale is $d_{\text{model}} = 256$,
+$L = 6$ layers, $H = 4$ heads, head dimension $64$. At the 14M
+scale the layer count doubles to $L = 12$ with the other widths
+unchanged. The Mamba-2 backbone uses state dimension
+$d_{\text{state}} = 64$ and SSD chunk size $T_{c} = 64$ throughout.
+Total parameter counts per cell range from $6.26$~M for vanilla
+Linear Attention at 7M to $13.79$~M for the RWKV-6 DHO cell at
+14M; per-cell counts are reported in
+Table~\ref{tab:results:master-matrix-causal-7m} of
+Appendix~\ref{app:results}.
+
+The LION wrapper preserves the time-mix and channel-mix
+abstraction~\cite{afzal2025linear}, replacing the causal scan kernel
+with a parallel $T \times T$ attention computation under a symmetric
+decay mask. The decay-class mapping per backbone is described in
+Section~\ref{sec:lion} and Section~\ref{sec:proposed:lion}; the
+controlled LION-S deployment on Linear Attention introduces a
+per-token sigmoid decay that is not present in the underlying
+causal backbone, and is used as the falsification control for the
+decay-as-prerequisite finding of
+Chapter~\ref{ch:experiments}.
+
+\section{Datasets}\label{app:setup:datasets}
+
+Three datasets carry the empirical evaluation, chosen for the
+expressivity axis each one exercises rather than for aggregate-score
+competitiveness.
+
+\subsection{LibriSpeech clean-100}\label{app:setup:librispeech}
+
+The principal probe is the train-clean-100 subset of
+LibriSpeech~\cite{panayotov2015librispeech}: $100$ hours of
+audiobook-source read English speech recorded at $16$~kHz, with the
+official train, dev-clean, and test-clean splits used unchanged.
+The character-level vocabulary contains the $26$ lowercase letters,
+the apostrophe, the space character, and a dedicated CTC blank
+token, for a head dimension of $29$.
+
+Audio is preprocessed with the parameters of
+Table~\ref{tab:setup:arch}: $80$-mel log-spectrograms with $25$~ms
+window and $10$~ms hop, followed by the $2\times$ acoustic
+subsampling described above. Utterances longer than $20$~s and
+shorter than $0.5$~s are filtered from the training stream;
+SpecAugment LD is applied during training as specified in
+Section~\ref{app:setup:training} and disabled during evaluation.
+Test evaluation uses full-utterance greedy CTC decoding with no
+language model rescoring.
+
+\subsection{Common Voice English 100h}\label{app:setup:cv}
+
+The cross-distribution probe is a $100$-hour balanced subset of the
+Common Voice English corpus~\cite{ardila2019commonvoice}. The
+training subset is constructed from the validated split of the
+Common Voice release: utterances are sampled stratified by speaker
+so that no speaker appears in more than one of the train, dev, or
+test partitions, and so that the cumulative duration matches the
+LibriSpeech train-clean-100 budget within rounding. The dev and test
+partitions follow the released Common Voice splits restricted to the
+sampled speaker set. Audio preprocessing matches the LibriSpeech
+pipeline; the only change is the vocabulary, which retains the same
+character set since both corpora are English.
+
+\subsection{Multi-Query Associative Recall}\label{app:setup:mqar}
+
+The synthetic axis-2 probe is the multi-query associative recall
+benchmark of~\citet{arora2023zoology}. Each example is a sequence
+of $(k, v)$ pairs followed by query keys whose values must be
+retrieved. Sequence length $T$ sweeps the canonical $\{64, 256,
+1024\}$ values; the number of stored pairs $K$ scales with $T$ such
+that the difficulty parameter $K / d$ stays meaningful at every
+length: for $T = 64$, $K = 16$; for $T = 256$, $K = 64$; for
+$T = 1024$, $K = 256$. The vocabulary contains $8192$ key tokens
+and $8192$ value tokens drawn from disjoint ranges. Training uses
+unlimited synthetic data with cross-entropy loss on the
+value-prediction positions; the success criterion is per-sequence
+accuracy reaching $0.9$. Each MQAR cell is run for up to $30\,000$
+steps with early stopping when per-sequence accuracy reaches
+$0.999$ on a held-out validation batch.
+
+\section{Hardware environment}\label{app:setup:hw}
+
+All cells were trained on a single workstation equipped with NVIDIA
+RTX PRO 6000 Blackwell GPUs ($48$~GB of VRAM each). Single-GPU
+training is the matrix-wide default. The only exception is the LA
+LION-S DHO cell at the 7M scale, which used 4-GPU data-parallel
+distributed training to fit the bidirectional complex-attention
+scan within a practical wall-clock window; the gradient
+accumulation pattern was set to keep the effective batch budget at
+the matrix-wide $300$~s of audio. The software stack consists of
+PyTorch with CUDA acceleration.

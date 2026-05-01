@@ -1,0 +1,351 @@
+\chapter{Complete Empirical Results}\label{app:results}
+
+This appendix records the complete per-cell empirical evidence
+behind the matrix figures and the aggregated table in
+Chapter~\ref{ch:experiments}. The first three tables form the
+master matrix on LibriSpeech across architecture, mode, and
+scale; each row reports test character error rate, test word
+error rate, and the corresponding absolute deltas versus the
+matched vanilla baseline, together with parameter counts. The
+fourth and fifth tables are the Common Voice cross-distribution
+comparisons (one on CER, one on WER) sorted by the magnitude of
+the delta-of-deltas. The sixth table is the chunked-streaming
+evaluation summary. The MQAR cohort with verdicts and
+convergence speed is reported in
+Table~\ref{tab:results:mqar-cohort} of
+Chapter~\ref{ch:experiments}. Throughout the appendix, character
+error rate is the primary metric and word error rate the
+secondary metric; the single-seed convention applies.
+
+\section{Master matrix on LibriSpeech}\label{app:results:master}
+
+The master matrix collects every reported LibriSpeech cell at the
+matched 50-epoch budget. Cells are grouped by mode (causal first,
+then LION) and scale (7M then 14M); within each block the
+architectures are listed RWKV-6, Mamba-2, Linear Attention. Inside
+each architecture-mode-scale block the rows are vanilla, MSDC, CVD,
+DHO, and the pre-registered composition. The DHO row reports the
+mechanism in its canonical depth-graded form. The $\Delta$ test
+column is test CER minus the matched vanilla test CER for the same
+(architecture, mode, scale) triple.
+
+\begin{table}[p]
+\centering
+\small
+\caption[Master matrix on LibriSpeech, causal, 7M]{LibriSpeech master
+matrix, causal mode, 7M scale (six layers). Vanilla rows are the
+per-architecture reference. The composition cell on RWKV-6 and
+Mamba-2 is CVD $\times$ MSDC; on Linear Attention it is
+DHO $\times$ MSDC, the pre-registered axis-1 plus axis-1-sub
+composition.}
+\label{tab:results:master-matrix-causal-7m}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{1.8cm} p{2.0cm} r r r r r r@{}}
+\toprule
+\textbf{Architecture} & \textbf{Mechanism} &
+\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
+\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\midrule
+RWKV-6   & Vanilla         & 0.1051 & 0.1049 & ref       & 0.3182 & ref       & 7\,736\,605 \\
+RWKV-6   & MSDC            & 0.0803 & 0.0788 & $-0.0261$ & 0.2372 & $-0.0810$ & 7\,755\,061 \\
+RWKV-6   & CVD             & 0.1005 & 0.1007 & $-0.0042$ & 0.3001 & $-0.0181$ & 7\,736\,629 \\
+RWKV-6   & DHO             & 0.0999 & 0.0989 & $-0.0061$ & 0.2994 & $-0.0188$ & 7\,811\,869 \\
+RWKV-6   & CVD $\times$ MSDC & 0.0787 & 0.0785 & $-0.0264$ & 0.2332 & $-0.0850$ & 7\,755\,085 \\
+\addlinespace
+Mamba-2  & Vanilla         & 0.1057 & 0.1036 & ref       & 0.3180 & ref       & 7\,268\,269 \\
+Mamba-2  & MSDC            & 0.0839 & 0.0825 & $-0.0211$ & 0.2481 & $-0.0699$ & 7\,325\,893 \\
+Mamba-2  & CVD             & 0.0966 & 0.0958 & $-0.0078$ & 0.2942 & $-0.0238$ & 7\,268\,317 \\
+Mamba-2  & DHO             & 0.1020 & 0.1006 & $-0.0030$ & 0.3172 & $-0.0008$ & 7\,420\,285 \\
+Mamba-2  & CVD $\times$ MSDC & 0.0812 & 0.0795 & $-0.0241$ & 0.2377 & $-0.0803$ & 7\,325\,941 \\
+\addlinespace
+LA       & Vanilla         & 0.1903 & 0.1879 & ref       & 0.5607 & ref       & 6\,256\,669 \\
+LA       & MSDC            & 0.1448 & 0.1409 & $-0.0470$ & 0.4148 & $-0.1459$ & 6\,275\,125 \\
+LA       & CVD             & 0.1730 & 0.1714 & $-0.0165$ & 0.5189 & $-0.0418$ & 6\,256\,693 \\
+LA       & DHO             & 0.1213 & 0.1198 & $-0.0681$ & 0.3608 & $-0.1999$ & 6\,369\,565 \\
+LA       & DHO $\times$ MSDC & 0.1000 & 0.0999 & $-0.0880$ & 0.2967 & $-0.2640$ & 6\,388\,021 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[p]
+\centering
+\small
+\caption[Master matrix on LibriSpeech, causal, 14M]{LibriSpeech
+master matrix, causal mode, 14M scale (twelve layers). The 14M
+Mamba-2 MSDC cell at test CER $0.0631$ and the 14M Mamba-2
+CVD $\times$ MSDC cell at test CER $0.0618$ are the matrix ceiling
+across all reported architecture-mode-scale combinations.}
+\label{tab:results:master-matrix-causal-14m}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{1.8cm} p{2.0cm} r r r r r r@{}}
+\toprule
+\textbf{Architecture} & \textbf{Mechanism} &
+\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
+\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\midrule
+RWKV-6   & Vanilla         & 0.1082 & 0.1103 & ref       & 0.3244 & ref       & 13\,561\,117 \\
+RWKV-6   & MSDC            & 0.0747 & 0.0751 & $-0.0352$ & 0.2214 & $-0.1030$ & 13\,598\,029 \\
+RWKV-6   & CVD             & 0.1051 & 0.1051 & $-0.0052$ & 0.3093 & $-0.0151$ & 13\,561\,165 \\
+RWKV-6   & DHO             & 0.1058 & 0.1077 & $-0.0026$ & 0.3186 & $-0.0058$ & 13\,785\,373 \\
+RWKV-6   & CVD $\times$ MSDC & 0.0745 & 0.0746 & $-0.0357$ & 0.2171 & $-0.1073$ & 13\,598\,077 \\
+\addlinespace
+Mamba-2  & Vanilla         & 0.0821 & 0.0827 & ref       & 0.2468 & ref       & 12\,624\,445 \\
+Mamba-2  & MSDC            & 0.0635 & 0.0631 & $-0.0196$ & 0.1850 & $-0.0618$ & 12\,739\,693 \\
+Mamba-2  & CVD             & 0.0729 & 0.0728 & $-0.0099$ & 0.2180 & $-0.0288$ & 12\,624\,541 \\
+Mamba-2  & DHO             & 0.0783 & 0.0781 & $-0.0046$ & 0.1912 & $-0.0556$ & 12\,928\,477 \\
+Mamba-2  & CVD $\times$ MSDC & 0.0627 & 0.0618 & $-0.0209$ & 0.1810 & $-0.0658$ & 12\,739\,789 \\
+\addlinespace
+LA       & Vanilla         & 0.1378 & 0.1359 & ref       & 0.4266 & ref       & 10\,601\,245 \\
+LA       & MSDC            & 0.0975 & 0.0969 & $-0.0390$ & 0.2874 & $-0.1392$ & 10\,638\,157 \\
+LA       & CVD             & 0.1291 & 0.1300 & $-0.0058$ & 0.4018 & $-0.0248$ & 10\,601\,293 \\
+LA       & DHO             & 0.0953 & 0.0947 & $-0.0412$ & 0.2850 & $-0.1416$ & 10\,827\,037 \\
+LA       & DHO $\times$ MSDC & 0.0784 & 0.0786 & $-0.0573$ & 0.2316 & $-0.1950$ & 10\,863\,949 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[p]
+\centering
+\small
+\caption[Master matrix on LibriSpeech, LION, 7M]{LibriSpeech master
+matrix, LION bidirectional mode, 7M scale (six layers). RWKV-6 and
+Mamba-2 LION cells inherit the LION-S decay class from their causal
+backbone. Linear Attention LION rows are split into the LION-LIT
+default (per~\citet{afzal2025linear} Table~1) and the LION-S
+falsification control with a per-token sigmoid decay added; both
+are reported, since the contrast isolates the role of decay as a
+prerequisite for the bidirectional value-decorrelation mechanism.
+The 14M LION matrix is dropped from scope.}
+\label{tab:results:master-matrix-lion-7m}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{2.5cm} p{2.0cm} r r r r r r@{}}
+\toprule
+\textbf{Architecture (mode)} & \textbf{Mechanism} &
+\textbf{Dev CER} & \textbf{Test CER} & \textbf{$\Delta$ CER} &
+\textbf{Test WER} & \textbf{$\Delta$ WER} & \textbf{Params} \\
+\midrule
+RWKV-6 (LION-S)    & Vanilla         & 0.0858 & 0.0859 & ref       & 0.2545 & ref       & 7\,736\,605 \\
+RWKV-6 (LION-S)    & MSDC            & 0.0764 & 0.0750 & $-0.0109$ & 0.2275 & $-0.0270$ & 7\,755\,061 \\
+RWKV-6 (LION-S)    & CVD             & 0.0857 & 0.0852 & $-0.0007$ & 0.2547 & $+0.0002$ & 7\,736\,629 \\
+RWKV-6 (LION-S)    & DHO             & 0.0727 & 0.0740 & $-0.0119$ & 0.2219 & $-0.0326$ & 7\,811\,869 \\
+RWKV-6 (LION-S)    & CVD $\times$ MSDC & 0.0746 & 0.0747 & $-0.0112$ & 0.2242 & $-0.0303$ & 7\,755\,085 \\
+\addlinespace
+Mamba-2 (LION-S)   & Vanilla         & 0.0871 & 0.0853 & ref       & 0.2585 & ref       & 7\,268\,269 \\
+Mamba-2 (LION-S)   & MSDC            & 0.0846 & 0.0833 & $-0.0020$ & 0.2517 & $-0.0068$ & 7\,325\,893 \\
+Mamba-2 (LION-S)   & CVD             & 0.0851 & 0.0849 & $-0.0004$ & 0.2601 & $+0.0016$ & 7\,268\,317 \\
+Mamba-2 (LION-S)   & DHO             & 0.0842 & 0.0825 & $-0.0028$ & 0.2511 & $-0.0074$ & 7\,268\,269 \\
+Mamba-2 (LION-S)   & CVD $\times$ MSDC & 0.0820 & 0.0805 & $-0.0048$ & 0.2461 & $-0.0124$ & 7\,325\,941 \\
+\addlinespace
+LA (LION-LIT)      & Vanilla         & 0.3003 & 0.2951 & ref       & 0.7967 & ref       & 6\,256\,669 \\
+LA (LION-LIT)      & MSDC            & 0.1422 & 0.1404 & $-0.1547$ & 0.4103 & $-0.3864$ & 6\,275\,125 \\
+LA (LION-LIT)      & CVD             & 0.3228 & 0.3194 & $+0.0243$ & 0.8386 & $+0.0419$ & 6\,256\,693 \\
+LA (LION-LIT)      & DHO             & 0.1042 & 0.1042 & $-0.1909$ & 0.3152 & $-0.4815$ & 6\,332\,701 \\
+LA (LION-LIT)      & DHO $\times$ MSDC & 0.0961 & 0.0961 & $-0.1990$ & 0.2901 & $-0.5066$ & 6\,332\,701 \\
+\addlinespace
+LA (LION-S)        & Vanilla         & 0.1417 & 0.1381 & ref       & 0.4301 & ref       & 6\,262\,837 \\
+LA (LION-S)        & MSDC            & 0.1160 & 0.1154 & $-0.0227$ & 0.3464 & $-0.0837$ & 6\,281\,293 \\
+LA (LION-S)        & CVD             & 0.1332 & 0.1311 & $-0.0070$ & 0.4068 & $-0.0233$ & 6\,262\,861 \\
+LA (LION-S)        & CVD $\times$ MSDC & 0.1142 & 0.1129 & $-0.0252$ & 0.3442 & $-0.0859$ & 6\,281\,317 \\
+LA (LION-S)        & DHO             & 0.0982 & 0.0988 & $-0.0393$ & 0.2988 & $-0.1313$ & 6\,338\,869 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The LION-LIT and LION-S blocks of Linear Attention have separate
+vanilla references because the two backbones differ structurally:
+LION-LIT runs without per-token decay ($\lambda = 1$ throughout),
+while LION-S adds a per-token sigmoid decay parameterised by the
+Gated Random Feature Attention to LION-S correspondence
+of~\citet{afzal2025linear} Table~1. The $\Delta$ test column for
+the LA LION rows is therefore taken against the matched
+mode-and-decay-class vanilla rather than against any single LA-LION
+reference. The LA LION-S DHO row is the lowest LA LION-S test CER
+on the matrix and beats the LA LION-S CVD $\times$ MSDC composition
+($0.1129$) by $\Delta$ test $-0.014$.
+
+The reading of the master matrix is the subject of
+Chapter~\ref{ch:experiments}; the central observations are that
+MSDC transfers in deficit-proportional ordering across the three
+architectures (LA $>$ RWKV-6 $>$ Mamba-2), that DHO produces a
+clean BREAK on Linear Attention and a NULL on Mamba-2 under the
+LibriSpeech distribution, and that CVD transfers asymmetrically
+across the family with the LION-LIT $\times$ CVD cell as the
+controlled falsifier that isolates decay as the structural
+prerequisite for the value-decorrelation mechanism in the
+bidirectional setting.
+
+\section{Common Voice cross-distribution}\label{app:results:cv}
+
+The Common Voice pilot consists of sixteen cells covering the three
+architectures across the per-mechanism rows used at the 7M
+LibriSpeech causal scale. Each pilot cell is paired with the
+matching LibriSpeech 7M causal cell. The
+$\Delta_{\mathrm{CV}}$ column is the CV test CER minus the CV
+vanilla test CER for the same architecture; the
+$\Delta_{\mathrm{LS}}$ column is the LibriSpeech test CER minus the
+LibriSpeech vanilla test CER for the same architecture. The
+$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ column measures the
+task-prior modulation of the mechanism's transfer, with magnitude
+indicating how much the mechanism's effect changes between the two
+acoustic distributions. Rows are sorted by
+$|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}|$ descending; the
+three vanilla rows appear at the bottom by definition.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Common Voice cross-distribution comparison]{Common Voice
+cross-distribution comparison sorted by
+$|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}|$ descending. Positive
+values of $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$ indicate the
+mechanism's gain is smaller on Common Voice than on LibriSpeech;
+negative values indicate the opposite.}
+\label{tab:results:cv-cross}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{1.7cm} X r r r r r@{}}
+\toprule
+\textbf{Arch.} & \textbf{Mechanism} &
+\textbf{CV test} & \textbf{LS test} &
+\textbf{$\Delta_{\mathrm{CV}}$} & \textbf{$\Delta_{\mathrm{LS}}$} &
+\textbf{$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}$} \\
+\midrule
+RWKV-6  & CVD $\times$ MSDC & 0.2693 & 0.0785 & $-0.0599$ & $-0.0264$ & $-0.0335$ \\
+LA      & DHO               & 0.3418 & 0.1198 & $-0.0351$ & $-0.0681$ & $+0.0331$ \\
+LA      & DHO $\times$ MSDC & 0.3151 & 0.0999 & $-0.0617$ & $-0.0880$ & $+0.0263$ \\
+Mamba-2 & DHO               & 0.2910 & 0.1006 & $-0.0226$ & $-0.0030$ & $-0.0196$ \\
+Mamba-2 & MSDC              & 0.2791 & 0.0825 & $-0.0344$ & $-0.0211$ & $-0.0134$ \\
+Mamba-2 & CVD $\times$ MSDC & 0.2772 & 0.0795 & $-0.0363$ & $-0.0241$ & $-0.0122$ \\
+RWKV-6  & DHO               & 0.3114 & 0.0989 & $-0.0178$ & $-0.0061$ & $-0.0117$ \\
+RWKV-6  & MSDC              & 0.2953 & 0.0788 & $-0.0339$ & $-0.0261$ & $-0.0078$ \\
+Mamba-2 & CVD               & 0.3004 & 0.0958 & $-0.0132$ & $-0.0078$ & $-0.0053$ \\
+LA      & CVD               & 0.3556 & 0.1714 & $-0.0212$ & $-0.0165$ & $-0.0047$ \\
+LA      & MSDC              & 0.3251 & 0.1409 & $-0.0517$ & $-0.0470$ & $-0.0047$ \\
+RWKV-6  & CVD               & 0.3248 & 0.1007 & $-0.0043$ & $-0.0042$ & $-0.0002$ \\
+RWKV-6  & Vanilla           & 0.3291 & 0.1049 & ref       & ref       & ref \\
+Mamba-2 & Vanilla           & 0.3136 & 0.1036 & ref       & ref       & ref \\
+LA      & Vanilla           & 0.3768 & 0.1879 & ref       & ref       & ref \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The Mamba-2 DHO cell shows the clearest task-prior modulation in
+the table: the LibriSpeech result is a marginal $\Delta_{\mathrm{LS}}
+= -0.0030$ consistent with selective $\Delta t$ absorbing most of
+the block-complex transition's contribution under the LibriSpeech
+audiobook distribution, while the same cell delivers
+$\Delta_{\mathrm{CV}} = -0.0226$ on Common Voice, a productive
+transfer. The reading is that the absorption of DHO by Mamba-2's
+selective $\Delta t$ is not absolute but task-prior modulated, with
+Common Voice's broader speaker, accent, and recording-condition
+variability leaving residual axis-1 sub-structure that the
+block-complex extension exercises.
+
+The same cross-distribution comparison on word error rate is
+reported in Table~\ref{tab:results:cv-cross-wer}. WER differences
+amplify CER differences on the magnitude side without changing
+the qualitative direction of the task-prior modulation: the
+LA $\times$ DHO and LA $\times$ DHO$\times$MSDC cells remain the
+largest absorbers under Common Voice, and the Mamba-2 $\times$ DHO
+cell remains the cleanest example of CV-amplification.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Common Voice cross-distribution comparison on WER]{
+Common Voice cross-distribution comparison on word error rate,
+sorted by $|\Delta^{\mathrm{WER}}_{\mathrm{CV}} -
+\Delta^{\mathrm{WER}}_{\mathrm{LS}}|$ descending. Positive values
+of $\Delta^{\mathrm{WER}}_{\mathrm{CV}} -
+\Delta^{\mathrm{WER}}_{\mathrm{LS}}$ indicate the mechanism's WER
+gain is smaller on Common Voice than on LibriSpeech; negative
+values indicate the opposite. Vanilla rows appear at the bottom
+by definition.}
+\label{tab:results:cv-cross-wer}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}p{1.7cm} X r r r r r@{}}
+\toprule
+\textbf{Arch.} & \textbf{Mechanism} &
+\textbf{CV WER} & \textbf{LS WER} &
+\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{CV}}$} &
+\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{LS}}$} &
+\textbf{$\Delta^{\mathrm{WER}}_{\mathrm{CV}} - \Delta^{\mathrm{WER}}_{\mathrm{LS}}$} \\
+\midrule
+LA      & DHO $\times$ MSDC & 0.6937 & 0.2967 & $-0.1259$ & $-0.2640$ & $+0.1381$ \\
+LA      & DHO               & 0.7460 & 0.3608 & $-0.0736$ & $-0.1999$ & $+0.1263$ \\
+Mamba-2 & DHO               & 0.6487 & 0.3172 & $-0.0583$ & $-0.0008$ & $-0.0575$ \\
+LA      & MSDC              & 0.7217 & 0.4148 & $-0.0979$ & $-0.1459$ & $+0.0480$ \\
+RWKV-6  & CVD $\times$ MSDC & 0.6155 & 0.2332 & $-0.1128$ & $-0.0850$ & $-0.0278$ \\
+RWKV-6  & MSDC              & 0.6636 & 0.2372 & $-0.0647$ & $-0.0810$ & $+0.0163$ \\
+RWKV-6  & CVD               & 0.7192 & 0.3001 & $-0.0091$ & $-0.0181$ & $+0.0090$ \\
+RWKV-6  & DHO               & 0.7010 & 0.2994 & $-0.0273$ & $-0.0188$ & $-0.0085$ \\
+LA      & CVD               & 0.7856 & 0.5189 & $-0.0340$ & $-0.0418$ & $+0.0078$ \\
+Mamba-2 & CVD               & 0.6794 & 0.2942 & $-0.0276$ & $-0.0238$ & $-0.0038$ \\
+Mamba-2 & CVD $\times$ MSDC & 0.6292 & 0.2377 & $-0.0778$ & $-0.0803$ & $+0.0025$ \\
+Mamba-2 & MSDC              & 0.6350 & 0.2481 & $-0.0720$ & $-0.0699$ & $-0.0021$ \\
+RWKV-6  & Vanilla           & 0.7283 & 0.3182 & ref       & ref       & ref \\
+Mamba-2 & Vanilla           & 0.7070 & 0.3180 & ref       & ref       & ref \\
+LA      & Vanilla           & 0.8196 & 0.5607 & ref       & ref       & ref \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Chunked-streaming evaluation}\label{app:results:chunked}
+
+The chunked-streaming evaluation reports test CER on a fixed subset
+of $500$ test utterances, decoded under three window sizes
+$\{2.0, 5.0, 10.0\}$~s and two state policies. The reset policy
+clears the recurrent state at every chunk boundary; the carry
+policy retains the state across chunk boundaries. Smaller windows
+and the reset policy stress the mechanism's ability to operate
+without long-context state, while the carry policy and larger
+windows approach the full-utterance regime. Reported here is a
+summary across the 7M causal cells; per-architecture detail is
+given in Appendix~\ref{app:diagnostics:chunked}.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Chunked-streaming summary, 7M causal]{Chunked-streaming
+summary across the 7M causal cells. The first three columns report
+test CER averaged across the three architectures at the 2-second
+reset policy (the most restrictive setting), the 10-second carry
+policy (the closest to full-utterance), and full-utterance
+evaluation. The mechanism Δ column reports the average Δ versus the
+matched vanilla. The reset-policy degradation is largest on the
+cells with highest vanilla CER and is markedly reduced on the
+mechanism cells, confirming that the proposed mechanisms improve
+robustness to short streaming windows.}
+\label{tab:results:chunked-summary}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}X r r r r@{}}
+\toprule
+\textbf{Mechanism (avg.\ across archs)} &
+\textbf{2.0\,s reset} & \textbf{10.0\,s carry} & \textbf{Full-utt.} &
+\textbf{Δ full-utt.} \\
+\midrule
+Vanilla            & 0.2551 & 0.1516 & 0.1321 & ref      \\
+MSDC               & 0.1973 & 0.1201 & 0.1007 & $-0.0314$ \\
+CVD                & 0.2365 & 0.1409 & 0.1226 & $-0.0095$ \\
+DHO                & 0.2332 & 0.1255 & 0.1075 & $-0.0246$ \\
+Composition        & 0.1664 & 0.1015 & 0.0860 & $-0.0461$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The summary across architectures preserves the full-utterance
+ordering. Two further points emerge. First, the carry policy at
+the longer windows tracks the full-utterance evaluation closely,
+indicating that the recurrent state of every reported cell carries
+useful long-context information across chunk boundaries. Second,
+the reset-policy degradation at the 2-second window is largest on
+the cells whose vanilla CER is highest and is markedly reduced on
+the cells with effective MSDC, confirming that input-side
+multi-scale local mixing improves the architecture's robustness to
+short streaming windows by providing within-chunk acoustic
+structure without requiring long-context state.

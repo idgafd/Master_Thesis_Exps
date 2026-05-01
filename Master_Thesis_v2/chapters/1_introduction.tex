@@ -1,0 +1,134 @@
+\chapter{Introduction}\label{ch:introduction}
+
+\section{Motivation}
+
+The quadratic time and memory complexity of self-attention
+\cite{vaswani2017attention} has long defined the practical ceiling
+of sequence modelling. As context windows expand toward millions
+of tokens, this ceiling translates into prohibitive deployment
+costs in memory, latency, and energy. The field has consequently
+shifted toward sub-quadratic alternatives, and linear-time
+recurrent models, in particular State Space Models (SSMs) and
+the RWKV lineage, have moved from academic curiosities into a
+production substrate for frontier-scale systems
+\cite{li2025minimax01,liu2025hunyuanturbos}.
+
+This industrial adoption is evidenced by several recent
+deployments. MiniMax-01 demonstrated that linear attention can
+drive a $456$\,B-parameter mixture-of-experts model with context
+windows reaching $4$\,M tokens \cite{li2025minimax01}. Tencent's
+Hunyuan-TurboS \cite{liu2025hunyuanturbos} and NVIDIA's
+Nemotron-H family \cite{blakeman2025nemotronh} replace the
+majority of self-attention layers with Mamba blocks, reporting up
+to a threefold inference speed-up at parity. Further examples
+include AI21's Jamba \cite{lieber2024jamba}, the Zamba2 suite
+\cite{glorioso2024zamba2}, and the Evo~2 genomic foundation model,
+which uses a linear convolutional multi-hybrid to reach a $1$\,M
+nucleotide context \cite{brixi2026evo2}. Now that these models
+form a production substrate, their structural limitations
+translate directly into measurable deployment costs.
+
+Underneath this architectural variety, the models share a
+recurrent core and linear-time token mixing. They also share
+characteristic failure modes: an inability to resolve local
+structure at the correct scale, unreliable associative recall,
+and restricted recurrent dynamics. Numerous fixes have been
+proposed, including quad-directional spatial shifts in vision,
+depthwise convolutions in audio, and decorrelation steps in
+language modelling, yet they have not been compared on a single
+substrate at matched compute, which makes their relative gains
+difficult to attribute to architectural cause. This thesis
+addresses the missing cross-cut by treating
+\textit{mechanism-prior alignment} as a hypothesis: the gain a
+mechanism delivers should be predictable from how much of the
+targeted deficit the underlying backbone leaves uncovered.
+
+\section{Contributions}
+
+The thesis introduces three functional mechanisms that address
+documented expressivity deficits of linear-time recurrent
+models: a Multi-Scale Depthwise Convolution that addresses the
+short-range temporal-hierarchy axis, a Damped Harmonic
+Oscillator that extends the recurrent transition class beyond
+real-diagonal, and a Chunked Value Decorrelation that targets
+associative memory under interference. The mechanisms are
+evaluated on a cross-architecture matrix (RWKV-6, Mamba-2,
+Linear Attention) across two access modes (causal, LION
+bidirectional), two parameter scales (7M, 14M), and three
+probes: LibriSpeech for the principal axis-1 evaluation, Common
+Voice English for cross-distribution validation within axis~1,
+and the Multi-Query Associative Recall benchmark for axis-2
+isolation at sequence lengths $T \in \{64, 256, 1024\}$.
+
+The resulting evidence supports the central claim of the thesis:
+a mechanism's gain on a task is proportional to the residual
+structural deficit the architecture leaves uncovered along the
+axis the mechanism targets, modulated by what the
+task-as-exercised-by-data exercises. Both productive transfer
+(deficit-proportional MSDC, BREAK-and-NULL DHO, asymmetric CVD)
+and a single counter-example (LION-LIT~$\times$~CVD on Linear
+Attention, where the absence of decay inverts the transfer sign)
+populate the matrix and validate mechanism-prior alignment as a
+predictive criterion. The strongest single empirical statement
+of the thesis is the inversion of the standard
+sub-quadratic-versus-quadratic narrative on Multi-Query
+Associative Recall at $T = 1024$, where every linear-time
+backbone augmented with MSDC or CVD solves the task while the
+causal Transformer baseline fails.
+
+\section{Research questions}\label{sec:intro:rqs}
+
+The empirical evaluation answers four research questions, each
+mapped to a specific section of the experimental chapter.
+
+\paragraph{RQ1 (framework).} Can the expressivity of causal
+linear-time recurrent architectures be characterised through an
+axis decomposition under which a mechanism's gain on a task is
+predictable from the residual structural deficit the
+architecture leaves uncovered along the axis the mechanism
+targets?
+
+\paragraph{RQ2 (causal matrix).} Do the three proposed mechanisms
+transfer across the three causal backbones in a way that orders
+with the architecture-deficit map, and do the three exhibit
+distinct transfer signatures rather than a single common
+pattern?
+
+\paragraph{RQ3 (bidirectional adaptation).} Does the LION
+mechanism-level bidirectional wrapper preserve the transfer
+pattern observed in the causal mode, and are there structural
+prerequisites in the bidirectional setting that are absent in
+the causal setting?
+
+\paragraph{RQ4 (cross-task and cross-distribution).} Does the
+same mechanism-prior alignment hold when the matrix is exercised
+on a different acoustic distribution (Common Voice) and on a
+synthetic axis-2 probe (Multi-Query Associative Recall), and
+what modulations does the task-as-exercised-by-data introduce?
+
+\section{Structure of the thesis}\label{sec:intro:structure}
+
+The remainder of the thesis is organised as follows.
+Chapter~\ref{ch:related} surveys the architectural and
+mechanism literature on which the proposed mechanisms build, the
+formal expressivity bounds that delimit the diagonal class, and
+the evaluation probes used by the empirical chapter. The chapter
+positions the thesis within the wider linear-time recurrent
+literature.
+Chapter~\ref{ch:theoretical} establishes the theoretical
+foundation, introduces the axis decomposition that frames RQ1,
+formalises the three causal linear-time backbones within a
+unified recurrence template, presents the LION parallel form
+together with the decay-class taxonomy, and presents the three
+mathematical primitives on which the proposed mechanisms build.
+Chapter~\ref{ch:proposed} introduces the three proposed
+mechanisms, the unified LION wrapper, and the diagnostic probes
+used at the parameter level.
+Chapter~\ref{ch:experiments} reports the empirical matrix,
+answers RQ2, RQ3, and RQ4 across LibriSpeech, Common Voice, and
+Multi-Query Associative Recall, and synthesises the
+mechanism-prior alignment criterion.
+Chapter~\ref{ch:conclusions} summarises the thesis's
+contributions and identifies the diagonal-to-diagonal-plus-low-rank
+extension as the natural next step for the axis-3 question that
+the present scope does not address.
