@@ -502,9 +502,12 @@ backbones is paired with an element-wise singular fallback in the
 linear solve.
 
 Third, the chunk size $T_{c} = 64$ is uniform across backbones,
-matched to the SSD chunk size of Mamba-2 and to the WKV scan
-chunk of RWKV-6. The LION parallel form preserves the chunk-local
-preconditioner construction at the same $T_{c}$.
+matched to the SSD chunk size of
+Mamba-2~\cite{dao2024transformers} and to the chunk size used by
+the chunked WKV scan kernel of the RWKV-6 reference
+codepath~\cite{peng2024eaglefinch, rwkv2024block}. The LION
+parallel form preserves the chunk-local preconditioner
+construction at the same $T_{c}$.
 
 \subsection{Provenance: shared logic, distinct substrate}
 

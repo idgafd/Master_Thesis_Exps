@@ -189,7 +189,9 @@ Non-vanilla cells report CER followed by the relative reduction
 over the matched vanilla baseline in parentheses. The composition
 column is CVD~$\times$~MSDC on RWKV-6 and Mamba-2 and
 DHO~$\times$~MSDC on Linear Attention; bold values mark the matrix
-ceiling on the 14M Mamba-2 row.}
+ceiling on the 14M Mamba-2 row. Relative reductions in
+parentheses are reported as supplementary context; the chapter's
+deficit-alignment argument is made in absolute $\Delta$ terms.}
 \label{tab:results:aggregated}
 \setlength{\tabcolsep}{3pt}
 \renewcommand{\arraystretch}{1.20}
@@ -573,8 +575,10 @@ architecture in isolation.
 
 The evidence is stronger on the positive-transfer side than on
 the full converse / null side. The matrix shows that matched
-mechanisms help in the predicted ordering; systematic
-null-effect validation requires future multi-seed work along the
+mechanisms help in the order anticipated from the structural
+features identified in
+Section~\ref{sec:backbones:deficit}; systematic null-effect
+validation requires future multi-seed work along the
 converse-axis, and the falsification-protocol extension recorded
 in Section~\ref{sec:conclusions:future-work} of
 Chapter~\ref{ch:conclusions} commits the framework to a

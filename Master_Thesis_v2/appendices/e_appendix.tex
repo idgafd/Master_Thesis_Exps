@@ -177,7 +177,11 @@ LION wrapper provides equivalent bidirectional expressivity at
 roughly half the parameter and serial-compute budget; the
 operator-level family's principal cost axis is the
 doubled-per-layer serial computation rather than any
-expressivity advantage at matched scale.
+expressivity advantage at matched scale. The comparison varies
+depth jointly with parameter count, so the equivalence reading
+is at the level of the matched (parameter, serial-compute)
+budget rather than at fixed depth; isolating depth as a separate
+axis is left to future work.
 
 \section{Cross-scale persistence}\label{app:diagnostics:cross-scale}
 
