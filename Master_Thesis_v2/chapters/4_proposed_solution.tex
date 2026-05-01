@@ -435,18 +435,34 @@ choice.
 \section{Chunked Value Decorrelation}\label{sec:proposed:cvd}
 
 The third proposed mechanism is the Chunked Value Decorrelation
-(CVD). CVD is a value-side preconditioning operator constructed for
-linear-time recurrent substrates. It addresses the absent
+(CVD). CVD is a value-side preconditioning operator constructed
+for linear-time recurrent substrates. It addresses the absent
 interference-cancellation deficit identified in
 Section~\ref{sec:backbones:deficit}: when several stored keys are
 similar, their values overlap in the bounded recurrent state and
 become difficult to disentangle at readout, and none of the three
-backbones has a native primitive that performs an active cancellation
-of the correlated component before the value enters the state. The
-mechanism shares the principle of key-similarity decorrelation with
-LUCID Attention~\cite{duvvuri2026lucid} but is constructed for a
-different substrate, and the relationship between the two is one of
-shared logical motivation rather than direct adaptation.
+backbones has a native primitive that performs an active
+cancellation of the correlated component before the value enters
+the state.
+
+CVD belongs to a small family of value-side decorrelation
+operators built around a single logical move: construct a
+key-similarity preconditioner and apply its inverse to the values
+before they enter the readout. LUCID
+Attention~\cite{duvvuri2026lucid} realises this move inside
+quadratic softmax attention, materialising the full $T \times T$
+preconditioner with a fixed $1 / \sqrt{d}$ scaling.
+DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} realises it
+through online rank-one Householder erasure per token under the
+same key-similarity geometry. CVD realises it on linear-time
+recurrent substrates: a chunk-local $T_{c} \times T_{c}$
+preconditioner with a learnable per-head temperature $\tau_{h}$,
+applied to the values before they enter the unmodified scan of
+the underlying backbone. The substrate and the parametrisation
+differ across the three operators; the shared logic is the
+key-similarity-based value-decorrelation geometry that the
+deficit map identifies as missing from the three causal
+backbones.
 
 \subsection{Generic form}
 
@@ -508,22 +524,6 @@ the chunked WKV scan kernel of the RWKV-6 reference
 codepath~\cite{peng2024eaglefinch, rwkv2024block}. The LION
 parallel form preserves the chunk-local preconditioner
 construction at the same $T_{c}$.
-
-\subsection{Provenance: shared logic, distinct substrate}
-
-CVD is not a direct adaptation of LUCID. LUCID operates inside
-quadratic softmax attention, materialises a full $T \times T$
-preconditioner, and applies $P^{-1} V$ under softmax weights via
-the construction of equations~(\ref{eq:lucid-base})
-and~(\ref{eq:lucid-output}). CVD keeps only the shared logical
-move, key-similarity-based value decorrelation, but applies it to
-chunk-local recurrent memory updates with a learnable per-head
-temperature $\tau_{h}$ in place of LUCID's fixed $1 / \sqrt{d}$
-scaling. Its relation to DeltaNet's rank-one
-erasure~\cite{schlag2021deltanet, yang2024deltanet} is similarly
-structural: DeltaNet performs online rank-one Householder erasure
-per token, whereas CVD performs closed-form decorrelation within
-each chunk under the same key-similarity geometry.
 
 \subsection{Per-backbone form}
 
