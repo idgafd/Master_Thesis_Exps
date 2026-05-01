@@ -46,9 +46,76 @@ step size, and Linear Attention as a pure accumulator without
 intrinsic decay. The three share a recurrent core and linear-time
 token mixing while differing in the structure of their transition
 operator and in the strength of their content-adaptive routing.
-The remainder of this chapter positions the mechanisms studied
-in the thesis against the deficits these structural differences
-introduce.
+Table~\ref{tab:related:linear-time} maps the principal families
+of linear-time alternatives along this axis, locates the three
+thesis backbones inside the family map, and includes the
+diagonal-plus-low-rank class that brackets the formal-expressivity
+extension referenced in Section~\ref{sec:bounds}. The remainder of
+this chapter positions the mechanisms studied in the thesis
+against the deficits these structural differences introduce.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption[Linear-time alternatives to softmax attention]{Principal
+families of linear-time alternatives to softmax attention. Rows
+are grouped by token-mixer structure rather than chronologically.
+The three architectures instantiated in the experimental matrix of
+Chapter~\ref{ch:experiments} are flagged with (thesis); the
+diagonal-plus-low-rank row is the formal-expressivity extension
+referenced in Section~\ref{sec:bounds} and not exercised by the
+matrix.}
+\label{tab:related:linear-time}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\linewidth}{@{}p{3.0cm} X p{3.4cm}@{}}
+\toprule
+\textbf{Family} & \textbf{Representative(s)} &
+\textbf{Transition / state structure} \\
+\midrule
+Softmax approximators
+  & Performer~\cite{choromanski2021performer},
+    Linformer~\cite{wang2020linformer},
+    Reformer~\cite{kitaev2020reformer}
+  & no recurrence; pairwise attention via random features, low-rank projection, or LSH \\
+\addlinespace
+Kernel-feature linear attention
+  & Linear Attention~\cite{katharopoulos2020transformers} (thesis)
+  & identity transition $A_{t} = I$; outer-product state \\
+\addlinespace
+Gated linear attention
+  & GLA~\cite{yang2024gla},
+    RetNet~\cite{sun2023retnet}
+  & diagonal scalar transition with multiplicative gate or fixed retention mask \\
+\addlinespace
+RWKV time-mix family
+  & RWKV-4~\cite{peng2023rwkv},
+    RWKV-5/6~\cite{peng2024eaglefinch} (thesis: RWKV-6)
+  & diagonal per-channel transition with data-dependent decay \\
+\addlinespace
+Selective state-space models
+  & S4~\cite{gu2022s4},
+    Mamba~\cite{gu2023mamba},
+    Mamba-2~\cite{dao2024transformers} (thesis),
+    Mamba-3~\cite{lahoti2026mamba3}
+  & diagonal scalar transition with input-modulated step size \\
+\addlinespace
+Matrix-valued recurrences
+  & xLSTM~\cite{beck2024xlstm}
+  & block-diagonal transition with multiplicative input gate \\
+\addlinespace
+Long implicit convolutions
+  & Hyena~\cite{poli2023hyena}
+  & no recurrence; long depthwise convolution with implicit-kernel parameterisation \\
+\addlinespace
+Diagonal-plus-low-rank lift
+  & DeltaNet~\cite{schlag2021deltanet, yang2024deltanet},
+    DeltaProduct~\cite{siems2025deltaproduct},
+    RWKV-7~\cite{peng2025rwkv7}
+  & diagonal transition augmented by a Householder rank-1 or rank-$n$ update \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
 \section{Bidirectional adaptation strategies for causal linear RNNs}
 
