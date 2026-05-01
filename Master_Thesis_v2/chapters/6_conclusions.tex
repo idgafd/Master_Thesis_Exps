@@ -62,12 +62,18 @@ on diagonal-plus-low-rank architectures, and the criterion is
 not asserted on that class. The natural extension of the
 framework is to repeat the cross-architecture transfer matrix
 on a diagonal-plus-low-rank backbone class such as
-DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} or
+DeltaNet~\cite{schlag2021deltanet, yang2024deltanet},
+DeltaProduct~\cite{siems2025deltaproduct}, or
 RWKV-7~\cite{peng2025rwkv7}, with mechanisms targeting axis~3
-(non-Abelian state-tracking). The formal complexity-class
-boundary recalled in Section~\ref{sec:bounds} brackets exactly
-where the diagonal class cannot reach and where the
-diagonal-plus-low-rank class is the principal route across.
+(non-Abelian state-tracking). The DeltaProduct parameterisation
+is particularly suited as an axis-3 substrate, since its $n$-step
+Householder product exposes a tunable expressivity dial inside
+the diagonal-plus-low-rank class and allows the cross-architecture
+transfer matrix to be populated at controlled state-tracking
+capacity. The formal complexity-class boundary recalled in
+Section~\ref{sec:bounds} brackets exactly where the diagonal class
+cannot reach and where the diagonal-plus-low-rank class is the
+principal route across.
 
 A second extension addresses a structural epistemological point
 about the criterion. The criterion as stated tests a mechanism's

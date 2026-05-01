@@ -164,17 +164,36 @@ Linear Attention with VIM & 0.1207 & 10\,601\,245 \\
 \end{tabularx}
 \end{table}
 
-The reading at 7M is consistent across the family: on the two
+The reading at 7M is consistent across the family. On the two
 backbones that carry native decay (RWKV-6 and Mamba-2), the
 mechanism-level LION wrapper improves test CER by
 $\Delta = -0.020$ to $-0.037$ over the operator-level alternative
-at matched layers, parameters, and budget. On Linear Attention,
+at matched layers, parameters, and budget. On Linear Attention
 the natural LION-LIT mapping has $\lambda = 1$ and no decay; it
 loses to VIM by $\Delta = +0.109$. Adding decay through the
 LION-S control reverses the result and yields $\Delta = -0.048$.
 The pattern matches the decay-as-prerequisite finding of
-Chapter~\ref{ch:experiments}: the LION wrapper's bidirectional
-benefit on Linear Attention is conditional on a decay-bearing mask,
-and the controlled LION-S deployment supplies that decay through a
-per-token sigmoid that is not present in the underlying causal
-backbone.
+Chapter~\ref{ch:experiments}; the LION wrapper's bidirectional
+benefit on Linear Attention is conditional on a decay-bearing
+mask, and the controlled LION-S deployment supplies that decay
+through a per-token sigmoid that is not present in the underlying
+causal backbone.
+
+A complementary reading attaches to the 14M operator-level
+reference of
+Table~\ref{tab:results:bidirectional-comparison-14m}. On the two
+backbones that carry native decay, the operator-level
+configuration at twelve layers and doubled parameter count
+reaches test CER values within rounding of, and modestly below,
+the matched 7M LION-S rows of the same architectures ($0.0738$
+on 14M RWKV-6 with Bi-WKV against $0.0859$ on 7M RWKV-6 LION-S;
+$0.0746$ on 14M Mamba-2 with VIM against $0.0853$ on 7M Mamba-2
+LION-S). The mechanism-level LION wrapper at 7M sits in
+approximately the range the operator-level family reaches only
+once depth and parameter count are doubled. The reading is that
+the LION wrapper provides equivalent bidirectional expressivity
+at roughly half the compute and parameter budget on the two
+backbones whose causal recurrence carries native decay, with the
+operator-level family's principal cost axis located in the
+doubled serial computation per layer rather than in any
+expressivity advantage at matched scale.

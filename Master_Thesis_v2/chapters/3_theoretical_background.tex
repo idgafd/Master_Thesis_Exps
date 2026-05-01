@@ -19,16 +19,25 @@ mechanisms operate.
 
 \section{Axis decomposition of linear-time RNN expressivity}\label{sec:axes}
 
+In this thesis, \textit{expressivity} refers to the formal
+sequence-transformation capacity of the recurrent state-update
+operator, in the tradition of the formal-expressivity results
+of~\citet{sarrof2024expressive} and the architectural-capacity
+framing of~\citet{yang2024deltanet} and~\citet{siems2025deltaproduct}
+on DeltaNet and DeltaProduct, rather than aggregate benchmark
+performance.
+
 The expressivity of a sequence-modelling architecture is sometimes
-treated as a single-scalar property, with one architecture said to be
-\textit{more expressive} than another. This thesis adopts a different
-position. The expressivity of causal linear-time recurrent
-architectures does not collapse to a single scalar: it decomposes
-into orthogonal axes, each exercised by a different task structure,
-and a mechanism that extends the function class along one axis does
-not generally convert into measured gain on a task whose structural
-prior does not exercise that axis. The decomposition is the
-conceptual scaffold around which the rest of the thesis is organised.
+treated as a single-scalar property, with one architecture said to
+be \textit{more expressive} than another. This thesis adopts a
+different position. The expressivity of causal linear-time
+recurrent architectures does not collapse to a single scalar; it
+decomposes into orthogonal axes, each exercised by a different
+task structure, and a mechanism that extends the function class
+along one axis does not generally convert into measured gain on a
+task whose structural prior does not exercise that axis. The
+decomposition is the conceptual scaffold around which the rest of
+the thesis is organised.
 
 Three axes are central to the thesis and are exercised by the
 empirical matrix reported in Chapter~\ref{ch:experiments}. Two
@@ -85,12 +94,13 @@ diagonal state-space models of depth $L$ cannot represent the word
 problem for any non-Abelian group whose subnormal Abelian-factor
 series exceeds length $L$, regardless of width. Axis three is
 therefore bracketed by formal complexity theory and is out of scope
-for the mechanisms proposed in this thesis. The diagonal-plus-low-rank
-lift of DeltaNet, DeltaProduct, and
-RWKV-7~\cite{schlag2021deltanet, yang2024deltanet, peng2025rwkv7} is
-the principal route by which a recurrent linear-time architecture
-crosses the formal class boundary, and is referenced here to mark
-the boundary rather than exercised. Section~\ref{sec:bounds} returns
+for the mechanisms proposed in this thesis. The diagonal-plus-low-rank lift of
+DeltaNet~\cite{schlag2021deltanet, yang2024deltanet},
+DeltaProduct~\cite{siems2025deltaproduct}, and
+RWKV-7~\cite{peng2025rwkv7} is the principal route by which a
+recurrent linear-time architecture crosses the formal class
+boundary, and is referenced here to mark the boundary rather than
+exercised. Section~\ref{sec:bounds} returns
 to this axis in detail.
 
 Two further axes appear in the related-work map of the thesis but
@@ -778,8 +788,14 @@ introduced by DeltaNet~\cite{schlag2021deltanet} and parallelised
 by Yang et al.~\cite{yang2024deltanet}, in which a rank-one
 Householder update $(I - \beta_{t} k_{t} k_{t}^{\top})$ enlarges
 the reachable transition group beyond what the diagonal spectrum
-alone can simulate. RWKV-7~\cite{peng2025rwkv7} adopts the same
-diagonal-plus-low-rank parameterisation in its time-mix block.
+alone can simulate. The DeltaProduct extension
+of~\citet{siems2025deltaproduct} generalises the rank-one
+Householder step to a product of $n$ Householder factors per token,
+which lifts the reachable transition group further within the
+diagonal-plus-low-rank class and yields a tunable trade-off between
+state-tracking expressivity and per-step compute. The same
+diagonal-plus-low-rank parameterisation appears in
+RWKV-7~\cite{peng2025rwkv7} through its time-mix block.
 Architectures in this class can in principle recognise non-Abelian
 permutation languages that the diagonal class cannot, and the
 impossibility result of~\citet{merrill2024illusion} applies
