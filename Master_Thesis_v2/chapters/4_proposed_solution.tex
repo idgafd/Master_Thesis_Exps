@@ -65,22 +65,104 @@ The criterion that the matrix tests is
 task is proportional to the residual structural deficit the
 architecture leaves uncovered along the axis the mechanism
 targets. The criterion is two-sided. On the positive side, a
-mechanism that extends
-the function class along an axis on which the architecture leaves a
-deficit, applied to a task that exercises that axis, should yield a
-gain whose magnitude orders with the deficit size across
-architectures. On the null side, a mechanism whose target axis is
-not exercised by the task, or whose target axis the architecture's
-native primitives already cover, should yield no measured gain even
-if its parameters move under stochastic gradient descent. The matrix
-is sized to support both kinds of prediction: each row exercises a
-different combination of axis coverage and architectural primitive,
-and the column structure permits the mode-conditional decomposition
-of any observed transfer pattern.
+mechanism that extends the function class along an axis on which
+the architecture leaves a deficit, applied to a task that exercises
+that axis, should yield a gain whose magnitude orders with the
+deficit size across architectures. On the null side, a mechanism
+whose target axis is not exercised by the task, or whose target
+axis the architecture's native primitives already cover, should
+yield no measured gain even if its parameters move under
+stochastic gradient descent. The matrix is sized to support both
+kinds of prediction. Each row exercises a different combination of
+axis coverage and architectural primitive, and the column structure
+permits the mode-conditional decomposition of any observed transfer
+pattern.
+
+\paragraph{Research goal.}
+The thesis characterises expressivity-deficit-driven transferability
+of mechanism-level extensions on diagonal-class linear-time
+recurrent architectures. The goal is empirical and structural rather
+than optimisational. We do not aim to minimise an absolute test
+metric on any single probe.
+
+\paragraph{Research questions.}
+Four research questions structure the empirical evaluation.
+
+\textbf{RQ1 (framework).} Can the expressivity of causal linear-time
+recurrent architectures be characterised through an axis
+decomposition under which a mechanism's gain on a task is
+predictable from the residual structural deficit the architecture
+leaves uncovered along the axis the mechanism targets?
+
+\textbf{RQ2 (causal transfer).} Do the three proposed mechanisms
+transfer across the three causal backbones in a way that orders
+with the architecture-deficit map of
+Section~\ref{sec:backbones:deficit}, and do the three exhibit
+distinct transfer signatures rather than a single common pattern?
+
+\textbf{RQ3 (bidirectional adaptation).} Does the LION
+mechanism-level bidirectional wrapper preserve the transfer pattern
+observed in the causal mode, and are there structural prerequisites
+in the bidirectional setting that are absent in the causal setting?
+
+\textbf{RQ4 (cross-task and cross-distribution).} Does the same
+mechanism-prior alignment hold on a synthetic axis-2 probe
+(Multi-Query Associative Recall) and on a different acoustic
+distribution (Common Voice English), and what modulations does the
+broader distribution introduce?
+
+\paragraph{Research hypotheses.}
+Three hypotheses provide pre-experimental falsifiability markers.
+
+\textbf{RH1 (deficit-proportional ordering).} If the alignment
+criterion holds in the causal mode, the per-mechanism $\Delta$ test
+character error rate ordering across architectures should align
+with the architecture-deficit map of
+Section~\ref{sec:backbones:deficit}. Backbones with larger residual
+deficit along the mechanism's target axis should receive larger
+mechanism gains.
+
+\textbf{RH2 (decay as bidirectional prerequisite).} If a
+value-decorrelation mechanism applied bidirectionally requires
+bounded value accumulation, then removing decay from the
+bidirectional substrate should invert the mechanism's transfer
+sign. The hypothesis is testable by deploying the same mechanism
+on the LION-LIT (no decay) and the LION-S (with per-token sigmoid
+decay) variants of Linear Attention.
+
+\textbf{RH3 (cross-distribution).} A more diverse acoustic
+distribution should expose mechanism-task interactions that a
+narrower distribution masks. We pre-register Common Voice
+English~\cite{ardila2019commonvoice}, with its broader speaker
+diversity, accent variability, and recording-condition
+heterogeneity, as a probe where mechanisms selectively absorbed by
+an architecture's native primitives under the LibriSpeech audiobook
+distribution should become productive when the broader distribution
+exposes residual axis-1 sub-structure.
+
+\paragraph{Goals.}
+Three deliverables follow from the research questions and
+hypotheses.
+
+\textbf{G1.} Three mechanism-level extensions formalised for the
+diagonal-class linear-time recurrent family, instantiated on three
+causal backbones (RWKV-6, Mamba-2, Linear Attention) and on the
+LION bidirectional adaptation of the same three.
+
+\textbf{G2.} A cross-architecture transfer matrix populated under
+matched compute, reporting per-cell test character error rate on
+LibriSpeech and Common Voice, per-sequence accuracy on Multi-Query
+Associative Recall at $T \in \{64, 256, 1024\}$, and per-mechanism
+diagnostics at the parameter level.
+
+\textbf{G3.} The mechanism-prior alignment criterion stated as a
+predictive heuristic, supported by the matrix evidence and
+bracketed by the diagonal-class formal scope of
+Section~\ref{sec:bounds}.
 
 The three mechanisms target distinct axes on different sides of
 each backbone (input side, transition side, value side) and are
-algebraically independent: cells in the experimental matrix
+algebraically independent. Cells in the experimental matrix
 exercise individual mechanisms, pairwise compositions, and the
 full triple composition.
 
