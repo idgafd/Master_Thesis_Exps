@@ -54,6 +54,42 @@ extension referenced in Section~\ref{sec:bounds}. The remainder of
 this chapter positions the mechanisms studied in the thesis
 against the deficits these structural differences introduce.
 
+\section{Bidirectional adaptation strategies for causal linear RNNs}
+
+Causal linear-time recurrences propagate state in one direction,
+which suits streaming and autoregressive workloads but discards
+future context that is available in offline settings such as
+document encoding, full-utterance speech recognition, and image
+classification. Three structurally distinct strategies have
+emerged for adapting an existing causal architecture to
+bidirectional input access. At the mechanism level,
+LION~\cite{afzal2025linear} replaces the causal scan kernel with
+a parallel $T \times T$ attention computation under a symmetric
+decay mask, retaining the time-mix and channel-mix abstraction
+while changing the sequence-access pattern from causal to
+bidirectional. At the operator level,
+Vision-RWKV~\cite{duan2024visionrwkv} introduces a bidirectional
+WKV scan that runs the causal RWKV recurrence forwards and
+backwards and combines the resulting hidden states; Vision
+Mamba~\cite{zhu2024visionmamba} applies the same template to
+selective state-space models, pairing forward and backward Mamba
+blocks within each layer. At the ordering level, no new operator
+is introduced: the input is rearranged so that successive layers
+see the sequence in different traversal orders, as in
+VisualRWKV's per-layer scan alternation~\cite{hou2024visualrwkv},
+VMamba's four-route Cross-Scan Module~\cite{liu2024vmamba},
+LocalMamba's windowed selective scan with dynamic per-layer
+pattern selection~\cite{huang2024localmamba}, and ZigMa's
+zero-parameter zigzag pattern~\cite{hu2024zigma}. The three
+strategies trade off compute, memory, and information-flow
+geometry: the mechanism-level form pays a quadratic memory
+footprint in exchange for unrestricted future access at every
+layer; the operator-level form retains a linear-time envelope but
+doubles the serial compute per layer; the ordering-level form
+costs only a tensor reshape, but bidirectional information flow
+accumulates across the depth stack rather than within any single
+layer.
+
 \begin{table}[!htbp]
 \centering
 \small
@@ -117,42 +153,6 @@ Diagonal-plus-low-rank lift
 \end{tabularx}
 \end{table}
 
-\section{Bidirectional adaptation strategies for causal linear RNNs}
-
-Causal linear-time recurrences propagate state in one direction,
-which suits streaming and autoregressive workloads but discards
-future context that is available in offline settings such as
-document encoding, full-utterance speech recognition, and image
-classification. Three structurally distinct strategies have
-emerged for adapting an existing causal architecture to
-bidirectional input access. At the mechanism level,
-LION~\cite{afzal2025linear} replaces the causal scan kernel with
-a parallel $T \times T$ attention computation under a symmetric
-decay mask, retaining the time-mix and channel-mix abstraction
-while changing the sequence-access pattern from causal to
-bidirectional. At the operator level,
-Vision-RWKV~\cite{duan2024visionrwkv} introduces a bidirectional
-WKV scan that runs the causal RWKV recurrence forwards and
-backwards and combines the resulting hidden states; Vision
-Mamba~\cite{zhu2024visionmamba} applies the same template to
-selective state-space models, pairing forward and backward Mamba
-blocks within each layer. At the ordering level, no new operator
-is introduced: the input is rearranged so that successive layers
-see the sequence in different traversal orders, as in
-VisualRWKV's per-layer scan alternation~\cite{hou2024visualrwkv},
-VMamba's four-route Cross-Scan Module~\cite{liu2024vmamba},
-LocalMamba's windowed selective scan with dynamic per-layer
-pattern selection~\cite{huang2024localmamba}, and ZigMa's
-zero-parameter zigzag pattern~\cite{hu2024zigma}. The three
-strategies trade off compute, memory, and information-flow
-geometry: the mechanism-level form pays a quadratic memory
-footprint in exchange for unrestricted future access at every
-layer; the operator-level form retains a linear-time envelope but
-doubles the serial compute per layer; the ordering-level form
-costs only a tensor reshape, but bidirectional information flow
-accumulates across the depth stack rather than within any single
-layer.
-
 The thesis adopts the mechanism-level strategy and instantiates
 LION as a parallel adaptation across all three linear-time
 backbones. This choice is motivated by the structural property
@@ -178,6 +178,7 @@ before the recurrent core and scaled stably past 30~M parameters
 on the same benchmark. The structural difference is a single
 per-block operator that gives every token explicit access to its
 four spatial neighbours.
+
 
 \begin{table}[t]
 \centering
