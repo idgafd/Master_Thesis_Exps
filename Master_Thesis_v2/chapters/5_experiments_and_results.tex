@@ -363,22 +363,23 @@ to $-0.0226$ on Common Voice.}
 \label{fig:f4-libri-cv}
 \end{figure}
 
-Twelve of fifteen non-vanilla cells transfer to Common Voice
-with $|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}| < 0.020$,
-preserving the rank ordering of the LibriSpeech mechanism
-column. Three cells off-diagonal carry the cross-distribution
-information of the section. The Mamba-2~$\times$~DHO cell,
-anticipated in Section~\ref{sec:experiments:transfer}, gives a
-delta-of-deltas $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} =
--0.0196$, the largest absolute mechanism amplification in the
-table under the broader Common Voice distribution. The
-LA~$\times$~DHO and LA~$\times$~DHO~$\times$~MSDC
+Most non-vanilla cells, nine of twelve, remain within
+$|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}| < 0.020$,
+preserving the rank ordering of the LibriSpeech mechanism column.
+Four cells carry the structural cross-distribution information
+of the section. The Mamba-2~$\times$~DHO cell, anticipated in
+Section~\ref{sec:experiments:transfer}, gives a delta-of-deltas
+$\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} = -0.0196$;
+although still within the band, it is the cleanest example of
+task-prior amplification, with the near-noise LibriSpeech cell
+becoming productive on Common Voice. Three cells exceed the
+band. The LA~$\times$~DHO and LA~$\times$~DHO~$\times$~MSDC
 cells deliver smaller absolute gains on Common Voice than on
 LibriSpeech ($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} =
 +0.0331$ and $+0.0263$), reflecting the absorbed share of the
-LA-on-LibriSpeech BREAK pattern under the broader Common Voice
-distribution. The RWKV-6~$\times$~CVD~$\times$~MSDC composition
-shows the largest amplification in the opposite direction
+LA-on-LibriSpeech BREAK pattern under the broader distribution.
+The RWKV-6~$\times$~CVD~$\times$~MSDC composition shows the
+largest amplification in the opposite direction
 ($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} = -0.0335$),
 consistent with the multi-dilation receptive-field configuration
 matching the broader Common Voice phonetic coverage. The reading
