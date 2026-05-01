@@ -1,15 +1,12 @@
 \chapter{Proposed Solution}\label{ch:proposed}
 
-This chapter introduces the experimental matrix as the chapter's
-principal artefact, states the mechanism-prior alignment criterion
-the matrix is built to test, and defines the three mechanisms
-whose cross-architecture transfer it measures: the Multi-Scale
-Depthwise Convolution, the Damped Harmonic Oscillator, and the
-Chunked Value Decorrelation. The chapter also describes the
-unified LION wrapper that lifts each causal backbone to its
-bidirectional parallel form and the diagnostic instrumentation
-used by Chapter~\ref{ch:experiments} to attribute mechanism
-behaviour at the parameter level.
+This chapter defines the transfer-pattern matrix used to test
+mechanism-prior alignment, then introduces the three mechanisms
+evaluated in the matrix: Multi-Scale Depthwise Convolution, Damped
+Harmonic Oscillator, and Chunked Value Decorrelation. It closes
+with the LION bidirectional wrapper that lifts each causal
+backbone to its parallel form and the parameter-level diagnostics
+used by Chapter~\ref{ch:experiments}.
 
 \section{Problem formulation and the experimental matrix}\label{sec:proposed:matrix}
 
@@ -45,23 +42,17 @@ of the matrix is reported in Chapter~\ref{ch:experiments}; this
 chapter states the criterion the matrix is built to test and defines the
 three mechanisms whose transfer it measures.
 
-The criterion that the matrix tests is
-\textit{mechanism-prior alignment}. Larger residual deficits
-along the axis a mechanism targets tend to correspond to larger
-absolute gains; no measured gain is expected when the axis is
-not exercised by the task. The criterion is two-sided. On the positive side, a
-mechanism that extends the function class along an axis on which
-the architecture leaves a deficit, applied to a task that exercises
-that axis, should yield a gain whose magnitude orders with the
-deficit size across architectures. On the null side, a mechanism
-whose target axis is not exercised by the task, or whose target
-axis the architecture's native primitives already cover, should
-yield no measured gain even if its parameters move under
-stochastic gradient descent. The matrix is sized to support both
-kinds of prediction. Each row exercises a different combination of
-axis coverage and architectural primitive, and the column structure
-permits the mode-conditional decomposition of any observed transfer
-pattern.
+The matrix tests \textit{mechanism-prior alignment}, which is
+two-sided. Positively, a mechanism should yield larger gains on
+architectures with larger residual deficits along its target axis,
+provided the task exercises that axis. Negatively, it should not
+improve a task that does not exercise the axis, nor an
+architecture whose native primitives already cover it, even if the
+mechanism's parameters move under stochastic gradient descent. The
+matrix is sized to support both kinds of prediction: each row
+exercises a different combination of axis coverage and
+architectural primitive, and the column structure permits the
+mode-conditional decomposition of any observed transfer pattern.
 
 \paragraph{Research goal.}
 The thesis characterises expressivity-deficit-driven transferability
@@ -73,77 +64,68 @@ metric on any single probe.
 \paragraph{Research questions.}
 Four research questions structure the empirical evaluation.
 
-\textbf{RQ1 (framework).} Can the expressivity of causal linear-time
-recurrent architectures be characterised through an axis
-decomposition under which a mechanism's gain on a task is
-predictable from the residual structural deficit the architecture
-leaves uncovered along the axis the mechanism targets?
+\textbf{RQ1 (framework).} Can causal linear-time recurrent
+expressivity be decomposed into axes that predict mechanism gains
+from residual architectural deficits?
 
-\textbf{RQ2 (causal transfer).} Do the three proposed mechanisms
-transfer across the three causal backbones in a way that orders
-with the architecture-deficit map of
-Section~\ref{sec:backbones:deficit}, and do the three exhibit
-distinct transfer signatures rather than a single common pattern?
+\textbf{RQ2 (causal transfer).} Do MSDC, DHO, and CVD transfer
+across RWKV-6, Mamba-2, and Linear Attention according to the
+architecture-deficit map of
+Section~\ref{sec:backbones:deficit}, and do they produce distinct
+transfer signatures?
 
 \textbf{RQ3 (bidirectional adaptation).} Does the LION
-mechanism-level bidirectional wrapper preserve the transfer pattern
-observed in the causal mode, and are there structural prerequisites
-in the bidirectional setting that are absent in the causal setting?
+bidirectional wrapper preserve the causal transfer pattern, and
+does bidirectional use introduce additional structural
+prerequisites?
 
-\textbf{RQ4 (cross-task and cross-distribution).} Does the same
-mechanism-prior alignment hold on a synthetic axis-2 probe
-(Multi-Query Associative Recall) and on a different acoustic
-distribution (Common Voice English), and what modulations does the
-broader distribution introduce?
+\textbf{RQ4 (cross-task and cross-distribution).} Does
+mechanism-prior alignment hold on the synthetic axis-2 probe
+Multi-Query Associative Recall and on the Common Voice English
+acoustic distribution, and how does distributional breadth
+modulate the transfer pattern?
 
 \paragraph{Research hypotheses.}
 Three hypotheses provide pre-experimental falsifiability markers.
 
-\textbf{RH1 (deficit-driven ordering).} If the alignment
-criterion holds in the causal mode, the per-mechanism $\Delta$ test
-character error rate ordering across architectures should align
-with the architecture-deficit map of
-Section~\ref{sec:backbones:deficit}. Backbones with larger residual
-deficit along the mechanism's target axis should receive larger
-mechanism gains.
+\textbf{RH1 (deficit-driven ordering).} In the causal mode, the
+per-mechanism $\Delta$ test character error rate ordering across
+architectures should align with the architecture-deficit map of
+Section~\ref{sec:backbones:deficit}: backbones with larger
+residual deficit along the mechanism's target axis should receive
+larger mechanism gains.
 
-\textbf{RH2 (decay as bidirectional prerequisite).} If a
-value-decorrelation mechanism applied bidirectionally requires
-bounded value accumulation, then removing decay from the
-bidirectional substrate should invert the mechanism's transfer
-sign. The hypothesis is testable by deploying the same mechanism
-on the LION-LIT (no decay) and the LION-S (with per-token sigmoid
-decay) variants of Linear Attention.
+\textbf{RH2 (decay as bidirectional prerequisite).} If
+bidirectional value decorrelation requires bounded value
+accumulation, then CVD should fail or invert on LION-LIT Linear
+Attention (no decay) and recover on the controlled LION-S variant
+(per-token sigmoid decay).
 
-\textbf{RH3 (cross-distribution).} A more diverse acoustic
-distribution should expose mechanism-task interactions that a
-narrower distribution masks. We pre-specify Common Voice
-English~\cite{ardila2019commonvoice}, with its broader speaker
-diversity, accent variability, and recording-condition
-heterogeneity, as a probe where mechanisms selectively absorbed by
-an architecture's native primitives under the LibriSpeech audiobook
-distribution should become productive when the broader distribution
-exposes residual axis-1 sub-structure.
+\textbf{RH3 (cross-distribution).} We pre-specify Common Voice
+English~\cite{ardila2019commonvoice} as a probe whose broader
+speaker, accent, and recording-condition variability should expose
+mechanism-task interactions that the LibriSpeech audiobook
+distribution masks; mechanisms selectively absorbed by an
+architecture's native primitives under LibriSpeech should become
+productive when the broader distribution exposes residual axis-1
+sub-structure.
 
 \paragraph{Goals.}
 Three deliverables follow from the research questions and
 hypotheses.
 
-\textbf{G1.} Three mechanism-level extensions formalised for the
-diagonal-class linear-time recurrent family, instantiated on three
-causal backbones (RWKV-6, Mamba-2, Linear Attention) and on the
-LION bidirectional adaptation of the same three.
+\textbf{G1.} Three mechanism-level extensions for the
+diagonal-class linear-time recurrent family, instantiated on
+RWKV-6, Mamba-2, Linear Attention, and their LION variants.
 
-\textbf{G2.} A cross-architecture transfer matrix populated under
-matched compute, reporting per-cell test character error rate on
-LibriSpeech and Common Voice, per-sequence accuracy on Multi-Query
-Associative Recall at $T \in \{64, 256, 1024\}$, and per-mechanism
-diagnostics at the parameter level.
+\textbf{G2.} A matched-compute transfer matrix reporting CER on
+LibriSpeech and Common Voice, per-sequence accuracy on MQAR at
+$T \in \{64, 256, 1024\}$, and parameter-level mechanism
+diagnostics.
 
 \textbf{G3.} The mechanism-prior alignment criterion stated as a
-predictive heuristic, supported by the matrix evidence and
-bracketed by the diagonal-class formal scope of
-Section~\ref{sec:bounds}.
+predictive heuristic, supported by matrix evidence and scoped by
+the diagonal-class bounds of Section~\ref{sec:bounds}.
 
 The three mechanisms target distinct axes on different sides of
 each backbone (input side, transition side, value side) and are
@@ -183,13 +165,15 @@ mixing weights replicated independently per layer.
 
 \subsection{Design notes}
 
-The dilation set $\{1, 2, 4, 8\}$ at kernel size $k = 3$ produces a
-maximum past-only receptive field of $1 + (k - 1) \cdot \max \mathcal{D} = 17$
-frames at the deepest dilation. After the two-fold acoustic
-subsampling that precedes the encoder in the experimental setup, the
-range corresponds to roughly forty to one-hundred-sixty milliseconds
-in the input audio, which matches the phoneme-to-syllable scale
-relevant to character-level CTC decoding. The same dilation set was
+At kernel size $k = 3$, the dilation set $\{1, 2, 4, 8\}$
+produces per-branch past-only receptive fields of $3$, $5$, $9$,
+and $17$ encoder frames respectively. With the $10$~ms hop and
+the two-fold acoustic subsampling that precedes the encoder
+(Section~\ref{app:setup:training}), one encoder frame spans
+$20$~ms of input audio, so the four branches cover $60$, $100$,
+$180$, and $340$~ms of past context. This range covers the
+phoneme-to-syllable scale relevant to character-level CTC
+decoding. The same dilation set was
 selected on linguistic grounds in the autoregressive language model
 of~\citet{kiruluta2025breaking} and is the most direct precedent for
 the input-side multi-dilation form used here.
@@ -219,13 +203,11 @@ with its MSDC-augmented LION form.
 \centering
 \small
 \caption[Per-backbone form of Multi-Scale Depthwise
-Convolution]{Per-backbone form of Multi-Scale Depthwise
-Convolution. The vanilla causal column reproduces the backbone's
-state and readout from Sections~\ref{sec:backbones:la},
-\ref{sec:backbones:rwkv6}, and~\ref{sec:backbones:mamba2}. The two
-augmented columns show the algebraic insertion point of MSDC on each
-backbone in the causal mode and in the LION bidirectional mode. The
-mechanism operates on the input side in every cell.}
+Convolution]{Per-backbone form of MSDC. The vanilla column
+reproduces the backbone's state and readout; the two augmented
+columns show the algebraic insertion point of MSDC in the causal
+and LION bidirectional modes. The mechanism operates on the input
+side in every cell.}
 \label{tab:msdc-deployment}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.25}
@@ -336,7 +318,7 @@ schedule is the mechanism's only canonical clip parameterisation.
 
 \subsection{Design notes}
 
-Three design choices specify the mechanism completely beyond the
+Four design choices specify the mechanism completely beyond the
 algebraic form of equation~(\ref{eq:dho-generic}). First, the
 viscosity coefficient $\eta_{h, b}$ is initialised to zero. At step
 zero of training, the Rayleigh-dissipation term contributes nothing
@@ -394,12 +376,10 @@ and the DHO-augmented transition in the LION bidirectional mode.
 \centering
 \small
 \caption[Per-backbone form of the Damped Harmonic
-Oscillator]{Per-backbone form of the Damped Harmonic
-Oscillator. The vanilla causal column reproduces the per-step
-transition operator of each backbone from
-Section~\ref{sec:backbones}. The augmented columns show the
-DHO-replaced transition in the causal mode and in the LION
-bidirectional mode. The block parameters $\eta_{h, b}$,
+Oscillator]{Per-backbone form of DHO. The vanilla column
+reproduces the per-step transition operator of each backbone; the
+augmented columns show the DHO-replaced transition in the causal
+and LION bidirectional modes. The block parameters $\eta_{h, b}$,
 $\lambda_{\mathrm{raw}, h, b}$, and the LoRA projection that
 produces $\theta_{t, h, b}$ are shared between the two modes per
 backbone.}
@@ -497,12 +477,10 @@ underlying backbone in place of the raw values, so the
 recurrence's transition operator and readout direction are not
 changed.
 
-The full $T \times T$ key-similarity matrix is never materialised.
-The preconditioner is constructed and inverted on chunk-local
-$T_{c} \times T_{c}$ blocks, which preserves the linear-time
-backbone's $O(T)$ envelope at the expense of a $T_{c}^{3}$
-per-chunk per-head linear-system solve cost, amortised across the
-$T / T_{c}$ chunks of the sequence.
+Only $T_{c} \times T_{c}$ systems are materialised. Per head, the
+$(T / T_{c})$ chunks each pay an $O(T_{c}^{3})$ linear-system
+solve, giving total cost $O(T \, T_{c}^{2})$, which preserves the
+backbone's linear-in-$T$ envelope at fixed $T_{c}$.
 
 \subsection{Design notes}
 
@@ -534,32 +512,19 @@ preconditioner construction at the same $T_{c}$.
 
 \subsection{Provenance: shared logic, distinct substrate}
 
-The relationship between CVD and the LUCID Attention mechanism
-of~\citet{duvvuri2026lucid} is one of shared logical motivation
-rather than direct adaptation. LUCID is a softmax-attention
-mechanism that operates on the full $T \times T$ attention matrix
-inside a quadratic-complexity Transformer, preserves the
-$O(N^{2} d)$ complexity envelope, constructs the preconditioner of
-equation~(\ref{eq:lucid-base}) as a fixed function of the keys
-without a learnable temperature, and combines the preconditioner
-with the standard softmax weights of
-equation~(\ref{eq:lucid-output}) in front of the value path. CVD
-operates inside the recurrence of a linear-time RNN, never
-materialises the full $T \times T$ matrix, uses chunk-local
-$T_{c} \times T_{c}$ systems exclusively, introduces a per-head
-learnable $\tau_{h}$ in place of LUCID's fixed $1 / \sqrt{d}$
-scaling, and feeds the preconditioned values into the backbone's
-unchanged scan rather than into a softmax-weighted attention sum.
-The shared logical move is the use of a key-similarity
-preconditioner to decorrelate values before they enter the memory
-operation, motivated by the same observation that correlated keys
-cause readout interference in any associative-memory
-implementation. The relation to the rank-one Householder erasure
-of DeltaNet~\cite{schlag2021deltanet, yang2024deltanet} is
-parallel: both DeltaNet and CVD remove the component of each value
-aligned with earlier keys under the key-similarity geometry, but
-DeltaNet does so online with a single rank-one update per token
-while CVD does so in closed form across the chunk-local block.
+CVD is not a direct adaptation of LUCID. LUCID operates inside
+quadratic softmax attention, materialises a full $T \times T$
+preconditioner, and applies $P^{-1} V$ under softmax weights via
+the construction of equations~(\ref{eq:lucid-base})
+and~(\ref{eq:lucid-output}). CVD keeps only the shared logical
+move, key-similarity-based value decorrelation, but applies it to
+chunk-local recurrent memory updates with a learnable per-head
+temperature $\tau_{h}$ in place of LUCID's fixed $1 / \sqrt{d}$
+scaling. Its relation to DeltaNet's rank-one
+erasure~\cite{schlag2021deltanet, yang2024deltanet} is similarly
+structural: DeltaNet performs online rank-one Householder erasure
+per token, whereas CVD performs closed-form decorrelation within
+each chunk under the same key-similarity geometry.
 
 \subsection{Per-backbone form}
 
@@ -575,13 +540,11 @@ transition operator and readout direction unchanged.
 \centering
 \small
 \caption[Per-backbone form of Chunked Value
-Decorrelation]{Per-backbone form of Chunked Value
-Decorrelation. The mechanism operates on chunk-local
-$T_{c} \times T_{c}$ blocks on every backbone. The
-key-similarity source identifies the key-side tensor that
-populates the chunk-local Gram matrix, and the substitution site
-identifies where in the per-block computation the preconditioned
-values $\tilde{V}_{c}$ replace the raw values.}
+Decorrelation]{Per-backbone form of CVD. Each form builds a
+chunk-local key-similarity preconditioner on $T_{c} \times T_{c}$
+blocks and substitutes the preconditioned values
+$\tilde{V}_{c}$ for the raw values consumed by the native
+recurrent computation.}
 \label{tab:cvd-deployment}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.25}
@@ -617,19 +580,13 @@ $K_{c}^{\mathrm{RN}} (K_{c}^{\mathrm{RN}})^{\top}$ Gram matrix of
 the generic form and produces a preconditioner whose
 interpretation matches the RWKV-6 and Linear Attention forms.
 
-The three CVD forms above, and the three MSDC and DHO forms in
+The three CVD forms, and the MSDC and DHO forms in
 Sections~\ref{sec:proposed:msdc} and~\ref{sec:proposed:dho},
-illustrate a property of the mechanisms shared with all three
-proposed extensions of this thesis. The mechanisms are
-transferable at the functional level, not necessarily at the
-tensor-implementation level. Each backbone-specific form
-implements the same logical operation on the chunk structure
-native to that substrate: the chunk-local key-similarity
-preconditioner is the operation; the chunk structure is the
-substrate; the routing into the substrate is local. The shared
-operation is what the cross-architecture transfer matrix tests;
-the local routing is what the per-backbone formalisation
-provides.
+share one property: transferability is functional rather than
+tensor-identical. Each backbone receives the same logical
+operation, routed through its native chunk structure; the
+cross-architecture transfer matrix tests the shared operation,
+and the per-backbone formalisation supplies the local routing.
 
 \section{Unified LION wrapper}\label{sec:proposed:lion}
 
@@ -709,33 +666,47 @@ Linear Attention & none ($\lambda_{k} = 1$) & LION-LIT (default); LION-S (contro
 
 \section{Diagnostic instrumentation}\label{sec:proposed:probes}
 
-The empirical chapter attributes mechanism behaviour at the
-parameter level using a set of per-mechanism diagnostic probes
-whose construction is summarised here. Each probe reports a
-per-step scalar that distinguishes whether a mechanism is engaged
-under stochastic gradient descent and whether its engagement is
-helpful for the primary metric, supporting the four-cell
-engagement classifier that organises the closed-cell evidence in
-Chapter~\ref{ch:experiments}.
+Chapter~\ref{ch:experiments} attributes mechanism behaviour at
+the parameter level through a per-mechanism diagnostic probe.
+Table~\ref{tab:mechanism-diagnostics} lists the probe per
+mechanism and the reading it supports.
 
-For the Multi-Scale Depthwise Convolution mechanism, the probe
-reports the per-layer norm of the mixing weights $\alpha_{d}$ for
-$d > 1$ and the per-layer gradient signal on those weights,
-distinguishing the case in which the multi-dilation branches remain
-at their initialisation from the case in which they diverge under
-the gradient. For the Damped Harmonic Oscillator mechanism, the
-probe reports the per-head per-block trajectory of $\eta_{h, b}$
-and the rotation-angle distribution $\theta_{t, h, b}$,
-distinguishing the case in which the Rayleigh-dissipation coupling
-remains near zero from the case in which it engages. For the
-Chunked Value Decorrelation mechanism, the probe reports the
-trained per-head temperature $\tau_{h}$ and the chunk-local
-condition number of the Gram matrix that enters $P_{c}$,
-distinguishing the case in which the preconditioner is near-identity
-from the case in which it actively decorrelates. The four-cell
-engagement classifier crosses the parameter-mobility signal with
-the primary metric outcome, separating mechanisms that are engaged
-and helpful from those that are engaged without converting into
-measured gain, those that fail to engage, and the residual cell.
-The full classifier definition and its application to the
-closed-cell evidence are deferred to Chapter~\ref{ch:experiments}.
+\begin{table}[t]
+\centering
+\small
+\caption[Per-mechanism diagnostics]{Parameter-level diagnostic
+probes used to classify mechanism engagement.}
+\label{tab:mechanism-diagnostics}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\linewidth}{@{}p{1.6cm} p{4.4cm} X@{}}
+\toprule
+\textbf{Mechanism} & \textbf{Diagnostic} & \textbf{Reading} \\
+\midrule
+MSDC &
+Per-layer norm and gradient of the mixing weights $\alpha_{d}$
+for $d > 1$ &
+Whether the multi-dilation branches remain at initialisation or
+diverge under the gradient \\
+\addlinespace
+DHO &
+Per-head per-block trajectory of the viscosity $\eta_{h, b}$ and
+distribution of the rotation angle $\theta_{t, h, b}$ &
+Whether the Rayleigh-dissipation coupling stays near zero or
+engages, and how broadly the rotation operator is used \\
+\addlinespace
+CVD &
+Trained per-head temperature $\tau_{h}$ and the chunk-local
+condition number of the Gram matrix entering $P_{c}$ &
+Whether the preconditioner stays near identity or actively
+decorrelates \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A four-cell engagement classifier crosses the parameter-mobility
+signal of each diagnostic with the primary metric outcome,
+separating mechanisms that are engaged and helpful from those
+engaged without converting into measured gain, those that fail
+to engage, and the residual cell. The classifier is defined and
+applied in Chapter~\ref{ch:experiments}.
