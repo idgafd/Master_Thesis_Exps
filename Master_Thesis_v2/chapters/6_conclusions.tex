@@ -1,127 +1,95 @@
 \chapter{Conclusions}\label{ch:conclusions}
 
-This thesis characterised three causal linear-time recurrent
-backbones (RWKV-6, Mamba-2, Linear Attention) and three
-mechanism-level extensions (Multi-Scale Depthwise Convolution,
-Damped Harmonic Oscillator, Chunked Value Decorrelation) on a
-cross-architecture transfer matrix at 7M and 14M parameter
-scales. The matrix supports a predictive criterion that we call
-mechanism-prior alignment: larger residual deficits along the
-axis a mechanism targets tend to correspond to larger absolute
-gains, and no measured gain is expected when the mechanism's
-axis is not exercised by the task.
+This thesis evaluated three linear-time recurrent backbones
+(RWKV-6, Mamba-2, Linear Attention) and three mechanism-level
+extensions (MSDC, DHO, CVD) in a matched cross-architecture
+transfer matrix. The results support mechanism-prior alignment:
+mechanisms help most when their target axis matches both an
+architectural deficit and the structure exercised by the task.
 
 \section{Summary of findings}\label{sec:conclusions:summary}
 
-The matrix populates the criterion in six structural signatures
-across modes, scales, probes, and composition settings
-(Section~\ref{sec:experiments:synthesis}): deficit-driven
-ordering on MSDC, the LibriSpeech-only DHO direction (largest
-absolute gain on Linear Attention, small absolute gains on
-RWKV-6 and Mamba-2 under the audiobook distribution),
-asymmetric transfer on CVD, the
-LION-LIT~$\times$~CVD controlled falsifier isolating decay as
-the bidirectional-mode prerequisite, the
-Mamba-2~$\times$~DHO cross-distribution refinement to alignment
-between mechanism and task-as-exercised-by-data, and the axis-2
-isolation on the Multi-Query Associative Recall length sweep
-where mechanism-augmented linear-time backbones solve the task
-at $T = 1024$ while the causal Transformer fails. The matrix
-ceiling on LibriSpeech is the 14M Mamba-2 CVD~$\times$~MSDC
-composition cell at test character error rate $0.0618$; the
-strongest single-mechanism gain is the LA LION-LIT~$\times$~DHO
-BREAK at a $65\%$ relative reduction. The chapter does not
-lead on these absolute or relative numbers; the artefact is the
-matrix and the predictive criterion the matrix supports.
+The main empirical finding is that transfer is structured rather
+than uniform. MSDC follows the local-mixing deficit ordering
+LA $>$ RWKV-6 $>$ Mamba-2 across backbones. DHO produces its
+strongest gains on Linear Attention, where the vanilla transition
+has neither attenuation nor phase, but is distribution-modulated
+on Mamba-2: the LibriSpeech near-null becomes productive on
+Common Voice. CVD transfers asymmetrically and exposes decay as a
+prerequisite in the bidirectional Linear Attention setting:
+LION-LIT~$\times$~CVD is the only harmful cell in the matrix,
+while controlled LION-S restores productive transfer. On MQAR,
+MSDC and CVD solve the axis-2 recall probe at every reported
+length while the causal Transformer baseline fails at $T = 1024$;
+DHO fails as predicted by axis mismatch.
+
+The best LibriSpeech cell is the 14M Mamba-2 CVD~$\times$~MSDC
+composition at CER $0.0618$, but this number is secondary to the
+cross-matrix pattern supporting the criterion.
 
 \section{Limitations}\label{sec:conclusions:limitations}
 
-Five limitations bracket the empirical scope. First, the matrix
-is single-seed for every reported cell. Per-cell standard errors
-are not estimated. The across-matrix pattern is read off
-approximately seventy statistical tests oriented in a single
-coherent direction, which provides aggregate statistical
-confidence that offsets the variance of any individual cell. The
-single-seed methodology is a deliberate scope decision under the
-available compute for the matched 50-epoch budget across 65
-cells. Multi-seed validation of the high-magnitude cells, in
-particular the LA causal DHO and LA LION-LIT DHO cells, would
-sharpen the within-cell claim without changing the across-matrix
-pattern. Second, the present matrix provides stronger evidence
-for the positive-transfer side of the criterion than for the
-full converse / null side; systematic null-effect validation is
-left for future multi-seed work, and the criterion is reported as
-a predictive heuristic supported primarily on its
-positive-transfer half. Third, we do not fully disentangle
-structural inductive bias from generic optimisation benefits;
-generic parameter-matched controls (for example, MSDC compared
-to a residual block of equivalent parameter count) are left for
-future work. Fourth, the matrix scales to 14M parameters; the
-conditional 30M scale was dropped from scope since no ranking
-inversion appears between 7M and 14M, but the deficit-driven
-ordering is not asserted at scales beyond 14M. Fifth, the
-acoustic probes are English-only; the Common Voice
-cross-distribution validation exercises within-language acoustic
-variability rather than cross-language transfer.
-
-Internal hyperparameter ablations of the proposed mechanisms
-(the MSDC dilation set $\{1, 2, 4, 8\}$, the DHO depth-graded
-$\theta$-clip schedule of $\pi/8$ and $\pi/4$, the CVD
-chunk-local preconditioner temperature $\tau_{h}$) are not
-exhaustively tested in this thesis. The chosen values follow
-literature precedent for the underlying primitives and are
-reported as design choices rather than as ablated optima.
+Six limitations bracket the results. First, all matrix cells are
+single-seed, so per-cell standard errors are not estimated; the
+across-matrix claim rests on the coherence of many aligned
+comparisons rather than on formal per-cell significance tests.
+Second, the evidence is stronger on the positive-transfer side
+of the criterion than on the full converse / null side;
+systematic null-effect validation is left to future multi-seed
+work, and the criterion is reported as a predictive heuristic
+supported primarily on its positive-transfer half. Third, the
+experiments do not fully separate structural inductive bias from
+generic optimisation benefit; generic parameter-matched controls
+(for example, MSDC compared to a residual block of equivalent
+parameter count) are left for future work. Fourth, the matrix
+stops at 14M parameters, so the deficit-driven ordering is not
+asserted at scales beyond 14M. Fifth, the acoustic probes are
+English-only, with Common Voice testing within-language
+distribution shift rather than multilingual transfer. Sixth, the
+mechanism hyperparameters (the MSDC dilation set
+$\{1, 2, 4, 8\}$, the DHO depth-graded $\theta$-clip schedule of
+$\pi/8$ and $\pi/4$, the CVD chunk-local preconditioner
+temperature $\tau_{h}$) are reported as design choices following
+literature precedent rather than as ablated optima.
 
 \section{Scope and future work}\label{sec:conclusions:future-work}
 
-The criterion as stated holds within the diagonal-class function
-family of Section~\ref{sec:bounds}. The matrix does not test it
-on diagonal-plus-low-rank architectures, and the criterion is
-not asserted on that class. The natural extension of the
-framework is to repeat the cross-architecture transfer matrix
-on a diagonal-plus-low-rank backbone class such as
-DeltaNet~\cite{schlag2021deltanet, yang2024deltanet},
+The first extension is to cross the diagonal-class boundary. The
+present criterion is tested only on diagonal-class recurrent
+backbones. Repeating the matrix on diagonal-plus-low-rank models
+such as DeltaNet~\cite{schlag2021deltanet, yang2024deltanet},
 DeltaProduct~\cite{siems2025deltaproduct}, or
-RWKV-7~\cite{peng2025rwkv7}, with mechanisms targeting axis~3
-(non-Abelian state-tracking). The DeltaProduct parameterisation
-is particularly suited as an axis-3 substrate, since its $n$-step
-Householder product exposes a tunable expressivity dial inside
-the diagonal-plus-low-rank class and allows the cross-architecture
-transfer matrix to be populated at controlled state-tracking
-capacity. The formal complexity-class boundary recalled in
-Section~\ref{sec:bounds} brackets exactly where the diagonal class
-cannot reach and where the diagonal-plus-low-rank class is the
-principal route across.
+RWKV-7~\cite{peng2025rwkv7} would test whether the same alignment
+logic holds when mechanisms target axis~3, non-Abelian
+state-tracking. DeltaProduct is particularly suited because its
+$n$-step Householder product provides a tunable state-tracking
+capacity within the diagonal-plus-low-rank class.
 
-A second extension addresses a structural epistemological point
-about the criterion. The criterion as stated tests a mechanism's
-gain against a post-hoc reading of what a task exercises along
-each axis. A stricter falsifiability protocol would specify, for
-each (architecture, mechanism, dataset) triple, a numerical
-prediction made independently of the experimental result, derived
-from dataset-level metrics that quantify the structural axes the
-dataset exercises. Examples include a phoneme-to-syllable energy
-spectrum for axis 1 on speech, a key-similarity entropy for axis
-2 on synthetic recall, and analogous metrics for the remaining
-axes. The thesis does not develop such metrics. Their development
-is the natural prerequisite for converting the alignment
-criterion from a predictive heuristic into a strictly falsifiable
-claim.
+The second extension is a stricter falsification protocol. The
+criterion as stated tests a mechanism's gain against a post-hoc
+reading of what a task exercises along each axis. A stronger
+protocol would pre-register, for each
+(architecture, mechanism, dataset) triple, a numerical prediction
+derived from dataset-level metrics that quantify the structural
+axes the dataset exercises (for example, a phoneme-to-syllable
+energy spectrum for axis~1 on speech, a key-similarity entropy
+for axis~2 on synthetic recall). The thesis does not develop
+such metrics; their development is the natural prerequisite for
+turning the alignment criterion from a predictive heuristic into
+a strictly falsifiable claim.
 
-A third extension direction is the cross-modality replication of
-the matrix on vision and language probes. The thesis instantiated
-MSDC on speech as one node in a five-paper cross-domain pattern
-(Section~\ref{sec:related:cross-modality}). The cross-architecture
-transfer matrix is portable to those modalities with appropriate
-substitution of the axis-1 and axis-2 probes.
+The third extension is cross-modality replication. The same
+matrix can be ported to vision and language probes by
+substituting modality-appropriate axis-1 and axis-2 tasks for
+the speech probes; the cross-modality scaffold is given by the
+five-paper local-mixing cluster of
+Section~\ref{sec:related:cross-modality}.
 
-The framework remains agnostic to the specific evaluation domain
-and to the specific mechanism instantiation. What it asserts is
-the predictive structure: a mechanism's gain orders with the
-residual structural deficit along the axis it targets, modulated
-by what the task-as-exercised-by-data exercises. The empirical
-matrix populates the criterion in three productive signatures
-across the diagonal-class linear-time family and one controlled
-falsifier; further work extends the criterion across the
-diagonal-plus-low-rank boundary and across modalities other
-than speech.
+Overall, the thesis argues that mechanism transfer in linear-time
+recurrent models is not generic. It is structured by the match
+between the mechanism, the residual deficit of the backbone, and
+the task structure exposed by the data. The matrix demonstrates
+this structure within the diagonal-class family and motivates
+extending the same test across larger scales, stricter
+falsification protocols, and non-diagonal recurrent
+architectures.
