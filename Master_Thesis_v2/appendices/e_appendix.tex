@@ -111,9 +111,9 @@ operator-level test CER within the same architecture row.}
 \textbf{Δ (LION − op)} \\
 \midrule
 RWKV-6           & LION-S    & 0.0859 & 0.1062 (Bi-WKV) & $-0.0203$ \\
-Mamba-2          & LION-S    & 0.0853 & 0.1221 (VIM)    & $-0.0368$ \\
-Linear Attention & LION-LIT  & 0.2951 & 0.1858 (VIM)    & $+0.1093$ \\
-Linear Attention & LION-S    & 0.1381 & 0.1858 (VIM)    & $-0.0477$ \\
+Mamba-2          & LION-S    & 0.0853 & 0.1221 (Vim)    & $-0.0368$ \\
+Linear Attention & LION-LIT  & 0.2951 & 0.1858 (Vim)    & $+0.1093$ \\
+Linear Attention & LION-S    & 0.1381 & 0.1858 (Vim)    & $-0.0477$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -132,8 +132,8 @@ Operator-level bidirectional reference at the 14M scale. LION
 \textbf{Architecture (operator-level)} & \textbf{Test CER} & \textbf{Params} \\
 \midrule
 RWKV-6 with Bi-WKV       & 0.0738 & 13\,561\,117 \\
-Mamba-2 with VIM         & 0.0746 & 12\,624\,445 \\
-Linear Attention with VIM & 0.1207 & 10\,601\,245 \\
+Mamba-2 with Vim         & 0.0746 & 12\,624\,445 \\
+Linear Attention with Vim & 0.1207 & 10\,601\,245 \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -144,7 +144,7 @@ mechanism-level LION wrapper improves test CER by
 $\Delta = -0.020$ to $-0.037$ over the operator-level alternative
 at matched layers, parameters, and budget. On Linear Attention
 the natural LION-LIT mapping has $\lambda = 1$ and no decay; it
-loses to VIM by $\Delta = +0.109$. Adding decay through the
+loses to Vim by $\Delta = +0.109$. Adding decay through the
 LION-S control reverses the result and yields $\Delta = -0.048$.
 The pattern matches the decay-as-prerequisite finding of
 Chapter~\ref{ch:experiments}; the LION wrapper's bidirectional
@@ -167,7 +167,7 @@ two backbones with native decay, the 14M operator-level
 configuration reaches test CER values modestly below the
 matched 7M LION-S rows: $0.0738$ on 14M RWKV-6 with Bi-WKV
 against $0.0859$ on 7M RWKV-6 LION-S, and $0.0746$ on 14M
-Mamba-2 with VIM against $0.0853$ on 7M Mamba-2 LION-S. The
+Mamba-2 with Vim against $0.0853$ on 7M Mamba-2 LION-S. The
 mechanism-level LION wrapper at 7M therefore sits in
 approximately the range the operator-level family reaches only
 after doubling the parameter budget and doubling the
