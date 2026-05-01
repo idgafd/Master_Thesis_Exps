@@ -238,16 +238,12 @@ and query projections of the input $x_{t}$. The state is a pure
 accumulator: each token write is added to the running sum without any
 attenuation of earlier writes.
 
-Within the unified template of equation~(\ref{eq:unified}), Linear
-Attention corresponds to the trivial transition $A_{t} = I$, an
-input-write operator $B_{t} = \phi(K_{t})$ that produces a rank-one
-outer-product update with $V_{t}$, and a separable readout direction
-$C_{t} = \phi(Q_{t})$ applied with a normalisation step over $z_{t}$.
-Among the three backbones, Linear Attention leaves the largest
-residual structural deficit: the architecture has no native primitive
-that bounds the magnitude of the accumulator, no native primitive
-that selectively attenuates earlier writes, and no explicit local
-mixing on the input side.
+Within the unified template of equation~(\ref{eq:unified}),
+Linear Attention corresponds to the trivial transition
+$A_{t} = I$, an input-write operator $B_{t} = \phi(K_{t})$ that
+produces a rank-one outer-product update with $V_{t}$, and a
+separable readout direction $C_{t} = \phi(Q_{t})$ applied with a
+normalisation step over $z_{t}$.
 
 \subsection{RWKV-6 with per-channel data-dependent decay}\label{sec:backbones:rwkv6}
 
@@ -286,16 +282,14 @@ trainable vectors and $A_{\ast}, B_{\ast}$ trainable low-rank
 projections. The double-exponential map ensures $w_{t} \in (0, 1)^{D/h}$
 without requiring an explicit clamp.
 
-Within the unified template of equation~(\ref{eq:unified}), RWKV-6
-corresponds to a transition $A_{t} = \mathrm{diag}(w_{t})$ that is
-diagonal and per-token data-dependent, an input-write operator that
-produces the rank-one outer product $k_{t}^{\top} v_{t}$, and a
-readout that includes the static bonus $\mathrm{diag}(u)$ in addition
-to the previous-state component $s_{t-1}$. The architecture's
-distinctive feature, relative to Linear Attention, is that decay is
-both present and per-channel data-dependent, which gives the recurrent
-state a native mechanism for selectively attenuating earlier writes
-on a per-channel basis.
+Within the unified template of equation~(\ref{eq:unified}),
+RWKV-6 corresponds to a transition
+$A_{t} = \mathrm{diag}(w_{t})$ with $w_{t}$ per-channel
+data-dependent through equation~(\ref{eq:rwkv6-decay}), an
+input-write that produces the rank-one outer product
+$k_{t}^{\top} v_{t}$, and a readout that includes the static
+bonus $\mathrm{diag}(u)$ on the current write in addition to the
+previous-state component $s_{t-1}$.
 
 \subsection{Mamba-2 with input-modulated scalar transitions}\label{sec:backbones:mamba2}
 
@@ -332,17 +326,12 @@ The discrete input-write parameter $B_{t}$ and readout direction
 $C_{t}$ are similarly produced by input-dependent linear projections
 $s_{B}(x_{t}) = \mathrm{Linear}_{N}(x_{t})$ and $s_{C}(x_{t}) = \mathrm{Linear}_{N}(x_{t})$~\cite{gu2023mamba}.
 
-Within the unified template of equation~(\ref{eq:unified}), Mamba-2
-corresponds to a transition $A_{t} = a_{t} I$ that is structurally
-restricted to the scalar-identity form, with the scalar magnitude
-$a_{t}$ controlled by a single per-token data-dependent step size
-$\Delta_{t}$. The input-write parameter $B_{t}$ and readout direction
-$C_{t}$ are also input-dependent through low-rank projections of
-$x_{t}$. The architecture's distinctive feature, relative to RWKV-6,
-is that the selectivity passes through a single scalar per token
-rather than a per-channel decay vector, which simplifies the
-state-space duality with kernel attention at the cost of removing
-per-channel decay diversity from the transition operator.
+Within the unified template of equation~(\ref{eq:unified}),
+Mamba-2 corresponds to a transition $A_{t} = a_{t} I$ with $a_{t}$
+per-token data-dependent through the selective step size
+$\Delta_{t}$ of equation~(\ref{eq:mamba2-delta}), and
+input-dependent $B_{t}$, $C_{t}$ through low-rank projections of
+$x_{t}$.
 
 \subsection{Architecture-deficit map}\label{sec:backbones:deficit}
 
@@ -457,19 +446,12 @@ parallel-form mapping:
       decay rate.
 \end{itemize}
 
-For the experimental matrix of this thesis, the natural parallel-form
-mapping per causal backbone is as follows. RWKV-6 inherits LION-S,
-since the WKV decay vector $w_{t}$ is per-channel data-dependent
-through equation~(\ref{eq:rwkv6-decay}). Mamba-2 inherits LION-S,
-since the scalar $a_{t}$ is per-token data-dependent through the
-selective step size $\Delta_{t}$ of equation~(\ref{eq:mamba2-delta}).
-Linear Attention inherits LION-LIT, since the causal accumulator has
-$A_{t} = I$ and therefore no decay to inherit. The matrix
-additionally reports a controlled LION-S deployment on the Linear
-Attention backbone, in which a per-token sigmoid decay is introduced
-that is not present in the underlying causal backbone. The motivation
-for this controlled deployment is structural and is examined in the
-remainder of this section.
+The per-backbone parallel-form mapping (RWKV-6 to LION-S,
+Mamba-2 to LION-S, Linear Attention to LION-LIT, with a
+controlled LION-S deployment on Linear Attention) is detailed
+in Section~\ref{sec:proposed:lion}. The structural reason why
+both LION-LIT and LION-S are reported on Linear Attention is
+examined in the remainder of this section.
 
 The role of decay in the bidirectional setting is more constraining
 than in the causal setting. In the causal recurrence, the unbounded
@@ -482,23 +464,14 @@ $O(T \cdot d_{K})$, and the absence of a decay structure on
 $\mathbf{M}$ means the value tensor enters the output proportional to
 a sum that scales linearly in sequence length without architectural
 attenuation. The LION-LIT instantiation remains a correct definition,
-but a downstream mechanism that operates on this output, such as the
-value-decorrelation primitive of Section~\ref{sec:primitives:cvd},
-loses its conditioning guarantee when applied to a substrate whose
-accumulation is unbounded.
-
-This observation is the structural reason why the experimental matrix
-of this thesis reports both LION-LIT and LION-S on the Linear
-Attention backbone. LION-LIT is the table-default instantiation per
-the natural parallel-form mapping, and serves as a controlled
-baseline for the bidirectional behaviour of Linear Attention without
-decay. LION-S, in contrast, adds a per-token sigmoid decay that is
-not present in the underlying causal backbone, and serves as a
-controlled experiment for the question of whether decay is
-structurally required for the value-decorrelation mechanism of
-Chapter~\ref{ch:proposed} to engage productively in the bidirectional
-setting. The empirical outcome of this comparison is reported in
-Chapter~\ref{ch:experiments}.
+but a downstream mechanism that operates on this output, such
+as the value-decorrelation primitive of
+Section~\ref{sec:primitives:cvd}, loses its conditioning
+guarantee when applied to a substrate whose accumulation is
+unbounded. The matrix therefore reports both LION-LIT (the
+natural parallel-form mapping; controlled baseline) and LION-S
+(per-token sigmoid decay added) on Linear Attention; the
+empirical outcome is reported in Chapter~\ref{ch:experiments}.
 
 \section{Mathematical primitives for mechanism design}\label{sec:primitives}
 

@@ -31,26 +31,20 @@ hop, followed by $2\times$ acoustic subsampling that brings
 post-frontend sequence length to $T \le 500$ at the
 phoneme-to-syllable scale relevant to the axis-1 deficit. The
 cross-distribution probe is a $100$-hour balanced subset of
-Common Voice English~\cite{ardila2019commonvoice} sampled
-stratified by speaker so that no speaker appears in more than one
-of the train, dev, or test partitions, with the cumulative
-duration matching the LibriSpeech budget within rounding. Both
-acoustic probes share the same $29$-symbol character vocabulary
-(twenty-six lowercase letters, the apostrophe, the space
-character, and a dedicated CTC blank token). The synthetic axis-2
-probe is the Multi-Query Associative Recall benchmark of
-\citet{arora2023zoology} with the canonical sequence-length sweep
-$T \in \{64, 256, 1024\}$ and the matching stored-pair counts
-$K \in \{16, 64, 256\}$ that grow with $T$ to keep the difficulty
-parameter $K / d$ meaningful at every length. The synthetic probe
-uses two disjoint $8192$-token vocabularies for keys and values.
-Table~\ref{tab:librispeech-vs-cv} summarises the pre-experimental
-comparison between the two acoustic probes that motivates the
-cross-distribution validation of
-Section~\ref{sec:experiments:cv}; the broader acoustic variance of
-Common Voice along speaker, accent, and recording-condition axes
-is identified as a probe property prior to any experiment on the
-proposed mechanisms.
+Common Voice English~\cite{ardila2019commonvoice}; the
+selection protocol and the pre-experimental comparison with
+LibriSpeech are summarised in
+Table~\ref{tab:librispeech-vs-cv} and detailed in
+Appendix~\ref{app:setup:cv}. Both acoustic probes share the same
+$29$-symbol character vocabulary (twenty-six lowercase letters,
+the apostrophe, the space character, and a dedicated CTC blank
+token). The synthetic axis-2 probe is the Multi-Query
+Associative Recall benchmark of~\citet{arora2023zoology} with
+the canonical sequence-length sweep $T \in \{64, 256, 1024\}$
+and the matching stored-pair counts $K \in \{16, 64, 256\}$ that
+grow with $T$ to keep the difficulty parameter $K / d$
+meaningful at every length. The synthetic probe uses two
+disjoint $8192$-token vocabularies for keys and values.
 
 \begin{table}[!htbp]
 \centering
@@ -119,11 +113,7 @@ chunked-streaming evaluation, reported in
 Appendix~\ref{app:diagnostics:chunked}, supplements the
 full-utterance acoustic test by isolating the short-window regime
 in which the recurrent state has not accumulated long-context
-information. The framework is justified by the matrix-as-artefact
-position: clean per-cell attribution at the architectural level
-is preferred over decoder-coupled aggregate scores, since the
-chapter's empirical claim is the pattern of relative gains rather
-than any single absolute metric.
+information.
 
 \paragraph{Training budget and parameter match.} Every
 LibriSpeech and Common Voice cell is trained under a locked
@@ -469,15 +459,12 @@ Twelve of fifteen non-vanilla cells transfer to Common Voice
 with $|\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}}| < 0.020$,
 preserving the rank ordering of the LibriSpeech mechanism
 column. Three cells off-diagonal carry the cross-distribution
-information of the section. The Mamba-2~$\times$~DHO cell, a
-near-null on LibriSpeech, becomes productive on Common Voice
-($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} = -0.0196$): the
-selective $\Delta t$ absorption of the block-complex extension
-identified in Section~\ref{sec:experiments:transfer} is not
-absolute but task-prior modulated, with Common Voice's broader
-speaker, accent, and recording-condition variability leaving
-residual axis-1 sub-structure that the block-complex extension
-exercises. The LA~$\times$~DHO and LA~$\times$~DHO~$\times$~MSDC
+information of the section. The Mamba-2~$\times$~DHO cell,
+anticipated in Section~\ref{sec:experiments:transfer}, gives a
+delta-of-deltas $\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} =
+-0.0196$, the largest absolute mechanism amplification in the
+table under the broader Common Voice distribution. The
+LA~$\times$~DHO and LA~$\times$~DHO~$\times$~MSDC
 cells deliver smaller absolute gains on Common Voice than on
 LibriSpeech ($\Delta_{\mathrm{CV}} - \Delta_{\mathrm{LS}} =
 +0.0331$ and $+0.0263$), reflecting the absorbed share of the
