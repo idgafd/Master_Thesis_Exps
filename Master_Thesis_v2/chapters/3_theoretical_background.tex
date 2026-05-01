@@ -1,15 +1,12 @@
 \chapter{Theoretical Background}\label{ch:theoretical}
 
-This chapter develops the conceptual scaffold and the
-mathematical machinery on which the proposed mechanisms of
-Chapter~\ref{ch:proposed} stand: the axis decomposition of
-linear-time recurrent expressivity, the unified causal recurrence
-template that places the three matrix backbones inside one
-algebraic frame, the LION bidirectional form with its decay-class
-taxonomy, the three primitives that supply the mechanisms'
-building blocks, and the formal complexity-class bounds that
-delimit the diagonal class within which the entire thesis
-operates.
+This chapter provides the theoretical foundation for
+Chapter~\ref{ch:proposed}: an axis-based view of linear-time
+recurrent expressivity, a unified recurrence template for the
+three matrix backbones, the LION bidirectional adaptation with
+its decay-class taxonomy, the three primitives the proposed
+mechanisms build on, and the formal complexity-class bounds that
+delimit the diagonal class within which the thesis operates.
 
 \section{Axis decomposition of linear-time RNN expressivity}\label{sec:axes}
 
@@ -46,22 +43,20 @@ primary probes.
 
 The first axis concerns the architecture's capacity to encode
 short-range temporal structure. The relevant patterns include
-phoneme-to-syllable transitions in speech, formant trajectories in
-voiced segments, $n$-gram structure in language, and adjacent-pixel
-structure in vision. The structural deficit is shared across the
-linear-time recurrent family that Section~\ref{sec:backbones}
-formalises: each token sees only its own embedding plus the running
-recurrent state, and the state cannot encode short-range
-neighbourhood information as efficiently as an explicit local
-operator can (Section~\ref{sec:primitives:msdc}). The diagnostic
-property of an axis-one task is that improvements in short-range
-mixing translate into reductions of the primary metric. For the
-ASR probes used in this thesis, the primary metric is character error
-rate at post-subsampling sequence lengths $T \le 500$. Linear-time
-architectures exhibit characteristic failure modes on axis-one tasks,
-most visibly through the scaling difficulties of Vision
-Mamba~\cite{zhu2024visionmamba} on image classification beyond
-modest parameter counts and through the documented gap of Audio
+phoneme-to-syllable transitions in speech, formant trajectories
+in voiced segments, $n$-gram structure in language, and
+adjacent-pixel structure in vision. The deficit is the absence
+of explicit local mixing before the recurrent state update;
+Section~\ref{sec:primitives:msdc} gives the technical
+formulation. The diagnostic property of an axis-one task is that
+improvements in short-range mixing translate into reductions of
+the primary metric, which on the thesis's ASR probes is the
+character error rate at post-subsampling sequence lengths
+$T \le 500$. Linear-time architectures exhibit characteristic
+failure modes on axis-one tasks, most visibly through the
+scaling difficulties of Vision Mamba~\cite{zhu2024visionmamba}
+on image classification beyond modest parameter counts and
+through the documented gap of Audio
 Mamba~\cite{erol2024audiomamba} on speech recognition in the
 absence of explicit local mixing.
 
@@ -125,27 +120,24 @@ predicts.
 
 Across the three primary axes, the thesis observes a single
 empirical regularity that the synthesis chapter formalises as a
-predictive criterion. Larger residual deficits along the axis a
+predictive criterion: larger residual deficits along the axis a
 mechanism targets tend to correspond to larger absolute gains,
 and no measured gain is expected when the mechanism extends the
-function class along an axis the task does not exercise. The remainder of the thesis is
-organised around this criterion.
-Chapter~\ref{ch:proposed} introduces three proposed mechanisms, each
-targeting a specific axis. Chapter~\ref{ch:experiments} reports the
-cross-architecture transfer pattern on the empirical matrix, which
-exhibits the criterion in three different signatures across the three
-mechanisms.
+function class along an axis the task does not exercise.
+Chapter~\ref{ch:proposed} instantiates this criterion in three
+mechanisms, and Chapter~\ref{ch:experiments} tests it across
+backbones and probes.
 
 \begin{table}[t]
 \centering
 \small
-\caption[Axes of expressivity for causal linear-time RNNs]{Axes of
-expressivity considered in this thesis, with the diagnostic property
-that distinguishes each axis, the task or task-family that exercises
-it, and the role each axis plays in the empirical matrix. Axes one,
-two, and three are exercised by the matrix; axes four and five are
-mentioned for completeness and contextualisation of closed-cell
-evidence.}
+\caption[Axes of expressivity for causal linear-time RNNs]{Axes
+of expressivity considered in this thesis, with the diagnostic
+property that distinguishes each axis and the task family that
+exercises it. Axes one and two are exercised by the matrix's
+primary probes; axis three is bracketed by the formal
+complexity-class bound of Section~\ref{sec:bounds}; axes four
+and five are mentioned for completeness.}
 \label{tab:axes}
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.15}
@@ -575,38 +567,35 @@ matrix.
 
 The transition operator of a linear-time recurrent architecture
 determines the function class the hidden state can express across
-time. RWKV-6's per-channel decay produces a real-diagonal transition
-in $(\mathbb{R}_{+})^{K}$, which acts on each state channel as
-multiplicative damping. Linear Attention's pure accumulator
-corresponds to the trivial case $A_{t} = I$, which sits inside the
-same real-diagonal class. Each of these is a special case of a
-real-diagonal transition: state channels evolve independently, with
-no representation of phase. The function class cannot represent
-oscillatory dynamics, which restricts its capacity to model phenomena
-including formant trajectories in voiced speech, rotational
-trajectories in handwriting and motion, and any other process whose
-state lives on a circle rather than a half-line.
+time. RWKV-6's per-channel decay and Linear Attention's pure
+accumulator $A_{t} = I$ both sit inside the real-diagonal class:
+state channels evolve independently with no representation of
+phase, and the function class cannot represent oscillatory
+dynamics. This restricts the architecture's capacity to model
+phenomena such as formant trajectories in voiced speech,
+rotational trajectories in handwriting and motion, and other
+processes whose state lives on a circle rather than a half-line.
 
-The natural extension of the real-diagonal class that admits
-oscillation while remaining inside the diagonalisable matrix family
-is the block-complex transition. The standard reference for the
-rotation group $SO(2)$ and its embedding into matrix Lie-group theory
+The smallest natural extension of the real-diagonal class that
+admits damped oscillation while remaining inside the
+diagonalisable matrix family is the block-complex transition.
+The standard reference for the rotation group $SO(2)$ and its
+embedding into matrix Lie-group theory
 is~\citet[Chapter 1]{hall2015lie}. Replacing each pair of state
-channels with a two-vector that is rotated by an angle $\theta$ and
-scaled by a damping factor $e^{-\lambda}$ yields the per-block
-transition
+channels with a two-vector that is rotated by an angle $\theta$
+and scaled by a damping factor $e^{-\lambda}$ yields the
+per-block transition
 \begin{equation}\label{eq:block-complex}
 G_{b} = e^{-\lambda} \, R(\theta), \qquad R(\theta) = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix}.
 \end{equation}
 Stacking $K/2$ such two-by-two blocks produces a block-diagonal
-transition in $SO(2)^{K/2} \times \mathbb{R}_{+}^{K/2}$. This is the
-smallest natural extension of the real-diagonal $(\mathbb{R}_{+})^{K}$
-class that admits damped oscillation. Each block has eigenvalues
-$r e^{\pm i \theta}$ with $r = e^{-\lambda}$, placing the transition
-inside the complex-diagonal SSM class characterised formally
-by~\citet{sarrof2024expressive}. The block-complex form is therefore
-a structured subset of the complex-diagonal class and inherits the
-formal-language properties of that class as recalled in
+transition in $SO(2)^{K/2} \times \mathbb{R}_{+}^{K/2}$. Each
+block has eigenvalues $r e^{\pm i \theta}$ with $r = e^{-\lambda}$,
+placing the transition inside the complex-diagonal SSM class
+characterised formally by~\citet{sarrof2024expressive}. The
+block-complex form is therefore a structured subset of the
+complex-diagonal class and inherits the formal-language
+properties of that class as recalled in
 Section~\ref{sec:bounds}.
 
 Allowing the rotation angle $\theta$ to grow without further
@@ -708,13 +697,10 @@ rather than direct adaptation.
 
 \section{Formal expressivity bounds}\label{sec:bounds}
 
-The chapter closes with a recapitulation of the formal
-complexity-class boundaries surveyed in the related-work chapter,
-with emphasis on the function-class membership of the three
-proposed mechanisms. The purpose of this section is to make
-explicit the formal scope within which the empirical matrix of
-Chapter~\ref{ch:experiments} operates rather than to re-establish
-the bounds themselves.
+This section fixes the formal scope of the empirical matrix by
+locating the three proposed mechanisms within the diagonal
+recurrence class, rather than re-proving the known bounds from
+the related-work chapter.
 
 The position of attention-based and recurrent linear-time
 architectures in the parallel-circuit hierarchy has been established
@@ -789,16 +775,14 @@ mechanism of Section~\ref{sec:primitives:cvd} operates on the value
 tensor without modifying the recurrence's transition either. None
 of the three crosses the diagonal-to-low-rank boundary.
 
-The formal results recalled in this section therefore function as a
-scope clarifier rather than as theorems the thesis attempts to
-violate. The empirical matrix of Chapter~\ref{ch:experiments}
-pre-registers the prediction that no mechanism in the matrix yields
-a non-Abelian state-tracking gain at any scale or sequence length,
-and the probes used in the experimental matrix (LibriSpeech, Common
-Voice, MQAR) are chosen deliberately so as not to require such a
-gain. State-tracking probes such as $S_{n}$ permutation composition
-and Dyck-$k$ for $k \ge 2$ are deferred to future work on
-diagonal-plus-low-rank mechanisms; the natural extension of the
-framework is to repeat the cross-architecture transfer matrix on a
-diagonal-plus-low-rank backbone class with mechanisms that target
-the third axis introduced in Section~\ref{sec:axes}.
+The formal results recalled here function as scope conditions
+rather than theorems the thesis attempts to violate. The matrix
+does not predict non-Abelian state-tracking gains at any scale,
+and its probes (LibriSpeech, Common Voice, MQAR) are chosen
+deliberately so as not to require them. State-tracking probes
+such as $S_{n}$ permutation composition and Dyck-$k$ for
+$k \ge 2$ are deferred to future work on diagonal-plus-low-rank
+mechanisms; the natural extension of the framework is to repeat
+the cross-architecture transfer matrix on a
+diagonal-plus-low-rank backbone class with mechanisms that
+target the third axis introduced in Section~\ref{sec:axes}.
